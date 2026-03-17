@@ -1,0 +1,6781 @@
+import { useState, useEffect, useRef } from "react";
+
+// Refined, curated palette — desaturated sophistication with precise accents
+const PLANETS = [
+  { id: 1,  appId: "flashcards",   name: "Flash Cards",             symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
+  { id: 2,  appId: "echonote",     name: "EchoNote",                symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Record lectures, auto-transcribe, and generate study material instantly." },
+  { id: 3,  appId: "brainmap",     name: "Brain Map",               symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
+  { id: 4,  appId: "simplifier",   name: "Text Simplifier",         symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
+  { id: 5,  appId: "academy",      name: "Academy",                 symbol: "◎", color: "#7FD4C8", glow: "#4FBFB0", size: 46, orbitRadius: 280, speed: 33, desc: "Structured courses and guided learning." },
+  { id: 6,  appId: "studio",       name: "Studio",                  symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
+  { id: 7,  appId: "universe",     name: "Universe of Information", symbol: "⟡", color: "#D0A8F8", glow: "#A060E8", size: 50, orbitRadius: 360, speed: 48, desc: "Explore the world's knowledge, organized." },
+  { id: 8,  appId: "earthrecord",  name: "Earth's Record",          symbol: "◉", color: "#88D8A8", glow: "#40B870", size: 38, orbitRadius: 398, speed: 55, desc: "History, facts, and records of our world." },
+  { id: 9,  appId: "careercompass",name: "Career Compass",          symbol: "◇", color: "#F8E070", glow: "#D4B820", size: 44, orbitRadius: 435, speed: 65, desc: "Map your path, skills, and opportunities." },
+  { id: 10, appId: "assistant",    name: "Personal Assistant",      symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
+  { id: 11, appId: "mentalhealth", name: "Mental Health",           symbol: "⬟", color: "#FFB3C6", glow: "#FF6B9D", size: 40, orbitRadius: 505, speed: 58, desc: "Mindfulness, balance, and well-being." },
+  { id: 12, appId: "flow",         name: "Flow",                    symbol: "⬢", color: "#A8E6CF", glow: "#56C596", size: 46, orbitRadius: 542, speed: 50, desc: "Focus sessions, streaks, and deep work." },
+  { id: 13, appId: "studybuddy",  name: "Study Buddy",             symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Your real-time AI study partner — learn together." },
+  { id: 14, appId: "settings",    name: "Settings",                symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience, accessibility, and preferences." },
+];
+
+const TILT = 0.34;
+
+function Stars() {
+  const stars = useRef(
+    Array.from({ length: 160 }, (_, i) => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() < 0.15 ? Math.random() * 1.8 + 1.2 : Math.random() * 0.9 + 0.3,
+      opacity: Math.random() * 0.5 + 0.15,
+      twinkle: Math.random() * 6 + 4,
+      delay: Math.random() * 5,
+    }))
+  );
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
+      {stars.current.map((s, i) => (
+        <div key={i} style={{
+          position: "absolute", left: `${s.x}%`, top: `${s.y}%`,
+          width: s.size, height: s.size, borderRadius: "50%",
+          background: i % 7 === 0 ? "#e8d8ff" : i % 5 === 0 ? "#c8e8ff" : "#ffffff",
+          opacity: s.opacity,
+          animation: `starPulse ${s.twinkle}s ease-in-out infinite alternate`,
+          animationDelay: `${s.delay}s`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function Sun() {
+  return (
+    <div style={{
+      position: "absolute", left: "50%", top: "50%",
+      transform: "translate(-50%, -50%)", zIndex: 15,
+      display: "flex", flexDirection: "column", alignItems: "center",
+    }}>
+      {/* Outermost corona ring */}
+      <div style={{
+        position: "absolute", width: 174, height: 174, borderRadius: "50%",
+        border: "1px solid rgba(210, 180, 100, 0.12)",
+        animation: "coronaPulse 4s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute", width: 148, height: 148, borderRadius: "50%",
+        border: "1px solid rgba(210, 180, 100, 0.18)",
+        animation: "coronaPulse 4s ease-in-out infinite 0.8s",
+      }} />
+      {/* Sun body — clean sphere */}
+      <div style={{
+        width: 110, height: 110, borderRadius: "50%",
+        background: "radial-gradient(circle at 38% 32%, #FFF8E8, #F5D96A, #D4A820, #9B6C00)",
+        boxShadow: "0 0 30px rgba(212,168,32,0.45), 0 0 70px rgba(212,168,32,0.2), 0 0 120px rgba(212,168,32,0.08)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        position: "relative", zIndex: 1,
+      }}>
+        {/* Subtle surface shading */}
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "50%",
+          background: "radial-gradient(circle at 65% 65%, rgba(0,0,0,0.18) 0%, transparent 60%)",
+        }} />
+        <div style={{
+          position: "relative", zIndex: 1,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+        }}>
+          <span style={{
+            fontFamily: "'Montserrat', sans-serif", fontSize: 18, fontWeight: 800,
+            color: "rgba(20,10,0,0.85)", letterSpacing: 4,
+            textTransform: "uppercase", lineHeight: 1,
+            paddingLeft: 4, // compensate for trailing letter-spacing
+          }}>ACE</span>
+          <span style={{
+            fontFamily: "'Montserrat', sans-serif", fontSize: 18, fontWeight: 800,
+            color: "rgba(20,10,0,0.85)", letterSpacing: 4,
+            textTransform: "uppercase", lineHeight: 1,
+            paddingLeft: 4,
+          }}>IT</span>
+        </div>
+      </div>
+      {/* Wordmark below */}
+      <div style={{
+        marginTop: 14, display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <div style={{ width: 24, height: 1, background: "rgba(212,168,32,0.35)" }} />
+        <span style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 500,
+          color: "rgba(212,168,32,0.55)", letterSpacing: 5, textTransform: "uppercase",
+        }}>Galaxy</span>
+        <div style={{ width: 24, height: 1, background: "rgba(212,168,32,0.35)" }} />
+      </div>
+    </div>
+  );
+}
+
+function OrbitRing({ orbitRadius, highlight }) {
+  const rx = orbitRadius;
+  const ry = orbitRadius * TILT;
+  return (
+    <div style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0, pointerEvents: "none" }}>
+      <svg style={{ position: "absolute", left: -rx, top: -ry, overflow: "visible", pointerEvents: "none" }}
+        width={rx * 2} height={ry * 2}>
+        <ellipse cx={rx} cy={ry} rx={rx} ry={ry} fill="none"
+          stroke={highlight ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.04)"}
+          strokeWidth={highlight ? "1" : "0.75"}
+          strokeDasharray={highlight ? "none" : "2 4"}
+        />
+      </svg>
+    </div>
+  );
+}
+
+function Planet({ planet, onClick, isActive }) {
+  const angleRef = useRef(-(planet.id * 3.7));
+  const lastTimeRef = useRef(null);
+  const hoverRef = useRef(false);
+  const [state, setState] = useState({ x: 0, y: 0, depthScale: 1, opacity: 1, zIndex: 10 });
+  const [hover, setHover] = useState(false);
+
+  const handleMouseEnter = () => { hoverRef.current = true;  setHover(true);  };
+  const handleMouseLeave = () => { hoverRef.current = false; setHover(false); };
+
+  useEffect(() => {
+    const speedRad = (2 * Math.PI) / (planet.speed * 1000);
+    let rafId;
+    const animate = (time) => {
+      // Only advance the angle when not hovered — planet freezes under the cursor
+      if (lastTimeRef.current !== null && !hoverRef.current) {
+        angleRef.current += speedRad * (time - lastTimeRef.current);
+      }
+      lastTimeRef.current = time;
+      const angle = angleRef.current;
+      const x = Math.cos(angle) * planet.orbitRadius;
+      const y = Math.sin(angle) * planet.orbitRadius * TILT;
+      const depth = (Math.sin(angle) + 1) / 2;
+      const depthScale = 0.48 + depth * 1.04;
+      const opacity = 0.78 + depth * 0.22;
+      const zIndex = Math.round(depth * 90);
+      setState({ x, y, depthScale, opacity, zIndex });
+      rafId = requestAnimationFrame(animate);
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [planet.speed, planet.orbitRadius]);
+
+  const finalScale = state.depthScale * (hover ? 1.1 : 1);
+  const resolvedZ = isActive || hover ? 300 : state.zIndex;
+
+  return (
+    <>
+      <OrbitRing orbitRadius={planet.orbitRadius} highlight={hover || isActive} />
+      <div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={() => onClick(planet)}
+        style={{
+          position: "absolute",
+          left: `calc(50% + ${state.x}px)`,
+          top: `calc(50% + ${state.y}px)`,
+          transform: `translate(-50%, -50%) scale(${finalScale})`,
+          width: planet.size,
+          height: planet.size,
+          borderRadius: "50%",
+          // Refined sphere — subtle, not garish
+          background: `radial-gradient(circle at 38% 32%, ${planet.color}f8, ${planet.color}90, ${planet.color}28)`,
+          border: `1px solid ${planet.color}50`,
+          boxShadow: hover || isActive
+            ? `0 0 18px ${planet.glow}55, 0 0 40px ${planet.glow}22, inset 0 0 12px rgba(255,255,255,0.15)`
+            : `0 0 8px ${planet.glow}28, inset 0 0 8px rgba(255,255,255,0.06)`,
+          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: state.opacity,
+          zIndex: resolvedZ,
+          transition: "box-shadow 0.25s ease, border-color 0.25s ease",
+        }}
+      >
+        {/* Surface shading */}
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "50%",
+          background: "radial-gradient(circle at 65% 68%, rgba(0,0,0,0.25) 0%, transparent 58%)",
+          pointerEvents: "none",
+        }} />
+        {/* Symbol — clean, not emoji */}
+        <span style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: planet.size * 0.38,
+          color: "rgba(255,255,255,0.9)",
+          lineHeight: 1,
+          position: "relative", zIndex: 1,
+          textShadow: `0 0 8px ${planet.color}`,
+          userSelect: "none",
+        }}>{planet.symbol}</span>
+
+        {/* Label — always readable, minimal, no pill */}
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 7px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+          textAlign: "center",
+        }}>
+          <span style={{
+            display: "block",
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+            color: hover || isActive ? planet.color : "rgba(255,255,255,0.75)",
+            transition: "color 0.25s ease",
+          }}>
+            {planet.name}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Panel slide-in from left
+function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openAuth, onLogout, recentApps = [], onLaunch }) {
+  const [appsOpen, setAppsOpen] = useState(true);
+  const [userOpen, setUserOpen] = useState(true);
+  return (
+    <>
+      {isOpen && (
+        <div onClick={onClose} style={{
+          position: "fixed", inset: 0, zIndex: 98,
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
+        }} />
+      )}
+      <div style={{
+        position: "fixed", left: 0, top: 0, bottom: 0, width: 280,
+        background: "linear-gradient(160deg, rgba(8,6,22,0.98) 0%, rgba(4,3,14,0.99) 100%)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+        transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 99, display: "flex", flexDirection: "column", overflow: "hidden",
+      }}>
+        {/* Top bar */}
+        <div style={{
+          padding: "24px 20px 18px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <div style={{
+              fontFamily: "'Montserrat', sans-serif", fontSize: 17, fontWeight: 800,
+              color: "#F5D96A", letterSpacing: 2, textTransform: "uppercase",
+            }}>Ace It</div>
+            <div style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 400,
+              color: "rgba(255,255,255,0.28)", letterSpacing: 4, textTransform: "uppercase",
+              marginTop: 1,
+            }}>Galaxy Platform</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: "none", border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.35)", width: 30, height: 30,
+            borderRadius: 4, cursor: "pointer", fontSize: 13,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.2s",
+          }}
+            onMouseEnter={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.2)"; e.target.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.color = "rgba(255,255,255,0.35)"; }}
+          >✕</button>
+        </div>
+
+        {/* User Information — collapsible */}
+        <button
+          onClick={() => setUserOpen(o => !o)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 20px 10px", background: "none", border: "none", cursor: "pointer",
+            transition: "opacity 0.15s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+        >
+          <span style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600,
+            color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase",
+          }}>User Information</span>
+          <span style={{
+            color: "rgba(255,255,255,0.25)", fontSize: 10, lineHeight: 1,
+            display: "inline-block",
+            transform: userOpen ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.25s ease",
+          }}>▾</span>
+        </button>
+
+        <div style={{
+          overflow: "hidden",
+          maxHeight: userOpen ? "400px" : "0px",
+          transition: "max-height 0.35s ease",
+        }}>
+          <div style={{
+            margin: "0 12px 12px",
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            padding: "14px 16px",
+          }}>
+            {user ? (
+              <>
+                {/* Logged-in view */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg, #9B7FFF, #F5D96A)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat', sans-serif", fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.75)" }}>{user.avatar}</div>
+                  <div>
+                    <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{user.name}</div>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "#88D8A8", marginTop: 2 }}>● Signed in</div>
+                  </div>
+                </div>
+                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 12 }} />
+                {[{ label: "Plan", value: "Free Tier" }, { label: "Status", value: "Active" }, { label: "Apps", value: "12 modules" }].map(({ label, value }) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{label}</span>
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{value}</span>
+                  </div>
+                ))}
+                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "12px 0" }} />
+                <button onClick={onLogout} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", cursor: "pointer", letterSpacing: 1, transition: "all 0.18s" }}
+                  onMouseEnter={e => { e.target.style.borderColor = "rgba(255,80,80,0.4)"; e.target.style.color = "rgba(255,120,120,0.8)"; }}
+                  onMouseLeave={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.color = "rgba(255,255,255,0.4)"; }}>Sign Out</button>
+              </>
+            ) : (
+              <>
+                {/* Guest view */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👤</div>
+                  <div>
+                    <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>Guest User</div>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "rgba(255,255,255,0.22)", marginTop: 2 }}>Not signed in</div>
+                  </div>
+                </div>
+                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 14 }} />
+                <button onClick={() => { openAuth("login"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "#F5D96A", border: "none", fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.8)", cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", transition: "all 0.18s", marginBottom: 8, boxShadow: "0 4px 16px rgba(245,217,106,0.2)" }}
+                  onMouseEnter={e => { e.target.style.opacity = "0.85"; }} onMouseLeave={e => { e.target.style.opacity = "1"; }}>Log In</button>
+                <button onClick={() => { openAuth("signup"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "transparent", border: "1px solid rgba(245,217,106,0.3)", fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(245,217,106,0.7)", cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", transition: "all 0.18s" }}
+                  onMouseEnter={e => { e.target.style.borderColor = "rgba(245,217,106,0.6)"; e.target.style.color = "#F5D96A"; }} onMouseLeave={e => { e.target.style.borderColor = "rgba(245,217,106,0.3)"; e.target.style.color = "rgba(245,217,106,0.7)"; }}>Create Account</button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Apps */}
+        {recentApps.length > 0 && (
+          <>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 16px 4px" }} />
+            <div style={{ padding: "10px 20px 6px" }}>
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase" }}>Recent</span>
+            </div>
+            <div style={{ padding: "0 10px 8px" }}>
+              {recentApps.map((appId) => {
+                const p = planets.find(pl => pl.appId === appId);
+                if (!p) return null;
+                return (
+                  <button key={appId} onClick={() => { onLaunch && onLaunch(appId); onClose(); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", marginBottom: 1, background: "transparent", border: "none", borderRadius: 4, cursor: "pointer", transition: "all 0.15s", borderLeft: "2px solid transparent" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderLeftColor = p.color; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: `radial-gradient(circle at 35% 35%, ${p.color}cc, ${p.color}55)`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "rgba(0,0,0,0.7)", boxShadow: `0 0 8px ${p.color}44` }}>{p.symbol}</div>
+                    <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.65)", letterSpacing: 0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                    </div>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)" }}>↗</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Thin divider between sections */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 16px 4px" }} />
+
+        {/* Section label — collapsible toggle */}
+        <button
+          onClick={() => setAppsOpen(o => !o)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 20px 10px", background: "none", border: "none", cursor: "pointer",
+            transition: "opacity 0.15s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+        >
+          <span style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600,
+            color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase",
+          }}>Applications</span>
+          <span style={{
+            color: "rgba(255,255,255,0.25)", fontSize: 10, lineHeight: 1,
+            display: "inline-block",
+            transform: appsOpen ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.25s ease",
+          }}>▾</span>
+        </button>
+
+        {/* Nav list — collapses smoothly */}
+        <div style={{
+          flex: appsOpen ? 1 : 0,
+          overflowY: appsOpen ? "auto" : "hidden",
+          maxHeight: appsOpen ? "10000px" : "0px",
+          transition: "max-height 0.35s ease",
+          padding: appsOpen ? "4px 10px 12px" : "0 10px",
+        }}>
+          {planets.map((p, i) => (
+            <button key={p.id} onClick={() => onSelect(p)} style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 10px", marginBottom: 1,
+              background: activePlanet?.id === p.id ? `rgba(255,255,255,0.05)` : "transparent",
+              border: "none", borderRadius: 4, cursor: "pointer",
+              transition: "all 0.18s ease",
+              borderLeft: activePlanet?.id === p.id ? `2px solid ${p.color}` : "2px solid transparent",
+              animation: "fadeSlideIn 0.35s ease forwards",
+              animationDelay: `${i * 0.03}s`, opacity: 0,
+            }}
+              onMouseEnter={(e) => { if (activePlanet?.id !== p.id) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+              onMouseLeave={(e) => { if (activePlanet?.id !== p.id) e.currentTarget.style.background = "transparent"; }}
+            >
+              {/* Color swatch dot */}
+              <div style={{
+                width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                background: p.color,
+                boxShadow: activePlanet?.id === p.id ? `0 0 8px ${p.color}88` : "none",
+              }} />
+              <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 500,
+                  color: activePlanet?.id === p.id ? p.color : "rgba(255,255,255,0.72)",
+                  letterSpacing: 0.3,
+                  transition: "color 0.18s",
+                }}>{p.name}</div>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 400,
+                  color: "rgba(255,255,255,0.22)", marginTop: 1, letterSpacing: 0.2,
+                }}>{p.desc}</div>
+              </div>
+              {activePlanet?.id === p.id && (
+                <div style={{
+                  width: 4, height: 4, borderRadius: "50%",
+                  background: p.color, flexShrink: 0,
+                }} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: "14px 20px",
+          borderTop: "1px solid rgba(255,255,255,0.04)",
+          fontFamily: "'DM Sans', sans-serif", fontSize: 9,
+          color: "rgba(255,255,255,0.15)", letterSpacing: 1,
+        }}>
+          © 2026 Ace It Galaxy
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Shared Nav Dropdown ─────────────────────────────────────────────────────
+
+const NAV_LINKS = {
+  Features: [
+    { label: "Smart Decks",        desc: "Organize your study material"     },
+    { label: "Spaced Repetition",  desc: "Study at the perfect moment"      },
+    { label: "Progress Tracking",  desc: "See your mastery grow"            },
+    { label: "AI Generation",      desc: "Auto-create cards from any text"  },
+    { label: "Offline Mode",       desc: "Study anywhere, anytime"          },
+    { label: "Collaboration",      desc: "Study with your group"            },
+  ],
+  "How It Works": [
+    { label: "Create a Deck",     desc: "Build your first flash card set"   },
+    { label: "Study & Flip",      desc: "Review at your own pace"           },
+    { label: "Track Mastery",     desc: "Watch your progress build"         },
+    { label: "Watch a Demo",      desc: "See it in action"                  },
+  ],
+  Pricing: [
+    { label: "Free Tier",         desc: "Get started at no cost"            },
+    { label: "Pro — $9/mo",       desc: "Unlimited decks & AI features"     },
+    { label: "Team — $6/mo",      desc: "Per seat, for study groups"        },
+    { label: "Compare Plans",     desc: "See all features side by side"     },
+  ],
+};
+
+function NavDropdown({ links, label, color = "#C8B8FF", glow = "#9B7FFF" }) {
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  const show = () => { clearTimeout(timerRef.current); setOpen(true); };
+  const hide = () => { timerRef.current = setTimeout(() => setOpen(false), 120); };
+
+  return (
+    <div style={{ position: "relative" }} onMouseEnter={show} onMouseLeave={hide}>
+      {/* Trigger */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 5,
+        fontSize: 12, fontWeight: 500, cursor: "pointer",
+        color: open ? "#fff" : "rgba(255,255,255,0.38)",
+        letterSpacing: 0.5, transition: "color 0.18s",
+        userSelect: "none",
+      }}>
+        {label}
+        <span style={{
+          fontSize: 8, display: "inline-block",
+          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 0.22s ease",
+          color: open ? color : "rgba(255,255,255,0.3)",
+        }}>▾</span>
+      </div>
+
+      {/* Panel */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 14px)", left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(8,6,20,0.97)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderTop: `2px solid ${color}`,
+          borderRadius: 8,
+          minWidth: 240,
+          padding: "8px 6px",
+          backdropFilter: "blur(20px)",
+          boxShadow: `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.3), 0 0 40px ${glow}18`,
+          zIndex: 200,
+          animation: "ddFadeIn 0.18s ease both",
+        }}>
+          {/* Arrow notch */}
+          <div style={{
+            position: "absolute", top: -6, left: "50%", transform: "translateX(-50%)",
+            width: 10, height: 10, background: color,
+            clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+          }} />
+
+          {links.map(({ label: lbl, desc }, i) => (
+            <div key={lbl} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 12px", borderRadius: 6, cursor: "pointer",
+              transition: "background 0.15s",
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = `${color}12`}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                background: color, opacity: 0.5,
+              }} />
+              <div>
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 600,
+                  color: "rgba(255,255,255,0.82)", letterSpacing: 0.2,
+                }}>{lbl}</div>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 300,
+                  color: "rgba(255,255,255,0.28)", marginTop: 1,
+                }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── App Configs & Shared Landing ───────────────────────────────────────────
+
+const APP_CONFIGS = {
+  echonote: {
+    badge: "AI Lecture Assistant",
+    headline: ["Ace It", "EchoNote."],
+    highlight: 1,
+    sub: "Record any lecture, class, or meeting and watch it transform into organized notes, flashcards, and quizzes — automatically. Never miss a concept again.",
+    cta: "Start Recording",
+    stats: [{ value:"500K+", label:"Lectures Captured" },{ value:"98%", label:"Transcription Accuracy" },{ value:"10×", label:"Faster Note-Taking" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"⬡", title:"Live Transcription",       desc:"Real-time speech-to-text captures every word as your professor speaks — with speaker detection and noise filtering." },
+      { icon:"✦", title:"Instant Flashcards",        desc:"Highlight any sentence in your transcript and instantly convert it into a flashcard ready to study." },
+      { icon:"⟡", title:"AI Lecture Summaries",     desc:"Get a clean, structured summary of any lecture in seconds. Key points, definitions, and takeaways organized automatically." },
+      { icon:"◈", title:"Ask About Your Lecture",   desc:"Type any question about what was said in class and get a precise answer pulled directly from the recording." },
+      { icon:"◎", title:"Auto Quiz Generation",     desc:"EchoNote auto-generates quiz questions from your lecture so you can test yourself immediately after class." },
+      { icon:"⊕", title:"Cross-App Linking",        desc:"Automatically links lecture content to your Flashcard decks, Encyclopedia entries, and Academy courses." },
+    ],
+    steps: [
+      { num:"01", title:"Record Your Lecture",   desc:"Hit record before class starts. EchoNote captures audio, filters noise, and transcribes in real time." },
+      { num:"02", title:"Highlight & Extract",   desc:"Click any word for a definition. Highlight sentences to create flashcards, notes, or summaries instantly." },
+      { num:"03", title:"Study From It",         desc:"Use AI-generated quizzes, flashcard decks, and summaries to turn one lecture into a full study session." },
+    ],
+  },
+  academy: {
+    badge: "AI-Powered Education",
+    headline: ["Ace It", "Academy."],
+    highlight: 1,
+    sub: "A complete AI school — from elementary through college. Adaptive lessons, cinematic learning, and personalized paths that replace traditional studying with something far more powerful.",
+    cta: "Start Learning",
+    stats: [{ value:"500+", label:"Subjects & Courses" },{ value:"K–College", label:"All Grade Levels" },{ value:"92%", label:"Completion Rate" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"◎", title:"AI Teacher Avatar",       desc:"Your personal AI teacher explains concepts clearly, answers follow-up questions, and adapts to your learning style in real time." },
+      { icon:"⟡", title:"Cinematic Learning",      desc:"Instead of reading textbooks, watch AI-generated story-based lessons. History, science, and literature come alive as interactive episodes." },
+      { icon:"◈", title:"Adaptive Learning Path",  desc:"The system detects your strengths and weaknesses and builds a custom curriculum that focuses your time where it matters most." },
+      { icon:"✦", title:"Textbook Integration",    desc:"Upload or select your textbook and Academy teaches chapter by chapter — with video breakdowns, quizzes, and auto-generated flashcards." },
+      { icon:"⬡", title:"Virtual Labs & Sims",     desc:"Explore interactive labs, real-world simulations, and roleplay scenarios that make abstract concepts click immediately." },
+      { icon:"⊕", title:"Knowledge Graph Learning", desc:"Every concept links to related ideas across subjects. Pull on one thread and discover how everything connects." },
+    ],
+    steps: [
+      { num:"01", title:"Pick Your Subject",     desc:"Choose from hundreds of courses or upload your own syllabus. Academy builds a custom learning path just for you." },
+      { num:"02", title:"Learn Your Way",        desc:"Watch lessons, interact with simulations, complete AI-generated quizzes, and go as fast or slow as you need." },
+      { num:"03", title:"Master & Advance",      desc:"Track your mastery score per subject. Earn completions, generate flashcard decks, and move through your curriculum with confidence." },
+    ],
+  },
+  studio: {
+    badge: "Real-World Skills",
+    headline: ["Ace It", "Studio."],
+    highlight: 1,
+    sub: "Learn the skills school never taught you. Music production, car mechanics, investing, creative arts, and hundreds more — with AI coaching every step of the way.",
+    cta: "Explore Skills",
+    stats: [{ value:"200+", label:"Skill Courses" },{ value:"50K+", label:"Active Learners" },{ value:"Project-Based", label:"Learning Style" },{ value:"4.8★", label:"User Rating" }],
+    features: [
+      { icon:"◈", title:"Skill Tree Explorer",    desc:"Discover what you can learn next. An interactive skill map shows every path from beginner to expert across any discipline." },
+      { icon:"⟡", title:"AI Skill Coach",         desc:"Your personal AI mentor reviews your work, gives specific feedback, and pushes you toward mastery at your own pace." },
+      { icon:"✦", title:"Project-Based Learning", desc:"Don't just watch — build. Every course includes real hands-on projects you complete and add to your skill portfolio." },
+      { icon:"◎", title:"Certification Paths",    desc:"Earn skill certificates as you progress. Track every credential and show the world what you've mastered." },
+      { icon:"⬡", title:"Creator Marketplace",    desc:"Experts and instructors upload their own courses. Find niche skills taught by people who've actually done it." },
+      { icon:"⊕", title:"Skill Discovery Quiz",   desc:"Not sure where to start? Take a 2-minute quiz and Studio recommends a personalized learning path based on your goals." },
+    ],
+    steps: [
+      { num:"01", title:"Discover Your Skill",   desc:"Browse the skill tree or take the discovery quiz. Find something you've always wanted to learn." },
+      { num:"02", title:"Learn by Building",     desc:"Follow step-by-step modules, complete projects, and get AI feedback on your actual work." },
+      { num:"03", title:"Earn & Showcase",        desc:"Build your skill portfolio, earn certifications, and share your work with the Studio community." },
+    ],
+  },
+  universe: {
+    badge: "AI Knowledge Encyclopedia",
+    headline: ["Ace It", "Universe."],
+    highlight: 1,
+    sub: "Replace fragmented web searching with one verified, AI-powered knowledge hub. Deep dive any topic, check facts automatically, and watch knowledge connect across every field of human understanding.",
+    cta: "Explore the Universe",
+    stats: [{ value:"10M+", label:"Topics Indexed" },{ value:"99%", label:"Source Verified" },{ value:"AI-Powered", label:"Research Engine" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"⟡", title:"AI Research Assistant",    desc:"Ask any question and get a comprehensive, cited answer in seconds — not ten browser tabs. Compare theories, summarize papers, explain complex ideas." },
+      { icon:"✦", title:"Truth Probability Scoring", desc:"Every piece of information is scored for credibility. Bias detection and source ratings help you know what to trust." },
+      { icon:"◈", title:"Knowledge Graph Explorer",  desc:"See how every idea connects to every other. Pull on one concept and the Universe shows you the web of related knowledge." },
+      { icon:"⬡", title:"Interactive Timelines",     desc:"Any historical, scientific, or cultural topic rendered as an interactive visual timeline. Watch knowledge unfold like a story." },
+      { icon:"◎", title:"Deep Topic Dives",          desc:"Structured knowledge hubs on every major subject — science, history, culture, philosophy, and more — curated by AI and verified experts." },
+      { icon:"⊕", title:"Scenario Engine",           desc:"Simulate historical events, scientific outcomes, and economic systems. Ask 'What if Rome never fell?' and watch the scenario unfold." },
+    ],
+    steps: [
+      { num:"01", title:"Search Any Topic",     desc:"Type any question or subject — from quantum mechanics to ancient civilizations. The Universe finds the best verified information instantly." },
+      { num:"02", title:"Explore the Graph",    desc:"Follow the knowledge graph wherever it leads. Every answer opens new connections across subjects you never expected to link." },
+      { num:"03", title:"Save & Study",         desc:"Bookmark discoveries, add your notes, generate flashcards from what you learn, and build your personal knowledge library." },
+    ],
+  },
+  earthrecord: {
+    badge: "Global Historical Archive",
+    headline: ["Ace It", "Earth's Record."],
+    highlight: 1,
+    sub: "The complete, tamper-resistant record of human history, culture, and knowledge — from ancient civilizations to today. Every perspective. Every culture. Preserved forever.",
+    cta: "Open the Record",
+    stats: [{ value:"1B+", label:"Facts Archived" },{ value:"200+", label:"Cultures Documented" },{ value:"10,000+", label:"Historical Events" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"◉", title:"Interactive Timeline",      desc:"Navigate all of human history on a visual timeline. Zoom into any era, region, or civilization and explore events in full context." },
+      { icon:"⟡", title:"Anti-Manipulation Tools",  desc:"Every entry has version history, bias detection, and political influence alerts. Truth is protected by design." },
+      { icon:"◈", title:"Global Cultural Archives",  desc:"Indigenous knowledge, oral histories, and cultural traditions from every civilization — preserved and searchable." },
+      { icon:"✦", title:"Myth vs Science Toggle",    desc:"Explore any topic through both a cultural/mythological lens and a scientific lens. Understand how stories and facts coexist." },
+      { icon:"⬡", title:"Peer-Verified Sources",    desc:"Academics, researchers, and expert contributors submit and review content. Every fact has a credibility score and source trail." },
+      { icon:"⊕", title:"Living Story Timelines",   desc:"History isn't static. Living timelines update as new discoveries emerge, with annotations showing how understanding has evolved." },
+    ],
+    steps: [
+      { num:"01", title:"Choose an Era or Culture",  desc:"Start with a time period, civilization, or region. The Record pulls together everything known about it." },
+      { num:"02", title:"Explore All Perspectives",  desc:"See historical events from multiple cultural viewpoints. Understand causes, consequences, and the human stories behind them." },
+      { num:"03", title:"Contribute & Connect",      desc:"Add verified knowledge, link events across timelines, and help preserve the world's collective memory for future generations." },
+    ],
+  },
+  careercompass: {
+    badge: "Life & Career Planning",
+    headline: ["Ace It", "Career Compass."],
+    highlight: 1,
+    sub: "Map your path from where you are to where you want to be. Discover careers, identify skill gaps, track certifications, and get AI-powered guidance at every step of your professional journey.",
+    cta: "Find My Direction",
+    stats: [{ value:"95%", label:"Found Their Path" },{ value:"500+", label:"Career Paths Mapped" },{ value:"3.2×", label:"Faster Goal Reach" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"◇", title:"Career Path Mapper",    desc:"Tell Compass where you want to go and it maps every step — skills needed, education paths, certifications, timelines, and realistic milestones." },
+      { icon:"⟡", title:"AI Career Advisor",     desc:"Get personalized career recommendations based on your skills, interests, and goals. Like having a career counselor available 24/7." },
+      { icon:"◈", title:"Skill Gap Analysis",    desc:"See exactly which skills separate you from your target role — and get a learning plan to close every gap efficiently." },
+      { icon:"✦", title:"Certification Tracker", desc:"Track every license, certification, and credential you're working toward. Progress bars, deadlines, and celebration when you finish." },
+      { icon:"⬡", title:"Job Market Intelligence", desc:"Real-time data on in-demand skills, salary ranges, hiring trends, and emerging opportunities in your chosen field." },
+      { icon:"⊕", title:"Career Roadmap Builder", desc:"Build a visual, time-stamped roadmap for your career. Set milestones, track financial projections, and stay on course." },
+    ],
+    steps: [
+      { num:"01", title:"Define Your Target",   desc:"Tell Career Compass where you want to end up — any career, any industry. It builds your full path from here." },
+      { num:"02", title:"Close the Gaps",       desc:"Work through recommended learning, earn certifications, and track every skill you add to your profile." },
+      { num:"03", title:"Make Your Move",       desc:"Use your roadmap, resume feedback, and job market insights to go after the exact opportunities you've been building toward." },
+    ],
+  },
+  assistant: {
+    badge: "Your AI Guide",
+    headline: ["Ace It", "Personal Assistant."],
+    highlight: 1,
+    sub: "The AI that follows you across every app on the platform. Ask anything, get organized, detect cognitive fatigue, and receive personalized coaching — all from one intelligent companion that knows how you learn.",
+    cta: "Meet Your Assistant",
+    stats: [{ value:"1M+", label:"Questions Answered" },{ value:"Cross-App", label:"Platform Integration" },{ value:"97%", label:"Clarity Rating" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"⊕", title:"Platform-Wide Intelligence",  desc:"Your assistant connects to all your apps — pulling flashcards, lecture notes, course progress, and study data into one conversation." },
+      { icon:"✦", title:"Cognitive Fatigue Detection",  desc:"AI monitors your engagement patterns and alerts you when it detects burnout, suggesting breaks, adjustments, or gentler study modes." },
+      { icon:"◈", title:"Personalized Study Coaching",  desc:"Get motivation coaching, custom study plans, and adaptive strategies based on your learning style, pace, and current goals." },
+      { icon:"⬡", title:"Smart Scheduling",             desc:"Tell your assistant what you need to study and when you have time — it builds an optimized study schedule that actually fits your life." },
+      { icon:"◎", title:"Concept Explainer",            desc:"Confused by anything from any subject? Your assistant explains it clearly, then offers examples, analogies, and practice questions." },
+      { icon:"⟡", title:"Goal Tracking & Reminders",   desc:"Set learning goals and let your assistant hold you to them — with timely reminders, progress updates, and celebration when you hit milestones." },
+    ],
+    steps: [
+      { num:"01", title:"Meet Your Assistant",    desc:"Tell it your goals, subjects, and learning style. It builds a profile of how you learn best." },
+      { num:"02", title:"Study Smarter Together", desc:"Ask questions, get explanations, receive custom practice problems, and let it organize everything you're working on." },
+      { num:"03", title:"Grow on Autopilot",      desc:"Your assistant learns from every session — getting better at knowing when to push, when to pause, and exactly what you need next." },
+    ],
+  },
+  mentalhealth: {
+    badge: "Emotional Wellness & Balance",
+    headline: ["Ace It", "Mental Health."],
+    highlight: 1,
+    sub: "You can't pour from an empty cup. Built for students who push themselves hard, this app helps you manage stress, track your emotional health, and build the resilience to go the distance.",
+    cta: "Start Your Practice",
+    stats: [{ value:"80%", label:"Reduced Burnout" },{ value:"Daily", label:"Check-In System" },{ value:"21 Days", label:"Avg Habit Build" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"⬟", title:"Daily Mood Check-In",       desc:"A 60-second daily check-in that tracks your mood, energy, and stress over time. Spot patterns before burnout hits." },
+      { icon:"⟡", title:"AI Emotional Companion",    desc:"Talk through what you're feeling with an empathetic AI that listens, reflects, and helps you reframe difficult thoughts." },
+      { icon:"◈", title:"Cognitive Reframing Tools",  desc:"Guided exercises that help you challenge negative thought patterns and replace them with healthier, more balanced perspectives." },
+      { icon:"✦", title:"Mindfulness & Breathing",   desc:"Science-backed breathing techniques, guided meditations, and mindfulness exercises designed specifically for student stress." },
+      { icon:"◎", title:"Emotional Intelligence Training", desc:"Lessons on recognizing emotions, improving relationships, and building the self-awareness that high performers all share." },
+      { icon:"⊕", title:"Therapist Handoff & Resources", desc:"When you need more than an app, we connect you. Emergency resources, therapist referrals, and crisis support — always available." },
+    ],
+    steps: [
+      { num:"01", title:"Check In Daily",    desc:"Spend 60 seconds each day logging how you feel. Awareness is where everything begins." },
+      { num:"02", title:"Practice & Reset",  desc:"Use guided sessions, journaling, and breathing exercises to process stress and restore your mental energy." },
+      { num:"03", title:"Track & Thrive",    desc:"See your emotional patterns over time. Recognize what helps, what hurts, and how you're genuinely growing." },
+    ],
+  },
+  flow: {
+    badge: "Learning Style Optimization",
+    headline: ["Ace It", "Flow."],
+    highlight: 1,
+    sub: "Your personal study optimization engine. Ace Flow detects how your brain works best, builds your ideal study environment, and eliminates the wasted time between sitting down and actually learning.",
+    cta: "Find Your Flow",
+    stats: [{ value:"500K+", label:"Sessions Optimized" },{ value:"2.4×", label:"Productivity Lift" },{ value:"40min", label:"Avg Deep Focus" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"⬢", title:"Learning Style Detection",  desc:"Flow studies how you interact with content across all apps and identifies whether you learn best visually, auditorially, by reading, or hands-on." },
+      { icon:"⟡", title:"Burnout Detection",         desc:"AI tracks your engagement patterns, response times, and session length. When fatigue is detected, Flow adjusts your session before you hit a wall." },
+      { icon:"◈", title:"Energy-Based Scheduling",   desc:"Map your peak focus hours and let Flow build study blocks around your natural energy curve instead of fighting it." },
+      { icon:"✦", title:"Focus Sessions & Timers",   desc:"Distraction-free deep work sessions with ambient soundscapes, structured breaks, and streak tracking that build your focus stamina over time." },
+      { icon:"◎", title:"ADHD & Neurodiverse Mode",  desc:"Chunked learning, reduced cognitive load, low-stimulation interface, and audio-first options designed for brains that work differently." },
+      { icon:"⊕", title:"Knowledge Roadmaps",        desc:"Visual concept maps and learning roadmaps that show you not just what to study — but the most efficient order to study it in." },
+    ],
+    steps: [
+      { num:"01", title:"Discover Your Style",   desc:"Flow profiles your learning style in the background across your first few sessions — no quiz required." },
+      { num:"02", title:"Study in Your Optimal Zone", desc:"Follow Flow's customized session structure, timing, and format recommendations to eliminate wasted study time." },
+      { num:"03", title:"Improve Every Week",    desc:"Flow gets smarter the more you use it. Your sessions become more efficient, your focus longer, and your retention higher." },
+    ],
+  },
+  studybuddy: {
+    badge: "AI Study Partner",
+    headline: ["Ace It", "Study Buddy."],
+    highlight: 1,
+    sub: "Never study alone again. Study Buddy is your real-time AI companion — quiz you, explain concepts, keep you motivated, and celebrate every win alongside you.",
+    cta: "Meet Your Buddy",
+    stats: [{ value:"200K+", label:"Study Sessions" },{ value:"94%", label:"Motivation Rate" },{ value:"3×", label:"Retention Boost" },{ value:"4.9★", label:"User Rating" }],
+    features: [
+      { icon:"❋", title:"Live Q&A Sessions",      desc:"Your buddy quizzes you in real time, adapts to your answers, and zeroes in on what you don't know yet." },
+      { icon:"✦", title:"Explain It Back",         desc:"Tell Study Buddy what you just learned — it listens, corrects, and reinforces your understanding." },
+      { icon:"⟡", title:"Study Together Mode",    desc:"Invite a friend and study in sync. Your buddy facilitates, keeps score, and cheers you both on." },
+      { icon:"◈", title:"Weak Spot Detector",     desc:"Study Buddy tracks every question you struggle with and automatically revisits them." },
+      { icon:"◎", title:"Daily Challenges",        desc:"Short daily challenge sets keep knowledge fresh between study sessions — takes less than 5 minutes." },
+      { icon:"⊕", title:"Progress Cheerleading",  desc:"Genuine encouragement, milestone celebrations, and streak rewards that actually make studying fun." },
+    ],
+    steps: [
+      { num:"01", title:"Pick a Topic",       desc:"Tell Study Buddy what you're studying and it instantly becomes an expert on your material." },
+      { num:"02", title:"Study Together",     desc:"Get quizzed, explain things back, ask questions. Your buddy adapts to your pace every step of the way." },
+      { num:"03", title:"Grow Together",      desc:"Track your improvement session by session. The more you study together, the smarter your buddy gets about you." },
+    ],
+  },
+  settings: {
+    badge: "Platform Preferences",
+    headline: ["Ace It", "Settings."],
+    highlight: 1,
+    sub: "Customize your entire Ace It experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
+    cta: "Open Settings",
+    stats: [{ value:"50+", label:"Customization Options" },{ value:"ADHD", label:"Friendly Mode" },{ value:"A11y", label:"Accessibility First" },{ value:"Your Way", label:"Learning Style" }],
+    features: [
+      { icon:"⚙", title:"Learning Preferences",    desc:"Set your learning style (visual, audio, reading, hands-on), preferred study session length, and content difficulty level across all apps." },
+      { icon:"✦", title:"ADHD & Neurodiverse Mode", desc:"Enable chunked learning, reduced cognitive load, focus timers, low-stimulation interface, and audio-first mode platform-wide." },
+      { icon:"◈", title:"Accessibility Options",   desc:"Dyslexia-friendly fonts, adjustable text size, high-contrast mode, color blind modes, and screen reader optimization." },
+      { icon:"⬡", title:"Notification Control",    desc:"Customize study reminders, streak alerts, achievement notifications, and AI assistant check-ins — on your schedule." },
+      { icon:"◎", title:"Privacy & Data",          desc:"Control what data is saved, how your learning profile is built, and manage your account information with full transparency." },
+      { icon:"⊕", title:"Platform Connections",    desc:"Manage which apps share data with each other, configure cross-app AI behavior, and set your personal assistant's communication style." },
+    ],
+    steps: [
+      { num:"01", title:"Set Your Learning Style", desc:"Tell the platform how you learn best. Every app adjusts its format, pacing, and interface to match your style." },
+      { num:"02", title:"Enable Accessibility",    desc:"Turn on any accessibility features you need. The platform is designed to work for every kind of learner." },
+      { num:"03", title:"Control Your Experience", desc:"Fine-tune notifications, privacy, and app connections so the platform serves you — not the other way around." },
+    ],
+  },
+};
+
+// Shared landing page renderer for all apps except Flash Cards
+function AppLanding({ planet, onBack }) {
+  const cfg = APP_CONFIGS[planet.appId];
+  const { color, glow, name, symbol } = planet;
+
+  const words = cfg.headline.join(" ").split(" ");
+  const allWords = cfg.headline.flatMap(line => line.split(" "));
+  let wordCounter = 0;
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, background:"#06040E",
+      fontFamily:"'DM Sans', sans-serif", overflowY:"auto", color:"#fff",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      <style>{`
+        @keyframes alFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes alShimmer { 0%,100%{opacity:0.5} 50%{opacity:1} }
+        .al-reveal { animation: alFadeUp 0.55s ease both; }
+        .al-feature:hover { transform:translateY(-3px)!important; }
+        @keyframes ddFadeIn { from{opacity:0;transform:translateX(-50%) translateY(-6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        * { box-sizing:border-box; }
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{
+        position:"sticky", top:0, zIndex:100,
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding:"0 48px", height:64,
+        background:"rgba(6,4,14,0.88)", backdropFilter:"blur(16px)",
+        borderBottom:"1px solid rgba(255,255,255,0.05)",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+          <button onClick={onBack} style={{
+            background:"none", border:`1px solid rgba(255,255,255,0.1)`,
+            borderRadius:4, padding:"6px 12px", cursor:"pointer",
+            color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:"'DM Sans', sans-serif",
+            letterSpacing:1, transition:"all 0.18s",
+          }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.25)";e.currentTarget.style.color="#fff";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.color="rgba(255,255,255,0.4)";}}
+          >← Galaxy</button>
+          <div style={{ width:1, height:18, background:"rgba(255,255,255,0.07)" }} />
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{
+              width:28, height:28, borderRadius:"50%",
+              background:`linear-gradient(135deg, ${glow}, ${color})`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:13, color:"rgba(0,0,0,0.75)", fontFamily:"'Montserrat', sans-serif", fontWeight:800,
+            }}>{symbol}</div>
+            <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:14, fontWeight:700, letterSpacing:0.5 }}>
+              <span style={{ color }}> Ace It</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
+            </span>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:28, alignItems:"center" }}>
+          {Object.keys(NAV_LINKS).map(key => (
+            <NavDropdown key={key} label={key} links={NAV_LINKS[key]} color={color} glow={glow} />
+          ))}
+        </div>
+        <div style={{ display:"flex", gap:10 }}>
+          <button style={{
+            background:"none", border:`1px solid ${color}55`,
+            borderRadius:4, padding:"8px 18px", cursor:"pointer",
+            color:`${color}cc`, fontSize:11, fontWeight:600,
+            fontFamily:"'DM Sans', sans-serif", letterSpacing:1, transition:"all 0.18s",
+          }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=color;e.currentTarget.style.color=color;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=`${color}55`;e.currentTarget.style.color=`${color}cc`;}}
+          >Log In</button>
+          <button style={{
+            background:color, border:"none", borderRadius:4,
+            padding:"8px 18px", cursor:"pointer", color:"rgba(0,0,0,0.85)",
+            fontSize:11, fontWeight:700, fontFamily:"'Montserrat', sans-serif",
+            letterSpacing:1, textTransform:"uppercase", transition:"all 0.18s",
+            boxShadow:`0 4px 20px ${glow}44`,
+          }}
+            onMouseEnter={e=>{e.target.style.opacity="0.88";e.target.style.transform="translateY(-1px)";}}
+            onMouseLeave={e=>{e.target.style.opacity="1";e.target.style.transform="none";}}
+          >{cfg.cta}</button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section style={{
+        minHeight:"calc(100vh - 64px)", display:"flex", alignItems:"center",
+        justifyContent:"center", padding:"80px 48px", position:"relative", overflow:"hidden",
+      }}>
+        <div style={{ position:"absolute", width:700, height:700, borderRadius:"50%", background:`radial-gradient(circle, ${glow}0D 0%, transparent 70%)`, top:"5%", left:"-5%", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", width:400, height:400, borderRadius:"50%", background:`radial-gradient(circle, ${color}0A 0%, transparent 70%)`, bottom:"5%", right:"5%", pointerEvents:"none" }} />
+
+        <div style={{ maxWidth:1100, width:"100%", display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
+          {/* Left copy */}
+          <div>
+            <div className="al-reveal" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:`${color}14`, border:`1px solid ${color}33`, borderRadius:20, padding:"5px 14px", marginBottom:28 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:color, animation:"alShimmer 2s infinite" }} />
+              <span style={{ fontSize:11, color:`${color}dd`, letterSpacing:2, textTransform:"uppercase", fontWeight:600 }}>{cfg.badge}</span>
+            </div>
+
+            <h1 className="al-reveal" style={{ animationDelay:"0.1s", fontFamily:"'Montserrat', sans-serif", fontSize:"clamp(34px,4.5vw,56px)", fontWeight:900, lineHeight:1.1, margin:"0 0 20px", letterSpacing:-1 }}>
+              {cfg.headline.map((line, li) => (
+                <span key={li}>
+                  {line.split(" ").map((word, wi) => {
+                    const isAceIt = word === "Ace" || word === "It";
+                    return <span key={wi} style={{ color: li === 0 && isAceIt ? color : "inherit" }}>{word} </span>;
+                  })}
+                  {li < cfg.headline.length - 1 && <br />}
+                </span>
+              ))}
+            </h1>
+
+            <p className="al-reveal" style={{ animationDelay:"0.2s", fontSize:16, fontWeight:300, color:"rgba(255,255,255,0.42)", lineHeight:1.75, marginBottom:40, maxWidth:460 }}>
+              {cfg.sub}
+            </p>
+
+            <div className="al-reveal" style={{ animationDelay:"0.3s", display:"flex", gap:12, flexWrap:"wrap" }}>
+              <button style={{
+                background:color, border:"none", borderRadius:6,
+                padding:"14px 32px", cursor:"pointer", color:"rgba(0,0,0,0.85)",
+                fontSize:13, fontWeight:700, fontFamily:"'Montserrat', sans-serif",
+                letterSpacing:1.5, textTransform:"uppercase", transition:"all 0.2s",
+                boxShadow:`0 6px 30px ${glow}44`,
+              }}
+                onMouseEnter={e=>{e.target.style.transform="translateY(-2px)";e.target.style.boxShadow=`0 10px 40px ${glow}66`;}}
+                onMouseLeave={e=>{e.target.style.transform="none";e.target.style.boxShadow=`0 6px 30px ${glow}44`;}}
+              >{cfg.cta} →</button>
+              <button style={{
+                background:"transparent", border:"1px solid rgba(255,255,255,0.1)",
+                borderRadius:6, padding:"14px 32px", cursor:"pointer",
+                color:"rgba(255,255,255,0.5)", fontSize:13, fontWeight:500,
+                fontFamily:"'DM Sans', sans-serif", transition:"all 0.2s",
+              }}
+                onMouseEnter={e=>{e.target.style.borderColor="rgba(255,255,255,0.25)";e.target.style.color="#fff";}}
+                onMouseLeave={e=>{e.target.style.borderColor="rgba(255,255,255,0.1)";e.target.style.color="rgba(255,255,255,0.5)";}}
+              >Learn More</button>
+            </div>
+
+            <div className="al-reveal" style={{ animationDelay:"0.4s", display:"flex", alignItems:"center", gap:16, marginTop:40 }}>
+              <div style={{ display:"flex" }}>
+                {[color, glow, "#F0D080", "#88D8A8"].map((c,i) => (
+                  <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:`radial-gradient(circle at 35% 35%, ${c}, ${c}88)`, border:"2px solid #06040E", marginLeft:i===0?0:-7 }} />
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.65)" }}>{cfg.stats[1].value} {cfg.stats[1].label.toLowerCase()}</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.22)", letterSpacing:0.5 }}>already using {name}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — decorative card */}
+          <div className="al-reveal" style={{ animationDelay:"0.2s", display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
+            <div style={{
+              width:320, height:200, borderRadius:12,
+              background:`linear-gradient(135deg, ${glow}18, ${color}0A)`,
+              border:`1px solid ${color}30`, borderTop:`2px solid ${color}`,
+              display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+              gap:12, boxShadow:`0 24px 60px rgba(0,0,0,0.4), 0 0 80px ${glow}12`,
+              position:"relative", overflow:"hidden",
+            }}>
+              <div style={{ position:"absolute", width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, ${glow}18 0%, transparent 70%)`, top:"-30%", right:"-10%", pointerEvents:"none" }} />
+              <span style={{ fontSize:48, color, fontFamily:"'Montserrat', sans-serif", textShadow:`0 0 30px ${glow}` }}>{symbol}</span>
+              <div style={{ fontFamily:"'Montserrat', sans-serif", fontSize:18, fontWeight:800, color:"#fff", letterSpacing:0.5 }}>{name}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", letterSpacing:1 }}>{cfg.badge}</div>
+            </div>
+            <div style={{ display:"flex", gap:12, width:320 }}>
+              {cfg.stats.slice(0,2).map(({value,label}) => (
+                <div key={label} style={{
+                  flex:1, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)",
+                  borderRadius:8, padding:"14px 16px", textAlign:"center",
+                }}>
+                  <div style={{ fontFamily:"'Montserrat', sans-serif", fontSize:20, fontWeight:800, color }}>{value}</div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.28)", marginTop:3 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS BAR */}
+      <section style={{
+        borderTop:"1px solid rgba(255,255,255,0.05)", borderBottom:"1px solid rgba(255,255,255,0.05)",
+        background:"rgba(255,255,255,0.02)", padding:"36px 48px",
+      }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:24 }}>
+          {cfg.stats.map(({value,label},i) => (
+            <div key={label} className="al-reveal" style={{ animationDelay:`${i*0.08}s`, textAlign:"center" }}>
+              <div style={{ fontFamily:"'Montserrat', sans-serif", fontSize:30, fontWeight:900, color, letterSpacing:-0.5 }}>{value}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.28)", marginTop:4, letterSpacing:1, textTransform:"uppercase" }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={{ padding:"96px 48px" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div className="al-reveal" style={{ textAlign:"center", marginBottom:60 }}>
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:4, textTransform:"uppercase", color:`${color}99`, marginBottom:14 }}>Features</div>
+            <h2 style={{ fontFamily:"'Montserrat', sans-serif", fontSize:"clamp(26px,3.5vw,40px)", fontWeight:800, margin:0, letterSpacing:-0.5 }}>
+              Built to help you <span style={{ color }}>{cfg.cta.toLowerCase()}</span>
+            </h2>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:18 }}>
+            {cfg.features.map(({icon,title,desc},i) => (
+              <div key={title} className="al-feature al-reveal" style={{ animationDelay:`${i*0.07}s`,
+                background:"rgba(255,255,255,0.025)", border:"1px solid rgba(255,255,255,0.06)",
+                borderRadius:10, padding:"26px 26px 22px", transition:"all 0.25s",
+              }}
+                onMouseEnter={e=>{e.currentTarget.style.background=`${color}0A`;e.currentTarget.style.borderColor=`${color}33`;}}
+                onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.025)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)";}}
+              >
+                <div style={{ fontSize:20, color, marginBottom:14, fontFamily:"'Montserrat', sans-serif" }}>{icon}</div>
+                <div style={{ fontFamily:"'Montserrat', sans-serif", fontSize:14, fontWeight:700, color:"#fff", marginBottom:8 }}>{title}</div>
+                <div style={{ fontSize:13, color:"rgba(255,255,255,0.36)", lineHeight:1.65, fontWeight:300 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section style={{
+        padding:"96px 48px",
+        background:"rgba(255,255,255,0.015)",
+        borderTop:"1px solid rgba(255,255,255,0.04)", borderBottom:"1px solid rgba(255,255,255,0.04)",
+      }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div className="al-reveal" style={{ textAlign:"center", marginBottom:60 }}>
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:4, textTransform:"uppercase", color:`${color}99`, marginBottom:14 }}>Process</div>
+            <h2 style={{ fontFamily:"'Montserrat', sans-serif", fontSize:"clamp(26px,3.5vw,40px)", fontWeight:800, margin:0, letterSpacing:-0.5 }}>How it works</h2>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:48 }}>
+            {cfg.steps.map(({num,title,desc},i) => (
+              <div key={num} className="al-reveal" style={{ animationDelay:`${i*0.1}s` }}>
+                <div style={{ fontSize:11, fontWeight:800, color:`${color}55`, fontFamily:"'Montserrat', sans-serif", letterSpacing:2, marginBottom:14 }}>{num}</div>
+                <div style={{
+                  width:44, height:44, borderRadius:"50%",
+                  border:`1px solid ${color}33`, background:`${color}10`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:16, fontWeight:700, marginBottom:18,
+                  color, fontFamily:"'Montserrat', sans-serif",
+                }}>{i+1}</div>
+                <div style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:700, color:"#fff", marginBottom:10 }}>{title}</div>
+                <div style={{ fontSize:13, color:"rgba(255,255,255,0.35)", lineHeight:1.65, fontWeight:300 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA BANNER */}
+      <section style={{ padding:"96px 48px" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div className="al-reveal" style={{
+            background:`linear-gradient(135deg, ${glow}18 0%, ${color}0A 100%)`,
+            border:`1px solid ${color}22`, borderRadius:16,
+            padding:"72px 64px", textAlign:"center", position:"relative", overflow:"hidden",
+          }}>
+            <div style={{ position:"absolute", width:400, height:400, borderRadius:"50%", background:`radial-gradient(circle, ${glow}12 0%, transparent 70%)`, top:"-30%", right:"10%", pointerEvents:"none" }} />
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:4, textTransform:"uppercase", color:`${color}99`, marginBottom:16 }}>Get Started Today</div>
+            <h2 style={{ fontFamily:"'Montserrat', sans-serif", fontSize:"clamp(24px,3.5vw,38px)", fontWeight:900, margin:"0 0 14px", letterSpacing:-0.5 }}>
+              Ready to {cfg.cta.toLowerCase()}?
+            </h2>
+            <p style={{ fontSize:15, color:"rgba(255,255,255,0.35)", maxWidth:460, margin:"0 auto 38px", lineHeight:1.75, fontWeight:300 }}>
+              Join thousands of students already using {name} to study smarter and achieve better results.
+            </p>
+            <button style={{
+              background:color, border:"none", borderRadius:6,
+              padding:"15px 40px", cursor:"pointer", color:"rgba(0,0,0,0.85)",
+              fontSize:13, fontWeight:700, fontFamily:"'Montserrat', sans-serif",
+              letterSpacing:1.5, textTransform:"uppercase", transition:"all 0.2s",
+              boxShadow:`0 8px 32px ${glow}44`,
+            }}
+              onMouseEnter={e=>{e.target.style.transform="translateY(-2px)";e.target.style.boxShadow=`0 12px 40px ${glow}66`;}}
+              onMouseLeave={e=>{e.target.style.transform="none";e.target.style.boxShadow=`0 8px 32px ${glow}44`;}}
+            >{cfg.cta} →</button>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{
+        borderTop:"1px solid rgba(255,255,255,0.05)", padding:"36px 48px",
+        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:14,
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ width:22, height:22, borderRadius:"50%", background:`linear-gradient(135deg, ${glow}, ${color})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontFamily:"'Montserrat', sans-serif", fontWeight:800, color:"rgba(0,0,0,0.75)" }}>{symbol}</div>
+          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:12, fontWeight:700, color:`${color}99`, letterSpacing:0.5 }}>{name}</span>
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Ace It Galaxy</span>
+        </div>
+        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Ace It Galaxy · All rights reserved</div>
+        <div style={{ display:"flex", gap:22 }}>
+          {["Privacy","Terms","Support"].map(l => (
+            <span key={l} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.18s" }}
+              onMouseEnter={e=>e.target.style.color="rgba(255,255,255,0.6)"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,0.22)"}
+            >{l}</span>
+          ))}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+
+// ─── Flash Cards App ─────────────────────────────────────────────────────────
+// Clean base model — easy to read, edit, and extend
+
+const FC_DECKS = [
+  {
+    id: 1, title: "Real Estate Principles", subject: "Real Estate", cardCount: 6,
+    color: "#4F6EF7", lastStudied: "Today", mastery: 65,
+    cards: [
+      { id: 1, term: "Easement",      definition: "A legal right to use another person's land for a specific, limited purpose — such as a driveway or utility line." },
+      { id: 2, term: "Fee Simple",    definition: "The most complete form of property ownership. The owner holds full, unconditional rights with no restrictions or conditions." },
+      { id: 3, term: "Escrow",        definition: "A neutral third party that holds funds, documents, and assets until all conditions of a real estate transaction are satisfied." },
+      { id: 4, term: "Lien",          definition: "A legal claim placed against a property as security for a debt or obligation owed by the property owner." },
+      { id: 5, term: "Amortization",  definition: "The process of gradually paying off a mortgage through regular installments that cover both principal and interest." },
+      { id: 6, term: "Appraisal",     definition: "A professional assessment of a property's market value, typically required by lenders before approving a mortgage." },
+    ],
+  },
+  {
+    id: 2, title: "Contract Law Basics", subject: "Law", cardCount: 5,
+    color: "#E85D3F", lastStudied: "Yesterday", mastery: 40,
+    cards: [
+      { id: 1, term: "Offer",             definition: "A clear proposal made by one party to another, expressing willingness to enter into a contract under specific terms." },
+      { id: 2, term: "Acceptance",        definition: "Unconditional agreement to all the terms of an offer, creating a binding contract between the parties." },
+      { id: 3, term: "Consideration",     definition: "Something of value exchanged between parties — money, services, or a promise — that makes a contract legally enforceable." },
+      { id: 4, term: "Breach of Contract",definition: "Failure by one party to fulfill their obligations under a contract without legal justification." },
+      { id: 5, term: "Contingency",       definition: "A condition that must be met before a real estate contract becomes binding — such as financing approval or a home inspection." },
+    ],
+  },
+  {
+    id: 3, title: "Property Management", subject: "Real Estate", cardCount: 4,
+    color: "#2BAE7E", lastStudied: "3 days ago", mastery: 100,
+    cards: [
+      { id: 1, term: "Gross Lease",   definition: "A lease where the tenant pays a fixed rent and the landlord covers all operating expenses including taxes, insurance, and maintenance." },
+      { id: 2, term: "Net Lease",     definition: "A lease where the tenant pays base rent plus some or all of the property's operating expenses directly." },
+      { id: 3, term: "CAP Rate",      definition: "Capitalization rate — a metric used to estimate the return on an investment property, calculated as Net Operating Income ÷ Property Value." },
+      { id: 4, term: "Vacancy Rate",  definition: "The percentage of available rental units that are unoccupied at a given time, used to measure a property's performance." },
+    ],
+  },
+  {
+    id: 4, title: "Finance & Appraisal", subject: "Finance", cardCount: 5,
+    color: "#9B59B6", lastStudied: "1 week ago", mastery: 20,
+    cards: [
+      { id: 1, term: "LTV Ratio",             definition: "Loan-to-Value ratio — the percentage of a property's value being financed. Lenders use this to assess risk." },
+      { id: 2, term: "PMI",                   definition: "Private Mortgage Insurance — required when a borrower puts down less than 20%, protecting the lender against default." },
+      { id: 3, term: "Comparable Sales",      definition: "Recently sold properties similar in size, location, and condition used to estimate a subject property's market value." },
+      { id: 4, term: "Debt-to-Income Ratio",  definition: "The percentage of a borrower's gross monthly income that goes toward debt payments, used by lenders to qualify buyers." },
+      { id: 5, term: "Points",                definition: "Prepaid interest paid to a lender at closing — one point equals 1% of the loan amount — used to lower the interest rate." },
+    ],
+  },
+];
+
+const FC_SUBJECTS = ["All", "Real Estate", "Law", "Finance", "Science", "History", "Math"];
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAuth, onLogout }) {
+  const [profileOpen, setProfileOpen] = useState(true);
+  const [decksOpen,   setDecksOpen]   = useState(true);
+
+  const navItems = [
+    { icon: "⌂", label: "Home",       v: "home"    },
+    { icon: "▦", label: "My Library", v: "library" },
+  ];
+
+  const accountItems = [
+    { icon: "◎", label: "Settings"       },
+    { icon: "✦", label: "Upgrade to Pro" },
+    { icon: "⟡", label: "Help & Support" },
+  ];
+
+  return (
+    <>
+      {/* Backdrop */}
+      {isOpen && (
+        <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(26,24,20,0.35)", backdropFilter: "blur(4px)", animation: "fcFadeIn 0.2s ease both" }} />
+      )}
+
+      {/* Panel */}
+      <div style={{
+        position: "fixed", left: 0, top: 0, bottom: 0, width: 272,
+        background: "#fff", borderRight: "1px solid #ECEAE4",
+        display: "flex", flexDirection: "column", overflow: "hidden",
+        zIndex: 201,
+        transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+        boxShadow: isOpen ? "4px 0 32px rgba(26,24,20,0.08)" : "none",
+      }}>
+
+        {/* Header */}
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid #ECEAE4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, background: "#1A1814", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "#F7F6F2", fontSize: 14, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
+            </div>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Ace Cards</span>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; }}>✕</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 20px" }}>
+
+          {/* User profile */}
+          <div style={{ marginBottom: 6 }}>
+            <button onClick={() => setProfileOpen(o => !o)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 8px", background: "none", border: "none", cursor: "pointer", borderRadius: 6 }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E" }}>Account</span>
+              <span style={{ fontSize: 9, color: "#A8A59E", display: "inline-block", transform: profileOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.22s" }}>▾</span>
+            </button>
+
+            {profileOpen && (
+              <div style={{ margin: "4px 0 8px", padding: "14px 14px", background: "#F7F6F2", borderRadius: 10, border: "1px solid #ECEAE4" }}>
+                {user ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg, #1A1814, #4F6EF7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #fff, 0 0 0 4px #ECEAE4" }}>
+                        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2" }}>{user.avatar}</span>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{user.name}</div>
+                        <div style={{ fontSize: 11, color: "#8C8880", marginTop: 1 }}>Free Plan</div>
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginBottom: 5 }}>
+                        <span>XP Progress</span><span style={{ color: "#4F6EF7", fontWeight: 600 }}>1,240 / 2,000</span>
+                      </div>
+                      <div style={{ height: 4, background: "#ECEAE4", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: "62%", background: "linear-gradient(90deg, #1A1814, #4F6EF7)", borderRadius: 2 }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", borderTop: "1px solid #ECEAE4", paddingTop: 12, marginBottom: 12 }}>
+                      {[{ val: "7🔥", lbl: "Streak" }, { val: "4", lbl: "Decks" }, { val: "64%", lbl: "Mastery" }].map(({ val, lbl }, i) => (
+                        <div key={lbl} style={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid #ECEAE4" : "none" }}>
+                          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#1A1814" }}>{val}</div>
+                          <div style={{ fontSize: 9, color: "#A8A59E", marginTop: 2, textTransform: "uppercase", letterSpacing: 1 }}>{lbl}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { onLogout(); onClose(); }} style={{ width: "100%", padding: "8px 0", borderRadius: 6, background: "transparent", border: "1px solid #E8E5E0", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.color = "#8C8880"; }}>Sign Out</button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}>👤</div>
+                      <div>
+                        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#8C8880" }}>Guest</div>
+                        <div style={{ fontSize: 11, color: "#A8A59E", marginTop: 1 }}>Not signed in</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => { openAuth("login"); onClose(); }} style={{ flex: 1, padding: "9px 0", borderRadius: 7, border: "1.5px solid #1A1814", background: "#1A1814", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = "0.85"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>Log In</button>
+                      <button onClick={() => { openAuth("signup"); onClose(); }} style={{ flex: 1, padding: "9px 0", borderRadius: 7, border: "1.5px solid #1A1814", background: "transparent", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814", transition: "all 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>Sign Up</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#ECEAE4", margin: "6px 8px 12px" }} />
+
+          {/* Navigation */}
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", padding: "0 8px", marginBottom: 4 }}>Navigate</div>
+            {navItems.map(({ icon, label, v }) => {
+              const active = view === v;
+              return (
+                <div key={v} onClick={() => setView(v)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 10px", borderRadius: 8, cursor: "pointer", marginBottom: 2, background: active ? "#1A1814" : "transparent", borderLeft: active ? "none" : "2px solid transparent", transition: "all 0.15s" }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F7F6F2"; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}>
+                  <span style={{ fontSize: 14, color: active ? "#F7F6F2" : "#8C8880", width: 18, textAlign: "center" }}>{icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#F7F6F2" : "#5A5752" }}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#ECEAE4", margin: "6px 8px 12px" }} />
+
+          {/* Recent Decks */}
+          <div style={{ marginBottom: 6 }}>
+            <button onClick={() => setDecksOpen(o => !o)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 8px", background: "none", border: "none", cursor: "pointer", borderRadius: 6 }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E" }}>Recent Decks</span>
+              <span style={{ fontSize: 9, color: "#A8A59E", display: "inline-block", transform: decksOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.22s" }}>▾</span>
+            </button>
+
+            {decksOpen && (
+              <div style={{ marginTop: 4 }}>
+                {decks.map(deck => (
+                  <div key={deck.id} onClick={() => setView("library")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, cursor: "pointer", marginBottom: 2, transition: "background 0.15s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    {/* Color dot */}
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: deck.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1814", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{deck.title}</div>
+                      <div style={{ fontSize: 10, color: "#A8A59E", marginTop: 1 }}>{deck.cardCount} cards · {deck.mastery}% mastered</div>
+                    </div>
+                    {/* Mini mastery bar */}
+                    <div style={{ width: 36, height: 3, background: "#ECEAE4", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+                      <div style={{ height: "100%", width: `${deck.mastery}%`, background: deck.mastery === 100 ? "#2BAE7E" : deck.color, borderRadius: 2 }} />
+                    </div>
+                  </div>
+                ))}
+                <div onClick={() => setView("library")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderRadius: 8, marginTop: 2, transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <span style={{ fontSize: 11, color: "#4F6EF7", fontWeight: 600 }}>+ View all decks →</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#ECEAE4", margin: "6px 8px 12px" }} />
+
+          {/* Account links */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", padding: "0 8px", marginBottom: 4 }}>Account</div>
+            {accountItems.map(({ icon, label }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 10px", borderRadius: 8, cursor: "pointer", marginBottom: 2, transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <span style={{ fontSize: 13, color: "#8C8880", width: 18, textAlign: "center" }}>{icon}</span>
+                <span style={{ fontSize: 13, color: "#5A5752" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom — Upgrade CTA + back to Galaxy */}
+        <div style={{ flexShrink: 0, borderTop: "1px solid #ECEAE4" }}>
+          {/* Upgrade strip */}
+          <div style={{ margin: "12px 12px 8px", padding: "14px 16px", background: "#1A1814", borderRadius: 10 }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#F5C842", marginBottom: 4 }}>✦ Go Pro</div>
+            <div style={{ fontSize: 11, color: "rgba(247,246,242,0.5)", lineHeight: 1.5, marginBottom: 12 }}>Unlimited decks, AI card generation & more</div>
+            <div style={{ background: "#F5C842", borderRadius: 6, padding: "8px 0", textAlign: "center", fontSize: 11, fontWeight: 700, fontFamily: "'Playfair Display', serif", color: "#1A1814", cursor: "pointer", letterSpacing: 0.5 }}>Upgrade — $9/mo</div>
+          </div>
+          {/* Galaxy link */}
+          <div onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", cursor: "pointer", transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={{ fontSize: 13, color: "#8C8880" }}>←</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Ace It Galaxy</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Root wrapper — receives onBack from Galaxy ────────────────────────────────
+function FlashCardsApp({ onBack, user, openAuth, onLogout }) {
+  const [view, setView]             = useState("home");
+  const [activeDeck, setActiveDeck] = useState(null);
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [activeSubject, setActiveSubject] = useState("All");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [studyConfig, setStudyConfig] = useState(null);
+  const [drafts, setDrafts] = useState([]);
+
+  // ── Deck state — initialized from localStorage, falls back to sample decks ──
+  const [decks, setDecks] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aceIt_fc_decks");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return FC_DECKS;
+  });
+
+  // ── User-created folders — persisted separately ────────────────────────────
+  const [userFolders, setUserFolders] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aceIt_fc_folders");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("aceIt_fc_decks", JSON.stringify(decks)); } catch {}
+  }, [decks]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aceIt_fc_folders", JSON.stringify(userFolders)); } catch {}
+  }, [userFolders]);
+
+  const saveDeck = (deckData) => {
+    const newDeck = {
+      id: Date.now(),
+      title: deckData.title,
+      subject: deckData.subject || "Other",
+      description: deckData.description || "",
+      color: deckData.color || "#4F6EF7",
+      cardCount: deckData.cards.filter(c => c.term.trim() || c.definition.trim()).length,
+      lastStudied: "Just now",
+      mastery: 0,
+      folderKey: deckData.folderKey || null,   // which folder this deck belongs to
+      cards: deckData.cards.filter(c => c.term.trim() || c.definition.trim()).map((c, i) => ({
+        id: i + 1,
+        term: c.term.trim(),
+        definition: c.definition.trim(),
+      })),
+    };
+    setDecks(prev => [newDeck, ...prev]);
+    return newDeck;
+  };
+
+  const deleteDeck = (id) => setDecks(prev => prev.filter(d => d.id !== id));
+
+  const updateDeck = (id, changes) => setDecks(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
+
+  const saveDraft = (draft) => {
+    setDrafts(prev => {
+      const filtered = prev.filter(d => d.id !== draft.id);
+      return [{ ...draft, id: draft.id || `draft-${Date.now()}` }, ...filtered].slice(0, 20);
+    });
+  };
+
+  const openDeck   = (deck) => { setActiveDeck(deck); setView("deck"); };
+  const startStudy = (deck) => { setActiveDeck(deck); setView("setup"); };
+  const goHome     = ()     => { setView("home"); setActiveDeck(null); };
+  const openCreate = ()     => { setActiveDeck(null); setView("create"); };
+
+  const filteredDecks = decks.filter(d => {
+    const matchSubject = activeSubject === "All" || d.subject === activeSubject;
+    const matchSearch  = d.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchSubject && matchSearch;
+  });
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F2", minHeight: "100vh", color: "#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #D8D5CE; border-radius: 3px; }
+        @keyframes fcFadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fcFadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes fcSlideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
+        .fc-fade-up { animation: fcFadeUp 0.5s ease both; }
+        .fc-fade-in { animation: fcFadeIn 0.3s ease both; }
+        .fc-deck-card { transition: all 0.22s; }
+        .fc-deck-card:hover { transform: translateY(-4px) !important; box-shadow: 0 12px 40px rgba(0,0,0,0.1) !important; }
+        .fc-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .fc-nav-link { transition: color 0.18s; }
+        .fc-nav-link:hover { color: #1A1814 !important; }
+      `}</style>
+
+      {/* ── NAV ──────────────────────────────────────────────────────────── */}
+      <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Hamburger + Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.18s", flexShrink: 0 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.background = "#F7F6F2"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.background = "none"; }}>
+              <div style={{ width: 14, height: 1.5, background: "#1A1814", borderRadius: 1 }} />
+              <div style={{ width: 10, height: 1.5, background: "#8C8880", borderRadius: 1 }} />
+              <div style={{ width: 14, height: 1.5, background: "#1A1814", borderRadius: 1 }} />
+            </button>
+            <div onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
+              </div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Ace Cards</span>
+            </div>
+          </div>
+
+          {/* Nav links */}
+          <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+            {[["Home", "home"], ["My Library", "library"]].map(([label, v]) => (
+              <span key={v} className="fc-nav-link" onClick={() => setView(v)} style={{ fontSize: 14, fontWeight: 500, color: view === v ? "#1A1814" : "#8C8880", cursor: "pointer", borderBottom: view === v ? "2px solid #1A1814" : "2px solid transparent", paddingBottom: 2 }}>{label}</span>
+            ))}
+          </div>
+
+          {/* Right */}
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={onBack} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", transition: "all 0.18s" }}>← Galaxy</button>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</div>
+                  <div style={{ fontSize: 10, color: "#8C8880" }}>Free Plan</div>
+                </div>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #1A1814, #4F6EF7)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#F7F6F2", cursor: "pointer" }}
+                  onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 6, padding: "7px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", color: "#5A5752", transition: "all 0.18s" }}>Log In</button>
+                <button className="fc-btn" onClick={() => openAuth("signup")} style={{ background: "#1A1814", border: "none", borderRadius: 6, padding: "7px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#F7F6F2", transition: "all 0.18s" }}>Sign Up Free</button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
+      <FCSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} decks={decks} view={view} setView={(v) => { setView(v); setSidebarOpen(false); setActiveDeck(null); }} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} />
+
+      {/* ── VIEWS ────────────────────────────────────────────────────────── */}
+      {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => setView("library")} onNewDeck={openCreate} />}
+      {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} />}
+      {view === "create"  && <FCCreateDeck onBack={() => setView("library")} onSave={(deckData) => { saveDeck(deckData); setView("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} />}
+      {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => setView("deck")} onStart={(cfg) => { setStudyConfig(cfg); setView("study"); }} />}
+      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => setView("setup")} onBackToLibrary={() => setView("library")} />}
+    </div>
+  );
+}
+
+// ── Home View ─────────────────────────────────────────────────────────────────
+function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck }) {
+  return (
+    <div>
+      {/* Hero */}
+      <section style={{ background: "#1A1814", color: "#F7F6F2", padding: "80px 24px 72px" }}>
+        <div style={{ maxWidth: 740, margin: "0 auto", textAlign: "center" }}>
+          <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
+            Ace It Flash Cards
+          </div>
+          <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
+            <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
+          </h1>
+          <p className="fc-fade-up" style={{ animationDelay: "0.16s", fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.7, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
+            Build flash card decks, flip through terms, and track your mastery — built for students who are serious about passing.
+          </p>
+          <div className="fc-fade-up" style={{ animationDelay: "0.24s", display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="fc-btn" onClick={onGoLibrary} style={{ background: "#F5C842", border: "none", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#1A1814", transition: "all 0.2s" }}>Browse My Decks</button>
+            <button style={{ background: "transparent", border: "1px solid rgba(247,246,242,0.2)", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "rgba(247,246,242,0.7)" }} onClick={onNewDeck}>Create a Deck</button>
+            <button style={{ background: "transparent", border: "1px solid #F5C84255", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#F5C842" }} onClick={() => {}}>⚡ Quick Build</button>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Feature pills strip */}
+      <div style={{ background: "#1A1814", borderBottom: "1px solid rgba(247,246,242,0.06)", overflowX: "auto" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px", display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(247,246,242,0.3)", letterSpacing: 2, textTransform: "uppercase", whiteSpace: "nowrap", marginRight: 6 }}>AI Tools</span>
+          {[
+            { icon:"⚡", label:"Quick Build — Paste Text → Cards" },
+            { icon:"🧠", label:"Spaced Repetition Engine" },
+            { icon:"✦", label:"9 Study Modes" },
+            { icon:"◎", label:"ADHD Focus Mode" },
+            { icon:"🔍", label:"Weak-Area Targeting" },
+            { icon:"📊", label:"Memory Strength Dashboard" },
+            { icon:"🔗", label:"Cross-App Linking" },
+          ].map(({ icon, label }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(247,246,242,0.06)", border: "1px solid rgba(247,246,242,0.08)", borderRadius: 20, padding: "6px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
+              <span style={{ fontSize: 12 }}>{icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(247,246,242,0.55)" }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ background: "#ECEAE4", borderBottom: "1px solid #D8D5CE" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+          {[["4", "Study Decks"], ["20", "Total Cards"], ["56%", "Avg Mastery"], ["7", "Day Streak"]].map(([val, lbl], i) => (
+            <div key={lbl} style={{ padding: "20px 0", textAlign: "center", borderRight: i < 3 ? "1px solid #D8D5CE" : "none" }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#1A1814" }}>{val}</div>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "#8C8880", letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{lbl}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Decks */}
+      <section style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#8C8880", marginBottom: 8 }}>Continue Studying</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Your Recent Decks</h2>
+          </div>
+          <span onClick={onGoLibrary} style={{ fontSize: 13, fontWeight: 600, color: "#1A1814", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>View all →</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+          {decks.map((deck, i) => <FCDeckCard key={deck.id} deck={deck} index={i} onOpen={onOpenDeck} onStudy={onStartStudy} />)}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section style={{ background: "#fff", borderTop: "1px solid #ECEAE4", borderBottom: "1px solid #ECEAE4", padding: "72px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 52 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#8C8880", marginBottom: 8 }}>Simple by design</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>How it works</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 48 }}>
+            {[
+              { num: "01", title: "Create a Deck",  desc: "Add terms and definitions. Organize by subject, topic, or exam section." },
+              { num: "02", title: "Flip & Study",   desc: "Go through your cards one by one. Flip to reveal the answer and mark what you know." },
+              { num: "03", title: "Track Mastery",  desc: "Watch your progress bar fill up as you master each card in the deck." },
+            ].map(({ num, title, desc }) => (
+              <div key={num}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 700, color: "#D8D5CE", letterSpacing: 2, marginBottom: 14 }}>{num}</div>
+                <div style={{ width: 40, height: 40, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+                  <span style={{ color: "#F7F6F2", fontSize: 16, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>{num[1]}</span>
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, marginBottom: 10 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: "#6B6860", lineHeight: 1.65, fontWeight: 300 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ padding: "32px 24px", textAlign: "center" }}>
+        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Ace Cards · Part of Ace It Galaxy</span>
+      </footer>
+    </div>
+  );
+}
+
+// ── Library — folder tree data ────────────────────────────────────────────────
+// Structure: Year > Semester > Class > Chapter  (add more levels as needed)
+const FC_TREE = [
+  {
+    id: "y2025", type: "year", label: "2025 – 2026", color: "#4F6EF7",
+    children: [
+      {
+        id: "fall25", type: "semester", label: "Fall 2025", color: "#E85D3F",
+        children: [
+          {
+            id: "re101", type: "class", label: "Real Estate Principles 101", color: "#4F6EF7",
+            children: [
+              { id: "re101-ch1", type: "chapter", label: "Chapter 1 – Property Foundations", color: "#4F6EF7", deckIds: [1] },
+              { id: "re101-ch2", type: "chapter", label: "Chapter 2 – Contracts & Law",       color: "#E85D3F", deckIds: [2] },
+            ],
+          },
+          {
+            id: "pm201", type: "class", label: "Property Management 201", color: "#2BAE7E",
+            children: [
+              { id: "pm201-ch1", type: "chapter", label: "Chapter 1 – Lease Types & CAP Rates", color: "#2BAE7E", deckIds: [3] },
+            ],
+          },
+        ],
+      },
+      {
+        id: "spr26", type: "semester", label: "Spring 2026", color: "#9B59B6",
+        children: [
+          {
+            id: "fin301", type: "class", label: "Finance & Appraisal 301", color: "#9B59B6",
+            children: [
+              { id: "fin301-ch1", type: "chapter", label: "Chapter 1 – Loan Fundamentals", color: "#9B59B6", deckIds: [4] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+// Folder type display config — add or rename levels here
+const FC_TYPE_META = {
+  year:     { icon: "📅", label: "Year"     },
+  semester: { icon: "📆", label: "Semester" },
+  class:    { icon: "📚", label: "Class"    },
+  chapter:  { icon: "📖", label: "Chapter"  },
+  section:  { icon: "📄", label: "Section"  },
+};
+
+const FC_ORG_LEVELS = ["year", "semester", "class", "chapter", "section"];
+
+// Tree helpers
+function fcFindNode(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children) { const f = fcFindNode(n.children, id); if (f) return f; }
+  }
+  return null;
+}
+function fcGetAllDeckIds(node) {
+  let ids = node.deckIds ? [...node.deckIds] : [];
+  if (node.children) for (const c of node.children) ids = ids.concat(fcGetAllDeckIds(c));
+  return ids;
+}
+
+// ── Organize / New-Deck Wizard ────────────────────────────────────────────────
+function FCOrganizeModal({ onClose, allDecks, tree }) {
+  const [step, setStep]           = useState(0);
+  const [choices, setChoices]     = useState({});  // { year: "y2025", ... }
+  const [newNames, setNewNames]   = useState({});  // { year: "2026-2027", ... }
+  const [creating, setCreating]   = useState({});  // { year: true }
+  const [deckName, setDeckName]   = useState("");
+
+  const isNameStep = step === FC_ORG_LEVELS.length;
+  const currentLevel = FC_ORG_LEVELS[step];
+
+  const getOptions = (s) => {
+    if (s === 0) return tree;
+    const parentId = choices[FC_ORG_LEVELS[s - 1]];
+    if (!parentId) return [];
+    return fcFindNode(tree, parentId)?.children || [];
+  };
+  const options = getOptions(step);
+
+  const choose = (id) => { setChoices(c => ({ ...c, [currentLevel]: id })); setCreating(c => ({ ...c, [currentLevel]: false })); };
+  const skip   = ()   => { const n = { ...choices }; delete n[currentLevel]; setChoices(n); setCreating(c => ({ ...c, [currentLevel]: false })); setStep(s => s + 1); };
+  const next   = ()   => setStep(s => s + 1);
+  const back   = ()   => setStep(s => Math.max(0, s - 1));
+
+  const canContinue = !!choices[currentLevel] || (creating[currentLevel] && newNames[currentLevel]?.trim());
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(26,24,20,0.55)", backdropFilter: "blur(6px)" }} />
+      <div className="fc-fade-in" onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 16, width: "100%", maxWidth: 500, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ background: "#1A1814", padding: "22px 28px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}>
+              {isNameStep ? "Name Your Deck" : "Organize Your Deck"}
+            </span>
+            <button onClick={onClose} style={{ background: "rgba(247,246,242,0.1)", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: "#F7F6F2", fontSize: 13 }}>✕</button>
+          </div>
+          {/* Progress bar */}
+          <div style={{ display: "flex", gap: 4 }}>
+            {[...FC_ORG_LEVELS, "name"].map((_, i) => (
+              <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= step ? "#F5C842" : "rgba(247,246,242,0.15)", transition: "background 0.3s" }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+            <span style={{ fontSize: 11, color: "rgba(247,246,242,0.4)" }}>
+              {isNameStep ? "Final step" : `Step ${step + 1} of ${FC_ORG_LEVELS.length + 1} — ${FC_TYPE_META[currentLevel]?.label}`}
+            </span>
+            {!isNameStep && <span onClick={skip} style={{ fontSize: 11, color: "#F5C842", cursor: "pointer", fontWeight: 600 }}>Skip →</span>}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "24px 28px 28px" }}>
+          {isNameStep ? (
+            <div>
+              <p style={{ fontSize: 13, color: "#6B6860", marginBottom: 16, lineHeight: 1.6 }}>Give your deck a name. You can always rename it later.</p>
+
+              {/* Path summary */}
+              <div style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 10, padding: "12px 16px", marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", marginBottom: 8 }}>Saved to</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {FC_ORG_LEVELS.map(lvl => {
+                    const id = choices[lvl]; const nm = newNames[lvl];
+                    if (!id && !nm) return null;
+                    const node = id ? fcFindNode(tree, id) : null;
+                    const m = FC_TYPE_META[lvl];
+                    return (
+                      <span key={lvl} style={{ fontSize: 11, fontWeight: 600, color: m.color || "#4F6EF7", background: `${m.color || "#4F6EF7"}15`, padding: "3px 10px", borderRadius: 20 }}>
+                        {m.icon} {node ? node.label : nm}
+                      </span>
+                    );
+                  })}
+                  {!Object.values(choices).some(Boolean) && !Object.values(newNames).some(Boolean) && (
+                    <span style={{ fontSize: 11, color: "#A8A59E" }}>Uncategorized</span>
+                  )}
+                </div>
+              </div>
+
+              <input autoFocus type="text" value={deckName} onChange={e => setDeckName(e.target.value)} placeholder="e.g. Chapter 4 – Agency Law" style={{ width: "100%", padding: "12px 16px", border: "1.5px solid #D8D5CE", borderRadius: 8, fontSize: 15, color: "#1A1814", outline: "none", fontFamily: "'DM Sans', sans-serif", background: "#F7F6F2" }}
+                onKeyDown={e => e.key === "Enter" && deckName.trim() && onClose()} />
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontSize: 13, color: "#6B6860", marginBottom: 16, lineHeight: 1.6 }}>
+                {options.length > 0 ? `Choose an existing ${FC_TYPE_META[currentLevel]?.label.toLowerCase()} or create a new one.` : `No ${FC_TYPE_META[currentLevel]?.label.toLowerCase()}s yet — create one or skip.`}
+              </p>
+
+              {/* Option list */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+                {options.map(opt => {
+                  const selected = choices[currentLevel] === opt.id;
+                  return (
+                    <div key={opt.id} onClick={() => choose(opt.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${selected ? opt.color : "#ECEAE4"}`, background: selected ? `${opt.color}08` : "#F7F6F2", cursor: "pointer", transition: "all 0.15s" }}
+                      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = "#D8D5CE"; }}
+                      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = "#ECEAE4"; }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: opt.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, fontWeight: selected ? 600 : 400, color: "#1A1814", flex: 1 }}>{opt.label}</span>
+                      {selected && <span style={{ fontSize: 13, color: opt.color }}>✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Create new */}
+              {!creating[currentLevel] ? (
+                <div onClick={() => { setCreating(c => ({ ...c, [currentLevel]: true })); setChoices(c => { const n = { ...c }; delete n[currentLevel]; return n; }); }}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderRadius: 10, border: "1.5px dashed #D8D5CE", cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.color = "#8C8880"; }}>
+                  <span>+</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Create new {FC_TYPE_META[currentLevel]?.label.toLowerCase()}…</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input autoFocus type="text" value={newNames[currentLevel] || ""} onChange={e => setNewNames(n => ({ ...n, [currentLevel]: e.target.value }))} placeholder={`Name your ${FC_TYPE_META[currentLevel]?.label.toLowerCase()}…`} style={{ flex: 1, padding: "10px 14px", border: "1.5px solid #4F6EF7", borderRadius: 8, fontSize: 13, color: "#1A1814", outline: "none", fontFamily: "'DM Sans', sans-serif" }} />
+                  <button onClick={() => { setCreating(c => ({ ...c, [currentLevel]: false })); setNewNames(n => { const x = { ...n }; delete x[currentLevel]; return x; }); }} style={{ background: "#F7F6F2", border: "1px solid #D8D5CE", borderRadius: 8, padding: "0 12px", cursor: "pointer", fontSize: 12, color: "#8C8880" }}>✕</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Footer buttons */}
+          <div style={{ display: "flex", alignItems: "center", marginTop: 24, gap: 10 }}>
+            {step > 0 && <button onClick={back} style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 8, padding: "10px 16px", fontSize: 13, cursor: "pointer", color: "#5A5752" }}>← Back</button>}
+            <div style={{ flex: 1 }} />
+            {!isNameStep ? (
+              <button onClick={next} disabled={!canContinue} style={{ background: "#1A1814", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: canContinue ? "pointer" : "default", color: "#F7F6F2", opacity: canContinue ? 1 : 0.4, transition: "opacity 0.2s" }}>Continue →</button>
+            ) : (
+              <button onClick={() => { if (deckName.trim()) onClose(); }} disabled={!deckName.trim()} style={{ background: "#1A1814", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: deckName.trim() ? "pointer" : "default", color: "#F7F6F2", opacity: deckName.trim() ? 1 : 0.4, transition: "opacity 0.2s" }}>Create Deck ✓</button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Create Deck ───────────────────────────────────────────────────────────────
+function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFolders }) {
+  const [tab, setTab]           = useState("cards");   // cards | quickbuild | details | organize
+  const [title, setTitle]       = useState("");
+  const [description, setDesc]  = useState("");
+  const [subject, setSubject]   = useState("");
+  const [color, setColor]       = useState("#4F6EF7");
+  // Quick Build
+  const [qbText, setQbText]         = useState("");
+  const [qbGenerating, setQbGenerating] = useState(false);
+  const [qbGenerated, setQbGenerated]   = useState(false);
+  const [qbSubMode, setQbSubMode]       = useState("ai");      // "ai" | "manual"
+  const [qbDocOpen, setQbDocOpen]       = useState(false);     // word-doc editor visible
+  const [qbAiCards, setQbAiCards]       = useState([]);        // AI-generated cards for review
+  const [qbAiStep, setQbAiStep]         = useState("input");   // "input" | "generating" | "review"
+  // Manual / post-AI highlight editor
+  const [pendingTerm, setPendingTerm]   = useState("");
+  const [pendingDef, setPendingDef]     = useState("");
+  const [pendingCardNum, setPendingCardNum] = useState(1);
+  const [qbPairs, setQbPairs]           = useState([]);        // manually built pairs
+  const [selMode, setSelMode]           = useState(null);      // "term" | "def" | null
+  const [toolbar, setToolbar]           = useState(null);      // {x,y,text} floating toolbar
+  const docRef = useRef(null);
+  const [cards, setCards]       = useState([
+    { id: 1, term: "", definition: "" },
+    { id: 2, term: "", definition: "" },
+    { id: 3, term: "", definition: "" },
+  ]);
+  const [activeCard, setActiveCard] = useState(1);
+  // Organize — flexible: any level is optional, user can add custom options at any level
+  const [orgPath, setOrgPath] = useState({ year: "", semester: "", class: "", chapter: "" });
+  const [orgOptions, setOrgOptions] = useState({
+    year:     ["2025 – 2026", "2024 – 2025"],
+    semester: ["Fall 2025", "Spring 2026", "Summer 2026"],
+    class:    ["Real Estate Principles 101", "Property Management 201", "Finance & Appraisal 301"],
+    chapter:  ["Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"],
+  });
+  const [addingTo, setAddingTo]   = useState(null);   // which level is showing new-input
+  const [newOrgVal, setNewOrgVal] = useState("");
+  // Custom free-form folders
+  const [customFolders, setCustomFolders]   = useState([]);
+  const [selectedCustom, setSelectedCustom] = useState("");
+  const [addingCustom, setAddingCustom]     = useState(false);
+  const [newCustomVal, setNewCustomVal]     = useState("");
+
+  const commitNewOrgOpt = (level) => {
+    const v = newOrgVal.trim();
+    if (!v) { setAddingTo(null); return; }
+    setOrgOptions(o => ({ ...o, [level]: [...o[level], v] }));
+    setOrgPath(p => ({ ...p, [level]: v }));
+    setAddingTo(null); setNewOrgVal("");
+  };
+
+  const commitNewCustom = () => {
+    const v = newCustomVal.trim();
+    if (!v) { setAddingCustom(false); return; }
+    setCustomFolders(f => [...f, v]);
+    setSelectedCustom(v);
+    setAddingCustom(false); setNewCustomVal("");
+  };
+
+  const anyOrgSelected = Object.values(orgPath).some(Boolean) || selectedCustom;
+  const nextId = Math.max(...cards.map(c => c.id)) + 1;
+
+  const updateCard = (id, field, val) =>
+    setCards(cs => cs.map(c => c.id === id ? { ...c, [field]: val } : c));
+
+  const addCard = () => {
+    const id = Date.now();
+    setCards(cs => [...cs, { id, term: "", definition: "" }]);
+    setActiveCard(id);
+    setTimeout(() => document.getElementById(`term-${id}`)?.focus(), 60);
+  };
+
+  const removeCard = (id) => {
+    if (cards.length <= 1) return;
+    const idx = cards.findIndex(c => c.id === id);
+    setCards(cs => cs.filter(c => c.id !== id));
+    setActiveCard(cards[Math.max(0, idx - 1)]?.id ?? cards[0].id);
+  };
+
+  const filledCards = cards.filter(c => c.term.trim() || c.definition.trim()).length;
+  const canSave = title.trim() && filledCards > 0;
+
+  const COLORS = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1ABC9C","#E91E8C"];
+  const SUBJECTS = ["Real Estate","Law","Finance","Science","History","Math","Biology","Chemistry","Other"];
+
+  const handleQuickBuild = async () => {
+    if (!qbText.trim()) return;
+    setQbAiStep("generating");
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1500,
+          messages: [{
+            role: "user",
+            content: `You are an expert flashcard creator. Read the study material below and create high-quality flashcards. Each card should have a clear, concise TERM (the concept, word, or question) and an accurate, complete DEFINITION (the explanation or answer).
+
+Rules:
+- Extract the most important concepts, definitions, and key facts
+- Terms should be specific and testable (a word, phrase, or question)
+- Definitions should be clear and complete but concise
+- Do not create duplicate cards
+- Create between 5 and 15 cards depending on the content density
+- Respond ONLY with valid JSON, no explanation, no markdown, no code fences
+
+Format: {"cards":[{"term":"...","definition":"..."},...]}
+
+Study Material:
+${qbText}`,
+          }],
+        }),
+      });
+      const data = await res.json();
+      const raw  = data.content?.find(b => b.type === "text")?.text || "";
+      const clean = raw.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      const generated = (parsed.cards || []).map((c, i) => ({ id: Date.now() + i, term: c.term || "", definition: c.definition || "" }));
+      setQbAiCards(generated);
+      setQbAiStep("review");
+      if (!title.trim()) setTitle("Quick Build Deck");
+    } catch {
+      // Fallback: simple extraction
+      const sentences = qbText.split(/[.!\n]+/).map(s => s.trim()).filter(s => s.length > 20).slice(0, 10);
+      const generated = sentences.map((s, i) => ({ id: Date.now() + i, term: s.split(" ").slice(0, 5).join(" "), definition: s }));
+      setQbAiCards(generated);
+      setQbAiStep("review");
+      if (!title.trim()) setTitle("Quick Build Deck");
+    }
+  };
+
+  const confirmAiCards = (keepCards) => {
+    if (keepCards) {
+      setCards(qbAiCards.map((c, i) => ({ ...c, id: Date.now() + i })));
+      setActiveCard(qbAiCards[0]?.id || Date.now());
+    }
+    setQbAiStep("input");
+    setQbAiCards([]);
+    setQbGenerated(true);
+    setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
+  };
+
+  const confirmAiAndOpenDoc = () => {
+    setCards(qbAiCards.map((c, i) => ({ ...c, id: Date.now() + i })));
+    setActiveCard(qbAiCards[0]?.id || Date.now());
+    setQbAiStep("input");
+    setQbAiCards([]);
+    setQbDocOpen(true);
+    setPendingCardNum(qbAiCards.length + 1);
+  };
+
+  const handleDocMouseUp = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) { setToolbar(null); return; }
+    const text = sel.toString().trim();
+    const range = sel.getRangeAt(0);
+    const rect  = range.getBoundingClientRect();
+    const docRect = docRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+    setToolbar({ x: rect.left - docRect.left + rect.width / 2, y: rect.top - docRect.top - 8, text });
+  };
+
+  const applySelection = (type) => {
+    if (!toolbar?.text) return;
+    if (type === "term") {
+      setPendingTerm(toolbar.text);
+      setSelMode("term_set");
+    } else {
+      setPendingDef(toolbar.text);
+      setSelMode("def_set");
+    }
+    setToolbar(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  // Auto-card: AI reads highlighted text and generates both term + definition
+  const [autoCardLoading, setAutoCardLoading] = useState(false);
+  const handleAutoCard = async () => {
+    if (!toolbar?.text) return;
+    const text = toolbar.text;
+    setToolbar(null);
+    window.getSelection()?.removeAllRanges();
+    setAutoCardLoading(true);
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 300,
+          messages: [{
+            role: "user",
+            content: `You are a flashcard expert. Convert this text into ONE high-quality flashcard.
+
+Rules:
+- The TERM should be a clear question, fill-in-the-blank, or concept label — NOT just a copied phrase
+- For fill-in-the-blank: replace the key answer with "___" (e.g. "It takes ___ to form an agency relationship")
+- The DEFINITION should be the precise answer or explanation
+- Keep both concise
+- Respond ONLY with JSON, no explanation: {"term":"...","definition":"..."}
+
+Text: "${text}"`,
+          }],
+        }),
+      });
+      const data = await res.json();
+      const raw  = data.content?.find(b => b.type === "text")?.text || "";
+      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      setPendingTermPrev(pendingTerm);
+      setPendingDefPrev(pendingDef);
+      setPendingTerm(parsed.term || text);
+      setPendingDef(parsed.definition || "");
+      setSelMode("auto");
+    } catch {
+      // Fallback: just set the text as term
+      setPendingTerm(text);
+    }
+    setAutoCardLoading(false);
+  };
+
+  // Improve term/definition
+  const [improvingTerm, setImprovingTerm]   = useState(false);
+  const [improvingDef,  setImprovingDef]    = useState(false);
+  const [pendingTermPrev, setPendingTermPrev] = useState(""); // undo buffer
+  const [pendingDefPrev,  setPendingDefPrev]  = useState("");
+
+  const handleImproveTerm = async () => {
+    if (!pendingTerm.trim()) return;
+    setImprovingTerm(true);
+    setPendingTermPrev(pendingTerm);
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 150,
+          messages: [{
+            role: "user",
+            content: `Improve this flashcard TERM to make it a clearer, more testable question or fill-in-the-blank. The definition is: "${pendingDef}".
+
+Current term: "${pendingTerm}"
+
+Rules:
+- Use fill-in-the-blank with ___ if appropriate
+- Keep it concise and specific
+- Make it clearly testable
+- Respond with ONLY the improved term text, nothing else`,
+          }],
+        }),
+      });
+      const data = await res.json();
+      const improved = data.content?.find(b => b.type === "text")?.text?.trim() || pendingTerm;
+      setPendingTerm(improved.replace(/^["']|["']$/g, ""));
+    } catch { /* keep original */ }
+    setImprovingTerm(false);
+  };
+
+  const handleImproveDef = async () => {
+    if (!pendingDef.trim()) return;
+    setImprovingDef(true);
+    setPendingDefPrev(pendingDef);
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 200,
+          messages: [{
+            role: "user",
+            content: `Improve this flashcard DEFINITION to make it clearer, more accurate, and more complete. The term is: "${pendingTerm}".
+
+Current definition: "${pendingDef}"
+
+Rules:
+- Be precise and complete but concise
+- Use plain language
+- Avoid restating the term
+- Respond with ONLY the improved definition text, nothing else`,
+          }],
+        }),
+      });
+      const data = await res.json();
+      const improved = data.content?.find(b => b.type === "text")?.text?.trim() || pendingDef;
+      setPendingDef(improved.replace(/^["']|["']$/g, ""));
+    } catch { /* keep original */ }
+    setImprovingDef(false);
+  };
+
+  const commitPair = () => {
+    if (!pendingTerm.trim() || !pendingDef.trim()) return;
+    const newCard = { id: Date.now(), term: pendingTerm.trim(), definition: pendingDef.trim() };
+    setCards(cs => {
+      const filtered = cs.filter(c => c.term.trim() || c.definition.trim());
+      return [...filtered, newCard];
+    });
+    setQbPairs(p => [...p, { ...newCard, cardNum: pendingCardNum }]);
+    setPendingCardNum(n => n + 1);
+    setPendingTerm("");
+    setPendingDef("");
+    setPendingTermPrev("");
+    setPendingDefPrev("");
+    setSelMode(null);
+    setActiveCard(newCard.id);
+  };
+
+  const tabStyle = (t) => ({
+    padding: "9px 20px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600,
+    cursor: "pointer", transition: "all 0.18s",
+    background: tab === t ? "#1A1814" : "transparent",
+    color: tab === t ? "#F7F6F2" : "#8C8880",
+  });
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#F7F6F2" }}>
+      {/* ── Top bar ── */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => {
+                const hasContent = title.trim() || filledCards > 0;
+                if (hasContent && onSaveDraft) {
+                  onSaveDraft({ title: title || "Untitled Draft", cards, color, subject, description, savedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+                }
+                onBack();
+              }} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "#1A1814"} onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>
+              ← Back
+            </button>
+            <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", margin: 0 }}>New Deck</h2>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", background: "#F7F6F2", borderRadius: 9, padding: 3, gap: 2 }}>
+            {[["quickbuild","⚡ Quick Build"], ["cards","📇 Cards"], ["details","✏️ Details"], ["organize","📁 Organize"]].map(([t, label]) => (
+              <button key={t} onClick={() => setTab(t)} style={tabStyle(t)}>{label}</button>
+            ))}
+          </div>
+
+          {/* Save */}
+          <button onClick={() => {
+            if (!canSave) return;
+            const folderKey = selectedCustom
+              ? selectedCustom
+              : Object.values(orgPath).filter(Boolean).join(" › ") || null;
+            onSave({ title, subject, description, color, cards, folderKey });
+          }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
+            onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+            Save Deck {filledCards > 0 && `(${filledCards} card${filledCards !== 1 ? "s" : ""})`}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px" }}>
+
+        {/* ══ QUICK BUILD TAB ══ */}
+        {tab === "quickbuild" && (
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <style>{`
+              @keyframes qbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+              @keyframes qbFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+              .qb-fade{animation:qbFade 0.3s ease both}
+              .qb-doc-text::selection{background:#F5C84255}
+              .qb-doc-text *::selection{background:#F5C84255}
+            `}</style>
+
+            {/* Header */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#FFF8E8", border: "1px solid #F5C84244", borderRadius: 20, padding: "4px 14px", marginBottom: 14 }}>
+                <span style={{ fontSize: 11 }}>⚡</span>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#D4A830", textTransform: "uppercase" }}>Quick Build Mode</span>
+              </div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>Paste Text → Instant Cards</h3>
+              <p style={{ fontSize: 14, color: "#8C8880", lineHeight: 1.6 }}>Paste any study material and choose how to build your deck.</p>
+            </div>
+
+            {/* MODE SELECTOR */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+              {[
+                { id:"ai",     icon:"🤖", title:"Let AI Build",  desc:"Paste your text and AI instantly extracts key concepts and creates accurate flashcards for you." },
+                { id:"manual", icon:"✏️", title:"I'll Choose",  desc:"Paste your text, then highlight exactly which parts become terms and which become definitions." },
+              ].map(m => (
+                <div key={m.id} onClick={() => { setQbSubMode(m.id); setQbAiStep("input"); setQbDocOpen(false); }}
+                  style={{ border: `2px solid ${qbSubMode===m.id ? "#1A1814" : "#ECEAE4"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", background: qbSubMode===m.id ? "#1A1814" : "#fff", transition: "all 0.18s" }}
+                  onMouseEnter={e => { if (qbSubMode!==m.id) e.currentTarget.style.borderColor="#A8A59E"; }}
+                  onMouseLeave={e => { if (qbSubMode!==m.id) e.currentTarget.style.borderColor="#ECEAE4"; }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                    <span style={{ fontSize:20 }}>{m.icon}</span>
+                    <span style={{ fontSize:14, fontWeight:700, color: qbSubMode===m.id?"#F7F6F2":"#1A1814" }}>{m.title}</span>
+                    {qbSubMode===m.id && <span style={{ marginLeft:"auto", fontSize:12, color:"#F5C842", fontWeight:800 }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize:12, color: qbSubMode===m.id?"rgba(247,246,242,0.55)":"#8C8880", lineHeight:1.55 }}>{m.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── AI MODE ── */}
+            {qbSubMode === "ai" && (
+              <div className="qb-fade">
+                {qbAiStep === "input" && (
+                  <>
+                    <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, overflow:"hidden", marginBottom:16 }}>
+                      <div style={{ padding:"12px 16px", borderBottom:"1px solid #F0EDE8", display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase" }}>Your Study Material</span>
+                        {qbText.length > 0 && <span style={{ marginLeft:"auto", fontSize:11, color:"#8C8880" }}>{qbText.split(/\s+/).filter(Boolean).length} words</span>}
+                      </div>
+                      <textarea value={qbText} onChange={e => setQbText(e.target.value)}
+                        placeholder={"Paste your lecture notes, textbook chapter, study guide, or any text here…\n\nAI will read and understand the full context — just like asking Claude to make flashcards for you."}
+                        style={{ width:"100%", minHeight:220, padding:"16px", fontSize:14, color:"#3A3830", fontFamily:"'DM Sans',sans-serif", border:"none", outline:"none", resize:"vertical", lineHeight:1.7, background:"transparent", boxSizing:"border-box" }} />
+                    </div>
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
+                      <span style={{ fontSize:11, fontWeight:600, color:"#8C8880", alignSelf:"center" }}>Source:</span>
+                      {["Lecture Notes","Textbook","Study Guide","My Notes","Article"].map(t => (
+                        <button key={t} style={{ padding:"5px 12px", borderRadius:20, border:"1px solid #ECEAE4", background:"#fff", fontSize:11, color:"#5A5752", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>{t}</button>
+                      ))}
+                    </div>
+                    <button onClick={handleQuickBuild} disabled={qbText.trim().length < 20}
+                      style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:qbText.trim().length>=20?"#F5C842":"#ECEAE4", color:qbText.trim().length>=20?"#1A1814":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:qbText.trim().length>=20?"pointer":"default", transition:"all 0.2s" }}>
+                      🤖 Generate Flashcards with AI
+                    </button>
+                  </>
+                )}
+
+                {qbAiStep === "generating" && (
+                  <div className="qb-fade" style={{ background:"#fff", border:"1.5px solid #F5C84244", borderRadius:16, padding:"40px 28px", textAlign:"center" }}>
+                    <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid #F0EDE8", borderTopColor:"#F5C842", animation:"qbSpin 0.8s linear infinite", margin:"0 auto 18px" }} />
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814", marginBottom:8 }}>Reading your material…</div>
+                    <div style={{ fontSize:13, color:"#8C8880", marginBottom:20 }}>AI is understanding your content and building accurate flashcards</div>
+                    <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
+                      {["Understanding context","Identifying key concepts","Building Q&A pairs","Checking accuracy"].map((s,i) => (
+                        <div key={i} style={{ fontSize:11, color:"#F5C842", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                          <span style={{ width:6, height:6, borderRadius:"50%", background:"#F5C842", display:"inline-block" }} />{s}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {qbAiStep === "review" && qbAiCards.length > 0 && (
+                  <div className="qb-fade">
+                    <div style={{ background:"#F0FDF4", border:"1.5px solid #2BAE7E44", borderRadius:14, padding:"16px 20px", marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
+                      <div style={{ fontSize:28 }}>✅</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#1A1814" }}>{qbAiCards.length} cards generated</div>
+                        <div style={{ fontSize:12, color:"#6B6860", marginTop:2 }}>Review below. Delete any you don't want, then add to your deck.</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18, maxHeight:400, overflowY:"auto" }}>
+                      {qbAiCards.map((c, i) => (
+                        <div key={c.id} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"14px 16px", display:"flex", gap:12, alignItems:"flex-start" }}>
+                          <div style={{ width:24, height:24, borderRadius:6, background:"#1A1814", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
+                            <span style={{ fontSize:10, fontWeight:800, color:"#F7F6F2" }}>{i+1}</span>
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:4 }}>{c.term}</div>
+                            <div style={{ fontSize:12, color:"#6B6860", lineHeight:1.55 }}>{c.definition}</div>
+                          </div>
+                          <button onClick={() => setQbAiCards(cs => cs.filter(x => x.id !== c.id))}
+                            style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:6, width:26, height:26, cursor:"pointer", fontSize:11, color:"#A8A59E", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
+                            onMouseEnter={e=>{e.currentTarget.style.borderColor="#E85D3F";e.currentTarget.style.color="#E85D3F";}}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#A8A59E";}}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+                      <button onClick={() => confirmAiCards(true)}
+                        style={{ padding:"13px", borderRadius:10, border:"none", background:"#1A1814", color:"#F7F6F2", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}
+                        onMouseEnter={e=>e.currentTarget.style.opacity="0.85"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                        ✓ Use These Cards →
+                      </button>
+                      <button onClick={confirmAiAndOpenDoc}
+                        style={{ padding:"13px", borderRadius:10, border:"2px solid #1A1814", background:"transparent", color:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"all 0.2s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.background="#1A1814";e.currentTarget.style.color="#F7F6F2";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#1A1814";}}>
+                        ✏️ Keep + Add More Manually
+                      </button>
+                    </div>
+                    <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); }}
+                      style={{ width:"100%", padding:"10px", borderRadius:10, border:"1px solid #ECEAE4", background:"transparent", color:"#8C8880", fontSize:12, cursor:"pointer" }}>
+                      ← Start Over
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── MANUAL MODE: Text Input ── */}
+            {qbSubMode === "manual" && !qbDocOpen && (
+              <div className="qb-fade">
+                <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, overflow:"hidden", marginBottom:14 }}>
+                  <div style={{ padding:"12px 16px", borderBottom:"1px solid #F0EDE8", display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase" }}>Your Study Material</span>
+                    {qbText.length > 0 && <span style={{ marginLeft:"auto", fontSize:11, color:"#8C8880" }}>{qbText.split(/\s+/).filter(Boolean).length} words</span>}
+                  </div>
+                  <textarea value={qbText} onChange={e => setQbText(e.target.value)}
+                    placeholder={"Paste your study material here, then click Open Editor to start highlighting…"}
+                    style={{ width:"100%", minHeight:220, padding:"16px", fontSize:14, color:"#3A3830", fontFamily:"'DM Sans',sans-serif", border:"none", outline:"none", resize:"vertical", lineHeight:1.7, background:"transparent", boxSizing:"border-box" }} />
+                </div>
+                <div style={{ background:"#F7F6F2", borderRadius:12, padding:"14px 16px", marginBottom:18, display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <span style={{ fontSize:18 }}>💡</span>
+                  <div style={{ fontSize:12, color:"#5A5752", lineHeight:1.6 }}>
+                    Once you open the editor, <strong>highlight any text</strong> → a toolbar appears →
+                    click <strong style={{color:"#4F6EF7"}}>Set as Term</strong> or <strong style={{color:"#2BAE7E"}}>Set as Definition</strong> →
+                    pair them up to create a card. Simple and fast.
+                  </div>
+                </div>
+                <button onClick={() => { if (qbText.trim().length >= 20) { setQbDocOpen(true); setPendingCardNum(1); } }}
+                  disabled={qbText.trim().length < 20}
+                  style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:qbText.trim().length>=20?"#1A1814":"#ECEAE4", color:qbText.trim().length>=20?"#F7F6F2":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:qbText.trim().length>=20?"pointer":"default", transition:"all 0.2s" }}>
+                  ✏️ Open Editor →
+                </button>
+              </div>
+            )}
+
+            {/* ══ WORD DOC EDITOR ══ */}
+            {qbDocOpen && (
+              <div className="qb-fade" style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:20, alignItems:"start" }}>
+
+                {/* LEFT: document */}
+                <div>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>
+                      {qbSubMode==="ai" ? "Your Text — Add More Cards" : "Highlight to Build Cards"}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, background:"#F7F6F2", borderRadius:20, padding:"5px 14px", border:"1px solid #ECEAE4" }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background: selMode==="term_set"?"#4F6EF7": selMode==="def_set"?"#2BAE7E":"#D8D5CE", transition:"background 0.2s" }} />
+                      <span style={{ fontSize:11, fontWeight:600, color:"#5A5752" }}>
+                        {selMode==="term_set" ? "✓ Term set — now select the definition" :
+                         selMode==="def_set"  ? "✓ Definition set — now select the term" :
+                         "Highlight any text to start"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ position:"relative" }}>
+                    <div ref={docRef} onMouseUp={handleDocMouseUp}
+                      style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"28px 32px", minHeight:380, boxShadow:"0 4px 24px rgba(0,0,0,0.06)", lineHeight:1.85, fontSize:15, color:"#1A1814", fontFamily:"Georgia, serif", cursor:"text", userSelect:"text", position:"relative", whiteSpace:"pre-wrap", wordBreak:"break-word" }}
+                      className="qb-doc-text">
+                      {qbText}
+                    </div>
+
+                    {/* Floating toolbar */}
+                    {toolbar && (
+                      <div style={{ position:"absolute", left:Math.max(4, Math.min(toolbar.x - 160, 380)), top:Math.max(0, toolbar.y - 52), zIndex:200, background:"#1A1814", borderRadius:10, padding:"6px 8px", display:"flex", gap:6, boxShadow:"0 6px 24px rgba(0,0,0,0.22)", whiteSpace:"nowrap" }}>
+                        <div style={{ position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"6px solid transparent", borderRight:"6px solid transparent", borderTop:"6px solid #1A1814" }} />
+                        <button onClick={() => applySelection("term")}
+                          style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#4F6EF7", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
+                          📌 Term
+                        </button>
+                        <button onClick={() => applySelection("def")}
+                          style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#2BAE7E", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
+                          📖 Definition
+                        </button>
+                        <button onClick={handleAutoCard} disabled={autoCardLoading}
+                          style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#F5C842", color:"#1A1814", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
+                          {autoCardLoading
+                            ? <><span style={{ width:10, height:10, border:"2px solid rgba(26,24,20,0.3)", borderTopColor:"#1A1814", borderRadius:"50%", display:"inline-block", animation:"qbSpin 0.7s linear infinite" }} /> Making…</>
+                            : <>✨ Auto Card</>
+                          }
+                        </button>
+                        <button onClick={() => setToolbar(null)}
+                          style={{ padding:"6px 8px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.5)", fontSize:12, cursor:"pointer" }}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop:8, fontSize:11, color:"#A8A59E", textAlign:"center" }}>Highlight text → choose Term or Definition → pair them in the panel →</div>
+                </div>
+
+                {/* RIGHT: builder */}
+                <div style={{ position:"sticky", top:80 }}>
+                  {/* Current pair */}
+                  <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"18px", marginBottom:12 }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+                      <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E" }}>Card #{pendingCardNum}</div>
+                      {selMode === "auto" && (
+                        <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#FFF8E8", border:"1px solid #F5C84255", borderRadius:12, padding:"3px 10px" }}>
+                          <span style={{ fontSize:11 }}>✨</span>
+                          <span style={{ fontSize:10, fontWeight:700, color:"#D4A830", letterSpacing:1 }}>AI Generated</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* TERM */}
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7" }}>📌 Term</div>
+                        <div style={{ display:"flex", gap:5 }}>
+                          {pendingTermPrev && pendingTermPrev !== pendingTerm && (
+                            <button onClick={() => { setPendingTerm(pendingTermPrev); setPendingTermPrev(""); }}
+                              style={{ padding:"3px 9px", borderRadius:6, border:"1px solid #D8D5CE", background:"#F7F6F2", fontSize:10, fontWeight:600, color:"#8C8880", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:4 }}
+                              title="Undo">
+                              ↩ Undo
+                            </button>
+                          )}
+                          <button onClick={handleImproveTerm} disabled={!pendingTerm.trim() || improvingTerm}
+                            style={{ padding:"3px 9px", borderRadius:6, border:`1px solid ${pendingTerm.trim()?"#4F6EF755":"#ECEAE4"}`, background:pendingTerm.trim()?"#EEF1FF":"#F7F6F2", fontSize:10, fontWeight:700, color:pendingTerm.trim()?"#4F6EF7":"#A8A59E", cursor:pendingTerm.trim()&&!improvingTerm?"pointer":"default", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:4, transition:"all 0.15s" }}
+                            title="Let AI improve this term">
+                            {improvingTerm
+                              ? <><span style={{ width:8, height:8, border:"1.5px solid #4F6EF755", borderTopColor:"#4F6EF7", borderRadius:"50%", display:"inline-block", animation:"qbSpin 0.7s linear infinite" }} /> Improving…</>
+                              : <>✦ Improve Term</>
+                            }
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        value={pendingTerm}
+                        onChange={e => setPendingTerm(e.target.value)}
+                        placeholder="Highlight text and click Term, or type directly here…&#10;Tip: Use ___ for fill-in-the-blank (e.g. 'It takes ___ to form an agency relationship')"
+                        style={{ width:"100%", minHeight:60, padding:"10px 12px", borderRadius:9, border:`1.5px solid ${pendingTerm?"#4F6EF7":"#ECEAE4"}`, background:pendingTerm?"#EEF1FF":"#FAFAF8", fontSize:13, color:"#1A1814", lineHeight:1.55, outline:"none", resize:"vertical", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
+                        onFocus={e => e.target.style.borderColor="#4F6EF7"}
+                        onBlur={e => e.target.style.borderColor=pendingTerm?"#4F6EF7":"#ECEAE4"}
+                      />
+                    </div>
+
+                    {/* DEFINITION */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#2BAE7E" }}>📖 Definition</div>
+                        <div style={{ display:"flex", gap:5 }}>
+                          {pendingDefPrev && pendingDefPrev !== pendingDef && (
+                            <button onClick={() => { setPendingDef(pendingDefPrev); setPendingDefPrev(""); }}
+                              style={{ padding:"3px 9px", borderRadius:6, border:"1px solid #D8D5CE", background:"#F7F6F2", fontSize:10, fontWeight:600, color:"#8C8880", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:4 }}
+                              title="Undo">
+                              ↩ Undo
+                            </button>
+                          )}
+                          <button onClick={handleImproveDef} disabled={!pendingDef.trim() || improvingDef}
+                            style={{ padding:"3px 9px", borderRadius:6, border:`1px solid ${pendingDef.trim()?"#2BAE7E55":"#ECEAE4"}`, background:pendingDef.trim()?"#F0FDF8":"#F7F6F2", fontSize:10, fontWeight:700, color:pendingDef.trim()?"#2BAE7E":"#A8A59E", cursor:pendingDef.trim()&&!improvingDef?"pointer":"default", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:4, transition:"all 0.15s" }}
+                            title="Let AI improve this definition">
+                            {improvingDef
+                              ? <><span style={{ width:8, height:8, border:"1.5px solid #2BAE7E55", borderTopColor:"#2BAE7E", borderRadius:"50%", display:"inline-block", animation:"qbSpin 0.7s linear infinite" }} /> Improving…</>
+                              : <>✦ Improve Definition</>
+                            }
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        value={pendingDef}
+                        onChange={e => setPendingDef(e.target.value)}
+                        placeholder="Highlight text and click Definition, or type directly here…"
+                        style={{ width:"100%", minHeight:72, padding:"10px 12px", borderRadius:9, border:`1.5px solid ${pendingDef?"#2BAE7E":"#ECEAE4"}`, background:pendingDef?"#F0FDF8":"#FAFAF8", fontSize:13, color:"#1A1814", lineHeight:1.55, outline:"none", resize:"vertical", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
+                        onFocus={e => e.target.style.borderColor="#2BAE7E"}
+                        onBlur={e => e.target.style.borderColor=pendingDef?"#2BAE7E":"#ECEAE4"}
+                      />
+                    </div>
+
+                    <button onClick={commitPair} disabled={!pendingTerm.trim() || !pendingDef.trim()}
+                      style={{ width:"100%", padding:"11px", borderRadius:9, border:"none", background:pendingTerm&&pendingDef?"#1A1814":"#ECEAE4", color:pendingTerm&&pendingDef?"#F7F6F2":"#A8A59E", fontSize:13, fontWeight:700, cursor:pendingTerm&&pendingDef?"pointer":"default", transition:"all 0.2s", fontFamily:"'Montserrat',sans-serif" }}>
+                      {pendingTerm && pendingDef ? `+ Add as Card #${pendingCardNum}` : "Fill both fields above"}
+                    </button>
+                  </div>
+
+                  {/* Cards built */}
+                  {qbPairs.length > 0 && (
+                    <div style={{ background:"#F7F6F2", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"14px" }}>
+                      <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E", marginBottom:10 }}>{qbPairs.length} card{qbPairs.length!==1?"s":""} added</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:200, overflowY:"auto" }}>
+                        {qbPairs.map(p => (
+                          <div key={p.id} style={{ background:"#fff", borderRadius:8, padding:"9px 11px", border:"1px solid #ECEAE4", display:"flex", gap:8, alignItems:"flex-start" }}>
+                            <div style={{ width:19, height:19, borderRadius:4, background:"#1A1814", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                              <span style={{ fontSize:9, fontWeight:800, color:"#F7F6F2" }}>{p.cardNum}</span>
+                            </div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:"#1A1814", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.term}</div>
+                              <div style={{ fontSize:10, color:"#8C8880", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.definition}</div>
+                            </div>
+                            <button onClick={() => { setQbPairs(ps => ps.filter(x => x.id!==p.id)); setCards(cs => cs.filter(c => c.id!==p.id)); }}
+                              style={{ background:"none", border:"none", fontSize:10, color:"#D8D5CE", cursor:"pointer", flexShrink:0 }}
+                              onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"} onMouseLeave={e=>e.currentTarget.style.color="#D8D5CE"}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => { setQbDocOpen(false); setTab("cards"); }}
+                        style={{ width:"100%", marginTop:10, padding:"11px", borderRadius:9, border:"none", background:"#2BAE7E", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                        ✓ Done — Review All Cards →
+                      </button>
+                    </div>
+                  )}
+
+                  <button onClick={() => { setQbDocOpen(false); if (qbSubMode==="ai") setQbAiStep("review"); }}
+                    style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:10, border:"1px solid #ECEAE4", background:"transparent", color:"#8C8880", fontSize:12, cursor:"pointer" }}>
+                    ← Back
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/* ══ CARDS TAB ══ */}
+        {tab === "cards" && (
+          <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 24, alignItems: "start" }}>
+
+            {/* Left — card list */}
+            <div style={{ position: "sticky", top: 80 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Cards — {cards.length}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+                {cards.map((c, i) => (
+                  <div key={c.id} onClick={() => { setActiveCard(c.id); setTimeout(() => document.getElementById(`term-${c.id}`)?.focus(), 30); }}
+                    style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", border: `1.5px solid ${activeCard === c.id ? "#1A1814" : "#ECEAE4"}`, background: activeCard === c.id ? "#1A1814" : "#fff", transition: "all 0.15s", position: "relative", overflow: "hidden" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: activeCard === c.id ? "rgba(247,246,242,0.4)" : "#A8A59E", marginBottom: 3 }}>#{i + 1}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: activeCard === c.id ? "#F7F6F2" : "#1A1814", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {c.term || <span style={{ opacity: 0.4 }}>Empty term</span>}
+                    </div>
+                    {c.definition && <div style={{ fontSize: 11, color: activeCard === c.id ? "rgba(247,246,242,0.5)" : "#8C8880", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{c.definition}</div>}
+                  </div>
+                ))}
+              </div>
+              <button onClick={addCard} style={{ width: "100%", padding: "10px 0", borderRadius: 8, border: "1.5px dashed #D8D5CE", background: "none", fontSize: 13, fontWeight: 600, color: "#8C8880", cursor: "pointer", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.color = "#8C8880"; }}>
+                + Add Card
+              </button>
+            </div>
+
+            {/* Right — active card editor */}
+            <div>
+              {cards.map((c) => c.id === activeCard ? (
+                <div key={c.id} style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #ECEAE4", overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+                  {/* Card header */}
+                  <div style={{ padding: "18px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#A8A59E", letterSpacing: 1, textTransform: "uppercase" }}>Card #{cards.findIndex(x => x.id === c.id) + 1}</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {cards.findIndex(x => x.id === c.id) > 0 && (
+                        <button onClick={() => { const i = cards.findIndex(x => x.id === c.id); setActiveCard(cards[i-1].id); }} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "#8C8880" }}>↑ Prev</button>
+                      )}
+                      {cards.findIndex(x => x.id === c.id) < cards.length - 1 && (
+                        <button onClick={() => { const i = cards.findIndex(x => x.id === c.id); setActiveCard(cards[i+1].id); }} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "#8C8880" }}>↓ Next</button>
+                      )}
+                      {cards.length > 1 && (
+                        <button onClick={() => removeCard(c.id)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "#E85D3F", transition: "all 0.15s" }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = "#E85D3F"} onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>✕ Remove</button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Term */}
+                  <div style={{ padding: "16px 24px", borderBottom: "1px solid #F7F6F2" }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", display: "block", marginBottom: 8 }}>Term</label>
+                    <textarea id={`term-${c.id}`} value={c.term} onChange={e => updateCard(c.id, "term", e.target.value)} placeholder="Enter the term or question…"
+                      style={{ width: "100%", minHeight: 90, padding: "12px 0", fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif", color: "#1A1814", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.4 }} />
+                  </div>
+
+                  {/* Definition */}
+                  <div style={{ padding: "16px 24px" }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", display: "block", marginBottom: 8 }}>Definition</label>
+                    <textarea value={c.definition} onChange={e => updateCard(c.id, "definition", e.target.value)} placeholder="Enter the definition or answer…"
+                      style={{ width: "100%", minHeight: 120, padding: "12px 0", fontSize: 16, fontWeight: 400, fontFamily: "'DM Sans', sans-serif", color: "#3A3830", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7 }} />
+                  </div>
+
+                  {/* Footer hint */}
+                  <div style={{ padding: "12px 24px", background: "#FAFAF8", borderTop: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#C8C5BE" }}>Tab to jump between fields • Enter to add a new card</span>
+                    <button onClick={addCard} style={{ background: "none", border: "none", fontSize: 12, fontWeight: 600, color: "#4F6EF7", cursor: "pointer", padding: 0 }}>+ Add next card →</button>
+                  </div>
+                </div>
+              ) : null)}
+
+              {/* Keyboard nav hint when no card selected — shouldn't happen but safety */}
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
+                <span style={{ fontSize: 12, color: "#C8C5BE" }}>{filledCards} of {cards.length} cards filled</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ DETAILS TAB ══ */}
+        {tab === "details" && (
+          <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>Deck Details</h3>
+              <p style={{ fontSize: 14, color: "#8C8880" }}>Give your deck a name and a little context so you can find it easily later.</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Title */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Deck Title *</label>
+                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Real Estate Principles — Chapter 3"
+                  style={{ width: "100%", padding: "13px 16px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 16, fontWeight: 600, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", transition: "border-color 0.18s" }}
+                  onFocus={e => e.target.style.borderColor = "#1A1814"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "#A8A59E" }}>(optional)</span></label>
+                <textarea value={description} onChange={e => setDesc(e.target.value)} placeholder="What does this deck cover? Any tips for studying it?"
+                  style={{ width: "100%", padding: "13px 16px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 14, color: "#3A3830", fontFamily: "'DM Sans', sans-serif", outline: "none", resize: "vertical", minHeight: 100, lineHeight: 1.6, background: "#fff", transition: "border-color 0.18s" }}
+                  onFocus={e => e.target.style.borderColor = "#1A1814"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Subject</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {SUBJECTS.map(s => (
+                    <button key={s} onClick={() => setSubject(s === subject ? "" : s)}
+                      style={{ padding: "7px 16px", borderRadius: 20, border: `1.5px solid ${subject === s ? "#1A1814" : "#ECEAE4"}`, background: subject === s ? "#1A1814" : "#fff", fontSize: 13, fontWeight: subject === s ? 700 : 400, color: subject === s ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.15s" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Deck Color</label>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setColor(c)}
+                      style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: `3px solid ${color === c ? "#1A1814" : "transparent"}`, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2, cursor: "pointer", transition: "all 0.15s" }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview card */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 10 }}>Preview</label>
+                <div style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderTop: `3px solid ${color}`, borderRadius: 10, padding: "20px 22px" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: color, marginBottom: 6 }}>{subject || "No subject"}</div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#1A1814", marginBottom: 8 }}>{title || "Untitled Deck"}</div>
+                  {description && <div style={{ fontSize: 12, color: "#8C8880", lineHeight: 1.5 }}>{description}</div>}
+                  <div style={{ marginTop: 14, height: 3, background: "#ECEAE4", borderRadius: 2 }}><div style={{ height: "100%", width: "0%", background: color, borderRadius: 2 }} /></div>
+                  <div style={{ fontSize: 11, color: "#A8A59E", marginTop: 6 }}>{filledCards} card{filledCards !== 1 ? "s" : ""} · 0% mastery</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ ORGANIZE TAB ══ */}
+        {tab === "organize" && (
+          <div style={{ maxWidth: 580, margin: "0 auto" }}>
+            <div style={{ marginBottom: 28 }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>Organize</h3>
+              <p style={{ fontSize: 14, color: "#8C8880" }}>Place this deck in a folder. Use the structured levels, pick an existing folder, or create a new one — all in one place.</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Structured levels */}
+              {[
+                { key: "year",     label: "Year",     emoji: "📅" },
+                { key: "semester", label: "Semester", emoji: "🗓" },
+                { key: "class",    label: "Class",    emoji: "📚" },
+                { key: "chapter",  label: "Chapter",  emoji: "📖" },
+              ].map(({ key, label, emoji }) => (
+                <div key={key}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 14 }}>{emoji}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752" }}>{label}</span>
+                    {orgPath[key] && (
+                      <button onClick={() => setOrgPath(p => ({ ...p, [key]: "" }))}
+                        style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 11, color: "#A8A59E", cursor: "pointer", padding: 0 }}>✕ Clear</button>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {orgOptions[key].map(opt => (
+                      <button key={opt} onClick={() => { setOrgPath(p => ({ ...p, [key]: p[key] === opt ? "" : opt })); setSelectedCustom(""); }}
+                        style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${orgPath[key] === opt ? "#1A1814" : "#ECEAE4"}`, background: orgPath[key] === opt ? "#1A1814" : "#fff", fontSize: 13, fontWeight: orgPath[key] === opt ? 700 : 400, color: orgPath[key] === opt ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.15s" }}
+                        onMouseEnter={e => { if (orgPath[key] !== opt) e.currentTarget.style.borderColor = "#A8A59E"; }}
+                        onMouseLeave={e => { if (orgPath[key] !== opt) e.currentTarget.style.borderColor = "#ECEAE4"; }}>
+                        {opt}
+                      </button>
+                    ))}
+                    {addingTo === key ? (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input autoFocus value={newOrgVal} onChange={e => setNewOrgVal(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") commitNewOrgOpt(key); if (e.key === "Escape") { setAddingTo(null); setNewOrgVal(""); } }}
+                          placeholder={`New ${label}…`}
+                          style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #4F6EF7", fontSize: 13, outline: "none", width: 160, fontFamily: "'DM Sans', sans-serif" }} />
+                        <button onClick={() => commitNewOrgOpt(key)} style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: "#1A1814", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#F7F6F2" }}>Add</button>
+                        <button onClick={() => { setAddingTo(null); setNewOrgVal(""); }} style={{ background: "none", border: "none", fontSize: 13, color: "#A8A59E", cursor: "pointer" }}>✕</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setAddingTo(key); setNewOrgVal(""); }}
+                        style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px dashed #D8D5CE", background: "none", fontSize: 12, fontWeight: 500, color: "#A8A59E", cursor: "pointer", transition: "all 0.15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = "#8C8880"; e.currentTarget.style.color = "#5A5752"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.color = "#A8A59E"; }}>
+                        + New {label}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Custom / user folders — same section, no divider */}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 14 }}>📁</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752" }}>Custom Folder</span>
+                  {selectedCustom && (
+                    <button onClick={() => setSelectedCustom("")}
+                      style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 11, color: "#A8A59E", cursor: "pointer", padding: 0 }}>✕ Clear</button>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {/* Existing user folders from shared state */}
+                  {userFolders.map(f => (
+                    <button key={f.id} onClick={() => { setSelectedCustom(c => c === f.name ? "" : f.name); setOrgPath({ year:"", semester:"", class:"", chapter:"" }); }}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${selectedCustom === f.name ? "#1A1814" : "#ECEAE4"}`, background: selectedCustom === f.name ? "#1A1814" : "#fff", fontSize: 13, fontWeight: selectedCustom === f.name ? 700 : 400, color: selectedCustom === f.name ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.15s" }}>
+                      📁 {f.name}
+                    </button>
+                  ))}
+                  {/* Inline create */}
+                  {addingTo === "__custom__" ? (
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input autoFocus value={newOrgVal} onChange={e => setNewOrgVal(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && newOrgVal.trim()) {
+                            const name = newOrgVal.trim();
+                            const newFolder = { id: `uf-${Date.now()}`, name, parentId: null };
+                            setUserFolders && setUserFolders(fs => [...fs, newFolder]);
+                            setSelectedCustom(name);
+                            setOrgPath({ year:"", semester:"", class:"", chapter:"" });
+                            setAddingTo(null); setNewOrgVal("");
+                          }
+                          if (e.key === "Escape") { setAddingTo(null); setNewOrgVal(""); }
+                        }}
+                        placeholder="Folder name…"
+                        style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #4F6EF7", fontSize: 13, outline: "none", width: 180, fontFamily: "'DM Sans', sans-serif" }} />
+                      <button onClick={() => {
+                        if (!newOrgVal.trim()) return;
+                        const name = newOrgVal.trim();
+                        const newFolder = { id: `uf-${Date.now()}`, name, parentId: null };
+                        setUserFolders && setUserFolders(fs => [...fs, newFolder]);
+                        setSelectedCustom(name);
+                        setOrgPath({ year:"", semester:"", class:"", chapter:"" });
+                        setAddingTo(null); setNewOrgVal("");
+                      }} style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: "#1A1814", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#F7F6F2" }}>Create</button>
+                      <button onClick={() => { setAddingTo(null); setNewOrgVal(""); }} style={{ background: "none", border: "none", fontSize: 13, color: "#A8A59E", cursor: "pointer" }}>✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setAddingTo("__custom__"); setNewOrgVal(""); }}
+                      style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px dashed #D8D5CE", background: "none", fontSize: 12, fontWeight: 500, color: "#A8A59E", cursor: "pointer", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#4F6EF7"; e.currentTarget.style.color = "#4F6EF7"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.color = "#A8A59E"; }}>
+                      + New Folder
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Path summary */}
+            {anyOrgSelected ? (
+              <div style={{ marginTop: 28, padding: "16px 20px", background: "#fff", borderRadius: 10, border: "1.5px solid #ECEAE4" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Saved To</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                  {selectedCustom ? (
+                    <span style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#3A3830" }}>📁 {selectedCustom}</span>
+                  ) : (
+                    ["year","semester","class","chapter"].filter(k => orgPath[k]).map((k, i, arr) => (
+                      <span key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#3A3830" }}>{orgPath[k]}</span>
+                        {i < arr.length - 1 && <span style={{ color: "#D8D5CE" }}>›</span>}
+                      </span>
+                    ))
+                  )}
+                  <span style={{ color: "#D8D5CE" }}>›</span>
+                  <span style={{ background: "#1A1814", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, color: "#F7F6F2" }}>{title || "This Deck"}</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 28, padding: "24px", background: "#fff", borderRadius: 10, border: "1.5px dashed #D8D5CE", textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#8C8880", marginBottom: 4 }}>No folder selected</div>
+                <div style={{ fontSize: 12, color: "#A8A59E" }}>This deck will appear under All Folders. You can move it any time.</div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ── Library View (hierarchical) ───────────────────────────────────────────────
+function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts = [], onDeleteDeck, userFolders = [], setUserFolders }) {
+  const [folderPath, setFolderPath]     = useState([]);
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [treeExpanded, setTreeExpanded] = useState({ y2025: true, fall25: true });
+  const [addingFolder, setAddingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
+  const isUserFolder   = folderPath[0] === "__uf__";
+  const isDraftsFolder = folderPath[0] === "__drafts__";
+  const activeFolderName = isUserFolder ? folderPath[1] : null;
+
+  const currentNode = (!isUserFolder && !isDraftsFolder && folderPath.length > 0)
+    ? fcFindNode(FC_TREE, folderPath[folderPath.length - 1])
+    : null;
+  const currentChildren = currentNode ? (currentNode.children || []) : (isUserFolder || isDraftsFolder) ? [] : FC_TREE;
+
+  // Which decks to show in the right panel
+  const currentDecks = isUserFolder
+    ? allDecks.filter(d => d.folderKey === activeFolderName)
+    : isDraftsFolder
+      ? []
+      : currentNode
+        ? allDecks.filter(d => fcGetAllDeckIds(currentNode).includes(d.id) || d.folderKey === currentNode.label || d.folderKey?.includes(currentNode.label))
+        : allDecks;   // "All Folders" root → every deck
+
+  const allHere = currentDecks;
+
+  const searchResults = searchQuery.trim()
+    ? allDecks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || (d.subject||"").toLowerCase().includes(searchQuery.toLowerCase()))
+    : [];
+
+  const enterFolder  = (id) => setFolderPath(p => [...p, id]);
+  const navToIndex   = (i)  => setFolderPath(p => p.slice(0, i + 1));
+  const goRoot       = ()   => setFolderPath([]);
+  const toggleTree   = (id) => setTreeExpanded(e => ({ ...e, [id]: !e[id] }));
+
+  const createUserFolder = () => {
+    const name = newFolderName.trim();
+    if (!name) { setAddingFolder(false); return; }
+    setUserFolders && setUserFolders(fs => [...fs, { id: `uf-${Date.now()}`, name, parentId: null }]);
+    setAddingFolder(false); setNewFolderName("");
+  };
+
+  // Recursive left-panel tree renderer for FC_TREE
+  const renderTreeNode = (node, depth = 0) => {
+    const expanded   = treeExpanded[node.id];
+    const hasKids    = node.children?.length > 0;
+    const isActive   = folderPath[folderPath.length - 1] === node.id;
+    const meta       = FC_TYPE_META[node.type] || {};
+    const deckCount  = fcGetAllDeckIds(node).length;
+    return (
+      <div key={node.id}>
+        <div onClick={() => { if (hasKids) toggleTree(node.id); enterFolder(node.id); }}
+          style={{ display:"flex", alignItems:"center", gap:7, padding:`7px 8px 7px ${8+depth*14}px`, borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s", marginBottom:1 }}
+          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
+          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
+          <span style={{ fontSize:8, color:isActive?"rgba(247,246,242,0.4)":"#C8C5BE", width:10, flexShrink:0, display:"inline-block", transform:hasKids&&expanded?"rotate(90deg)":"rotate(0)", transition:"transform 0.2s" }}>{hasKids?"▶":" "}</span>
+          <span style={{ fontSize:11, flexShrink:0 }}>{meta.icon}</span>
+          <span style={{ fontSize:12, fontWeight:isActive?700:500, color:isActive?"#F7F6F2":"#3A3830", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{node.label}</span>
+          <span style={{ fontSize:10, color:isActive?"rgba(247,246,242,0.35)":"#C8C5BE", flexShrink:0 }}>{deckCount}</span>
+        </div>
+        {hasKids && expanded && node.children.map(c => renderTreeNode(c, depth+1))}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display:"flex", minHeight:"calc(100vh - 60px)" }}>
+
+      {/* ── LEFT TREE ─────────────────────────────────────────────────── */}
+      <div style={{ width:232, flexShrink:0, background:"#fff", borderRight:"1px solid #ECEAE4", display:"flex", flexDirection:"column", position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
+        <div style={{ padding:"20px 10px 0", flex:1 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A8A59E", padding:"0 8px", marginBottom:10 }}>My Library</div>
+
+          {/* All Folders root */}
+          <div onClick={goRoot}
+            style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", borderRadius:7, cursor:"pointer", background:folderPath.length===0?"#1A1814":"transparent", marginBottom:4, transition:"background 0.15s" }}
+            onMouseEnter={e => { if (folderPath.length>0) e.currentTarget.style.background="#F7F6F2"; }}
+            onMouseLeave={e => { if (folderPath.length>0) e.currentTarget.style.background="transparent"; }}>
+            <span style={{ fontSize:13 }}>🗂</span>
+            <span style={{ fontSize:13, fontWeight:700, color:folderPath.length===0?"#F7F6F2":"#1A1814" }}>All Folders</span>
+            <span style={{ marginLeft:"auto", fontSize:10, color:folderPath.length===0?"rgba(247,246,242,0.4)":"#C8C5BE" }}>{allDecks.length}</span>
+          </div>
+
+          {/* FC_TREE structured folders */}
+          {FC_TREE.map(n => renderTreeNode(n, 0))}
+
+          {/* ── User folders — inline in same tree, no separator ── */}
+          {userFolders.map(f => {
+            const isActive = isUserFolder && folderPath[1] === f.name;
+            const deckCount = allDecks.filter(d => d.folderKey === f.name).length;
+            return (
+              <div key={f.id}
+                onClick={() => setFolderPath(["__uf__", f.name])}
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 8px", borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s", marginBottom:1 }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
+                <span style={{ fontSize:9, color:"transparent", width:10, flexShrink:0 }}>·</span>
+                <span style={{ fontSize:11 }}>📁</span>
+                <span style={{ fontSize:12, fontWeight:isActive?700:500, color:isActive?"#F7F6F2":"#3A3830", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</span>
+                <span style={{ fontSize:10, color:isActive?"rgba(247,246,242,0.35)":"#C8C5BE" }}>{deckCount}</span>
+              </div>
+            );
+          })}
+
+          {/* Inline new folder input — appears right in the tree */}
+          {addingFolder && (
+            <div style={{ padding:"4px 8px 8px" }}>
+              <input autoFocus value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
+                onKeyDown={e => { if (e.key==="Enter") createUserFolder(); if (e.key==="Escape") { setAddingFolder(false); setNewFolderName(""); } }}
+                placeholder="Folder name…"
+                style={{ width:"100%", padding:"6px 10px", borderRadius:7, border:"1.5px solid #4F6EF7", fontSize:12, outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
+              <div style={{ fontSize:10, color:"#A8A59E", marginTop:3 }}>Enter to confirm · Esc to cancel</div>
+            </div>
+          )}
+
+          {/* Drafts */}
+          {drafts.length > 0 && (
+            <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #ECEAE4" }}>
+              <div onClick={() => setFolderPath(["__drafts__"])}
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:7, cursor:"pointer", background:isDraftsFolder?"#1A1814":"transparent", transition:"background 0.15s" }}
+                onMouseEnter={e => { if (!isDraftsFolder) e.currentTarget.style.background="#F7F6F2"; }}
+                onMouseLeave={e => { if (!isDraftsFolder) e.currentTarget.style.background="transparent"; }}>
+                <span style={{ fontSize:11 }}>📝</span>
+                <span style={{ fontSize:12, fontWeight:isDraftsFolder?700:500, color:isDraftsFolder?"#F7F6F2":"#3A3830", flex:1 }}>Drafts</span>
+                <span style={{ fontSize:10, background:"#F5C842", color:"#1A1814", borderRadius:10, padding:"1px 6px", fontWeight:700 }}>{drafts.length}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom actions */}
+        <div style={{ padding:"12px 10px", borderTop:"1px solid #ECEAE4", display:"flex", flexDirection:"column", gap:8 }}>
+          <button onClick={() => { setAddingFolder(true); setNewFolderName(""); }}
+            style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"8px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor="#4F6EF7"; e.currentTarget.style.color="#4F6EF7"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
+            📁 New Folder
+          </button>
+          <button onClick={onNewDeck}
+            style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"9px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor="#1A1814"; e.currentTarget.style.color="#1A1814"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
+            + New Deck
+          </button>
+        </div>
+      </div>
+
+      {/* ── RIGHT CONTENT ─────────────────────────────────────────────── */}
+      <div style={{ flex:1, padding:"28px 32px", overflowY:"auto" }}>
+
+        {/* Search */}
+        <div style={{ position:"relative", marginBottom:28 }}>
+          <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A8A59E", pointerEvents:"none" }}>⌕</span>
+          <input type="text" placeholder="Search all decks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            style={{ width:"100%", padding:"11px 16px 11px 38px", border:"1px solid #D8D5CE", borderRadius:10, fontSize:14, background:"#fff", color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }} />
+          {searchQuery && <span onClick={() => setSearchQuery("")} style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", cursor:"pointer", fontSize:13, color:"#A8A59E" }}>✕</span>}
+        </div>
+
+        {/* SEARCH RESULTS */}
+        {searchQuery.trim() ? (
+          <div>
+            <div style={{ fontSize:12, color:"#8C8880", marginBottom:16 }}>{searchResults.length} result{searchResults.length!==1?"s":""} for "<strong>{searchQuery}</strong>"</div>
+            {searchResults.length === 0
+              ? <div style={{ textAlign:"center", padding:"48px 0", color:"#8C8880" }}><div style={{ fontSize:36, marginBottom:12 }}>🔍</div><div style={{ fontSize:15, fontWeight:500 }}>No decks match</div></div>
+              : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))", gap:14 }}>{searchResults.map((d,i) => <FCDeckCard key={d.id} deck={d} index={i} onOpen={onOpenDeck} onStudy={onStartStudy} />)}</div>
+            }
+          </div>
+
+        ) : isDraftsFolder ? (
+          <div>
+            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", marginBottom:20 }}>📝 Drafts</h1>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {drafts.map(d => (
+                <div key={d.id} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderLeft:`3px solid ${d.color||"#F5C842"}`, borderRadius:10, padding:"16px 20px", display:"flex", alignItems:"center", gap:16 }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:"#1A1814", marginBottom:3 }}>{d.title}</div>
+                    <div style={{ fontSize:11, color:"#A8A59E" }}>{d.cards?.filter(c=>c.term).length||0} cards · Saved {d.savedAt}</div>
+                  </div>
+                  <span style={{ fontSize:11, background:"#FFF7D6", color:"#8C6800", borderRadius:6, padding:"3px 10px", fontWeight:600 }}>Draft</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        ) : (
+          <div>
+            {/* Breadcrumb */}
+            <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:20 }}>
+              <span onClick={goRoot} style={{ fontSize:13, color:folderPath.length===0?"#1A1814":"#8C8880", cursor:"pointer", fontWeight:folderPath.length===0?700:400 }}>All Folders</span>
+              {isUserFolder && <><span style={{ color:"#D8D5CE" }}>›</span><span style={{ fontSize:13, color:"#1A1814", fontWeight:700 }}>📁 {activeFolderName}</span></>}
+              {!isUserFolder && folderPath.map((id, i) => {
+                const n = fcFindNode(FC_TREE, id);
+                if (!n) return null;
+                const isLast = i === folderPath.length - 1;
+                return <span key={id} style={{ display:"flex", alignItems:"center", gap:6 }}><span style={{ color:"#D8D5CE" }}>›</span><span onClick={() => navToIndex(i)} style={{ fontSize:13, color:isLast?"#1A1814":"#8C8880", fontWeight:isLast?700:400, cursor:"pointer" }}>{n.label}</span></span>;
+              })}
+            </div>
+
+            {/* Header */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+              <div>
+                {isUserFolder ? (
+                  <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 10px", borderRadius:20, marginBottom:6 }}>Your Folder</div>
+                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>📁 {activeFolderName}</h1>
+                  <div style={{ fontSize:12, color:"#8C8880" }}>{currentDecks.length} deck{currentDecks.length!==1?"s":""}</div></>
+                ) : currentNode ? (
+                  <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:currentNode.color, background:`${currentNode.color}18`, padding:"2px 10px", borderRadius:20, marginBottom:6 }}>{FC_TYPE_META[currentNode.type]?.label}</div>
+                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>{currentNode.label}</h1>
+                  <div style={{ fontSize:12, color:"#8C8880" }}>{allHere.length} deck{allHere.length!==1?"s":""}</div></>
+                ) : (
+                  <><h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>All Folders</h1>
+                  <div style={{ fontSize:12, color:"#8C8880" }}>{allDecks.length} total deck{allDecks.length!==1?"s":""}</div></>
+                )}
+              </div>
+              <button onClick={onNewDeck} className="fc-btn" style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2", transition:"all 0.2s" }}>+ New Deck</button>
+            </div>
+
+            {/* Stats bar */}
+            {allHere.length > 0 && (
+              <div style={{ display:"flex", gap:10, marginBottom:28 }}>
+                {[
+                  { label:"Decks",      value:allHere.length },
+                  { label:"Cards",      value:allHere.reduce((a,d)=>a+(d.cardCount||d.cards?.length||0),0) },
+                  { label:"Avg Mastery",value:`${Math.round(allHere.reduce((a,d)=>a+(d.mastery||0),0)/allHere.length)}%` },
+                  { label:"Mastered",   value:allHere.filter(d=>d.mastery===100).length },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:10, padding:"12px 14px", flex:1, textAlign:"center" }}>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814" }}>{value}</div>
+                    <div style={{ fontSize:10, color:"#8C8880", marginTop:2, textTransform:"uppercase", letterSpacing:0.8 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Subfolder grid — FC_TREE children PLUS user folders at root ── */}
+            {!isUserFolder && (currentChildren.length > 0 || (folderPath.length === 0 && userFolders.length > 0)) && (
+              <div style={{ marginBottom:32 }}>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A8A59E", marginBottom:12 }}>Folders</div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:12 }}>
+                  {/* Structured tree children */}
+                  {currentChildren.map((child, i) => {
+                    const childIds   = fcGetAllDeckIds(child);
+                    const meta       = FC_TYPE_META[child.type] || {};
+                    return (
+                      <div key={child.id} className="fc-fade-up" style={{ animationDelay:`${i*0.05}s`, background:"#fff", border:"1px solid #ECEAE4", borderLeft:`3px solid ${child.color}`, borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s" }}
+                        onClick={() => enterFolder(child.id)}
+                        onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                          <span style={{ fontSize:18 }}>{meta.icon}</span>
+                          <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:child.color, background:`${child.color}15`, padding:"2px 8px", borderRadius:20 }}>{meta.label}</span>
+                        </div>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>{child.label}</div>
+                        <div style={{ fontSize:11, color:"#A8A59E" }}>{childIds.length} deck{childIds.length!==1?"s":""}</div>
+                      </div>
+                    );
+                  })}
+                  {/* User folders — shown inline at root, same grid */}
+                  {folderPath.length === 0 && userFolders.map((f, i) => {
+                    const count = allDecks.filter(d => d.folderKey === f.name).length;
+                    return (
+                      <div key={f.id} className="fc-fade-up" style={{ animationDelay:`${(currentChildren.length+i)*0.05}s`, background:"#fff", border:"1px solid #ECEAE4", borderLeft:"3px solid #4F6EF7", borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s", position:"relative" }}
+                        onClick={() => setFolderPath(["__uf__", f.name])}
+                        onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                          <span style={{ fontSize:18 }}>📁</span>
+                          <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 8px", borderRadius:20 }}>My Folder</span>
+                        </div>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>{f.name}</div>
+                        <div style={{ fontSize:11, color:"#A8A59E" }}>{count} deck{count!==1?"s":""}</div>
+                        <button onClick={e => { e.stopPropagation(); if (window.confirm(`Delete folder "${f.name}"? Decks inside will move to All Folders.`)) { setUserFolders && setUserFolders(fs => fs.filter(x => x.id !== f.id)); } }}
+                          style={{ position:"absolute", top:10, right:10, background:"none", border:"none", fontSize:11, color:"#D8D5CE", cursor:"pointer" }}
+                          onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"} onMouseLeave={e=>e.currentTarget.style.color="#D8D5CE"}>✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Deck grid */}
+            {currentDecks.length > 0 ? (
+              <div>
+                {(currentChildren.length > 0 || (folderPath.length === 0 && userFolders.length > 0)) && !isUserFolder && (
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A8A59E", marginBottom:12 }}>Decks</div>
+                )}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))", gap:14 }}>
+                  {currentDecks.map((d, i) => <FCDeckCard key={d.id} deck={d} index={i} onOpen={onOpenDeck} onStudy={onStartStudy} />)}
+                </div>
+              </div>
+            ) : (
+              !isDraftsFolder && (currentNode || isUserFolder) && (
+                <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
+                  <div style={{ fontSize:40, marginBottom:12 }}>📂</div>
+                  <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>No decks in this folder yet</div>
+                  <div style={{ fontSize:13, marginBottom:20 }}>When you create a deck and assign it here, it'll appear in this folder.</div>
+                  <button onClick={onNewDeck} style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>+ Create a Deck</button>
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Deck Card (shared) ────────────────────────────────────────────────────────
+function FCDeckCard({ deck, index, onOpen, onStudy }) {
+  return (
+    <div className="fc-deck-card fc-fade-up" style={{ animationDelay: `${index * 0.06}s`, background: "#fff", border: "1px solid #ECEAE4", borderTop: `3px solid ${deck.color}`, borderRadius: 12, padding: "22px 22px 18px", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+      onClick={() => onOpen(deck)}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, background: `${deck.color}18`, padding: "3px 10px", borderRadius: 20 }}>{deck.subject}</div>
+        <span style={{ fontSize: 11, color: "#A8A59E" }}>{deck.cardCount} cards</span>
+      </div>
+      <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#1A1814", marginBottom: 16, lineHeight: 1.3 }}>{deck.title}</h3>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#A8A59E", marginBottom: 6 }}>
+          <span>Mastery</span>
+          <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#1A1814", fontWeight: 600 }}>{deck.mastery}%</span>
+        </div>
+        <div style={{ height: 4, background: "#ECEAE4", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${deck.mastery}%`, background: deck.mastery === 100 ? "#2BAE7E" : deck.color, borderRadius: 2 }} />
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 11, color: "#A8A59E" }}>Last: {deck.lastStudied}</span>
+        <button onClick={e => { e.stopPropagation(); onStudy(deck); }} style={{ background: "#1A1814", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.15s" }}
+          onMouseEnter={e => e.target.style.opacity = "0.8"} onMouseLeave={e => e.target.style.opacity = "1"}>Study</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Deck View (overview + card list) ─────────────────────────────────────────
+function FCDeckView({ deck, onBack, onStudy, onDelete }) {
+  const [previewCard, setPreviewCard] = useState(null);
+  const [flipped, setFlipped]         = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
+        <span onClick={onBack} className="fc-nav-link" style={{ fontSize: 13, color: "#8C8880", cursor: "pointer" }}>← My Library</span>
+        <span style={{ color: "#D8D5CE" }}>/</span>
+        <span style={{ fontSize: 13, color: "#1A1814", fontWeight: 500 }}>{deck.title}</span>
+      </div>
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20, marginBottom: 32 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, marginBottom: 8 }}>{deck.subject}</div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 900, letterSpacing: -0.8, marginBottom: 10 }}>{deck.title}</h1>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 13, color: "#8C8880" }}>
+            <span>{deck.cardCount || deck.cards?.length || 0} cards</span>
+            <span>·</span>
+            <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#8C8880", fontWeight: deck.mastery === 100 ? 600 : 400 }}>{deck.mastery || 0}% mastered</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {!confirmDelete ? (
+            <button onClick={() => setConfirmDelete(true)} style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 8, padding: "10px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#A8A59E", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor="#E85D3F"; e.currentTarget.style.color="#E85D3F"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor="#ECEAE4"; e.currentTarget.style.color="#A8A59E"; }}>🗑 Delete</button>
+          ) : (
+            <div style={{ display:"flex", gap:6, alignItems:"center", background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:8, padding:"8px 12px" }}>
+              <span style={{ fontSize:12, color:"#E85D3F", fontWeight:600 }}>Delete this deck?</span>
+              <button onClick={() => onDelete && onDelete(deck.id)} style={{ padding:"5px 12px", borderRadius:6, border:"none", background:"#E85D3F", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>Yes, Delete</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", color:"#8C8880", fontSize:11, cursor:"pointer" }}>Cancel</button>
+            </div>
+          )}
+          <button style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752" }}>Edit Deck</button>
+          <button className="fc-btn" onClick={onStudy} style={{ background: "#1A1814", border: "none", borderRadius: 8, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>Study Now →</button>
+        </div>
+      </div>
+
+      {/* Flip preview — appears when a card row is clicked */}
+      {previewCard && (
+        <div className="fc-fade-in" style={{ background: "#fff", border: "1px solid #ECEAE4", borderTop: `3px solid ${deck.color}`, borderRadius: 14, padding: "40px 36px", textAlign: "center", marginBottom: 24, cursor: "pointer", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+          onClick={() => setFlipped(f => !f)}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: flipped ? deck.color : "#A8A59E", marginBottom: 18, transition: "color 0.3s" }}>{flipped ? "Definition" : "Term · tap to flip"}</div>
+          <div style={{ fontFamily: flipped ? "'DM Sans', sans-serif" : "'Playfair Display', serif", fontSize: flipped ? 16 : 22, fontWeight: flipped ? 400 : 800, color: "#1A1814", lineHeight: 1.5, transition: "all 0.3s" }}>
+            {flipped ? previewCard.definition : previewCard.term}
+          </div>
+        </div>
+      )}
+
+      {/* Mastery bar */}
+      <div style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 10, padding: "18px 20px", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 10 }}>
+          <span style={{ fontWeight: 600 }}>Overall Mastery</span>
+          <span style={{ color: deck.color, fontWeight: 700 }}>{deck.mastery}%</span>
+        </div>
+        <div style={{ height: 6, background: "#ECEAE4", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${deck.mastery}%`, background: deck.mastery === 100 ? "#2BAE7E" : deck.color, borderRadius: 3 }} />
+        </div>
+      </div>
+
+      {/* Card list */}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#8C8880", marginBottom: 14 }}>All Cards</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {deck.cards.map((card, i) => (
+          <div key={card.id} className="fc-fade-up" style={{ animationDelay: `${i * 0.04}s`, background: "#fff", border: "1px solid #ECEAE4", borderRadius: 10, padding: "18px 20px", display: "flex", gap: 20, alignItems: "flex-start", cursor: "pointer", transition: "all 0.18s" }}
+            onClick={() => { setPreviewCard(card); setFlipped(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = deck.color; e.currentTarget.style.background = `${deck.color}06`; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.background = "#fff"; }}>
+            <div style={{ width: 28, height: 28, background: "#F7F6F2", borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#A8A59E" }}>{i + 1}</div>
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E", marginBottom: 5 }}>Term</div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{card.term}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E", marginBottom: 5 }}>Definition</div>
+                <div style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.55, fontWeight: 300 }}>{card.definition}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Study Setup ───────────────────────────────────────────────────────────────
+function FCStudySetup({ deck, onBack, onStart }) {
+  const [mode, setMode]             = useState("all");      // all | pick | count | progressive
+  const [selectedIds, setSelectedIds] = useState(new Set(deck.cards.map(c => c.id)));
+  const [countVal, setCountVal]     = useState(Math.min(5, deck.cards.length));
+  const [progStart, setProgStart]   = useState(Math.min(3, deck.cards.length));
+
+  const toggleCard = (id) => setSelectedIds(s => {
+    const n = new Set(s);
+    if (n.has(id)) { if (n.size > 1) n.delete(id); }
+    else n.add(id);
+    return n;
+  });
+
+  const selectAll  = () => setSelectedIds(new Set(deck.cards.map(c => c.id)));
+  const clearAll   = () => setSelectedIds(new Set([deck.cards[0].id]));
+
+  const handleStart = () => {
+    let cards;
+    if      (mode === "pick")        cards = deck.cards.filter(c => selectedIds.has(c.id));
+    else if (mode === "count")       cards = deck.cards.slice(0, countVal);
+    else                             cards = deck.cards;
+    onStart({ mode, cards, progStart: mode === "progressive" ? progStart : null });
+  };
+
+  const readyCount = mode === "pick" ? selectedIds.size
+    : mode === "count" ? countVal
+    : mode === "progressive" ? progStart
+    : deck.cards.length;
+
+  const MODES = [
+    { id: "smart",       icon: "✦",  label: "Smart Study",     desc: "AI picks cards based on your weaknesses and memory decay" },
+    { id: "all",         icon: "▦",  label: "Full Deck",       desc: "Go through every card in order, start to finish" },
+    { id: "pick",        icon: "◎",  label: "Pick Cards",      desc: "Choose exactly which cards to study this session" },
+    { id: "rapid",       icon: "⚡", label: "Rapid Review",    desc: "Quick-flip mode — fast cycle through all cards" },
+    { id: "quiz",        icon: "◈",  label: "Quiz Mode",       desc: "Multiple choice answers — test your knowledge" },
+    { id: "timed",       icon: "⏱",  label: "Timed Practice",  desc: "Race the clock — answer before the countdown ends" },
+    { id: "challenge",   icon: "🔥", label: "Challenge Mode",  desc: "No hints, no second chances — pure mastery test" },
+    { id: "progressive", icon: "📈", label: "Progressive",     desc: "Start with 3 cards, unlock more as you master each" },
+    { id: "focus",       icon: "🧠", label: "Focus Mode",      desc: "ADHD-friendly — larger text, slower pace, no distractions" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
+      {/* Back */}
+      <span onClick={onBack} className="fc-nav-link" style={{ fontSize: 13, color: "#8C8880", cursor: "pointer", display: "inline-block", marginBottom: 28 }}>← Back to Deck</span>
+
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, marginBottom: 6 }}>Study Session</div>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: "#1A1814", letterSpacing: -0.5, marginBottom: 6 }}>{deck.title}</h1>
+        <div style={{ fontSize: 13, color: "#8C8880" }}>{deck.cards.length} cards available</div>
+      </div>
+
+      {/* Mode selector — 3 columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 28 }}>
+        {MODES.map(m => (
+          <div key={m.id} onClick={() => setMode(m.id)} style={{ border: `2px solid ${mode === m.id ? deck.color : "#ECEAE4"}`, borderRadius: 12, padding: "13px 14px", cursor: "pointer", background: mode === m.id ? `${deck.color}10` : "#fff", transition: "all 0.18s" }}
+            onMouseEnter={e => { if (mode !== m.id) { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.background = "#F7F6F2"; } }}
+            onMouseLeave={e => { if (mode !== m.id) { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.background = "#fff"; } }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+              <span style={{ fontSize: 14 }}>{m.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: mode === m.id ? "#1A1814" : "#5A5752", lineHeight: 1.2 }}>{m.label}</span>
+              {mode === m.id && <span style={{ marginLeft: "auto", fontSize: 10, color: deck.color, fontWeight: 700 }}>✓</span>}
+            </div>
+            <div style={{ fontSize: 10, color: "#8C8880", lineHeight: 1.4 }}>{m.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mode-specific controls */}
+      <div className="fc-fade-in" style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 14, padding: "22px 22px 18px", marginBottom: 24 }}>
+
+        {/* ── PICK MODE ── */}
+        {mode === "pick" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>Select cards to study</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span onClick={selectAll} style={{ fontSize: 11, fontWeight: 600, color: deck.color, cursor: "pointer" }}>Select all</span>
+                <span style={{ color: "#D8D5CE" }}>·</span>
+                <span onClick={clearAll} style={{ fontSize: 11, fontWeight: 600, color: "#8C8880", cursor: "pointer" }}>Clear</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {deck.cards.map((card, i) => {
+                const on = selectedIds.has(card.id);
+                return (
+                  <div key={card.id} onClick={() => toggleCard(card.id)} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderRadius: 8, border: `1.5px solid ${on ? deck.color : "#ECEAE4"}`, background: on ? `${deck.color}06` : "#F7F6F2", cursor: "pointer", transition: "all 0.15s" }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${on ? deck.color : "#D8D5CE"}`, background: on ? deck.color : "#fff", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                      {on && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span>}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814", fontFamily: "'Playfair Display', serif", marginBottom: 2 }}>{card.term}</div>
+                      <div style={{ fontSize: 11, color: "#8C8880", lineHeight: 1.4 }}>{card.definition.length > 80 ? card.definition.slice(0, 80) + "…" : card.definition}</div>
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: "#A8A59E", flexShrink: 0 }}>#{i + 1}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── COUNT MODE ── */}
+        {mode === "count" && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 18 }}>How many cards do you want to study?</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 20 }}>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 52, fontWeight: 900, color: deck.color, minWidth: 60, textAlign: "center", lineHeight: 1 }}>{countVal}</span>
+              <div style={{ flex: 1 }}>
+                <input type="range" min={1} max={deck.cards.length} value={countVal} onChange={e => setCountVal(Number(e.target.value))} style={{ width: "100%", accentColor: deck.color, cursor: "pointer" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginTop: 6 }}>
+                  <span>1 card</span><span>{deck.cards.length} cards (full deck)</span>
+                </div>
+              </div>
+            </div>
+            {/* Preview chips */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {deck.cards.slice(0, countVal).map((card, i) => (
+                <div key={card.id} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: i < countVal ? `${deck.color}18` : "#F7F6F2", color: i < countVal ? deck.color : "#A8A59E", fontWeight: 600, border: `1px solid ${i < countVal ? `${deck.color}30` : "#ECEAE4"}` }}>
+                  {card.term}
+                </div>
+              ))}
+              {deck.cards.length > countVal && <div style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: "#F7F6F2", color: "#A8A59E" }}>+{deck.cards.length - countVal} not included</div>}
+            </div>
+          </div>
+        )}
+
+        {/* ── PROGRESSIVE MODE ── */}
+        {mode === "progressive" && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 6 }}>Progressive Unlock</div>
+            <div style={{ fontSize: 12, color: "#6B6860", lineHeight: 1.6, marginBottom: 20 }}>
+              Start with a small number of cards. Every time you mark <em>all active cards</em> as "Got It", a new card unlocks automatically. Keep going until you've mastered the full deck.
+            </div>
+
+            {/* Start count picker */}
+            <div style={{ background: "#F7F6F2", borderRadius: 10, padding: "16px 18px", marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#8C8880", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Start with how many cards?</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 900, color: deck.color, minWidth: 50, textAlign: "center", lineHeight: 1 }}>{progStart}</span>
+                <div style={{ flex: 1 }}>
+                  <input type="range" min={1} max={Math.min(deck.cards.length, 10)} value={progStart} onChange={e => setProgStart(Number(e.target.value))} style={{ width: "100%", accentColor: deck.color, cursor: "pointer" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginTop: 5 }}>
+                    <span>1</span><span>10 max</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual flow preview */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {Array.from({ length: Math.min(deck.cards.length, progStart + 3) }, (_, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {i > 0 && <span style={{ fontSize: 10, color: "#D8D5CE" }}>→</span>}
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: i < progStart ? deck.color : "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i < progStart ? "#fff" : "#A8A59E", border: i >= progStart && i < progStart + 3 ? "1.5px dashed #D8D5CE" : "none" }}>
+                      {i + 1}
+                    </div>
+                    <div style={{ fontSize: 8, color: i < progStart ? deck.color : "#C8C5BE", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{i < progStart ? "Start" : "Unlock"}</div>
+                  </div>
+                </div>
+              ))}
+              {deck.cards.length > progStart + 3 && <span style={{ fontSize: 11, color: "#A8A59E" }}>…+{deck.cards.length - progStart - 3} more</span>}
+            </div>
+          </div>
+        )}
+
+        {/* ── ALL MODE ── */}
+        {mode === "all" && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 10 }}>All {deck.cards.length} cards, in order</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {deck.cards.map((card, i) => (
+                <div key={card.id} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: `${deck.color}15`, color: deck.color, fontWeight: 600, border: `1px solid ${deck.color}28` }}>{card.term}</div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Start CTA */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 13, color: "#8C8880" }}>
+          {mode === "progressive"
+            ? `Starting with ${progStart} card${progStart !== 1 ? "s" : ""} — unlocking from ${deck.cards.length} total`
+            : `${readyCount} card${readyCount !== 1 ? "s" : ""} selected`}
+        </div>
+        <button onClick={handleStart} className="fc-btn" style={{ background: "#1A1814", border: "none", borderRadius: 10, padding: "13px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>
+          Start Studying →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Study View ────────────────────────────────────────────────────────────────
+function FCStudyView({ deck, config, onBack, onBackToLibrary }) {
+  const { mode, cards: configCards, progStart } = config;
+
+  const [activeCount, setActiveCount] = useState(mode === "progressive" ? progStart : configCards.length);
+  const [unlockAnim,  setUnlockAnim]  = useState(false);
+
+  const allCards   = configCards;
+  const cards      = allCards.slice(0, activeCount);
+  const lockedLeft = allCards.length - activeCount;
+
+  const [index,   setIndex]   = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known,   setKnown]   = useState(new Set());
+  // roundCount lets us detect when a loop-around completes (for the round toast)
+  const [round,   setRound]   = useState(1);
+  const [showRoundToast, setShowRoundToast] = useState(false);
+
+  const card     = cards[index];
+  const allKnown = cards.every(c => known.has(c.id));
+
+  // Progressive unlock
+  useEffect(() => {
+    if (mode !== "progressive" || !allKnown || activeCount >= allCards.length) return;
+    setUnlockAnim(true);
+    const t = setTimeout(() => {
+      setActiveCount(n => Math.min(n + 1, allCards.length));
+      setKnown(new Set());
+      setIndex(0);
+      setFlipped(false);
+      setUnlockAnim(false);
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [allKnown, mode]);
+
+  // Advance to next card — loops back to start instead of showing done screen
+  const advance = (nextKnown) => {
+    if (index + 1 >= cards.length) {
+      // End of round — loop back
+      setIndex(0);
+      setFlipped(false);
+      setRound(r => r + 1);
+      setShowRoundToast(true);
+      setTimeout(() => setShowRoundToast(false), 2200);
+    } else {
+      setIndex(i => i + 1);
+      setFlipped(false);
+    }
+  };
+
+  const markKnown = () => {
+    const n = new Set(known);
+    n.add(card.id);
+    setKnown(n);
+    advance(n);
+  };
+
+  // ── UNLOCK TOAST ──
+  if (unlockAnim) {
+    const newCard = allCards[activeCount];
+    return (
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
+        <div className="fc-fade-in" style={{ background: "#fff", border: `2px solid ${deck.color}`, borderRadius: 20, padding: "48px 40px", boxShadow: `0 0 60px ${deck.color}30` }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🔓</div>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 900, color: "#1A1814", marginBottom: 8 }}>New Card Unlocked!</div>
+          <div style={{ fontSize: 14, color: "#6B6860", marginBottom: 20 }}>You mastered all active cards. Adding:</div>
+          <div style={{ background: `${deck.color}12`, border: `1.5px solid ${deck.color}30`, borderRadius: 10, padding: "14px 20px", display: "inline-block" }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}>{newCard?.term}</div>
+          </div>
+          <div style={{ marginTop: 20, fontSize: 12, color: "#A8A59E" }}>New round starting…</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN CARD ──
+  const progress = Math.round(((index) / cards.length) * 100);
+
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
+      {/* Inline styles for 3D flip */}
+      <style>{`
+        .fc-flip-scene { perspective: 1200px; }
+        .fc-flip-card {
+          position: relative; width: 100%; min-height: 300px;
+          transform-style: preserve-3d;
+          transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+          cursor: pointer;
+        }
+        .fc-flip-card.is-flipped { transform: rotateY(180deg); }
+        .fc-flip-face {
+          position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+          border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+          padding: 56px 44px; text-align: center;
+          box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+        }
+        .fc-flip-front {
+          background: #fff;
+          border: 1px solid #ECEAE4;
+          border-top: 4px solid ${deck.color};
+        }
+        .fc-flip-back {
+          background: ${deck.color}0D;
+          border: 2px solid ${deck.color}50;
+          border-top: 4px solid ${deck.color};
+          transform: rotateY(180deg);
+        }
+        .fc-flip-scene:hover .fc-flip-card { box-shadow: 0 8px 40px rgba(0,0,0,0.11); }
+        @keyframes fc-round-toast { 0%{opacity:0;transform:translateY(-10px)} 15%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0;transform:translateY(-8px)} }
+        .fc-round-toast { animation: fc-round-toast 2.2s ease forwards; }
+      `}</style>
+
+      {/* Round complete toast */}
+      {showRoundToast && (
+        <div className="fc-round-toast" style={{ position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)", background: "#1A1814", borderRadius: 10, padding: "10px 22px", zIndex: 999, display: "flex", alignItems: "center", gap: 10, pointerEvents: "none" }}>
+          <span style={{ fontSize: 16 }}>🔁</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#F7F6F2" }}>Round {round} complete — looping back!</span>
+          <span style={{ fontSize: 12, color: "#2BAE7E", fontWeight: 600 }}>{known.size}/{cards.length} known</span>
+        </div>
+      )}
+
+      {/* Top bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 7, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#8C8880", fontWeight: 500, transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; }}>
+          Leave Set
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814" }}>{deck.title}</div>
+          <div style={{ fontSize: 11, color: "#A8A59E", marginTop: 2 }}>
+            {index + 1} / {cards.length} · Round {round}
+            {mode === "progressive" && lockedLeft > 0 && <span style={{ color: "#D8D5CE" }}> · 🔒{lockedLeft}</span>}
+          </div>
+        </div>
+        <div style={{ fontSize: 13, color: "#2BAE7E", fontWeight: 700 }}>{known.size} ✓</div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 4, background: "#ECEAE4", borderRadius: 2, marginBottom: mode === "progressive" ? 10 : 28, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${progress}%`, background: deck.color, borderRadius: 2, transition: "width 0.4s ease" }} />
+      </div>
+
+      {/* Progressive unlock bar */}
+      {mode === "progressive" && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginBottom: 5 }}>
+            <span style={{ fontWeight: 700, color: deck.color }}>Unlock progress</span>
+            <span>{activeCount} / {allCards.length} unlocked</span>
+          </div>
+          <div style={{ height: 3, background: "#ECEAE4", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.round((activeCount / allCards.length) * 100)}%`, background: `linear-gradient(90deg, ${deck.color}, #2BAE7E)`, borderRadius: 2, transition: "width 0.6s ease" }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Card row: left arrow · card · right arrow ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+
+        {/* Left arrow — prev */}
+        <button
+          onClick={() => { setIndex(i => (i - 1 + cards.length) % cards.length); setFlipped(false); }}
+          style={{ flexShrink: 0, width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #ECEAE4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#8C8880", transition: "all 0.18s", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; }}
+        >‹</button>
+
+        {/* ── 3D Flip Card ── */}
+        <div className="fc-flip-scene" style={{ flex: 1, minHeight: 300 }} onClick={() => setFlipped(f => !f)}>
+          <div className={`fc-flip-card${flipped ? " is-flipped" : ""}`}>
+            {/* Front — Term */}
+            <div className="fc-flip-face fc-flip-front">
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 24 }}>Term · click to flip</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#1A1814", lineHeight: 1.4, maxWidth: 480 }}>{card?.term}</div>
+            </div>
+            {/* Back — Definition */}
+            <div className="fc-flip-face fc-flip-back">
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: deck.color, marginBottom: 24 }}>Definition</div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 17, fontWeight: 400, color: "#1A1814", lineHeight: 1.7, maxWidth: 480 }}>{card?.definition}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right arrow — next */}
+        <button
+          onClick={() => { advance(known); }}
+          style={{ flexShrink: 0, width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #ECEAE4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#8C8880", transition: "all 0.18s", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; }}
+        >›</button>
+      </div>
+
+      {/* Action buttons */}
+      {flipped ? (
+        <div className="fc-fade-in" style={{ display: "flex", justifyContent: "center" }}>
+          <button onClick={markKnown} style={{ background: "#2BAE7E", border: "none", borderRadius: 10, padding: "14px 56px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#fff", transition: "all 0.18s", boxShadow: "0 4px 16px rgba(43,174,126,0.3)" }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}>
+            Got It ✓
+          </button>
+        </div>
+      ) : (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={() => setFlipped(true)} className="fc-btn" style={{ background: "#1A1814", border: "none", borderRadius: 10, padding: "13px 40px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>
+            Reveal Answer
+          </button>
+        </div>
+      )}
+
+      {/* Progress dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 32, flexWrap: "wrap" }}>
+        {cards.map((c, i) => (
+          <div key={i} onClick={() => { setIndex(i); setFlipped(false); }}
+            style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 3, background: known.has(c.id) ? "#2BAE7E" : i === index ? deck.color : "#ECEAE4", cursor: "pointer", transition: "all 0.25s" }} />
+        ))}
+        {mode === "progressive" && lockedLeft > 0 && Array.from({ length: Math.min(lockedLeft, 6) }, (_, i) => (
+          <div key={`lock-${i}`} style={{ width: 6, height: 6, borderRadius: 3, background: "#ECEAE4", opacity: 0.35 }} />
+        ))}
+        {mode === "progressive" && lockedLeft > 6 && <span style={{ fontSize: 10, color: "#C8C5BE" }}>+{lockedLeft - 6}</span>}
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Brain Map App ────────────────────────────────────────────────────────────
+const BM_PALETTE = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2","#E91E8C","#C8B8FF","#6ED9B8","#FF6B6B","#4ECDC4"];
+
+const BM_INITIAL_MAPS = [
+  {
+    id: "map1", title: "Real Estate License Prep", color: "#4F6EF7", createdAt: new Date(Date.now() - 86400000 * 2),
+    nodes: [
+      { id: "root", label: "Real Estate\nLicense", x: 0,    y: 0,    color: "#4F6EF7", parentId: null,   deckIds: [],  note: "" },
+      { id: "n1",   label: "Property Law",          x: -280, y: -180, color: "#E85D3F", parentId: "root", deckIds: [2], note: "Focus on contracts & agency" },
+      { id: "n2",   label: "Finance & Loans",        x: 280,  y: -160, color: "#2BAE7E", parentId: "root", deckIds: [4], note: "" },
+      { id: "n3",   label: "Property Mgmt",          x: -260, y: 180,  color: "#9B59B6", parentId: "root", deckIds: [3], note: "" },
+      { id: "n4",   label: "Core Principles",        x: 260,  y: 180,  color: "#F5C842", parentId: "root", deckIds: [1], note: "" },
+      { id: "n5",   label: "Contracts",              x: -460, y: -110, color: "#E85D3F", parentId: "n1",   deckIds: [],  note: "" },
+      { id: "n6",   label: "Agency Law",             x: -460, y: -255, color: "#E85D3F", parentId: "n1",   deckIds: [],  note: "" },
+      { id: "n7",   label: "Appraisal",              x: 460,  y: -230, color: "#2BAE7E", parentId: "n2",   deckIds: [],  note: "" },
+      { id: "n8",   label: "Mortgages & LTV",        x: 460,  y: -90,  color: "#2BAE7E", parentId: "n2",   deckIds: [],  note: "" },
+      { id: "n9",   label: "Lease Types",            x: -460, y: 140,  color: "#9B59B6", parentId: "n3",   deckIds: [],  note: "" },
+      { id: "n10",  label: "CAP Rate",               x: -460, y: 250,  color: "#9B59B6", parentId: "n3",   deckIds: [],  note: "" },
+      { id: "n11",  label: "Easement & Liens",       x: 460,  y: 120,  color: "#F5C842", parentId: "n4",   deckIds: [],  note: "" },
+      { id: "n12",  label: "Fee Simple",             x: 460,  y: 240,  color: "#F5C842", parentId: "n4",   deckIds: [],  note: "" },
+    ],
+  },
+];
+
+// ── BrainMapCanvas — the interactive map editor ───────────────────────────────
+function BrainMapCanvas({ map, onNodesChange, onBack }) {
+  const [nodes,         setNodes]         = useState(map.nodes);
+  const [selectedId,    setSelectedId]    = useState(null);
+  const [pan,           setPan]           = useState({ x: 0, y: 0 });
+  const [zoom,          setZoom]          = useState(0.85);
+  const [editingId,     setEditingId]     = useState(null);
+  const [editLabel,     setEditLabel]     = useState("");
+  const [mapTitle,      setMapTitle]      = useState(map.title);
+  const [editTitle,     setEditTitle]     = useState(false);
+  const [showDeckPicker,setShowDeckPicker]= useState(false);
+  const [studyNode,     setStudyNode]     = useState(null);
+  const [studyDeckIdx,  setStudyDeckIdx]  = useState(0);
+  const [studyCardIdx,  setStudyCardIdx]  = useState(0);
+  const [studyFlipped,  setStudyFlipped]  = useState(false);
+  const [showNodeMenu,  setShowNodeMenu]  = useState(false);
+
+  // Undo history
+  const historyRef = useRef([]);
+  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
+  const handleUndo = () => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    historyRef.current = historyRef.current.slice(0, -1);
+    setNodes(prev);
+    setSelectedId(null);
+  };
+
+  // Wrapped setNodes that auto-pushes undo history for meaningful operations
+  const setNodesWithHistory = (updater) => {
+    setNodes(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      pushHistory(prev);
+      return next;
+    });
+  };
+
+  const dragRef  = useRef(null); // { type: "node"|"pan", id?, startX, startY, origX, origY, origPanX, origPanY }
+  const canvasRef= useRef(null);
+
+  const selectedNode = nodes.find(n => n.id === selectedId);
+
+  // ── Sync changes up ──
+  useEffect(() => { onNodesChange(nodes, mapTitle); }, [nodes, mapTitle]);
+
+  // ── Global mouse events for reliable drag ──
+  useEffect(() => {
+    const onMove = (e) => {
+      const d = dragRef.current;
+      if (!d) return;
+      if (d.type === "pan") {
+        setPan({ x: d.origPanX + (e.clientX - d.startX), y: d.origPanY + (e.clientY - d.startY) });
+      } else if (d.type === "node") {
+        const dx = (e.clientX - d.startX) / zoom;
+        const dy = (e.clientY - d.startY) / zoom;
+        setNodes(ns => ns.map(n => n.id === d.id ? { ...n, x: d.origX + dx, y: d.origY + dy } : n));
+      }
+    };
+    const onUp = () => { dragRef.current = null; };
+    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onUp);
+    window.addEventListener("keydown",   onKeyDown);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); window.removeEventListener("keydown", onKeyDown); };
+  }, [zoom]);
+
+  const onCanvasDown = (e) => {
+    if (e.target === canvasRef.current || e.target.classList.contains("bm-bg") || e.target.tagName === "svg") {
+      setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false);
+      dragRef.current = { type: "pan", startX: e.clientX, startY: e.clientY, origPanX: pan.x, origPanY: pan.y };
+    }
+  };
+
+  const onNodeDown = (e, node) => {
+    e.stopPropagation();
+    dragRef.current = { type: "node", id: node.id, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y };
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    setZoom(z => Math.min(Math.max(z * (e.deltaY < 0 ? 1.1 : 0.91), 0.15), 3));
+  };
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (el) el.addEventListener("wheel", onWheel, { passive: false });
+    return () => { if (el) el.removeEventListener("wheel", onWheel); };
+  }, []);
+
+  // ── Node ops ──
+  const getNodeById = (id) => nodes.find(n => n.id === id);
+
+  const getBranchColor = (nodeId) => {
+    let n = getNodeById(nodeId);
+    while (n?.parentId && n.parentId !== "root") n = getNodeById(n.parentId);
+    return n?.color || BM_PALETTE[0];
+  };
+
+  const addChild = (parentId) => {
+    const parent = getNodeById(parentId);
+    const children = nodes.filter(n => n.parentId === parentId);
+    const baseAngle = parentId === "root"
+      ? (children.length * (360 / Math.max(children.length + 1, 5))) * (Math.PI / 180)
+      : Math.atan2(parent.y, parent.x);
+    const spread = children.length * 0.45;
+    const dist   = parentId === "root" ? 260 : 175;
+    const angle  = baseAngle + (children.length % 2 === 0 ? spread : -spread) * 0.5;
+    const newNode = {
+      id: `n${Date.now()}`, label: "New Topic",
+      x: parent.x + Math.cos(angle) * dist,
+      y: parent.y + Math.sin(angle) * dist,
+      color: getBranchColor(parentId) || parent.color,
+      parentId, deckIds: [], note: "",
+    };
+    setNodesWithHistory(ns => [...ns, newNode]);
+    setSelectedId(newNode.id);
+    setTimeout(() => startEditing(newNode.id, "New Topic"), 80);
+  };
+
+  const deleteNode = (id) => {
+    if (id === "root") return;
+    const toRemove = new Set();
+    const q = [id];
+    while (q.length) { const cur = q.shift(); toRemove.add(cur); nodes.filter(n => n.parentId === cur).forEach(n => q.push(n.id)); }
+    setNodesWithHistory(ns => ns.filter(n => !toRemove.has(n.id)));
+    setSelectedId(null);
+  };
+
+  const updateNode = (id, updates) => setNodesWithHistory(ns => ns.map(n => n.id === id ? { ...n, ...updates } : n));
+  const startEditing = (id, label) => { setEditingId(id); setEditLabel(label); };
+  const commitEdit   = () => { if (editingId) { updateNode(editingId, { label: editLabel.trim() || "Topic" }); setEditingId(null); } };
+
+  // ── Flash card study ──
+  const studyDecks    = studyNode ? FC_DECKS.filter(d => studyNode.deckIds.includes(d.id)) : [];
+  const activeSDeck   = studyDecks[studyDeckIdx];
+  const activeSCard   = activeSDeck?.cards[studyCardIdx];
+  const totalStudyCards = studyDecks.reduce((a, d) => a + d.cards.length, 0);
+
+  const openStudy = (node) => { setStudyNode(node); setStudyDeckIdx(0); setStudyCardIdx(0); setStudyFlipped(false); };
+  const closeStudy = () => setStudyNode(null);
+  const nextCard = () => {
+    if (studyCardIdx < (activeSDeck?.cards.length || 1) - 1) { setStudyCardIdx(i => i + 1); setStudyFlipped(false); }
+    else if (studyDeckIdx < studyDecks.length - 1) { setStudyDeckIdx(i => i + 1); setStudyCardIdx(0); setStudyFlipped(false); }
+  };
+  const prevCard = () => {
+    if (studyCardIdx > 0) { setStudyCardIdx(i => i - 1); setStudyFlipped(false); }
+    else if (studyDeckIdx > 0) { setStudyDeckIdx(i => i - 1); setStudyCardIdx(0); setStudyFlipped(false); }
+  };
+
+  // ── Connection path (cubic bezier) ──
+  const getPath = (parent, child) => {
+    const mx = (parent.x + child.x) / 2;
+    return `M ${parent.x} ${parent.y} C ${mx} ${parent.y}, ${mx} ${child.y}, ${child.x} ${child.y}`;
+  };
+
+  // ── Layout ──
+  const W = typeof window !== "undefined" ? window.innerWidth  : 1440;
+  const H = typeof window !== "undefined" ? window.innerHeight - 56 : 800;
+  const cx = W / 2 + pan.x, cy = H / 2 + pan.y;
+
+  const nodeRect = (node) => {
+    const isRoot = node.id === "root";
+    const chars  = node.label.replace("\n", "").length;
+    const w = isRoot ? 140 : Math.min(Math.max(chars * 7.5 + 28, 108), 200);
+    const h = isRoot ? 84  : node.label.includes("\n") ? 52 : 40;
+    return { w, h, isRoot };
+  };
+
+  return (
+    <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
+      {/* Title bar strip */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
+        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
+        {editTitle ? (
+          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
+        ) : (
+          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
+          </div>
+        )}
+        {/* Zoom + Undo */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
+            title="Undo (Ctrl+Z)"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
+            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
+            ↩ Undo
+          </button>
+          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+          <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
+        </div>
+      </div>
+
+      {/* ── Canvas area (starts below title bar at top: 44px) ── */}
+      <div ref={canvasRef} style={{ position: "absolute", top: 44, left: 0, right: 0, bottom: 0, cursor: dragRef.current?.type === "pan" ? "grabbing" : "grab" }}
+        onMouseDown={onCanvasDown}>
+
+        {/* Dot grid */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+          <defs>
+            <pattern id={`bmDots-${map.id}`} x={(pan.x % (28 * zoom))} y={(pan.y % (28 * zoom))} width={28 * zoom} height={28 * zoom} patternUnits="userSpaceOnUse">
+              <circle cx={14 * zoom} cy={14 * zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill={`url(#bmDots-${map.id})`} />
+        </svg>
+
+        {/* Connection + Node SVG layer */}
+        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
+          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
+          <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
+
+            {/* Connections */}
+            {nodes.filter(n => n.parentId).map(n => {
+              const parent = getNodeById(n.parentId);
+              if (!parent) return null;
+              const isSelected = n.id === selectedId || n.parentId === selectedId;
+              return (
+                <path key={`e-${n.id}`} d={getPath(parent, n)}
+                  fill="none" stroke={n.color} strokeWidth={(isSelected ? 3 : 2) / zoom}
+                  strokeOpacity={isSelected ? 0.85 : 0.45} style={{ pointerEvents: "none", transition: "stroke-opacity 0.2s" }} />
+              );
+            })}
+
+            {/* Nodes */}
+            {nodes.map(n => {
+              const { w, h, isRoot } = nodeRect(n);
+              const isSel  = n.id === selectedId;
+              const lines  = n.label.split("\n");
+              const hasCards = n.deckIds.length > 0;
+              const deckCount = FC_DECKS.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0);
+
+              return (
+                <g key={n.id} transform={`translate(${n.x - w/2}, ${n.y - h/2})`}
+                  style={{ cursor: "pointer" }}
+                  onMouseDown={e => { onNodeDown(e, n); }}
+                  onClick={e => { e.stopPropagation(); setSelectedId(n.id); setShowDeckPicker(false); setShowNodeMenu(false); }}
+                  onDoubleClick={e => { e.stopPropagation(); startEditing(n.id, n.label); }}>
+
+                  {/* Selection glow */}
+                  {isSel && <rect x={-4} y={-4} width={w+8} height={h+8} rx={isRoot ? w/2+4 : 14} fill="none" stroke={n.color} strokeWidth={2.5 / zoom} opacity={0.4} />}
+
+                  {/* Node shape */}
+                  {isRoot ? (
+                    <ellipse cx={w/2} cy={h/2} rx={w/2} ry={h/2} fill={n.color} opacity={isSel ? 1 : 0.9}
+                      stroke={isSel ? "#fff" : "transparent"} strokeWidth={2.5 / zoom} />
+                  ) : (
+                    <rect x={0} y={0} width={w} height={h} rx={10}
+                      fill={n.color} opacity={isSel ? 1 : 0.84}
+                      stroke={isSel ? "#fff" : "transparent"} strokeWidth={2 / zoom} />
+                  )}
+
+                  {/* Label or inline editor */}
+                  {editingId === n.id ? (
+                    <foreignObject x={4} y={4} width={w - 8} height={h - 8}>
+                      <textarea autoFocus value={editLabel}
+                        onChange={e => setEditLabel(e.target.value)}
+                        onBlur={commitEdit}
+                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(); } if (e.key === "Escape") { setEditingId(null); } }}
+                        style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontSize: isRoot ? 12 : 10.5, fontWeight: 800, textAlign: "center", resize: "none", lineHeight: 1.35, padding: 0 }} />
+                    </foreignObject>
+                  ) : (
+                    lines.map((line, li) => (
+                      <text key={li} x={w / 2} y={h / 2 - (lines.length - 1) * 6.5 + li * 13}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fill="rgba(255,255,255,0.96)" fontSize={isRoot ? 12 : 10.5} fontWeight={800}
+                        fontFamily="'DM Sans', sans-serif" style={{ pointerEvents: "none", userSelect: "none" }}>
+                        {line}
+                      </text>
+                    ))
+                  )}
+
+                  {/* Flash card badge */}
+                  {hasCards && !editingId && (
+                    <g transform={`translate(${w - 8}, -8)`} onClick={e => { e.stopPropagation(); openStudy(n); }} style={{ cursor: "pointer" }}>
+                      <circle cx={0} cy={0} r={10} fill="#F5C842" stroke="rgba(12,11,24,0.6)" strokeWidth={1.5} />
+                      <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={7} fill="#1A1814" fontWeight={900}>{deckCount}</text>
+                    </g>
+                  )}
+
+                  {/* Add child button */}
+                  {isSel && !editingId && (
+                    <g transform={`translate(${w + 8}, ${h/2 - 11})`} onClick={e => { e.stopPropagation(); addChild(n.id); }} style={{ cursor: "pointer" }}>
+                      <circle cx={11} cy={11} r={11} fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5 / zoom} />
+                      <text x={11} y={11} textAnchor="middle" dominantBaseline="middle" fontSize={15} fill="#fff" fontWeight={700} style={{ pointerEvents: "none" }}>+</text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+
+        {/* ── Node Inspector Panel ── */}
+        {selectedNode && !studyNode && (
+          <div style={{ position: "absolute", top: 56, right: 16, width: 252, background: "rgba(10,9,22,0.97)", border: "1px solid rgba(255,255,255,0.09)", borderTop: `3px solid ${selectedNode.color}`, borderRadius: 14, padding: "18px 18px 20px", backdropFilter: "blur(18px)", zIndex: 80, animation: "bm-pop 0.2s ease both" }}
+            onClick={e => e.stopPropagation()}>
+
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 6 }}>Node</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 16, lineHeight: 1.3 }}>{selectedNode.label.replace("\n", " ")}</div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 16 }}>
+              <button onClick={() => startEditing(selectedNode.id, selectedNode.label)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.65)", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}>
+                ✎ Edit Label
+              </button>
+              <button onClick={() => addChild(selectedNode.id)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.65)", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}>
+                ⊕ Add Child Node
+              </button>
+            </div>
+
+            {/* Color picker */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 8 }}>Branch Color</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {BM_PALETTE.map(c => (
+                  <button key={c} onClick={() => updateNode(selectedNode.id, { color: c })}
+                    style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: `2.5px solid ${selectedNode.color === c ? "#fff" : "transparent"}`, cursor: "pointer", outline: selectedNode.color === c ? `2px solid ${c}` : "none", outlineOffset: 1.5, transition: "all 0.15s" }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Note */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 6 }}>Note</div>
+              <textarea value={selectedNode.note || ""} onChange={e => updateNode(selectedNode.id, { note: e.target.value })} placeholder="Add a note…"
+                style={{ width: "100%", minHeight: 58, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "8px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.65)", resize: "vertical", outline: "none", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55 }} />
+            </div>
+
+            {/* Linked Flash Decks */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 8 }}>Flash Card Decks</div>
+              {selectedNode.deckIds.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 8 }}>
+                  {selectedNode.deckIds.map(did => {
+                    const deck = FC_DECKS.find(d => d.id === did);
+                    if (!deck) return null;
+                    return (
+                      <div key={did} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", background: "rgba(255,255,255,0.04)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <div style={{ width: 7, height: 7, borderRadius: 2, background: deck.color, flexShrink: 0 }} />
+                        <div style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.65)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deck.title}</div>
+                        <button onClick={() => updateNode(selectedNode.id, { deckIds: selectedNode.deckIds.filter(i => i !== did) })}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "rgba(255,255,255,0.2)", padding: 0 }}>✕</button>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => openStudy(selectedNode)} style={{ padding: "8px", borderRadius: 8, border: "none", background: "#F5C842", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    📇 Study ({FC_DECKS.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0)} cards)
+                  </button>
+                </div>
+              )}
+              <button onClick={() => setShowDeckPicker(p => !p)} style={{ width: "100%", padding: "7px 0", borderRadius: 7, border: `1.5px dashed ${showDeckPicker ? "rgba(245,200,66,0.5)" : "rgba(255,255,255,0.13)"}`, background: showDeckPicker ? "rgba(245,200,66,0.06)" : "none", fontSize: 11, fontWeight: 600, cursor: "pointer", color: showDeckPicker ? "#F5C842" : "rgba(255,255,255,0.38)", transition: "all 0.15s" }}>
+                {showDeckPicker ? "✕ Close" : "+ Attach Flash Deck"}
+              </button>
+              {showDeckPicker && (
+                <div style={{ marginTop: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
+                  {FC_DECKS.map(deck => {
+                    const linked = selectedNode.deckIds.includes(deck.id);
+                    return (
+                      <div key={deck.id} onClick={() => updateNode(selectedNode.id, { deckIds: linked ? selectedNode.deckIds.filter(i => i !== deck.id) : [...selectedNode.deckIds, deck.id] })}
+                        style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 11px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.04)", background: linked ? "rgba(245,200,66,0.07)" : "transparent", transition: "background 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = linked ? "rgba(245,200,66,0.12)" : "rgba(255,255,255,0.04)"}
+                        onMouseLeave={e => e.currentTarget.style.background = linked ? "rgba(245,200,66,0.07)" : "transparent"}>
+                        <div style={{ width: 8, height: 8, borderRadius: 2, background: deck.color, flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: linked ? "#F5C842" : "rgba(255,255,255,0.65)" }}>{deck.title}</div>
+                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.23)", marginTop: 1 }}>{deck.cardCount} cards · {deck.mastery}% mastered</div>
+                        </div>
+                        <div style={{ fontSize: 13, color: linked ? "#F5C842" : "rgba(255,255,255,0.18)" }}>{linked ? "✓" : "+"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {selectedNode.id !== "root" && (
+              <button onClick={() => deleteNode(selectedNode.id)} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; e.currentTarget.style.background = "rgba(232,93,63,0.07)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(232,93,63,0.22)"; e.currentTarget.style.color = "rgba(232,93,63,0.55)"; e.currentTarget.style.background = "transparent"; }}>
+                🗑 Delete Node
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Bottom hint ── */}
+        {!selectedNode && !studyNode && (
+          <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(10,9,22,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 18px", backdropFilter: "blur(10px)", pointerEvents: "none" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Click node to select · Double-click to rename · Drag to move · Scroll to zoom · 📇 = flash cards</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Flash Card Study Drawer ── */}
+      {studyNode && (
+        <>
+          <div onClick={closeStudy} style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }} />
+          <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "min(580px, 94vw)", zIndex: 251, background: "#F7F6F2", borderRadius: "20px 20px 0 0", padding: "28px 30px 36px", boxShadow: "0 -24px 70px rgba(0,0,0,0.5)", animation: "bm-fade 0.28s ease both" }}>
+            <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", width: 34, height: 4, borderRadius: 2, background: "#D8D5CE" }} />
+
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 4 }}>
+                  Studying · <span style={{ color: "#1A1814" }}>{studyNode.label.replace("\n", " ")}</span>
+                </div>
+                {studyDecks.length > 1 && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                    {studyDecks.map((d, i) => (
+                      <button key={d.id} onClick={() => { setStudyDeckIdx(i); setStudyCardIdx(0); setStudyFlipped(false); }}
+                        style={{ padding: "4px 12px", borderRadius: 6, border: `1.5px solid ${studyDeckIdx === i ? d.color : "#ECEAE4"}`, background: studyDeckIdx === i ? d.color : "transparent", fontSize: 11, fontWeight: 700, cursor: "pointer", color: studyDeckIdx === i ? "#fff" : "#8C8880", transition: "all 0.15s" }}>
+                        {d.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button onClick={closeStudy} style={{ background: "#ECEAE4", border: "none", borderRadius: 7, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", flexShrink: 0 }}>✕</button>
+            </div>
+
+            {activeSDeck && activeSCard ? (
+              <>
+                {/* Progress bar */}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#A8A59E", marginBottom: 6 }}>
+                  <span style={{ fontWeight: 700, color: activeSDeck.color }}>{activeSDeck.title}</span>
+                  <span>{studyCardIdx + 1} / {activeSDeck.cards.length}</span>
+                </div>
+                <div style={{ height: 3, background: "#ECEAE4", borderRadius: 2, marginBottom: 20, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${((studyCardIdx + 1) / activeSDeck.cards.length) * 100}%`, background: activeSDeck.color, borderRadius: 2, transition: "width 0.35s" }} />
+                </div>
+
+                {/* Flip card */}
+                <div onClick={() => setStudyFlipped(f => !f)}
+                  style={{ background: studyFlipped ? activeSDeck.color + "10" : "#fff", border: `2px solid ${studyFlipped ? activeSDeck.color : "#ECEAE4"}`, borderRadius: 16, padding: "36px 30px", textAlign: "center", cursor: "pointer", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 18, transition: "all 0.22s", boxShadow: studyFlipped ? `0 4px 24px ${activeSDeck.color}22` : "0 2px 12px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: studyFlipped ? activeSDeck.color : "#A8A59E", marginBottom: 14, transition: "color 0.22s" }}>
+                    {studyFlipped ? "Definition" : "Term · click to reveal"}
+                  </div>
+                  <div style={{ fontFamily: studyFlipped ? "'DM Sans', sans-serif" : "'Playfair Display', serif", fontSize: studyFlipped ? 16 : 24, fontWeight: studyFlipped ? 400 : 800, color: "#1A1814", lineHeight: 1.5 }}>
+                    {studyFlipped ? activeSCard.definition : activeSCard.term}
+                  </div>
+                </div>
+
+                {/* Nav */}
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={prevCard} disabled={studyCardIdx === 0 && studyDeckIdx === 0}
+                    style={{ flex: 1, padding: "11px 0", borderRadius: 9, border: "1.5px solid #ECEAE4", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752", opacity: studyCardIdx === 0 && studyDeckIdx === 0 ? 0.3 : 1, transition: "all 0.15s" }}>← Prev</button>
+                  <button onClick={nextCard} disabled={studyCardIdx >= activeSDeck.cards.length - 1 && studyDeckIdx >= studyDecks.length - 1}
+                    style={{ flex: 2, padding: "11px 0", borderRadius: 9, border: "none", background: activeSDeck.color, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#fff", opacity: studyCardIdx >= activeSDeck.cards.length - 1 && studyDeckIdx >= studyDecks.length - 1 ? 0.4 : 1, transition: "all 0.15s" }}>Next →</button>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: "center", padding: "32px 0", color: "#A8A59E", fontSize: 14 }}>No flash card decks linked to this node.<br /><span style={{ fontSize: 12 }}>Select the node and click "+ Attach Flash Deck"</span></div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── BrainMapApp — top-level router (home | maps | canvas) ─────────────────────
+function BrainMapApp({ onBack, user, openAuth, onLogout }) {
+  const [view,        setView]       = useState("home");  // home | maps | canvas
+  const [maps,        setMaps]       = useState(BM_INITIAL_MAPS);
+  const [activeMap,   setActiveMap]  = useState(null);
+  const [sidebarOpen, setSidebarOpen]= useState(false);
+  const [showNewMap,  setShowNewMap] = useState(false);
+  const [newTitle,    setNewTitle]   = useState("");
+
+  const openMap  = (map) => { setActiveMap(map); setView("canvas"); };
+  const createMap = () => {
+    if (!newTitle.trim()) return;
+    const color = BM_PALETTE[maps.length % BM_PALETTE.length];
+    const map = {
+      id: `map${Date.now()}`, title: newTitle, color, createdAt: new Date(),
+      nodes: [{ id: "root", label: newTitle.split(" ").slice(0, 3).join("\n"), x: 0, y: 0, color, parentId: null, deckIds: [], note: "" }],
+    };
+    setMaps(ms => [...ms, map]);
+    setActiveMap(map);
+    setNewTitle(""); setShowNewMap(false);
+    setView("canvas");
+  };
+  const onNodesChange = (nodes, mapTitle) => {
+    setMaps(ms => ms.map(m => m.id === activeMap?.id ? { ...m, nodes, title: mapTitle } : m));
+    setActiveMap(am => am ? { ...am, nodes, title: mapTitle } : am);
+  };
+
+  if (view === "canvas" && activeMap) {
+    return (
+      <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0C0B18", minHeight: "100vh" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <style>{`* { box-sizing: border-box; } @keyframes bm-pop { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } } @keyframes bm-fade { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`}</style>
+        {/* Nav */}
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 200, height: 56, background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", paddingLeft: 16, paddingRight: 20, gap: 12, backdropFilter: "blur(10px)" }}>
+          <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, width: 34, height: 34, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <div style={{ width: 13, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
+            <div style={{ width: 9,  height: 1.5, background: "rgba(255,255,255,0.35)", borderRadius: 1 }} />
+            <div style={{ width: 13, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
+          </button>
+          <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "5px 12px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Galaxy</button>
+          <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3, gap: 2 }}>
+            {[["home","🏠 Home"],["maps","📂 Maps"]].map(([v,label]) => (
+              <button key={v} onClick={() => setView(v)} style={{ padding: "4px 12px", borderRadius: 6, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer", background: "transparent", color: "rgba(255,255,255,0.35)" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"}>{label}</button>
+            ))}
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            {user ? (
+              <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer" }}
+                onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
+            ) : (
+              <>
+                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "5px 12px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>Log In</button>
+                <button onClick={() => openAuth("signup")} style={{ background: "#F0A8C0", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>Sign Up</button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 150, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />}
+        <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 268, zIndex: 151, background: "linear-gradient(160deg, rgba(12,10,28,0.99) 0%, rgba(6,4,18,0.99) 100%)", borderRight: "1px solid rgba(255,255,255,0.06)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It Galaxy</div>
+            </div>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          </div>
+          {/* User */}
+          <div style={{ padding: "14px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#fff" }}>{user.avatar}</div>
+                <div><div style={{ fontSize: 13, fontWeight: 700, color: "#F7F6F2" }}>{user.name}</div><div style={{ fontSize: 10, color: "#F0A8C0", marginTop: 1 }}>● Active</div></div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 7 }}>
+                <button onClick={() => { openAuth("login"); setSidebarOpen(false); }} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: "1.5px solid rgba(255,255,255,0.13)", background: "transparent", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#F7F6F2" }}>Log In</button>
+                <button onClick={() => { openAuth("signup"); setSidebarOpen(false); }} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: "none", background: "#F0A8C0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>Sign Up</button>
+              </div>
+            )}
+          </div>
+          {/* Maps */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "10px 10px" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", padding: "0 4px", marginBottom: 8 }}>Your Maps</div>
+            {maps.map(m => (
+              <div key={m.id} onClick={() => { openMap(m); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 9px", borderRadius: 8, cursor: "pointer", marginBottom: 3, background: m.id === activeMap?.id ? "rgba(255,255,255,0.07)" : "transparent", transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = m.id === activeMap?.id ? "rgba(255,255,255,0.07)" : "transparent"}>
+                <div style={{ width: 9, height: 9, borderRadius: "50%", background: m.color, flexShrink: 0 }} />
+                <div><div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>{m.title}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", marginTop: 1 }}>{m.nodes.length} nodes</div></div>
+              </div>
+            ))}
+            <button onClick={() => { setShowNewMap(true); setSidebarOpen(false); }} style={{ width: "100%", marginTop: 6, padding: "8px 0", borderRadius: 8, border: "1.5px dashed rgba(255,255,255,0.1)", background: "none", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.3)", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(240,168,192,0.45)"; e.currentTarget.style.color = "#F0A8C0"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}>
+              + New Map
+            </button>
+          </div>
+          {/* FC Decks panel */}
+          <div style={{ padding: "12px 14px 20px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 10 }}>Flash Card Decks</div>
+            {FC_DECKS.map(d => (
+              <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{d.title}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>{d.cardCount} cards · {d.mastery}% mastered</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 10, lineHeight: 1.55 }}>Select a node on the map, then click "+ Attach Flash Deck" to link it.</div>
+          </div>
+        </div>
+
+        <BrainMapCanvas map={activeMap} onNodesChange={onNodesChange} onBack={() => setView("maps")} />
+      </div>
+    );
+  }
+
+  // ── Home & Maps views (light bg) ──
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0C0B18", minHeight: "100vh", color: "#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`* { box-sizing: border-box; } ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; } @keyframes bm-pop { from { opacity:0; transform:scale(0.9) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } } @keyframes bm-fade { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } } .bm-card { transition: all 0.22s !important; } .bm-card:hover { transform: translateY(-4px) !important; background: rgba(255,255,255,0.07) !important; }`}</style>
+
+      {/* Nav */}
+      <nav style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Galaxy</button>
+            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: "#F0A8C0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✺</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
+            {[["home","Home"],["maps","All Maps"]].map(([v,label]) => (
+              <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.13)" : "transparent", color: view === v ? "#F7F6F2" : "rgba(255,255,255,0.4)", transition: "all 0.18s" }}>{label}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#F7F6F2" }}>{user.name}</span>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer" }}>{user.avatar}</div>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "7px 14px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>Log In</button>
+                <button onClick={() => openAuth("signup")} style={{ background: "#F0A8C0", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>Sign Up Free</button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* ── HOME view ── */}
+      {view === "home" && (
+        <div>
+          {/* Hero */}
+          <div style={{ padding: "80px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(240,168,192,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(240,168,192,0.1)", border: "1px solid rgba(240,168,192,0.22)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#F0A8C0", marginBottom: 24 }}>
+              ✺ Visual Mind Mapping
+            </div>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, color: "#F7F6F2", lineHeight: 1.08, marginBottom: 20, letterSpacing: -1.5 }}>
+              <span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</h1>
+            <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 40px" }}>
+              Build beautiful mind maps and attach flash card decks directly to topics — so studying and understanding happen in the same place.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => setShowNewMap(true)} style={{ background: "#F0A8C0", border: "none", borderRadius: 9, padding: "14px 30px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#1A1814", transition: "all 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                + Create New Map
+              </button>
+              <button onClick={() => setView("maps")} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 9, padding: "14px 30px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "rgba(247,246,242,0.7)" }}>Browse My Maps</button>
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+              {[
+                [maps.length.toString(), "Brain Maps"],
+                [maps.reduce((a, m) => a + m.nodes.length, 0).toString(), "Total Nodes"],
+                [FC_DECKS.length.toString(), "Linked Decks"],
+                [maps.reduce((a, m) => a + m.nodes.filter(n => n.deckIds?.length > 0).length, 0).toString(), "Nodes with Cards"],
+              ].map(([val, lbl], i) => (
+                <div key={lbl} style={{ padding: "22px 0", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#F0A8C0" }}>{val}</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textTransform: "uppercase", marginTop: 4 }}>{lbl}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent maps */}
+          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Continue Mapping</div>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#F7F6F2", margin: 0 }}>Your Maps</h2>
+              </div>
+              <button onClick={() => setView("maps")} style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#F0A8C0", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>View all →</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              {maps.map(m => (
+                <div key={m.id} className="bm-card" onClick={() => openMap(m)}
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {m.nodes.filter(n => n.parentId === "root").slice(0, 5).map(n => (
+                      <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {/* New map card */}
+              <div onClick={() => setShowNewMap(true)} className="bm-card"
+                style={{ background: "transparent", border: "1.5px dashed rgba(255,255,255,0.12)", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
+                <div style={{ fontSize: 28, opacity: 0.35 }}>+</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>New Brain Map</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "60px 24px" }}>
+            <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#F7F6F2", textAlign: "center", marginBottom: 40 }}>Built for deep understanding</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                {[
+                  { emoji: "🧠", title: "Infinite Canvas",       desc: "Pan and zoom freely across an infinite workspace. Your map grows as your ideas do." },
+                  { emoji: "🎨", title: "Color Branches",        desc: "12 branch colors to organize topics visually. Change any node instantly from the panel." },
+                  { emoji: "📇", title: "Flash Card Integration",desc: "Attach any flash card deck to any node. Study directly from the map with a single click." },
+                  { emoji: "📝", title: "Node Notes",            desc: "Add context notes to any node — definitions, reminders, or references." },
+                  { emoji: "🔗", title: "Unlimited Connections",  desc: "Build deep hierarchies with unlimited child nodes off any parent branch." },
+                  { emoji: "📂", title: "Multiple Maps",         desc: "Create separate maps for every subject, chapter, or project and switch between them instantly." },
+                ].map(f => (
+                  <div key={f.title} style={{ background: "rgba(255,255,255,0.03)", border: "1.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "20px 20px" }}>
+                    <div style={{ fontSize: 24, marginBottom: 10 }}>{f.emoji}</div>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", lineHeight: 1.6 }}>{f.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MAPS view ── */}
+      {view === "maps" && (
+        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Your Workspace</div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#F7F6F2", margin: 0 }}>All Maps</h2>
+            </div>
+            <button onClick={() => setShowNewMap(true)} style={{ background: "#F0A8C0", border: "none", borderRadius: 9, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>+ New Map</button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {maps.map(m => (
+              <div key={m.id} className="bm-card" onClick={() => openMap(m)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
+                    <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div onClick={() => setShowNewMap(true)} className="bm-card"
+              style={{ background: "transparent", border: "1.5px dashed rgba(255,255,255,0.12)", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
+              <div style={{ fontSize: 28, opacity: 0.35 }}>+</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Create New Map</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── New map modal ── */}
+      {showNewMap && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)" }} onClick={() => setShowNewMap(false)}>
+          <div style={{ background: "rgba(14,12,28,0.99)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18, padding: "40px 38px 34px", width: 420, animation: "bm-pop 0.22s ease both" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 32, marginBottom: 16 }}>✺</div>
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#F7F6F2", marginBottom: 8 }}>New Brain Map</h3>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 26 }}>Give your map a topic to start branching from.</p>
+            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && createMap()} placeholder="e.g. Real Estate Chapter 4"
+              style={{ width: "100%", padding: "13px 15px", border: "1.5px solid rgba(255,255,255,0.14)", borderRadius: 9, fontSize: 15, fontWeight: 600, color: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "rgba(255,255,255,0.05)", marginBottom: 20, transition: "border-color 0.18s" }}
+              onFocus={e => e.target.style.borderColor = "#F0A8C0"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.14)"} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowNewMap(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>Cancel</button>
+              <button onClick={createMap} disabled={!newTitle.trim()} style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: newTitle.trim() ? "#F0A8C0" : "rgba(255,255,255,0.07)", fontSize: 13, fontWeight: 700, cursor: newTitle.trim() ? "pointer" : "default", color: newTitle.trim() ? "#1A1814" : "rgba(255,255,255,0.2)", transition: "all 0.18s" }}>Create Map →</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Text Simplifier App ─────────────────────────────────────────────────────
+const READING_LEVELS = [
+  { id: "kid",      label: "Kid",       emoji: "🧒", desc: "Age 8–10 · Simple words, short sentences" },
+  { id: "teen",     label: "Teen",      emoji: "🧑", desc: "Age 13–15 · Conversational and clear" },
+  { id: "adult",    label: "Adult",     emoji: "🧑‍💼", desc: "Standard reading level · Plain language" },
+  { id: "student",  label: "Student",   emoji: "🎓", desc: "College-ready · Concise and precise" },
+];
+
+const TS_TOOLS = [
+  { id: "simplify",  label: "Simplify",   emoji: "✨", desc: "Make it easier to read" },
+  { id: "explain",   label: "Explain",    emoji: "💡", desc: "Break it down step by step" },
+  { id: "summarize", label: "Summarize",  emoji: "📝", desc: "Key points, fast" },
+  { id: "define",    label: "Key Terms",  emoji: "📖", desc: "Glossary of hard words" },
+];
+
+const TS_MODES = [
+  { id: "standard",  label: "Standard",      emoji: "📄", desc: "Default output" },
+  { id: "dyslexia",  label: "Dyslexia",      emoji: "🔤", desc: "Wider spacing, serif-free" },
+  { id: "adhd",      label: "ADHD Mode",     emoji: "⚡", desc: "Chunked, bullets, highlights" },
+  { id: "audio",     label: "Audio",         emoji: "🔊", desc: "Read it aloud" },
+];
+
+const YT_DETAIL_LEVELS = [
+  {
+    id: "overview",
+    icon: "🎯",
+    label: "Main Topics",
+    sublabel: "Important info only",
+    desc: "The key topics, core arguments, and most important takeaways — fast and clean. Perfect for deciding if you need to watch the full video.",
+    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a concise overview. Please create a realistic, well-structured response that represents what a typical educational/informative YouTube video about the apparent topic might cover. Format your response as:\n\n**🎯 What This Video Is About**\n[2-3 sentence overview of the likely topic and purpose]\n\n**📌 Main Topics Covered**\n[4-6 bullet points with the key topics]\n\n**💡 Most Important Takeaways**\n[3-4 bullet points with the core insights]\n\nNote: Clarify at the top that this is a simulated summary preview — actual transcript analysis requires backend integration. Keep the response helpful and realistic for the apparent video topic.`,
+  },
+  {
+    id: "detailed",
+    icon: "📋",
+    label: "More Detail",
+    sublabel: "Full topic coverage",
+    desc: "Everything the video covers, explained clearly. Each topic broken down so you understand the content without needing to watch the full video.",
+    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a detailed summary. Please create a comprehensive, well-structured response representing what a typical video on this topic would cover. Format your response as:\n\n**📹 Video Overview**\n[3-4 sentence description]\n\n**📚 Topics Covered In Detail**\n\n[For each of 4-6 major topics, use this format:]\n### [Topic Name]\n[2-3 sentences explaining this topic as it would appear in the video]\n\n**🔑 Key Points to Remember**\n[5-7 bullet points]\n\n**❓ Questions This Video Answers**\n[3-4 questions the video addresses]\n\nNote: Clarify at the top this is a simulated detailed preview — real transcript analysis requires backend integration.`,
+  },
+  {
+    id: "breakdown",
+    icon: "📖",
+    label: "Full Breakdown",
+    sublabel: "Everything, organized",
+    desc: "A complete, organized breakdown of everything talked about — structured like study notes. Chapters, concepts, examples, and conclusions all laid out clearly.",
+    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a complete structured breakdown. Please create a thorough, organized response like detailed study notes for what a video on this topic would cover. Format as:\n\n**📹 Video Summary**\n[Overview paragraph]\n\n**⏱ Content Structure (Estimated)**\n[List 5-7 sections with time estimates like "0:00 – 2:30 · Introduction"]\n\n**📖 Complete Breakdown**\n\n[For each section:]\n### Section [#]: [Section Title] (~timestamp)\n**What's covered:** [2-3 sentences]\n**Key concepts:** [bullet points]\n**Important details:** [specific points]\n\n**✅ Summary & Conclusions**\n[What the video concludes or recommends]\n\n**🎓 Study Notes Version**\n[5-8 bullet points formatted as study notes]\n\nNote: Clarify at the top this is a simulated breakdown — real transcript analysis requires backend integration.`,
+  },
+];
+
+function getYoutubeId(url) {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]{11})/);
+  return match ? match[1] : null;
+}
+
+function TextSimplifierApp({ onBack, user, openAuth }) {
+  const [inputMode, setInputMode]     = useState("text");   // text | youtube
+  const [inputText, setInputText]     = useState("");
+  const [ytUrl, setYtUrl]             = useState("");
+  const [ytDetailLevel, setYtDetailLevel] = useState("overview");
+  const [ytLoadStep, setYtLoadStep]   = useState(0); // 0=idle, 1=fetching, 2=analyzing, 3=generating, 4=done
+  const [outputText, setOutputText]   = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [activeTool, setActiveTool]   = useState("simplify");
+  const [level, setLevel]             = useState("adult");
+  const [mode, setMode]               = useState("standard");
+  const [history, setHistory]         = useState([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [speaking, setSpeaking]       = useState(false);
+  const [copied, setCopied]           = useState(false);
+  const [error, setError]             = useState("");
+  const [ytError, setYtError]         = useState("");
+  const wordCount = inputText.trim().split(/\s+/).filter(Boolean).length;
+  const outputRef = useRef(null);
+
+  const ytId = getYoutubeId(ytUrl);
+  const isValidYt = !!ytId;
+
+  const buildPrompt = () => {
+    const levelLabel = READING_LEVELS.find(l => l.id === level)?.label;
+    if (activeTool === "simplify")  return `Rewrite the following text so it is clear and easy to understand at a "${levelLabel}" reading level. Use plain language. Remove jargon. Keep the meaning exactly the same. Only return the rewritten text with no introduction or explanation.\n\nText:\n${inputText}`;
+    if (activeTool === "explain")   return `Explain the following text at a "${levelLabel}" reading level. Break it down step by step in a way that is very easy to follow. Use simple language. Only return the explanation with no preamble.\n\nText:\n${inputText}`;
+    if (activeTool === "summarize") return `Summarize the following text at a "${levelLabel}" reading level. Pull out only the most important points. Be concise. Return only the summary with no introduction.\n\nText:\n${inputText}`;
+    if (activeTool === "define")    return `Identify the difficult or technical words and phrases in the text below. For each one, provide a simple plain-language definition written at a "${levelLabel}" reading level. Format as a clean list: **Word**: definition. Only return the glossary, no intro.\n\nText:\n${inputText}`;
+  };
+
+  const handleSimplify = async () => {
+    if (!inputText.trim()) return;
+    setLoading(true); setError(""); setOutputText("");
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: buildPrompt() }],
+        }),
+      });
+      const data = await res.json();
+      const result = data.content?.find(b => b.type === "text")?.text || "";
+      setOutputText(result);
+      setHistory(h => [{ tool: activeTool, level, input: inputText.slice(0, 80) + (inputText.length > 80 ? "…" : ""), output: result, ts: new Date(), type: "text" }, ...h.slice(0, 9)]);
+    } catch (e) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleYoutubeProcess = async () => {
+    if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
+    setYtError(""); setError(""); setOutputText(""); setLoading(true);
+
+    // Animated multi-step loading
+    setYtLoadStep(1);
+    await new Promise(r => setTimeout(r, 1100));
+    setYtLoadStep(2);
+    await new Promise(r => setTimeout(r, 1000));
+    setYtLoadStep(3);
+
+    const cfg = YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel);
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1500,
+          messages: [{ role: "user", content: cfg.prompt("", ytUrl) }],
+        }),
+      });
+      const data = await res.json();
+      const result = data.content?.find(b => b.type === "text")?.text || "";
+      setOutputText(result);
+      setHistory(h => [{ tool: cfg.label, level: "video", input: ytUrl, output: result, ts: new Date(), type: "youtube" }, ...h.slice(0, 9)]);
+    } catch (e) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+      setYtLoadStep(4);
+      setTimeout(() => setYtLoadStep(0), 500);
+    }
+  };
+
+  const handleSpeak = () => {
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
+    const utt = new SpeechSynthesisUtterance(outputText);
+    utt.rate = 0.9;
+    utt.onend = () => setSpeaking(false);
+    window.speechSynthesis.speak(utt);
+    setSpeaking(true);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(outputText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  // Markdown-lite renderer for YouTube output
+  const renderMarkdown = (text) => {
+    const lines = text.split("\n");
+    return lines.map((line, i) => {
+      if (line.startsWith("### ")) return <h4 key={i} style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814", margin: "18px 0 6px", borderLeft: "3px solid #6ED9B8", paddingLeft: 10 }}>{line.replace("### ", "")}</h4>;
+      if (line.startsWith("## ") || line.startsWith("**") && line.endsWith("**")) {
+        const clean = line.replace(/\*\*/g, "").replace("## ", "");
+        return <div key={i} style={{ fontSize: 13, fontWeight: 800, color: "#2BAE7E", letterSpacing: 1, textTransform: "uppercase", marginTop: 22, marginBottom: 8 }}>{clean}</div>;
+      }
+      if (line.startsWith("- ") || line.startsWith("• ")) return (
+        <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 7 }}>
+          <span style={{ color: "#6ED9B8", fontSize: 14, flexShrink: 0, marginTop: 2 }}>◆</span>
+          <span style={{ fontSize: 14, color: "#3A3830", lineHeight: 1.65 }}>{line.replace(/^[-•]\s/, "")}</span>
+        </div>
+      );
+      if (line.trim() === "") return <div key={i} style={{ height: 6 }} />;
+      // Bold inline
+      const parts = line.split(/(\*\*[^*]+\*\*)/g);
+      return (
+        <p key={i} style={{ fontSize: 15, color: "#3A3830", lineHeight: 1.8, margin: "4px 0" }}>
+          {parts.map((p, j) => p.startsWith("**") ? <strong key={j} style={{ color: "#1A1814" }}>{p.replace(/\*\*/g, "")}</strong> : p)}
+        </p>
+      );
+    });
+  };
+
+  // Output formatting for accessibility modes
+  const renderOutput = () => {
+    if (!outputText) return null;
+    if (inputMode === "youtube") return <div style={{ lineHeight: 1.8 }}>{renderMarkdown(outputText)}</div>;
+    if (mode === "adhd") {
+      const sentences = outputText.split(/(?<=[.!?])\s+/);
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {sentences.map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 16px", borderRadius: 10, background: i % 2 === 0 ? "#F0FDF8" : "#fff", border: "1px solid #E0F4ED" }}>
+              <span style={{ color: "#2BAE7E", fontSize: 18, lineHeight: 1.4, flexShrink: 0 }}>→</span>
+              <span style={{ fontSize: 16, lineHeight: 1.7, color: "#1A1814" }}>{s}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const fontStyle = {
+      standard: { fontFamily: "'DM Sans', sans-serif", fontSize: 17, lineHeight: 1.8, letterSpacing: 0 },
+      dyslexia: { fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 2.2, letterSpacing: "0.05em", wordSpacing: "0.2em" },
+      audio:    { fontFamily: "'DM Sans', sans-serif", fontSize: 17, lineHeight: 1.9, letterSpacing: 0 },
+    }[mode] || {};
+    if (activeTool === "define") {
+      const lines = outputText.split("\n").filter(Boolean);
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {lines.map((line, i) => {
+            const match = line.match(/\*\*(.+?)\*\*:?\s*(.*)/);
+            if (match) return (
+              <div key={i} style={{ padding: "14px 18px", background: "#F7F6F2", borderRadius: 10, borderLeft: "3px solid #6ED9B8" }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#1A1814", marginBottom: 4 }}>{match[1]}</div>
+                <div style={{ fontSize: 14, color: "#5A5752", lineHeight: 1.6 }}>{match[2]}</div>
+              </div>
+            );
+            return <div key={i} style={{ fontSize: 14, color: "#8C8880", paddingLeft: 4 }}>{line}</div>;
+          })}
+        </div>
+      );
+    }
+    return <p style={{ margin: 0, color: "#1A1814", ...fontStyle }}>{outputText}</p>;
+  };
+
+  const accentColor = "#2BAE7E";
+  const accentLight = "#6ED9B8";
+
+  const YT_LOAD_STEPS = [
+    { icon: "🔗", label: "Connecting to YouTube…" },
+    { icon: "📝", label: "Fetching video transcript…" },
+    { icon: "🧠", label: "AI analyzing content…" },
+    { icon: "✍️", label: "Generating your summary…" },
+  ];
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F2", minHeight: "100vh", color: "#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #D8D5CE; border-radius: 3px; }
+        @keyframes ts-spin { to { transform: rotate(360deg); } }
+        @keyframes ts-fade { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes ts-step { 0%{opacity:0;transform:translateX(-8px)} 100%{opacity:1;transform:translateX(0)} }
+        @keyframes ts-pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+        .ts-fade { animation: ts-fade 0.4s ease both; }
+        .ts-chip:hover { border-color: #1A1814 !important; color: #1A1814 !important; }
+        .yt-detail:hover { border-color: #2BAE7E !important; transform: translateY(-2px); }
+      `}</style>
+
+      {/* ── Nav ── */}
+      <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={onBack} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "#1A1814"} onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>← Galaxy</button>
+            <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>≋</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Ace It</span> Text Simplifier</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={() => setHistoryOpen(o => !o)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}>
+              🕐 History {history.length > 0 && `(${history.length})`}
+            </button>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</span>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, #1A1814, ${accentColor})`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#F7F6F2" }}>{user.avatar}</div>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 6, padding: "7px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", color: "#5A5752" }}>Log In</button>
+                <button onClick={() => openAuth("signup")} style={{ background: "#1A1814", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#F7F6F2" }}>Sign Up Free</button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Hero banner ── */}
+      <div style={{ background: "#1A1814", padding: "52px 24px 44px", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(110,217,184,0.12)", border: "1px solid rgba(110,217,184,0.25)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: accentLight, marginBottom: 20 }}>
+          ≋ Your Complex Text Translator
+        </div>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(36px, 5vw, 58px)", fontWeight: 900, color: "#F7F6F2", lineHeight: 1.1, marginBottom: 16, letterSpacing: -1 }}>
+          Hard text, made{" "}
+          <em style={{ color: accentLight, fontStyle: "italic" }}>human.</em>
+        </h1>
+        <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(247,246,242,0.5)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 0" }}>
+          Paste complex text or drop a YouTube link — get a clear, organized version you can actually understand and use.
+        </p>
+      </div>
+
+      {/* ── Input Mode Toggle ── */}
+      <div style={{ background: "#1A1814", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "center", paddingBottom: 0 }}>
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: "12px 12px 0 0", padding: "4px 4px 0", gap: 2 }}>
+          {[
+            { id: "text",    icon: "📄", label: "Paste Text" },
+            { id: "youtube", icon: "▶️", label: "YouTube Video" },
+          ].map(m => (
+            <button key={m.id} onClick={() => { setInputMode(m.id); setOutputText(""); setError(""); setYtError(""); }}
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 28px", borderRadius: "8px 8px 0 0", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all 0.18s",
+                background: inputMode === m.id ? "#F7F6F2" : "transparent",
+                color: inputMode === m.id ? "#1A1814" : "rgba(247,246,242,0.45)",
+              }}>
+              <span style={{ fontSize: 15 }}>{m.icon}</span> {m.label}
+              {m.id === "youtube" && <span style={{ background: "#2BAE7E", color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>New</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main workspace ── */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
+
+        {/* ══ TEXT MODE ══ */}
+        {inputMode === "text" && (
+          <>
+            {/* Tool + Level selectors */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 28, alignItems: "flex-start" }}>
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>What should I do?</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {TS_TOOLS.map(t => (
+                    <button key={t.id} onClick={() => setActiveTool(t.id)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
+                      <span>{t.emoji}</span> {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Reading Level</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {READING_LEVELS.map(l => (
+                    <button key={l.id} onClick={() => setLevel(l.id)} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
+                      <span style={{ fontSize: 16 }}>{l.emoji}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: level === l.id ? "#F7F6F2" : "#5A5752" }}>{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Input / Output panels */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+              <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #ECEAE4", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div style={{ padding: "14px 18px", borderBottom: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E" }}>Input Text</span>
+                  {inputText && <button onClick={() => setInputText("")} style={{ background: "none", border: "none", fontSize: 11, color: "#A8A59E", cursor: "pointer", padding: 0 }}>Clear</button>}
+                </div>
+                <textarea value={inputText} onChange={e => setInputText(e.target.value)}
+                  placeholder="Paste your complex text here…&#10;&#10;Academic papers, legal documents, medical reports, technical manuals — anything confusing."
+                  style={{ flex: 1, padding: "18px 20px", fontSize: 15, lineHeight: 1.7, color: "#1A1814", border: "none", outline: "none", resize: "none", fontFamily: "'DM Sans', sans-serif", background: "transparent", minHeight: 280 }} />
+                <div style={{ padding: "12px 18px", background: "#FAFAF8", borderTop: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: wordCount > 0 ? "#5A5752" : "#C8C5BE", fontWeight: 500 }}>{wordCount} word{wordCount !== 1 ? "s" : ""}</span>
+                  <button onClick={handleSimplify} disabled={loading || !inputText.trim()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 22px", borderRadius: 8, border: "none", background: inputText.trim() ? accentColor : "#ECEAE4", color: inputText.trim() ? "#fff" : "#A8A59E", fontSize: 13, fontWeight: 700, cursor: inputText.trim() ? "pointer" : "default", transition: "all 0.2s" }}
+                    onMouseEnter={e => { if (inputText.trim() && !loading) e.currentTarget.style.opacity = "0.88"; }}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                    {loading ? (<><span style={{ width: 13, height: 13, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "ts-spin 0.7s linear infinite" }} /> Processing…</>) : (<>{TS_TOOLS.find(t => t.id === activeTool)?.emoji} {TS_TOOLS.find(t => t.id === activeTool)?.label}</>)}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: "#fff", borderRadius: 14, border: `1.5px solid ${outputText ? accentColor + "50" : "#ECEAE4"}`, overflow: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.3s" }}>
+                <div style={{ padding: "14px 18px", borderBottom: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: outputText ? accentColor : "#A8A59E" }}>
+                    {outputText ? `${TS_TOOLS.find(t => t.id === activeTool)?.label} · ${READING_LEVELS.find(l => l.id === level)?.label} level` : "Output"}
+                  </span>
+                  {outputText && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={handleCopy} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: copied ? accentColor : "#8C8880", transition: "all 0.15s" }}>{copied ? "✓ Copied" : "Copy"}</button>
+                      <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#ECEAE4"}`, borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880", transition: "all 0.15s" }}>{speaking ? "⏹ Stop" : "🔊 Read"}</button>
+                    </div>
+                  )}
+                </div>
+                <div ref={outputRef} style={{ flex: 1, padding: "18px 20px", minHeight: 280, overflowY: "auto" }}>
+                  {loading ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 16, opacity: 0.5 }}>
+                      <div style={{ width: 36, height: 36, border: `3px solid ${accentColor}30`, borderTopColor: accentColor, borderRadius: "50%", animation: "ts-spin 0.8s linear infinite" }} />
+                      <span style={{ fontSize: 13, color: "#8C8880" }}>Thinking…</span>
+                    </div>
+                  ) : outputText ? (
+                    <div className="ts-fade">{renderOutput()}</div>
+                  ) : error ? (
+                    <div style={{ color: "#E85D3F", fontSize: 14, padding: "20px 0" }}>{error}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, color: "#D8D5CE", textAlign: "center" }}>
+                      <span style={{ fontSize: 40 }}>≋</span>
+                      <span style={{ fontSize: 14 }}>Your simplified text will appear here</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Accessibility modes */}
+            {outputText && (
+              <div className="ts-fade" style={{ background: "#fff", borderRadius: 12, border: "1.5px solid #ECEAE4", padding: "18px 22px", marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 12 }}>Accessibility & Display Mode</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {TS_MODES.map(m => (
+                    <button key={m.id} onClick={() => { if (m.id === "audio") { handleSpeak(); return; } setMode(m.id); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${mode === m.id && m.id !== "audio" ? "#1A1814" : "#ECEAE4"}`, background: mode === m.id && m.id !== "audio" ? "#1A1814" : "#fff", fontSize: 13, fontWeight: mode === m.id && m.id !== "audio" ? 700 : 500, color: mode === m.id && m.id !== "audio" ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
+                      <span>{m.emoji}</span>
+                      <div style={{ textAlign: "left" }}>
+                        <div>{m.label}</div>
+                        <div style={{ fontSize: 10, fontWeight: 400, color: mode === m.id && m.id !== "audio" ? "rgba(247,246,242,0.5)" : "#A8A59E", lineHeight: 1.3 }}>{m.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══ YOUTUBE MODE ══ */}
+        {inputMode === "youtube" && (
+          <div className="ts-fade">
+            {/* URL input */}
+            <div style={{ background: "#fff", borderRadius: 16, border: "1.5px solid #ECEAE4", overflow: "hidden", marginBottom: 28, boxShadow: "0 2px 20px rgba(0,0,0,0.04)" }}>
+              <div style={{ padding: "18px 24px", borderBottom: "1px solid #F0EDE8", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 36, height: 36, background: "#FF0000", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ color: "#fff", fontSize: 14, fontWeight: 900 }}>▶</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1814" }}>YouTube Video Summarizer</div>
+                  <div style={{ fontSize: 12, color: "#8C8880" }}>Paste any YouTube link and choose how much detail you want</div>
+                </div>
+              </div>
+              <div style={{ padding: "22px 24px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>YouTube URL</div>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div style={{ flex: 1, position: "relative" }}>
+                    <input
+                      value={ytUrl}
+                      onChange={e => { setYtUrl(e.target.value); setYtError(""); setOutputText(""); }}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      style={{ width: "100%", padding: "13px 16px 13px 44px", border: `1.5px solid ${ytError ? "#E85D3F" : isValidYt ? accentColor : "#ECEAE4"}`, borderRadius: 10, fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", transition: "all 0.18s", boxSizing: "border-box" }}
+                      onFocus={e => { if (!ytError) e.target.style.borderColor = accentColor; }}
+                      onBlur={e => { if (!ytError && !isValidYt) e.target.style.borderColor = "#ECEAE4"; }}
+                    />
+                    <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔗</span>
+                    {isValidYt && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: accentColor, fontSize: 16 }}>✓</span>}
+                  </div>
+                  {ytUrl && <button onClick={() => { setYtUrl(""); setOutputText(""); setYtError(""); }} style={{ padding: "13px 16px", borderRadius: 10, border: "1px solid #ECEAE4", background: "#F7F6F2", fontSize: 12, color: "#8C8880", cursor: "pointer", whiteSpace: "nowrap" }}>Clear</button>}
+                </div>
+                {ytError && <div style={{ fontSize: 12, color: "#E85D3F", marginTop: 8 }}>⚠ {ytError}</div>}
+                {isValidYt && (
+                  <div className="ts-fade" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "10px 14px", background: "#F0FDF8", border: "1px solid #6ED9B844", borderRadius: 8 }}>
+                    <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: accentColor }}>✓ Valid YouTube video detected</div>
+                      <div style={{ fontSize: 11, color: "#6B6860" }}>Video ID: {ytId}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Detail Level selector */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 14 }}>How much do you want from this video?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                {YT_DETAIL_LEVELS.map(dl => (
+                  <div key={dl.id} className="yt-detail" onClick={() => setYtDetailLevel(dl.id)}
+                    style={{ background: "#fff", border: `2px solid ${ytDetailLevel === dl.id ? accentColor : "#ECEAE4"}`, borderRadius: 14, padding: "20px 20px", cursor: "pointer", transition: "all 0.2s", position: "relative", overflow: "hidden" }}>
+                    {ytDetailLevel === dl.id && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accentColor }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontSize: 24 }}>{dl.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: ytDetailLevel === dl.id ? "#1A1814" : "#3A3830" }}>{dl.label}</div>
+                        <div style={{ fontSize: 11, color: ytDetailLevel === dl.id ? accentColor : "#8C8880", fontWeight: 600 }}>{dl.sublabel}</div>
+                      </div>
+                      {ytDetailLevel === dl.id && <div style={{ marginLeft: "auto", width: 20, height: 20, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "#fff", fontSize: 10, fontWeight: 900 }}>✓</span></div>}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6B6860", lineHeight: 1.6 }}>{dl.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Process button */}
+            {ytLoadStep === 0 && (
+              <button onClick={handleYoutubeProcess} disabled={!isValidYt || loading}
+                style={{ width: "100%", padding: "16px", borderRadius: 12, border: "none", background: isValidYt ? `linear-gradient(135deg, ${accentColor}, #1BAE65)` : "#ECEAE4", color: isValidYt ? "#fff" : "#A8A59E", fontSize: 15, fontWeight: 800, cursor: isValidYt ? "pointer" : "default", transition: "all 0.2s", letterSpacing: 0.3, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "'Montserrat', sans-serif", boxShadow: isValidYt ? "0 4px 20px rgba(43,174,126,0.3)" : "none" }}
+                onMouseEnter={e => { if (isValidYt) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+                <span style={{ fontSize: 18 }}>▶</span>
+                Summarize This Video — {YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel)?.label}
+              </button>
+            )}
+
+            {/* Loading steps */}
+            {loading && ytLoadStep > 0 && (
+              <div className="ts-fade" style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 16, padding: "32px 28px", textAlign: "center", marginBottom: 0 }}>
+                <div style={{ width: 52, height: 52, border: `3px solid ${accentColor}20`, borderTopColor: accentColor, borderRadius: "50%", animation: "ts-spin 0.9s linear infinite", margin: "0 auto 20px" }} />
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>Processing Your Video…</div>
+                <div style={{ fontSize: 13, color: "#8C8880", marginBottom: 28 }}>Hang tight — we're fetching the transcript and analyzing it</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, margin: "0 auto" }}>
+                  {YT_LOAD_STEPS.map((step, i) => {
+                    const stepNum = i + 1;
+                    const done = ytLoadStep > stepNum;
+                    const active = ytLoadStep === stepNum;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: active ? "#F0FDF8" : done ? "#fff" : "#FAFAF8", border: `1.5px solid ${active ? accentColor : done ? "#6ED9B844" : "#ECEAE4"}`, animation: active ? "ts-step 0.3s ease both" : "none", opacity: done || active ? 1 : 0.4, transition: "all 0.4s" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: done ? accentColor : active ? `${accentColor}20` : "#F0EDE8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {done ? <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span> : active ? <span style={{ width: 12, height: 12, border: `2px solid ${accentColor}`, borderTopColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "ts-spin 0.6s linear infinite" }} /> : <span style={{ fontSize: 13 }}>{step.icon}</span>}
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? "#1A1814" : done ? "#6B6860" : "#A8A59E" }}>{step.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Output */}
+            {outputText && !loading && (
+              <div className="ts-fade" style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${accentColor}55`, overflow: "hidden", boxShadow: "0 4px 24px rgba(43,174,126,0.1)" }}>
+                <div style={{ padding: "16px 22px", borderBottom: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F0FDF8" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: accentColor, animation: "ts-pulse 2s infinite" }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: accentColor }}>
+                      {YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel)?.label} · Video Summary
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={handleCopy} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 5, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: copied ? accentColor : "#8C8880" }}>{copied ? "✓ Copied" : "Copy"}</button>
+                    <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#D8D5CE"}`, borderRadius: 5, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880" }}>{speaking ? "⏹ Stop" : "🔊 Read Aloud"}</button>
+                  </div>
+                </div>
+                <div style={{ padding: "28px 28px", maxHeight: 600, overflowY: "auto" }}>
+                  {renderOutput()}
+                </div>
+                {/* Re-run at different level */}
+                <div style={{ padding: "16px 22px", borderTop: "1px solid #F0EDE8", background: "#FAFAF8", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "#8C8880", fontWeight: 600 }}>Try a different detail level:</span>
+                  {YT_DETAIL_LEVELS.filter(d => d.id !== ytDetailLevel).map(dl => (
+                    <button key={dl.id} onClick={() => { setYtDetailLevel(dl.id); setTimeout(handleYoutubeProcess, 50); }}
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${accentColor}44`, background: "#fff", fontSize: 12, fontWeight: 700, color: accentColor, cursor: "pointer", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#F0FDF8"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                      {dl.icon} {dl.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {error && <div style={{ color: "#E85D3F", fontSize: 14, marginTop: 16, padding: "14px 18px", background: "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA" }}>⚠ {error}</div>}
+          </div>
+        )}
+
+        {/* ── Features strip ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginTop: 48 }}>
+          {[
+            { emoji: "▶️", title: "YouTube Summaries",   desc: "Paste any YouTube link. Get a clean summary of the full video in three detail levels." },
+            { emoji: "🎓", title: "Academic to Plain",   desc: "Translates dense scholarly language into clear, everyday English." },
+            { emoji: "⚖️", title: "Legal Language",      desc: "Turns contracts and legalese into something a human can actually parse." },
+            { emoji: "🩺", title: "Medical Reports",     desc: "Decodes clinical summaries and diagnoses into plain language." },
+            { emoji: "⚡", title: "ADHD Mode",           desc: "Breaks output into bite-sized bullets with visual anchors." },
+            { emoji: "🔊", title: "Audio Playback",      desc: "Have your simplified text or video summary read aloud at a comfortable pace." },
+          ].map(f => (
+            <div key={f.title} style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 12, padding: "20px 22px" }}>
+              <div style={{ fontSize: 24, marginBottom: 10 }}>{f.emoji}</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>{f.title}</div>
+              <div style={{ fontSize: 13, color: "#8C8880", lineHeight: 1.6 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── History drawer ── */}
+      {historyOpen && (
+        <>
+          <div onClick={() => setHistoryOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200 }} />
+          <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: 360, background: "#fff", zIndex: 201, borderLeft: "1px solid #ECEAE4", display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.08)" }}>
+            <div style={{ padding: "20px 22px 16px", borderBottom: "1px solid #ECEAE4", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, margin: 0 }}>Recent History</h3>
+              <button onClick={() => setHistoryOpen(false)} style={{ background: "#F7F6F2", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880" }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+              {history.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#A8A59E", fontSize: 13, marginTop: 40 }}>No history yet</div>
+              ) : history.map((h, i) => (
+                <div key={i} onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input.replace("…", "")); setActiveTool(h.tool); } setOutputText(h.output); setHistoryOpen(false); }}
+                  style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #ECEAE4", marginBottom: 10, cursor: "pointer", transition: "all 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = accentColor} onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {h.type === "youtube" && <span style={{ fontSize: 11, background: "#FF000015", color: "#CC0000", fontWeight: 700, padding: "1px 6px", borderRadius: 4 }}>▶ YT</span>}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: accentColor, textTransform: "uppercase", letterSpacing: 1 }}>{h.tool} · {h.level}</span>
+                    </div>
+                    <span style={{ fontSize: 10, color: "#A8A59E" }}>{h.ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.5, wordBreak: "break-all" }}>{h.input.length > 60 ? h.input.slice(0, 60) + "…" : h.input}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Avatar + Floating Assistant ─────────────────────────────────────────────
+const PA_COLOR = "#90C8F8";
+const PA_GLOW  = "#4898E8";
+const PA_DARK  = "#0A1628";
+
+const SKIN_TONES = ["#FDDBB4","#F5C9A0","#E8A87C","#C68642","#8D5524","#4A2912"];
+const HAIR_COLORS = ["#1A0A00","#3D2B1F","#6B3A2A","#A0522D","#C8A84B","#E8D5A3","#888","#FF6B6B"];
+const EYE_COLORS  = ["#634E37","#2C5F8A","#3A7A3A","#8B7355","#1A1A3A","#7A3A3A"];
+const HAIR_STYLES = [
+  { id:"none",   label:"Bald"    },
+  { id:"short",  label:"Short"   },
+  { id:"medium", label:"Medium"  },
+  { id:"long",   label:"Long"    },
+  { id:"curly",  label:"Curly"   },
+  { id:"afro",   label:"Afro"    },
+  { id:"braids", label:"Braids"  },
+];
+const ACCESSORIES = [
+  { id:"none",      label:"None"       },
+  { id:"glasses",   label:"Glasses"    },
+  { id:"sunglasses",label:"Shades"     },
+  { id:"headband",  label:"Headband"   },
+  { id:"cap",       label:"Cap"        },
+];
+
+// ── AvatarHead SVG renderer ───────────────────────────────────────────────────
+function AvatarHead({ avatar = {}, size = 48 }) {
+  const {
+    skinTone  = "#F5C9A0",
+    hairStyle = "short",
+    hairColor = "#3D2B1F",
+    eyeColor  = "#634E37",
+    accessory = "none",
+  } = avatar;
+  const shadow = skinTone === "#FDDBB4" ? "#E8A87C"
+               : skinTone === "#F5C9A0" ? "#D4926A"
+               : skinTone === "#E8A87C" ? "#B8703A"
+               : skinTone === "#C68642" ? "#8D5524"
+               : skinTone === "#8D5524" ? "#5A3010"
+               : "#2A1208";
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" style={{ display:"block" }}>
+      {/* Hair back layer (long/braids) */}
+      {hairStyle === "long"   && <rect x="10" y="22" width="7" height="26" rx="5" fill={hairColor} />}
+      {hairStyle === "long"   && <rect x="43" y="22" width="7" height="26" rx="5" fill={hairColor} />}
+      {hairStyle === "braids" && <rect x="9"  y="20" width="6" height="30" rx="4" fill={hairColor} opacity=".9"/>}
+      {hairStyle === "braids" && <rect x="45" y="20" width="6" height="30" rx="4" fill={hairColor} opacity=".9"/>}
+      {/* Neck */}
+      <rect x="24" y="47" width="12" height="11" rx="5" fill={skinTone} />
+      {/* Ears */}
+      <ellipse cx="10" cy="33" rx="4" ry="5" fill={skinTone} />
+      <ellipse cx="50" cy="33" rx="4" ry="5" fill={skinTone} />
+      <ellipse cx="10" cy="33" rx="2.5" ry="3.5" fill={shadow} opacity=".4" />
+      <ellipse cx="50" cy="33" rx="2.5" ry="3.5" fill={shadow} opacity=".4" />
+      {/* Head */}
+      <ellipse cx="30" cy="31" rx="20" ry="23" fill={skinTone} />
+      {/* Chin shadow */}
+      <ellipse cx="30" cy="51" rx="12" ry="3" fill={shadow} opacity=".18" />
+      {/* ── Hair styles ── */}
+      {hairStyle === "short"  && <ellipse cx="30" cy="12" rx="20" ry="11" fill={hairColor} />}
+      {hairStyle === "medium" && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
+      {hairStyle === "medium" && <rect x="9" y="18" width="6" height="14" rx="5" fill={hairColor} />}
+      {hairStyle === "medium" && <rect x="45" y="18" width="6" height="14" rx="5" fill={hairColor} />}
+      {hairStyle === "long"   && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
+      {hairStyle === "curly"  && <circle cx="30" cy="12" r="18" fill={hairColor} />}
+      {hairStyle === "curly"  && <circle cx="13" cy="22" r="8"  fill={hairColor} />}
+      {hairStyle === "curly"  && <circle cx="47" cy="22" r="8"  fill={hairColor} />}
+      {hairStyle === "afro"   && <circle cx="30" cy="16" r="22" fill={hairColor} />}
+      {hairStyle === "braids" && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
+      {hairStyle === "braids" && [16,22,28,34,40,46].map(x => (
+        <rect key={x} x={x-1} y="19" width="3" height="18" rx="2" fill={hairColor} opacity=".85" />
+      ))}
+      {/* Cap (accessory — drawn over hair) */}
+      {accessory === "cap" && <>
+        <rect x="8" y="15" width="44" height="11" rx="5" fill="#2C3E7A" />
+        <rect x="5" y="22" width="52" height="5"  rx="3" fill="#223066" />
+      </>}
+      {/* Headband */}
+      {accessory === "headband" && <rect x="9" y="18" width="42" height="7" rx="4" fill="#E85D8A" />}
+      {/* Eyebrows */}
+      <path d="M18 24 Q22 21.5 26 23.5" stroke={hairStyle==="none"?"#aaa":hairColor} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M34 23.5 Q38 21.5 42 24" stroke={hairStyle==="none"?"#aaa":hairColor} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      {/* Eyes */}
+      <ellipse cx="22" cy="30" rx="5" ry="4.5" fill="white" />
+      <ellipse cx="38" cy="30" rx="5" ry="4.5" fill="white" />
+      <circle  cx="23" cy="30" r="3"    fill={eyeColor} />
+      <circle  cx="39" cy="30" r="3"    fill={eyeColor} />
+      <circle  cx="23" cy="30" r="1.5"  fill="#111" />
+      <circle  cx="39" cy="30" r="1.5"  fill="#111" />
+      <circle  cx="23.7" cy="28.8" r=".8" fill="white" />
+      <circle  cx="39.7" cy="28.8" r=".8" fill="white" />
+      {/* Glasses */}
+      {accessory === "glasses"    && <>
+        <ellipse cx="22" cy="30" rx="7" ry="6"   fill="none" stroke="#3A3A3A" strokeWidth="1.5" />
+        <ellipse cx="38" cy="30" rx="7" ry="6"   fill="none" stroke="#3A3A3A" strokeWidth="1.5" />
+        <line x1="29" y1="30" x2="31" y2="30"    stroke="#3A3A3A" strokeWidth="1.5" />
+        <line x1="9"  y1="29" x2="15" y2="30"    stroke="#3A3A3A" strokeWidth="1.5" />
+        <line x1="45" y1="30" x2="51" y2="29"    stroke="#3A3A3A" strokeWidth="1.5" />
+      </>}
+      {accessory === "sunglasses" && <>
+        <ellipse cx="22" cy="30" rx="7" ry="5.5" fill="#1A1A1A" opacity=".85" />
+        <ellipse cx="38" cy="30" rx="7" ry="5.5" fill="#1A1A1A" opacity=".85" />
+        <line x1="29" y1="29.5" x2="31" y2="29.5" stroke="#555" strokeWidth="1.5" />
+        <line x1="9"  y1="29"   x2="15" y2="30"   stroke="#555" strokeWidth="1.5" />
+        <line x1="45" y1="30"   x2="51" y2="29"   stroke="#555" strokeWidth="1.5" />
+      </>}
+      {/* Nose */}
+      <path d="M29 36 Q27 40 30 42 Q33 40 31 36" stroke={shadow} strokeWidth="1" fill="none" strokeLinecap="round" />
+      {/* Mouth */}
+      <path d="M23 47 Q30 51.5 37 47" stroke="#C07060" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ── Floating AI Assistant Widget ──────────────────────────────────────────────
+function FloatingAssistant({ avatar, visible, user, onOpen }) {
+  const [expanded, setExpanded]  = useState(false);
+  const [pos, setPos]            = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [dragging, setDragging]  = useState(false);
+  const [messages, setMessages]  = useState([]);
+  const [input, setInput]        = useState("");
+  const [loading, setLoading]    = useState(false);
+  const dragRef  = useRef(null);
+  const endRef   = useRef(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX - pos.x;
+    const startY = e.clientY - pos.y;
+    setDragging(true);
+    const move = (mv) => {
+      setPos({ x: Math.max(0, Math.min(window.innerWidth-64, mv.clientX - startX)), y: Math.max(0, Math.min(window.innerHeight-64, mv.clientY - startY)) });
+    };
+    const up = () => { setDragging(false); window.removeEventListener("mousemove",move); window.removeEventListener("mouseup",up); };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup",  up);
+  };
+
+  const sendMessage = async (text) => {
+    const msg = text || input.trim();
+    if (!msg || loading) return;
+    setInput("");
+    const userMsg = { role:"user", content:msg };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, system:`You are the Ace It AI assistant — a friendly, smart study helper. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences max unless explaining a concept). Help with studying, flashcards, brain maps, simplifying text, planning, motivation — anything related to the Ace It platform or learning.`, messages: history.map(m=>({role:m.role,content:m.content})) }) });
+      const data = await res.json();
+      setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
+    } catch { setMessages(h => [...h, { role:"assistant", content:"Connection error. Please try again." }]); }
+    finally { setLoading(false); }
+  };
+
+  if (!visible) return null;
+
+  const btnSize = 56;
+  const hasAvatar = avatar && avatar.skinTone;
+
+  return (
+    <div style={{ position:"fixed", zIndex:9999, left:pos.x, top:pos.y, userSelect:"none" }}>
+      <style>{`@keyframes fa-pop{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}} @keyframes fa-bounce2{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}`}</style>
+
+      {/* Expanded panel */}
+      {expanded && (
+        <div style={{ position:"absolute", bottom: btnSize + 10, right: 0, width:320, background:"#fff", borderRadius:18, boxShadow:"0 16px 60px rgba(10,22,40,0.22), 0 0 0 1px rgba(72,152,232,0.12)", overflow:"hidden", animation:"fa-pop 0.22s ease both", display:"flex", flexDirection:"column" }}>
+          {/* Panel header */}
+          <div style={{ background:`linear-gradient(135deg, ${PA_DARK}, #1A3A6A)`, padding:"14px 16px", display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(255,255,255,0.1)", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+              {hasAvatar ? <AvatarHead avatar={avatar} size={34}/> : <span style={{fontSize:18}}>⊕</span>}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Ace It Assistant</div>
+              <div style={{ fontSize:10, color:`${PA_COLOR}cc`, fontWeight:600 }}>● Online · Always here</div>
+            </div>
+            <button onClick={() => onOpen()} style={{ background:"rgba(255,255,255,0.1)", border:"none", borderRadius:7, padding:"5px 10px", fontSize:11, color:"rgba(255,255,255,0.7)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Open Full ↗</button>
+            <button onClick={() => setExpanded(false)} style={{ background:"none", border:"none", fontSize:16, color:"rgba(255,255,255,0.4)", cursor:"pointer", lineHeight:1 }}>✕</button>
+          </div>
+
+          {/* Messages */}
+          <div style={{ height:260, overflowY:"auto", padding:"12px 14px", display:"flex", flexDirection:"column", gap:10, background:"#F9FCFF" }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign:"center", paddingTop:20 }}>
+                <div style={{ fontSize:26, marginBottom:8 }}>👋</div>
+                <div style={{ fontSize:13, fontWeight:700, color:"#0A1628", marginBottom:4 }}>Hi {user?.name?.split(" ")[0] || "there"}!</div>
+                <div style={{ fontSize:11, color:"#6A7888", lineHeight:1.6 }}>I can help you study, explain things, quiz you, or just answer questions. What do you need?</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:14 }}>
+                  {["Quiz me on my flashcards","Explain a concept","Help me focus","Build a study plan"].map(s => (
+                    <button key={s} onClick={() => sendMessage(s)} style={{ padding:"7px 10px", borderRadius:8, border:`1px solid #D8ECFF`, background:"#fff", fontSize:11, color:PA_GLOW, fontWeight:600, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {messages.map((m,i) => (
+              <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start", flexDirection: m.role==="user"?"row-reverse":"row" }}>
+                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, overflow:"hidden", background: m.role==="user" ? `linear-gradient(135deg,${PA_DARK},${PA_GLOW})` : `linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {m.role==="user" ? <span style={{fontSize:11,color:"#fff",fontWeight:800}}>{user?.avatar||"U"}</span> : (hasAvatar ? <AvatarHead avatar={avatar} size={26}/> : <span style={{fontSize:12}}>⊕</span>)}
+                </div>
+                <div style={{ maxWidth:"78%", padding:"8px 11px", borderRadius: m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px", background: m.role==="user"?`linear-gradient(135deg,${PA_GLOW},#3A80D8)`:"#fff", border: m.role==="user"?"none":"1px solid #E4EEF8", fontSize:12, lineHeight:1.65, color: m.role==="user"?"#fff":"#1A1814" }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                <div style={{ width:26, height:26, borderRadius:"50%", background:`linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  {hasAvatar ? <AvatarHead avatar={avatar} size={26}/> : <span style={{fontSize:12}}>⊕</span>}
+                </div>
+                <div style={{ padding:"10px 14px", borderRadius:"12px 12px 12px 3px", background:"#fff", border:"1px solid #E4EEF8", display:"flex", gap:5 }}>
+                  {[0,0.2,0.4].map((d,i) => <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:PA_COLOR, animation:`fa-bounce2 1.2s ${d}s infinite` }} />)}
+                </div>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{ padding:"10px 12px", borderTop:"1px solid #E4EEF8", background:"#fff", display:"flex", gap:8 }}>
+            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")sendMessage();}} placeholder="Ask me anything…"
+              style={{ flex:1, padding:"9px 12px", border:`1.5px solid ${input?PA_GLOW:"#D8ECFF"}`, borderRadius:10, fontSize:12, outline:"none", fontFamily:"'DM Sans',sans-serif", color:"#1A1814", background:"#F9FCFF", transition:"border-color 0.15s" }}
+              onFocus={e=>e.target.style.borderColor=PA_GLOW} onBlur={e=>{if(!input)e.target.style.borderColor="#D8ECFF";}} />
+            <button onClick={() => sendMessage()} disabled={!input.trim()||loading} style={{ width:36, height:36, borderRadius:9, border:"none", background:input.trim()&&!loading?`linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`:"#E4EEF8", cursor:input.trim()&&!loading?"pointer":"default", fontSize:14, color:input.trim()&&!loading?"#fff":"#A8B4C0", flexShrink:0 }}>↑</button>
+          </div>
+        </div>
+      )}
+
+      {/* Floating button */}
+      <div
+        onMouseDown={onMouseDown}
+        onClick={() => { if (!dragging) setExpanded(e => !e); }}
+        style={{ width:btnSize, height:btnSize, borderRadius:"50%", cursor:"grab", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow:`0 6px 28px ${PA_GLOW}55, 0 2px 8px rgba(0,0,0,0.2)`, background: hasAvatar ? "#fff" : `linear-gradient(135deg,${PA_DARK},${PA_GLOW})`, border:`3px solid ${expanded?PA_COLOR:"rgba(255,255,255,0.3)"}`, transition:"border-color 0.2s, box-shadow 0.2s", position:"relative" }}
+        title="Ace It Assistant"
+      >
+        {hasAvatar
+          ? <AvatarHead avatar={avatar} size={btnSize - 8} />
+          : <span style={{ fontSize:24, lineHeight:1 }}>⊕</span>
+        }
+        {/* Pulse ring when closed */}
+        {!expanded && <div style={{ position:"absolute", inset:-4, borderRadius:"50%", border:`2px solid ${PA_GLOW}`, animation:"fa-bounce2 2s infinite", opacity:0.4, pointerEvents:"none" }} />}
+      </div>
+    </div>
+  );
+}
+
+const PA_SUGGESTED = [
+  "Help me make a study plan for this week",
+  "Explain a concept I'm struggling with",
+  "Quiz me on what I've been studying",
+  "I'm feeling overwhelmed — what should I do?",
+  "What's the best way to memorize this?",
+  "Help me break down a big topic",
+];
+
+function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onLogout, avatar }) {
+  const [profileOpen, setProfileOpen] = useState(true);
+
+  const navItems = [
+    { icon: "⌂",  label: "Home",          v: "home"     },
+    { icon: "💬", label: "Chat",           v: "chat"     },
+    { icon: "📅", label: "Study Planner",  v: "planner"  },
+    { icon: "🎯", label: "Goals",          v: "goals"    },
+    { icon: "📊", label: "My Progress",    v: "progress" },
+    { icon: "🧑", label: "My Avatar",      v: "avatar"   },
+    { icon: "⚙",  label: "Preferences",   v: "prefs"    },
+  ];
+
+  const navItem = (icon, label, v) => {
+    const active = view === v;
+    return (
+      <button key={v} onClick={() => { setView(v); onClose(); }}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "9px 12px", borderRadius: 8, border: "none", background: active ? `${PA_COLOR}18` : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s", marginBottom: 2 }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F0F6FF"; }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}>
+        <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>{icon}</span>
+        <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? PA_GLOW : "#3A3830" }}>{label}</span>
+        {active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: PA_GLOW }} />}
+      </button>
+    );
+  };
+
+  return (
+    <>
+      {isOpen && <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(10,22,40,0.35)", backdropFilter: "blur(4px)" }} />}
+      <div style={{
+        position: "fixed", left: 0, top: 0, bottom: 0, width: 272,
+        background: "#fff", borderRight: "1px solid #E4EEF8",
+        display: "flex", flexDirection: "column", zIndex: 201,
+        transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+        boxShadow: isOpen ? "4px 0 32px rgba(10,22,40,0.10)" : "none",
+      }}>
+
+        {/* Header */}
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid #E4EEF8", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 15 }}>⊕</span>
+            </div>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Ace It Assistant</span>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#90C8F8"; e.currentTarget.style.color = PA_GLOW; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#E4EEF8"; e.currentTarget.style.color = "#8C8880"; }}>✕</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 20px" }}>
+
+          {/* Account */}
+          <div style={{ marginBottom: 6 }}>
+            <button onClick={() => setProfileOpen(o => !o)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 8px", background: "none", border: "none", cursor: "pointer", borderRadius: 6 }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F0F6FF"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E" }}>Account</span>
+              <span style={{ fontSize: 9, color: "#A8A59E", transform: profileOpen ? "rotate(180deg)" : "rotate(0)", display: "inline-block", transition: "transform 0.22s" }}>▾</span>
+            </button>
+            {profileOpen && (
+              <div style={{ margin: "4px 0 8px", padding: "14px", background: "#F4F8FF", borderRadius: 10, border: "1px solid #D8ECFF" }}>
+                {user ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: avatar?.skinTone ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 0 0 3px #fff, 0 0 0 4px #D8ECFF`, overflow:"hidden" }}>
+                        {avatar?.skinTone ? <AvatarHead avatar={avatar} size={42} /> : <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#fff" }}>{user.avatar}</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{user.name}</div>
+                        <div style={{ fontSize: 11, color: "#8C8880", marginTop: 1 }}>Free Plan</div>
+                      </div>
+                    </div>
+                    <button onClick={() => { onLogout(); onClose(); }} style={{ width: "100%", padding: "8px 0", borderRadius: 6, background: "transparent", border: "1px solid #D8ECFF", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.color = "#8C8880"; }}>Sign Out</button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#E4EEF8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}>👤</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814" }}>Not signed in</div>
+                        <div style={{ fontSize: 11, color: "#8C8880" }}>Sign in to save your chats</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => { openAuth("login"); onClose(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 6, border: "1px solid #D8ECFF", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#5A5752" }}>Log In</button>
+                      <button onClick={() => { openAuth("signup"); onClose(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 6, border: "none", background: PA_GLOW, fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#fff" }}>Sign Up</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Nav */}
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", padding: "6px 8px 8px" }}>Navigation</div>
+            {navItems.map(n => navItem(n.icon, n.label, n.v))}
+          </div>
+
+          {/* Back to Galaxy */}
+          <div style={{ marginTop: 8, paddingTop: 12, borderTop: "1px solid #E4EEF8" }}>
+            <button onClick={onBack} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F0F6FF"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <span style={{ fontSize: 13, color: "#A8A59E" }}>←</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "#8C8880" }}>Back to Galaxy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAvatar, showFloating, setShowFloating }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [view, setView]               = useState("home");
+  // ── Chat history system ──────────────────────────────────────────────────────
+  const newConvo = () => ({ id: Date.now(), title: "New Chat", messages: [], createdAt: new Date() });
+  const [conversations, setConversations] = useState([newConvo()]);
+  const [activeConvoId, setActiveConvoId] = useState(conversations[0].id);
+  const [renamingId, setRenamingId]       = useState(null);
+  const [renameVal, setRenameVal]         = useState("");
+  const [chatSidebarOpen, setChatSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery]     = useState("");
+
+  const activeConvo = conversations.find(c => c.id === activeConvoId) || conversations[0];
+  const messages    = activeConvo?.messages || [];
+
+  const setMessages = (updater) => {
+    setConversations(cs => cs.map(c =>
+      c.id === activeConvoId
+        ? { ...c, messages: typeof updater === "function" ? updater(c.messages) : updater }
+        : c
+    ));
+  };
+
+  const startNewChat = () => {
+    const c = newConvo();
+    setConversations(cs => [c, ...cs]);
+    setActiveConvoId(c.id);
+    setInput("");
+  };
+
+  const deleteConvo = (id) => {
+    setConversations(cs => {
+      const remaining = cs.filter(c => c.id !== id);
+      if (remaining.length === 0) { const c = newConvo(); return [c]; }
+      return remaining;
+    });
+    if (activeConvoId === id) {
+      setConversations(cs => {
+        const remaining = cs.filter(c => c.id !== id);
+        if (remaining.length) setActiveConvoId(remaining[0].id);
+        return cs;
+      });
+    }
+  };
+
+  const renameConvo = (id, title) => {
+    setConversations(cs => cs.map(c => c.id === id ? { ...c, title } : c));
+    setRenamingId(null);
+  };
+
+  const autoTitle = (text) => text.length > 40 ? text.slice(0, 38) + "…" : text;
+
+  const groupConvos = (list) => {
+    const now = new Date();
+    const todayStart    = new Date(now); todayStart.setHours(0,0,0,0);
+    const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate()-1);
+    const weekStart     = new Date(todayStart); weekStart.setDate(weekStart.getDate()-7);
+    const monthStart    = new Date(todayStart); monthStart.setDate(1);
+    const groups = { Today:[], Yesterday:[], "Last 7 Days":[], "Last 30 Days":[], Older:[] };
+    list.forEach(c => {
+      const d = new Date(c.createdAt);
+      if      (d >= todayStart)     groups["Today"].push(c);
+      else if (d >= yesterdayStart) groups["Yesterday"].push(c);
+      else if (d >= weekStart)      groups["Last 7 Days"].push(c);
+      else if (d >= monthStart)     groups["Last 30 Days"].push(c);
+      else                          groups["Older"].push(c);
+    });
+    return groups;
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [loading, setLoading]         = useState(false);
+  const [goals, setGoals]             = useState([
+    { id: 1, text: "Pass Real Estate Principles exam",     done: false, priority: "high"   },
+    { id: 2, text: "Create 3 new flashcard decks this week", done: false, priority: "medium" },
+    { id: 3, text: "Study at least 30 min every day",     done: true,  priority: "medium" },
+  ]);
+  const [newGoal, setNewGoal]         = useState("");
+  const [newGoalPriority, setNewGoalPriority] = useState("medium");
+  const [planDays, setPlanDays]       = useState([
+    { day:"Monday",    tasks:["Review RE Chapter 1","30 min flashcards"],       done:[false,true]  },
+    { day:"Tuesday",   tasks:["Study Contracts & Law","Quiz mode"],              done:[false,false] },
+    { day:"Wednesday", tasks:["Finance & Appraisal deck","Brain Map review"],   done:[true,false]  },
+    { day:"Thursday",  tasks:["Full deck review","RE practice test"],            done:[false,false] },
+    { day:"Friday",    tasks:["Weak-area flashcards","EchoNote notes"],          done:[false,false] },
+    { day:"Saturday",  tasks:["Rest or light review"],                           done:[false]       },
+    { day:"Sunday",    tasks:["Weekly recap & prep next week"],                  done:[false]       },
+  ]);
+  const [addingTaskDay, setAddingTaskDay] = useState(null);
+  const [newTask, setNewTask]             = useState("");
+  // Local avatar draft (pending save)
+  const [draftAvatar, setDraftAvatar] = useState(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" });
+  const [avatarSaved, setAvatarSaved] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+  useEffect(() => { setDraftAvatar(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); }, [avatar]);
+
+  const systemPrompt = `You are Ace It Personal Assistant — an intelligent, warm, and motivating AI study companion built into the Ace It learning platform. You help students study smarter, stay organized, and stay motivated.
+
+You can:
+- Explain any concept clearly at the user's level
+- Build personalized study plans
+- Create practice questions and quizzes on any topic
+- Give study tips and strategies
+- Help with goal setting and accountability
+- Provide motivation and emotional support for learning
+- Help users understand difficult material from any subject
+
+The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful. Keep responses clear and well-structured. Use headers, bullet points, and numbered lists when helpful. Don't be overly formal — be like a smart, supportive study partner.`;
+
+  const sendMessage = async (text) => {
+    const userText = text || input.trim();
+    if (!userText || loading) return;
+    setInput("");
+
+    // Auto-title from first user message
+    if (messages.length === 0) {
+      setConversations(cs => cs.map(c => c.id === activeConvoId ? { ...c, title: autoTitle(userText) } : c));
+    }
+
+    const userMsg  = { role: "user", content: userText, ts: new Date() };
+    const newMsgs  = [...messages, userMsg];
+    setMessages(newMsgs);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: newMsgs.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data   = await res.json();
+      const reply  = data.content?.find(b => b.type === "text")?.text || "Sorry, I couldn't respond. Please try again.";
+      setMessages(m => [...m, { role: "assistant", content: reply, ts: new Date() }]);
+    } catch {
+      setMessages(m => [...m, { role: "assistant", content: "Something went wrong connecting to the AI. Please try again.", ts: new Date() }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderMarkdown = (text) => {
+    const lines = text.split("\n");
+    return lines.map((line, i) => {
+      if (line.startsWith("### ")) return <div key={i} style={{ fontWeight: 800, fontSize: 14, color: "#0A1628", margin: "14px 0 6px", borderLeft: `3px solid ${PA_COLOR}`, paddingLeft: 10 }}>{line.replace("### ", "")}</div>;
+      if (line.startsWith("## "))  return <div key={i} style={{ fontWeight: 800, fontSize: 15, color: PA_GLOW,  margin: "16px 0 8px",  letterSpacing: 0.5 }}>{line.replace("## ", "")}</div>;
+      if (line.startsWith("# "))   return <div key={i} style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: 17, color: "#0A1628", margin: "18px 0 10px" }}>{line.replace("# ", "")}</div>;
+      if (line.match(/^\d+\.\s/))  return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 5 }}><span style={{ color: PA_GLOW, fontWeight: 700, flexShrink: 0 }}>{line.match(/^\d+/)[0]}.</span><span style={{ color: "#1A1814", fontSize: 14, lineHeight: 1.6 }}>{line.replace(/^\d+\.\s/, "")}</span></div>;
+      if (line.startsWith("- ") || line.startsWith("• ")) return (
+        <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 5 }}>
+          <span style={{ color: PA_COLOR, fontSize: 14, flexShrink: 0, marginTop: 3 }}>◆</span>
+          <span style={{ fontSize: 14, color: "#1A1814", lineHeight: 1.6 }}>{line.replace(/^[-•]\s/, "")}</span>
+        </div>
+      );
+      if (line.startsWith("**") && line.endsWith("**")) return <div key={i} style={{ fontWeight: 800, fontSize: 14, color: "#0A1628", margin: "12px 0 4px" }}>{line.replace(/\*\*/g, "")}</div>;
+      if (line.trim() === "") return <div key={i} style={{ height: 8 }} />;
+      const parts = line.split(/(\*\*[^*]+\*\*)/g);
+      return <p key={i} style={{ fontSize: 14, color: "#1A1814", lineHeight: 1.75, margin: "3px 0" }}>{parts.map((p, j) => p.startsWith("**") ? <strong key={j}>{p.replace(/\*\*/g, "")}</strong> : p)}</p>;
+    });
+  };
+
+  // ── HOME VIEW ──
+  const HomeView = () => (
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "48px 28px" }}>
+      {/* Welcome header */}
+      <div style={{ marginBottom: 40 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
+          <span style={{ fontSize: 11 }}>⊕</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Personal Assistant</span>
+        </div>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
+          Hey {user?.name?.split(" ")[0] || "there"} 👋<br />
+          <span style={{ color: PA_GLOW }}>What are we</span> working on today?
+        </h1>
+        <p style={{ fontSize: 15, color: "#5A6878", lineHeight: 1.7, maxWidth: 520 }}>
+          Ask me anything — explain concepts, build study plans, quiz you, or just talk through what's on your mind.
+        </p>
+      </div>
+
+      {/* Quick start — suggested prompts */}
+      <div style={{ marginBottom: 44 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 14 }}>Quick Start</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          {PA_SUGGESTED.map((s, i) => (
+            <button key={i} onClick={() => { setView("chat"); setTimeout(() => sendMessage(s), 100); }}
+              style={{ textAlign: "left", padding: "14px 16px", borderRadius: 12, border: `1.5px solid #D8ECFF`, background: "#F4F8FF", cursor: "pointer", fontSize: 13, color: "#1A2030", fontWeight: 500, lineHeight: 1.5, transition: "all 0.18s", fontFamily: "'DM Sans', sans-serif" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.background = `${PA_COLOR}18`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.background = "#F4F8FF"; }}>
+              <span style={{ color: PA_GLOW, marginRight: 8, fontSize: 14 }}>→</span>{s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Dashboard cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+        {[
+          { icon: "💬", title: "Start Chatting",    desc: "Ask me anything — concepts, study help, or just a question", action: () => setView("chat"),    color: PA_COLOR },
+          { icon: "📅", title: "View Study Plan",   desc: "Your personalized weekly schedule and daily tasks",           action: () => setView("planner"), color: "#F0D080" },
+          { icon: "🎯", title: "Track Your Goals",  desc: `${goals.filter(g => !g.done).length} active goals in progress`, action: () => setView("goals"), color: "#A8E6CF" },
+        ].map(({ icon, title, desc, action, color }) => (
+          <div key={title} onClick={action} style={{ background: "#fff", border: `1.5px solid #E4EEF8`, borderTop: `3px solid ${color}`, borderRadius: 14, padding: "22px 20px", cursor: "pointer", transition: "all 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(72,152,232,0.1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+            <div style={{ fontSize: 26, marginBottom: 10 }}>{icon}</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#0A1628", marginBottom: 6 }}>{title}</div>
+            <div style={{ fontSize: 12, color: "#6A7888", lineHeight: 1.55 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── CHAT VIEW ──
+  const ChatView = () => {
+    const filtered = searchQuery.trim()
+      ? conversations.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()) || c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase())))
+      : conversations;
+    const grouped = groupConvos(filtered);
+
+    return (
+      <div style={{ display: "flex", height: "calc(100vh - 64px)", overflow: "hidden" }}>
+        <style>{`
+          @keyframes pa-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+          @keyframes pa-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+          .pa-convo-item:hover .pa-convo-actions { opacity: 1 !important; }
+          .pa-convo-item:hover { background: #EEF5FF !important; }
+          ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#D8ECFF;border-radius:2px}
+        `}</style>
+
+        {/* ── LEFT: Conversation History Sidebar ── */}
+        <div style={{
+          width: chatSidebarOpen ? 280 : 0,
+          minWidth: chatSidebarOpen ? 280 : 0,
+          background: "#F0F6FF",
+          borderRight: "1px solid #E4EEF8",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          transition: "width 0.3s cubic-bezier(0.16,1,0.3,1), min-width 0.3s",
+          flexShrink: 0,
+        }}>
+          {/* Sidebar header */}
+          <div style={{ padding: "16px 14px 12px", flexShrink: 0 }}>
+            <button onClick={startNewChat}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px dashed ${PA_GLOW}66`, background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: 700, color: PA_GLOW, display: "flex", alignItems: "center", gap: 8, transition: "all 0.18s", fontFamily: "'DM Sans',sans-serif" }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${PA_COLOR}18`; e.currentTarget.style.borderStyle = "solid"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderStyle = "dashed"; }}>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> New Chat
+            </button>
+
+            {/* Search */}
+            <div style={{ position: "relative", marginTop: 10 }}>
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search chats…"
+                style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1.5px solid #D8ECFF", borderRadius: 8, fontSize: 12, outline: "none", background: "#fff", fontFamily: "'DM Sans',sans-serif", color: "#1A1814", boxSizing: "border-box", transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = PA_GLOW} onBlur={e => e.target.style.borderColor = "#D8ECFF"} />
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#A8B4C0" }}>🔍</span>
+              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#A8B4C0", lineHeight: 1 }}>✕</button>}
+            </div>
+          </div>
+
+          {/* Conversation list */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
+            {Object.entries(grouped).map(([label, items]) => {
+              if (!items.length) return null;
+              return (
+                <div key={label}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8B4C0", padding: "12px 6px 6px" }}>{label}</div>
+                  {items.map(c => {
+                    const isActive   = c.id === activeConvoId;
+                    const isRenaming = renamingId === c.id;
+                    const preview    = c.messages.filter(m => m.role === "user").slice(-1)[0]?.content;
+                    return (
+                      <div key={c.id} className="pa-convo-item" onClick={() => { if (!isRenaming) setActiveConvoId(c.id); }}
+                        style={{ position: "relative", padding: "9px 10px", borderRadius: 9, cursor: "pointer", marginBottom: 2, background: isActive ? `${PA_COLOR}28` : "transparent", border: isActive ? `1px solid ${PA_COLOR}55` : "1px solid transparent", transition: "all 0.15s" }}>
+                        {isRenaming ? (
+                          <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") renameConvo(c.id, renameVal || "Untitled"); if (e.key === "Escape") setRenamingId(null); }}
+                            onBlur={() => renameConvo(c.id, renameVal || "Untitled")}
+                            style={{ width: "100%", padding: "4px 6px", border: `1.5px solid ${PA_GLOW}`, borderRadius: 5, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", outline: "none", background: "#fff", boxSizing: "border-box" }} />
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? "#0A1628" : "#1A2030", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3, paddingRight: 44 }}>
+                              {c.messages.length === 0 ? <span style={{ color: "#A8B4C0", fontStyle: "italic" }}>New Chat</span> : c.title}
+                            </div>
+                            {preview && <div style={{ fontSize: 11, color: "#8A9AAC", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: 44 }}>{preview}</div>}
+                            {/* Action buttons — revealed on hover */}
+                            <div className="pa-convo-actions" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, opacity: isActive ? 1 : 0, transition: "opacity 0.15s" }}>
+                              <button onClick={e => { e.stopPropagation(); setRenamingId(c.id); setRenameVal(c.title); }}
+                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(72,152,232,0.1)", cursor: "pointer", fontSize: 11, color: PA_GLOW, display: "flex", alignItems: "center", justifyContent: "center" }} title="Rename">✏</button>
+                              <button onClick={e => { e.stopPropagation(); if (conversations.length > 1) deleteConvo(c.id); }}
+                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(232,93,63,0.08)", cursor: conversations.length > 1 ? "pointer" : "default", fontSize: 11, color: conversations.length > 1 ? "#E85D3F" : "#D8ECFF", display: "flex", alignItems: "center", justifyContent: "center" }} title="Delete">🗑</button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div style={{ textAlign: "center", padding: "40px 16px", color: "#A8B4C0" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+                <div style={{ fontSize: 12 }}>No chats match "{searchQuery}"</div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar footer */}
+          <div style={{ padding: "12px 14px", borderTop: "1px solid #E4EEF8", flexShrink: 0 }}>
+            <div style={{ fontSize: 11, color: "#A8B4C0", textAlign: "center" }}>{conversations.length} conversation{conversations.length !== 1 ? "s" : ""}</div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Main chat area ── */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#fff" }}>
+
+          {/* Chat top bar */}
+          <div style={{ padding: "12px 20px", borderBottom: "1px solid #E4EEF8", display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: "#fff" }}>
+            <button onClick={() => setChatSidebarOpen(o => !o)}
+              style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 7, width: 32, height: 32, cursor: "pointer", fontSize: 13, color: chatSidebarOpen ? PA_GLOW : "#8A9AAC", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", flexShrink: 0 }}
+              title={chatSidebarOpen ? "Hide history" : "Show history"}>
+              {chatSidebarOpen ? "◀" : "▶"}
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0A1628", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {messages.length === 0 ? "New Chat" : activeConvo.title}
+              </div>
+              {messages.length > 0 && <div style={{ fontSize: 11, color: "#A8B4C0" }}>{messages.length} message{messages.length !== 1 ? "s" : ""}</div>}
+            </div>
+            <button onClick={startNewChat}
+              style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid #D8ECFF`, background: "#F4F8FF", cursor: "pointer", fontSize: 12, fontWeight: 700, color: PA_GLOW, whiteSpace: "nowrap", flexShrink: 0, fontFamily: "'DM Sans',sans-serif", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${PA_COLOR}22`; e.currentTarget.style.borderColor = PA_GLOW; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#F4F8FF"; e.currentTarget.style.borderColor = "#D8ECFF"; }}>
+              + New Chat
+            </button>
+          </div>
+
+          {/* Messages area */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 20px" }}>
+            {messages.length === 0 ? (
+              <div style={{ maxWidth: 580, margin: "52px auto 0", textAlign: "center", animation: "pa-fadein 0.4s ease both" }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px", boxShadow: `0 8px 32px ${PA_GLOW}33`, overflow: "hidden" }}>
+                  {avatar?.skinTone ? <AvatarHead avatar={avatar} size={72} /> : <span style={{ fontSize: 32 }}>⊕</span>}
+                </div>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#0A1628", marginBottom: 10 }}>
+                  Hi {user?.name?.split(" ")[0] || "there"} — what are we working on?
+                </h2>
+                <p style={{ fontSize: 14, color: "#6A7888", lineHeight: 1.7, marginBottom: 32 }}>
+                  Ask me anything. I can explain concepts, quiz you, build study plans, help you navigate your apps, or just think through things with you.
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, textAlign: "left" }}>
+                  {PA_SUGGESTED.map((s, i) => (
+                    <button key={i} onClick={() => sendMessage(s)}
+                      style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid #D8ECFF", background: "#F4F8FF", cursor: "pointer", fontSize: 12, color: "#1A2030", fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5, transition: "all 0.15s", textAlign: "left" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.background = `${PA_COLOR}18`; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.background = "#F4F8FF"; }}>
+                      <span style={{ color: PA_GLOW, marginRight: 6 }}>→</span>{s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", flexDirection: "column", gap: 0, paddingBottom: 24, paddingTop: 20 }}>
+                {messages.map((m, i) => (
+                  <div key={i} style={{ animation: i === messages.length - 1 ? "pa-fadein 0.3s ease both" : "none" }}>
+                    {/* Date separator */}
+                    {i === 0 || new Date(messages[i-1].ts).toDateString() !== new Date(m.ts).toDateString() ? (
+                      <div style={{ textAlign: "center", margin: "20px 0 12px" }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#A8B4C0", background: "#F4F8FF", padding: "3px 10px", borderRadius: 10, letterSpacing: 1 }}>
+                          {new Date(m.ts).toLocaleDateString([], { weekday:"short", month:"short", day:"numeric" })}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 20, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
+                      {/* Avatar */}
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, background: m.role === "user" ? `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})` : `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, boxShadow: `0 2px 8px ${PA_GLOW}22`, marginTop: 2 }}>
+                        {m.role === "user"
+                          ? (avatar?.skinTone ? <AvatarHead avatar={avatar} size={32}/> : <span style={{ color:"#fff" }}>{user?.avatar||"U"}</span>)
+                          : <span style={{ fontSize: 16 }}>⊕</span>
+                        }
+                      </div>
+
+                      {/* Message block */}
+                      <div style={{ flex: 1, maxWidth: "calc(100% - 44px)" }}>
+                        {/* Name + time */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Ace It Assistant"}</span>
+                          <span style={{ fontSize: 10, color: "#C0CDD8" }}>{m.ts ? new Date(m.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : ""}</span>
+                        </div>
+
+                        {/* Bubble */}
+                        <div style={{ padding: "13px 16px", borderRadius: m.role === "user" ? "18px 4px 18px 18px" : "4px 18px 18px 18px", background: m.role === "user" ? `linear-gradient(135deg, ${PA_GLOW}, #2A70C8)` : "#F4F8FF", border: m.role === "user" ? "none" : "1.5px solid #E4EEF8", boxShadow: m.role === "user" ? `0 4px 20px ${PA_GLOW}33` : "0 2px 8px rgba(0,0,0,0.04)", display: "inline-block", maxWidth: m.role === "user" ? "100%" : "100%" }}>
+                          {m.role === "user"
+                            ? <p style={{ fontSize: 14, color: "#fff", lineHeight: 1.65, margin: 0 }}>{m.content}</p>
+                            : <div style={{ lineHeight: 1.8 }}>{renderMarkdown(m.content)}</div>
+                          }
+                        </div>
+
+                        {/* Copy button for assistant messages */}
+                        {m.role === "assistant" && (
+                          <div style={{ marginTop: 5, display: "flex", gap: 6 }}>
+                            <button onClick={() => { navigator.clipboard.writeText(m.content); }}
+                              style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid #E4EEF8", background: "transparent", fontSize: 10, color: "#A8B4C0", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.15s" }}
+                              onMouseEnter={e => { e.currentTarget.style.color = PA_GLOW; e.currentTarget.style.borderColor = PA_GLOW; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "#A8B4C0"; e.currentTarget.style.borderColor = "#E4EEF8"; }}>
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Typing indicator */}
+                {loading && (
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 20, animation: "pa-fadein 0.2s ease both" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>⊕</div>
+                    <div style={{ paddingTop: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Ace It Assistant</div>
+                      <div style={{ padding: "12px 16px", borderRadius: "4px 18px 18px 18px", background: "#F4F8FF", border: "1.5px solid #E4EEF8", display: "flex", gap: 5, alignItems: "center" }}>
+                        {[0, 0.18, 0.36].map((d, i) => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: PA_COLOR, animation: `pa-bounce 1.2s ${d}s infinite` }} />)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* ── Input bar ── */}
+          <div style={{ padding: "14px 20px 20px", borderTop: "1px solid #E4EEF8", flexShrink: 0, background: "#fff" }}>
+            {/* Quick-reply chips when messages exist */}
+            {messages.length > 0 && !loading && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                {["Explain that differently", "Give me an example", "Quiz me on this", "Make it simpler", "Go deeper", "Summarize this"].map(s => (
+                  <button key={s} onClick={() => sendMessage(s)}
+                    style={{ padding: "4px 11px", borderRadius: 20, border: "1px solid #D8ECFF", background: "#F4F8FF", fontSize: 11, color: PA_GLOW, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `${PA_COLOR}22`; e.currentTarget.style.borderColor = PA_GLOW; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#F4F8FF"; e.currentTarget.style.borderColor = "#D8ECFF"; }}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", background: "#F4F8FF", border: `1.5px solid ${input ? PA_GLOW : "#D8ECFF"}`, borderRadius: 14, padding: "10px 12px", transition: "border-color 0.18s", boxShadow: input ? `0 0 0 3px ${PA_GLOW}18` : "none" }}>
+              <textarea value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                placeholder="Ask me anything…"
+                rows={1}
+                style={{ flex: 1, padding: "2px 0", fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans',sans-serif", outline: "none", resize: "none", lineHeight: 1.6, background: "transparent", border: "none", maxHeight: 140, overflowY: "auto" }} />
+              <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+                style={{ width: 38, height: 38, borderRadius: 10, border: "none", background: input.trim() && !loading ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#D8ECFF", cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", boxShadow: input.trim() && !loading ? `0 4px 14px ${PA_GLOW}44` : "none", flexShrink: 0, fontSize: 16, color: input.trim() && !loading ? "#fff" : "#A8B4C0" }}>
+                {loading
+                  ? <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "pa-bounce 0.8s linear infinite" }} />
+                  : "↑"}
+              </button>
+            </div>
+            <div style={{ fontSize: 10, color: "#C0CDD8", marginTop: 7, textAlign: "center" }}>Enter to send · Shift+Enter for new line · Powered by Claude</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const PlannerView = () => (
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 28px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>This Week</div>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Study Planner</h2>
+        <p style={{ fontSize: 14, color: "#6A7888" }}>Check off tasks, add new ones, and build your weekly rhythm.</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+        {planDays.map((day, di) => {
+          const allDone  = day.done.every(Boolean);
+          const someDone = day.done.some(Boolean);
+          const isAdding = addingTaskDay === di;
+          return (
+            <div key={day.day} style={{ background: "#fff", border: `1.5px solid ${allDone ? "#A8E6CF" : "#E4EEF8"}`, borderTop: `3px solid ${allDone ? "#2BAE7E" : someDone ? PA_COLOR : "#E4EEF8"}`, borderRadius: 14, padding: "18px 18px 14px", transition: "all 0.2s" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#0A1628" }}>{day.day}</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {allDone && <span style={{ fontSize: 10, background: "#D1FAE5", color: "#059669", fontWeight: 700, padding: "2px 7px", borderRadius: 8 }}>Done ✓</span>}
+                  <button onClick={() => setAddingTaskDay(isAdding ? null : di)} style={{ background: "none", border: `1px solid ${isAdding ? PA_GLOW : "#D8ECFF"}`, borderRadius: 5, width: 22, height: 22, fontSize: 13, cursor: "pointer", color: isAdding ? PA_GLOW : "#A8B4C0", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>{isAdding ? "✕" : "+"}</button>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {day.tasks.map((task, ti) => (
+                  <div key={ti} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div onClick={() => {
+                      setPlanDays(ds => ds.map((d,i) => i===di ? {...d, done: d.done.map((v,j) => j===ti ? !v : v)} : d));
+                    }} style={{ width: 17, height: 17, borderRadius: 4, border: `2px solid ${day.done[ti] ? "#2BAE7E" : "#D8ECFF"}`, background: day.done[ti] ? "#2BAE7E" : "#fff", flexShrink: 0, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", marginTop:2, transition:"all 0.15s" }}>
+                      {day.done[ti] && <span style={{ color:"#fff", fontSize:9, fontWeight:900 }}>✓</span>}
+                    </div>
+                    <span style={{ flex:1, fontSize: 12, color: day.done[ti] ? "#A8B4C0" : "#1A2030", textDecoration: day.done[ti] ? "line-through" : "none", lineHeight: 1.5, cursor:"pointer" }} onClick={() => {
+                      setPlanDays(ds => ds.map((d,i) => i===di ? {...d, done: d.done.map((v,j) => j===ti ? !v : v)} : d));
+                    }}>{task}</span>
+                    <button onClick={() => setPlanDays(ds => ds.map((d,i) => i===di ? {...d, tasks: d.tasks.filter((_,j)=>j!==ti), done: d.done.filter((_,j)=>j!==ti)} : d))} style={{ background:"none", border:"none", fontSize:10, color:"#D8ECFF", cursor:"pointer", padding:2, lineHeight:1, flexShrink:0 }}
+                      onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"} onMouseLeave={e=>e.currentTarget.style.color="#D8ECFF"}>✕</button>
+                  </div>
+                ))}
+                {/* Add task inline */}
+                {isAdding && (
+                  <div style={{ display:"flex", gap:6, marginTop:4 }}>
+                    <input autoFocus value={newTask} onChange={e=>setNewTask(e.target.value)} onKeyDown={e=>{
+                      if(e.key==="Enter"&&newTask.trim()){
+                        setPlanDays(ds=>ds.map((d,i)=>i===di?{...d,tasks:[...d.tasks,newTask.trim()],done:[...d.done,false]}:d));
+                        setNewTask(""); setAddingTaskDay(null);
+                      } else if(e.key==="Escape"){setAddingTaskDay(null);setNewTask("");}
+                    }} placeholder="New task…"
+                      style={{ flex:1, padding:"5px 8px", border:`1.5px solid ${PA_GLOW}`, borderRadius:6, fontSize:11, outline:"none", fontFamily:"'DM Sans',sans-serif" }}/>
+                    <button onClick={()=>{
+                      if(newTask.trim()){setPlanDays(ds=>ds.map((d,i)=>i===di?{...d,tasks:[...d.tasks,newTask.trim()],done:[...d.done,false]}:d)); setNewTask(""); setAddingTaskDay(null);}
+                    }} style={{ padding:"5px 9px", borderRadius:6, border:"none", background:PA_GLOW, color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>Add</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 28, background: `${PA_COLOR}14`, border: `1px solid ${PA_COLOR}44`, borderRadius: 14, padding: "18px 22px", display: "flex", alignItems: "center", gap: 14 }}>
+        <span style={{ fontSize: 22 }}>💡</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0A1628", marginBottom: 3 }}>Want a custom plan?</div>
+          <div style={{ fontSize: 12, color: "#6A7888" }}>Ask your assistant to build a study plan based on your goals or exam date.</div>
+        </div>
+        <button onClick={() => { setView("chat"); setTimeout(() => sendMessage("Build me a personalized study plan for this week"), 100); }} style={{ marginLeft: "auto", padding: "9px 18px", borderRadius: 9, border: "none", background: PA_GLOW, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Ask AI →</button>
+      </div>
+    </div>
+  );
+
+  const GoalsView = () => {
+    const addGoal = () => {
+      if (!newGoal.trim()) return;
+      setGoals(g => [...g, { id: Date.now(), text: newGoal.trim(), done: false, priority: newGoalPriority }]);
+      setNewGoal("");
+    };
+    return (
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 28px" }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Tracking</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>My Goals</h2>
+          <p style={{ fontSize: 14, color: "#6A7888" }}>{goals.filter(g => !g.done).length} active · {goals.filter(g => g.done).length} completed</p>
+        </div>
+        {/* Add goal */}
+        <div style={{ background: "#fff", border: "1.5px solid #E4EEF8", borderRadius: 14, padding: "18px 18px", marginBottom: 28 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 12 }}>Add a New Goal</div>
+          <input value={newGoal} onChange={e => setNewGoal(e.target.value)} onKeyDown={e => e.key === "Enter" && addGoal()} placeholder="What do you want to achieve?"
+            style={{ width: "100%", padding: "11px 14px", border: `1.5px solid ${newGoal ? PA_GLOW : "#D8ECFF"}`, borderRadius: 9, fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#F9FCFF", marginBottom: 12, boxSizing: "border-box", transition: "border-color 0.18s" }}
+            onFocus={e => e.target.style.borderColor = PA_GLOW} onBlur={e => { if (!newGoal) e.target.style.borderColor = "#D8ECFF"; }} />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "#6A7888", fontWeight: 600 }}>Priority:</span>
+            {["high","medium","low"].map(p => (
+              <button key={p} onClick={() => setNewGoalPriority(p)} style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${newGoalPriority===p ? (p==="high"?"#E85D3F":p==="medium"?PA_GLOW:"#2BAE7E") : "#D8ECFF"}`, background: newGoalPriority===p ? (p==="high"?"#FEF2F2":p==="medium"?`${PA_COLOR}22`:"#F0FDF4") : "#fff", color: p==="high"?"#E85D3F":p==="medium"?PA_GLOW:"#2BAE7E", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition:"all 0.15s", textTransform:"capitalize" }}>{p}</button>
+            ))}
+            <button onClick={addGoal} disabled={!newGoal.trim()} style={{ marginLeft: "auto", padding: "8px 18px", borderRadius: 9, border: "none", background: newGoal.trim() ? PA_GLOW : "#E4EEF8", color: newGoal.trim() ? "#fff" : "#A8B4C0", fontSize: 13, fontWeight: 700, cursor: newGoal.trim() ? "pointer" : "default", transition: "all 0.2s" }}>+ Add Goal</button>
+          </div>
+        </div>
+        {/* Goals list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {["high","medium","low"].map(priority => {
+            const items = goals.filter(g => g.priority === priority);
+            if (!items.length) return null;
+            const pColor = priority==="high"?"#E85D3F":priority==="medium"?PA_GLOW:"#2BAE7E";
+            const pLabel = priority==="high"?"🔴 High":priority==="medium"?"🔵 Medium":"🟢 Low";
+            return (
+              <div key={priority}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: pColor, marginBottom: 8, paddingLeft: 4 }}>{pLabel} Priority</div>
+                {items.map(g => (
+                  <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#fff", border: `1.5px solid ${g.done ? "#D1FAE5" : "#E4EEF8"}`, borderRadius: 12, marginBottom: 7, transition: "all 0.2s" }}>
+                    <div onClick={() => setGoals(gs => gs.map(x => x.id===g.id ? {...x,done:!x.done} : x))}
+                      style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${g.done ? "#2BAE7E" : "#D8ECFF"}`, background: g.done ? "#2BAE7E" : "#fff", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s" }}>
+                      {g.done && <span style={{ color:"#fff", fontSize:11, fontWeight:900 }}>✓</span>}
+                    </div>
+                    <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: g.done ? "#A8B4C0" : "#0A1628", textDecoration: g.done ? "line-through" : "none", transition:"all 0.2s" }}>{g.text}</span>
+                    <select value={g.priority} onChange={e => setGoals(gs => gs.map(x => x.id===g.id ? {...x,priority:e.target.value} : x))} style={{ fontSize:11, border:"1px solid #D8ECFF", borderRadius:6, padding:"3px 6px", background:"#F9FCFF", color:"#6A7888", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                    <button onClick={() => setGoals(gs => gs.filter(x => x.id!==g.id))} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#D8ECFF", padding:4 }}
+                      onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"} onMouseLeave={e=>e.currentTarget.style.color="#D8ECFF"}>✕</button>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          {goals.length === 0 && <div style={{ textAlign:"center", padding:"60px 0", color:"#A8B4C0" }}><div style={{ fontSize:40, marginBottom:12 }}>🎯</div><div style={{ fontSize:14 }}>Add your first goal above</div></div>}
+        </div>
+      </div>
+    );
+  };
+
+  // ── PROGRESS VIEW ──
+  const ProgressView = () => (
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 28px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Overview</div>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628" }}>My Progress</h2>
+      </div>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 }}>
+        {[
+          { val: messages.length, label: "AI Conversations", icon: "💬" },
+          { val: `${goals.filter(g => g.done).length}/${goals.length}`, label: "Goals Completed", icon: "🎯" },
+          { val: planDays.reduce((a, d) => a + d.done.filter(Boolean).length, 0), label: "Tasks Done", icon: "✅" },
+          { val: "7🔥", label: "Day Streak", icon: "🔥" },
+        ].map(({ val, label, icon }) => (
+          <div key={label} style={{ background: "#fff", border: "1.5px solid #E4EEF8", borderRadius: 14, padding: "20px 18px", textAlign: "center" }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#0A1628", marginBottom: 4 }}>{val}</div>
+            <div style={{ fontSize: 11, color: "#A8B4C0", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      {/* Weekly tasks bar chart */}
+      <div style={{ background: "#fff", border: "1.5px solid #E4EEF8", borderRadius: 14, padding: "24px 24px" }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#0A1628", marginBottom: 20 }}>Weekly Task Completion</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 80 }}>
+          {planDays.map(d => {
+            const pct = d.done.length > 0 ? d.done.filter(Boolean).length / d.done.length : 0;
+            return (
+              <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{ width: "100%", height: 64, background: "#F4F8FF", borderRadius: 8, overflow: "hidden", display: "flex", alignItems: "flex-end" }}>
+                  <div style={{ width: "100%", height: `${pct * 100}%`, background: pct === 1 ? "#2BAE7E" : `linear-gradient(180deg, ${PA_COLOR}, ${PA_GLOW})`, borderRadius: 6, transition: "height 0.5s ease", minHeight: pct > 0 ? 8 : 0 }} />
+                </div>
+                <div style={{ fontSize: 10, color: "#A8B4C0", fontWeight: 600 }}>{d.day.slice(0, 3)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── AVATAR BUILDER VIEW ──
+  const AvatarView = () => {
+    const Swatch = ({ value, current, onChange, round = false }) => (
+      <div onClick={() => onChange(value)}
+        style={{ width: 30, height: 30, borderRadius: round ? "50%" : 8, background: value, cursor: "pointer", border: `3px solid ${current===value?"#1A1814":"transparent"}`, outline: current===value?`2px solid ${value}`:"none", outlineOffset:2, transition:"all 0.15s", boxShadow:"0 1px 4px rgba(0,0,0,0.15)" }} />
+    );
+    const StyleBtn = ({ id, label, current, onChange }) => (
+      <button onClick={() => onChange(id)} style={{ padding:"7px 14px", borderRadius:20, border:`1.5px solid ${current===id?PA_GLOW:"#D8ECFF"}`, background:current===id?`${PA_COLOR}22`:"#fff", fontSize:12, fontWeight:current===id?700:500, color:current===id?PA_GLOW:"#5A6878", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}>{label}</button>
+    );
+
+    return (
+      <div style={{ maxWidth: 780, margin: "0 auto", padding: "40px 28px" }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Personalization</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>My Avatar</h2>
+          <p style={{ fontSize: 14, color: "#6A7888" }}>Build your look. Your avatar will appear on your AI assistant button across the entire platform.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, alignItems: "start" }}>
+          {/* Left: Preview */}
+          <div style={{ background: "#fff", border: "1.5px solid #E4EEF8", borderRadius: 20, padding: "36px 28px", textAlign: "center", position: "sticky", top: 80 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 140, height: 140, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_DARK}22, ${PA_GLOW}33)`, border: `4px solid ${PA_COLOR}`, marginBottom: 20, boxShadow: `0 8px 32px ${PA_GLOW}33`, overflow:"hidden" }}>
+              <AvatarHead avatar={draftAvatar} size={130} />
+            </div>
+            <input value={draftAvatar.displayName || ""} onChange={e => setDraftAvatar(a => ({...a, displayName: e.target.value}))} placeholder={user?.name || "Your display name"}
+              style={{ width:"100%", padding:"10px 14px", border:"1.5px solid #E4EEF8", borderRadius:9, fontSize:15, fontWeight:700, textAlign:"center", fontFamily:"'Playfair Display',serif", color:"#0A1628", outline:"none", background:"#F9FCFF", marginBottom:20, boxSizing:"border-box" }}
+              onFocus={e=>e.target.style.borderColor=PA_GLOW} onBlur={e=>e.target.style.borderColor="#E4EEF8"} />
+            <button onClick={() => { setAvatar({...draftAvatar}); setAvatarSaved(true); setTimeout(()=>setAvatarSaved(false), 2500); }}
+              style={{ width:"100%", padding:"12px 0", borderRadius:10, border:"none", background:`linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", letterSpacing:0.5, transition:"all 0.2s", boxShadow:`0 4px 16px ${PA_GLOW}44` }}>
+              {avatarSaved ? "✓ Avatar Saved!" : "Save Avatar"}
+            </button>
+            {avatar?.skinTone && <button onClick={() => { setDraftAvatar({ skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); setAvatar(null); }} style={{ width:"100%", padding:"8px 0", borderRadius:10, border:"1px solid #E4EEF8", background:"transparent", color:"#A8B4C0", fontSize:12, cursor:"pointer", marginTop:8, fontFamily:"'DM Sans',sans-serif" }}>Reset Avatar</button>}
+          </div>
+
+          {/* Right: Controls */}
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+            {/* Skin tone */}
+            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Skin Tone</div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {SKIN_TONES.map(t => <Swatch key={t} value={t} current={draftAvatar.skinTone} onChange={v=>setDraftAvatar(a=>({...a,skinTone:v}))} round />)}
+              </div>
+            </div>
+            {/* Hair style */}
+            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Hair Style</div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:16 }}>
+                {HAIR_STYLES.map(h => <StyleBtn key={h.id} id={h.id} label={h.label} current={draftAvatar.hairStyle} onChange={v=>setDraftAvatar(a=>({...a,hairStyle:v}))} />)}
+              </div>
+              {draftAvatar.hairStyle !== "none" && <>
+                <div style={{ fontSize:11, fontWeight:700, color:"#6A7888", marginBottom:10, letterSpacing:1, textTransform:"uppercase" }}>Hair Color</div>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  {HAIR_COLORS.map(c => <Swatch key={c} value={c} current={draftAvatar.hairColor} onChange={v=>setDraftAvatar(a=>({...a,hairColor:v}))} />)}
+                </div>
+              </>}
+            </div>
+            {/* Eye color */}
+            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Eye Color</div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {EYE_COLORS.map(c => <Swatch key={c} value={c} current={draftAvatar.eyeColor} onChange={v=>setDraftAvatar(a=>({...a,eyeColor:v}))} round />)}
+              </div>
+            </div>
+            {/* Accessories */}
+            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Accessories</div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {ACCESSORIES.map(a => <StyleBtn key={a.id} id={a.id} label={a.label} current={draftAvatar.accessory} onChange={v=>setDraftAvatar(d=>({...d,accessory:v}))} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── PREFERENCES VIEW ──
+  const PrefsView = () => (
+    <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px 28px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Configuration</div>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Preferences</h2>
+        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Ace It.</p>
+      </div>
+
+      {/* Floating assistant toggle */}
+      <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, overflow:"hidden", marginBottom:16 }}>
+        <div style={{ padding:"20px 22px", display:"flex", alignItems:"center", gap:14, borderBottom:"1px solid #F0F6FF" }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:`${PA_COLOR}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>⊕</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>Floating Assistant Button</div>
+            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Ace It apps so you can get help from anywhere.</div>
+          </div>
+          <div onClick={() => setShowFloating(s => !s)} style={{ width:48, height:26, borderRadius:13, background:showFloating?PA_GLOW:"#D8ECFF", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
+            <div style={{ position:"absolute", top:3, left:showFloating?24:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
+          </div>
+        </div>
+        {showFloating && (
+          <div style={{ padding:"14px 22px", background:"#F4F8FF" }}>
+            <div style={{ fontSize:11, color:"#6A7888", lineHeight:1.6 }}>
+              💡 <strong>Tip:</strong> You can drag the button anywhere on screen. Click it to open a quick chat panel. You can also hide it from inside any app's sidebar.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Avatar quick access */}
+      <div onClick={() => setView("avatar")} style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 22px", display:"flex", alignItems:"center", gap:14, cursor:"pointer", marginBottom:16, transition:"all 0.2s" }}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=PA_GLOW} onMouseLeave={e=>e.currentTarget.style.borderColor="#E4EEF8"}>
+        <div style={{ width:44, height:44, borderRadius:"50%", border:`2px solid ${PA_COLOR}`, overflow:"hidden", flexShrink:0, background:"#F4F8FF", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          {avatar?.skinTone ? <AvatarHead avatar={avatar} size={44}/> : <span style={{fontSize:22}}>🧑</span>}
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>{avatar?.skinTone ? "Edit My Avatar" : "Create My Avatar"}</div>
+          <div style={{ fontSize:12, color:"#6A7888" }}>{avatar?.skinTone ? "Your avatar appears on the floating button and across your profile" : "Build your personal avatar — it replaces the default ⊕ icon"}</div>
+        </div>
+        <span style={{ fontSize:16, color:"#A8B4C0" }}>→</span>
+      </div>
+
+      {/* Assistant personality */}
+      <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 22px" }}>
+        <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:4 }}>Assistant Style</div>
+        <div style={{ fontSize:12, color:"#6A7888", marginBottom:16 }}>How should your assistant communicate with you?</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {[
+            { id:"friendly",     label:"Friendly & Encouraging",  desc:"Warm, upbeat, lots of positive reinforcement" },
+            { id:"direct",       label:"Direct & Concise",        desc:"Straight to the point, no fluff" },
+            { id:"academic",     label:"Academic & Thorough",      desc:"Detailed explanations, references, depth" },
+          ].map(style => (
+            <div key={style.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", border:"1.5px solid #E4EEF8", borderRadius:10, cursor:"pointer", background:"#F9FCFF" }}>
+              <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${PA_GLOW}`, background:"#fff", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                {style.id==="friendly" && <div style={{ width:9, height:9, borderRadius:"50%", background:PA_GLOW }} />}
+              </div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:"#0A1628" }}>{style.label}</div>
+                <div style={{ fontSize:11, color:"#6A7888" }}>{style.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const VIEW_TITLES = { home:"Home", chat:"Chat", planner:"Study Planner", goals:"Goals", progress:"Progress", avatar:"My Avatar", prefs:"Preferences" };
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F4F8FF", minHeight: "100vh", color: "#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet" />
+      <style>{`*{box-sizing:border-box} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:#D8ECFF;border-radius:3px}`}</style>
+
+      <PASidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} view={view} setView={setView} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} avatar={avatar} />
+
+      {/* Top nav */}
+      <nav style={{ background: "#fff", borderBottom: "1px solid #E4EEF8", position: "sticky", top: 0, zIndex: 100, height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "#5A6878", fontSize: 16, transition: "all 0.15s", lineHeight: 1 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#E4EEF8"; e.currentTarget.style.color = "#5A6878"; }}>☰</button>
+          <div style={{ width: 1, height: 20, background: "#E4EEF8" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⊕</div>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#0A1628" }}>
+              <span style={{ color: PA_GLOW }}>Ace It</span> Personal Assistant
+            </span>
+          </div>
+        </div>
+
+        {/* View tabs */}
+        <div style={{ display: "flex", background: "#F0F6FF", borderRadius: 9, padding: 3, gap: 2 }}>
+          {[["⌂","home"],["💬","chat"],["📅","planner"],["🎯","goals"],["📊","progress"],["🧑","avatar"],["⚙","prefs"]].map(([icon, v]) => (
+            <button key={v} onClick={() => setView(v)} title={VIEW_TITLES[v]}
+              style={{ padding: "7px 12px", borderRadius: 6, border: "none", fontSize: 14, cursor: "pointer", transition: "all 0.18s", background: view === v ? "#fff" : "transparent", color: view === v ? PA_GLOW : "#8A9AAC", boxShadow: view === v ? "0 1px 6px rgba(72,152,232,0.15)" : "none" }}>
+              {icon}
+            </button>
+          ))}
+        </div>
+
+        {/* User */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {user ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#3A4858" }}>{user.name}</span>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", overflow:"hidden", background: avatar?.skinTone ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", border:`2px solid ${PA_COLOR}` }}>
+                {avatar?.skinTone ? <AvatarHead avatar={avatar} size={34}/> : user.avatar}
+              </div>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => openAuth("login")}  style={{ background: "none", border: "1px solid #D8ECFF", borderRadius: 7, padding: "7px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#5A6878" }}>Log In</button>
+              <button onClick={() => openAuth("signup")} style={{ background: PA_GLOW,  border: "none",             borderRadius: 7, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#fff"    }}>Sign Up</button>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <main style={{ overflowY: view === "chat" ? "hidden" : "auto" }}>
+        {view === "home"     && <HomeView />}
+        {view === "chat"     && <ChatView />}
+        {view === "planner"  && <PlannerView />}
+        {view === "goals"    && <GoalsView />}
+        {view === "progress" && <ProgressView />}
+        {view === "avatar"   && <AvatarView />}
+        {view === "prefs"    && <PrefsView />}
+      </main>
+    </div>
+  );
+}
+
+// ─── Auth Modal ──────────────────────────────────────────────────────────────
+function AuthModal({ onClose, onAuth, initialMode = "login" }) {
+  const [mode, setMode]             = useState(initialMode); // login | signup
+  const [step, setStep]             = useState("form");      // form | success
+  const [name, setName]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [confirm, setConfirm]       = useState("");
+  const [showPass, setShowPass]     = useState(false);
+  const [showConf, setShowConf]     = useState(false);
+  const [errors, setErrors]         = useState({});
+  const [loading, setLoading]       = useState(false);
+
+  const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); };
+
+  const passStrength = (p) => {
+    if (!p) return 0;
+    let s = 0;
+    if (p.length >= 8)             s++;
+    if (/[A-Z]/.test(p))           s++;
+    if (/[0-9]/.test(p))           s++;
+    if (/[^A-Za-z0-9]/.test(p))   s++;
+    return s;
+  };
+  const strength = passStrength(password);
+  const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
+  const strengthColor = ["", "#E85D3F", "#F5C842", "#4F6EF7", "#2BAE7E"][strength];
+
+  const validate = () => {
+    const e = {};
+    if (mode === "signup" && !name.trim())      e.name     = "Name is required";
+    if (!email.trim())                          e.email    = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email))      e.email    = "Enter a valid email";
+    if (!password)                              e.password = "Password is required";
+    else if (password.length < 8)              e.password = "At least 8 characters";
+    if (mode === "signup" && password !== confirm) e.confirm = "Passwords don't match";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validate()) return;
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setStep("success");
+      setTimeout(() => {
+        onAuth({ name: name || email.split("@")[0], email, avatar: (name || email)[0].toUpperCase() });
+      }, 1400);
+    }, 900);
+  };
+
+  const inputStyle = (field) => ({
+    width: "100%", padding: "12px 14px",
+    border: `1.5px solid ${errors[field] ? "#E85D3F" : "#E8E5E0"}`,
+    borderRadius: 8, fontSize: 14, color: "#1A1814", outline: "none",
+    fontFamily: "'DM Sans', sans-serif", background: "#FAFAF8",
+    transition: "border-color 0.18s",
+  });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)" }} />
+
+      {/* Modal card */}
+      <div style={{ position: "relative", width: "100%", maxWidth: 860, maxHeight: "92vh", display: "flex", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+
+        {/* ── LEFT — Brand panel ── */}
+        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+          {/* BG glow */}
+          <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+          {/* Logo */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F5C842", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 900, color: "#1A1814" }}>A</span>
+              </div>
+              <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>ACE IT</span>
+            </div>
+
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 900, color: "#F7F6F2", lineHeight: 1.2, marginBottom: 16 }}>
+              {mode === "login" ? "Welcome back." : "Start your journey."}
+            </h2>
+            <p style={{ fontSize: 14, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, fontWeight: 300 }}>
+              {mode === "login"
+                ? "Sign in to access your Galaxy, flashcard decks, and study tools."
+                : "Create a free account and start mastering your subjects today."}
+            </p>
+          </div>
+
+          {/* Floating card decoration */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderTop: "2px solid #C8B8FF", borderRadius: 12, padding: "18px 20px", marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Ace It Flash Cards</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Real Estate Principles</div>
+              <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: "100%", width: "65%", background: "#C8B8FF", borderRadius: 2 }} /></div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, marginLeft: 20 }}>
+              <span style={{ fontSize: 16 }}>🔓</span>
+              <span style={{ fontSize: 12, color: "rgba(247,246,242,0.4)" }}>New card unlocked! <span style={{ color: "#2BAE7E", fontWeight: 600 }}>Escrow</span></span>
+            </div>
+          </div>
+
+          {/* Tagline */}
+          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It Galaxy</div>
+        </div>
+
+        {/* ── RIGHT — Form panel ── */}
+        <div style={{ flex: 1, background: "#fff", padding: "48px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
+          {/* Close */}
+          <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; e.currentTarget.style.color = "#1A1814"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; e.currentTarget.style.color = "#8C8880"; }}>✕</button>
+
+          {/* Success screen */}
+          {step === "success" ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#2BAE7E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 24, boxShadow: "0 0 0 8px #2BAE7E18" }}>✓</div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 10 }}>
+                {mode === "login" ? "Welcome back!" : "Account created!"}
+              </h3>
+              <p style={{ fontSize: 14, color: "#8C8880" }}>Taking you in…</p>
+            </div>
+          ) : (
+            <>
+              {/* Tab switcher */}
+              <div style={{ display: "flex", background: "#F7F6F2", borderRadius: 10, padding: 4, marginBottom: 32, gap: 4 }}>
+                {[["login", "Sign In"], ["signup", "Create Account"]].map(([m, label]) => (
+                  <button key={m} onClick={() => switchMode(m)} style={{ flex: 1, padding: "9px 0", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", background: mode === m ? "#fff" : "transparent", color: mode === m ? "#1A1814" : "#8C8880", boxShadow: mode === m ? "0 1px 6px rgba(0,0,0,0.08)" : "none" }}>{label}</button>
+                ))}
+              </div>
+
+              {/* Social buttons */}
+              <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+                {[["G", "Continue with Google", "#fff", "#3A3830", "#E8E5E0"], ["", "Continue with Apple", "#1A1814", "#F7F6F2", "#1A1814"]].map(([icon, label, bg, color, border]) => (
+                  <button key={label} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: `1.5px solid ${border}`, background: bg, color, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", fontFamily: "'DM Sans', sans-serif" }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                    <span style={{ fontSize: 14, fontWeight: 900 }}>{icon || "🍎"}</span> {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <div style={{ flex: 1, height: 1, background: "#ECEAE4" }} />
+                <span style={{ fontSize: 11, color: "#A8A59E", fontWeight: 500 }}>or continue with email</span>
+                <div style={{ flex: 1, height: 1, background: "#ECEAE4" }} />
+              </div>
+
+              {/* Fields */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+                {mode === "signup" && (
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Full Name</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
+                      onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.name ? "#E85D3F" : "#E8E5E0"} />
+                    {errors.name && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.name}</div>}
+                  </div>
+                )}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Email Address</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
+                    onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.email ? "#E85D3F" : "#E8E5E0"} />
+                  {errors.email && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.email}</div>}
+                </div>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", letterSpacing: 0.3 }}>Password</label>
+                    {mode === "login" && <span style={{ fontSize: 11, color: "#4F6EF7", cursor: "pointer", fontWeight: 600 }}>Forgot password?</span>}
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
+                      onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.password ? "#E85D3F" : "#E8E5E0"} />
+                    <button onClick={() => setShowPass(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showPass ? "🙈" : "👁"}</button>
+                  </div>
+                  {errors.password && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.password}</div>}
+                  {mode === "signup" && password && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ display: "flex", gap: 3, marginBottom: 4 }}>
+                        {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength ? strengthColor : "#ECEAE4", transition: "background 0.3s" }} />)}
+                      </div>
+                      <span style={{ fontSize: 10, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>
+                    </div>
+                  )}
+                </div>
+                {mode === "signup" && (
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Confirm Password</label>
+                    <div style={{ position: "relative" }}>
+                      <input type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
+                        onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.confirm ? "#E85D3F" : "#E8E5E0"} />
+                      <button onClick={() => setShowConf(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showConf ? "🙈" : "👁"}</button>
+                    </div>
+                    {errors.confirm && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.confirm}</div>}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit */}
+              <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "13px 0", borderRadius: 9, border: "none", background: "#1A1814", color: "#F7F6F2", fontSize: 14, fontWeight: 700, cursor: loading ? "default" : "pointer", letterSpacing: 0.5, transition: "all 0.2s", opacity: loading ? 0.7 : 1, marginBottom: 18 }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.86"; }}
+                onMouseLeave={e => e.currentTarget.style.opacity = loading ? "0.7" : "1"}>
+                {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+              </button>
+
+              {mode === "signup" && (
+                <p style={{ fontSize: 11, color: "#A8A59E", textAlign: "center", lineHeight: 1.6 }}>
+                  By creating an account you agree to our <span style={{ color: "#4F6EF7", cursor: "pointer" }}>Terms</span> and <span style={{ color: "#4F6EF7", cursor: "pointer" }}>Privacy Policy</span>.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AceItGalaxy ─────────────────────────────────────────────────────────────
+export default function AceItGalaxy() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activePlanet, setActivePlanet] = useState(null);
+  const [currentApp, setCurrentApp] = useState(null);
+  const [user, setUser]       = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [recentApps, setRecentApps] = useState([]);
+  const [avatar, setAvatar]         = useState(null);       // null = not built yet
+  const [showFloating, setShowFloating] = useState(true);   // floating assistant visibility
+
+  const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
+  const handleAuth = (userData) => { setUser(userData); setShowAuth(false); };
+  const handleLogout = () => setUser(null);
+
+  const launchApp = (appId) => {
+    setRecentApps(prev => {
+      const filtered = prev.filter(id => id !== appId);
+      return [appId, ...filtered].slice(0, 3);
+    });
+    setCurrentApp(appId);
+  };
+
+  const floatingWidget = <FloatingAssistant avatar={avatar} visible={showFloating && currentApp !== "assistant"} user={user} onOpen={() => launchApp("assistant")} />;
+
+  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} />;
+  if (currentApp) {
+    const planet = PLANETS.find(p => p.appId === currentApp);
+    if (planet) return <>{<AppLanding planet={planet} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "radial-gradient(ellipse at 48% 52%, #0a0818 0%, #060410 45%, #020208 100%)",
+      overflow: "hidden",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+      <style>{`
+        @keyframes starPulse { 0% { opacity: var(--lo, 0.1); } 100% { opacity: var(--hi, 0.6); } }
+        @keyframes coronaPulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.04); } }
+        @keyframes fadeSlideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes modalIn { from { opacity:0; transform:translate(-50%,-48%) scale(0.96); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        * { box-sizing: border-box; }
+      `}</style>
+
+      {/* Subtle deep nebula atmosphere */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
+        background: "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(80,50,160,0.06) 0%, transparent 70%)" }} />
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
+        background: "radial-gradient(ellipse 60% 50% at 80% 80%, rgba(30,80,160,0.05) 0%, transparent 70%)" }} />
+
+      <Stars />
+
+      {/* Header bar — glassmorphism, cleaner */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 400,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 28px",
+        height: 56,
+        background: "rgba(4,2,14,0.72)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        animation: "fadeUp 0.8s ease 0.2s both",
+      }}>
+        {/* Menu button */}
+        <button onClick={() => setSidebarOpen(prev => !prev)} style={{
+          background: "none", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 6, width: 34, height: 34, cursor: "pointer",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+          transition: "all 0.2s",
+        }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,217,106,0.4)"; e.currentTarget.style.background = "rgba(245,217,106,0.06)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "none"; }}
+        >
+          <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
+          <div style={{ width: 10, height: 1.5, background: "rgba(255,255,255,0.35)", borderRadius: 1 }} />
+          <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
+        </button>
+
+        {/* Center brand */}
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 24, height: 24, borderRadius: 6, background: "linear-gradient(135deg, #F5D96A, #E8A82A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 12, fontWeight: 900, color: "#1A1814" }}>A</span>
+          </div>
+          <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 3, textTransform: "uppercase" }}>Ace It Galaxy</span>
+        </div>
+
+        {/* Right — auth */}
+        {user ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(245,217,106,0.9)" }}>{user.name}</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 1, letterSpacing: 0.5 }}>FREE PLAN</div>
+            </div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #9B7FFF, #F5D96A)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 800, color: "#1A1814", cursor: "pointer", border: "2px solid rgba(255,255,255,0.12)" }}
+              onClick={() => setSidebarOpen(true)}>
+              {user.avatar}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={() => openAuth("login")} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 500, padding: "6px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 6, color: "rgba(255,255,255,0.6)", cursor: "pointer", transition: "all 0.18s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}>
+              Log In
+            </button>
+            <button onClick={() => openAuth("signup")} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, padding: "6px 18px", background: "#F5D96A", border: "none", borderRadius: 6, color: "rgba(0,0,0,0.8)", cursor: "pointer", transition: "all 0.18s", boxShadow: "0 2px 12px rgba(245,217,106,0.25)" }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
+              Sign Up
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Galaxy scene */}
+      <div style={{ position: "absolute", inset: 0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <Sun />
+        {PLANETS.map((planet) => (
+          <Planet key={planet.id} planet={planet} onClick={setActivePlanet} isActive={activePlanet?.id === planet.id} />
+        ))}
+      </div>
+
+      {/* Planet detail modal — modern glass design */}
+      {activePlanet && (
+        <>
+          <div onClick={() => setActivePlanet(null)} style={{ position: "fixed", inset: 0, zIndex: 499, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(3px)" }} />
+          <div style={{
+            position: "fixed", left: "50%", top: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 500, width: 340,
+            background: "linear-gradient(160deg, rgba(12,9,28,0.97) 0%, rgba(6,4,18,0.97) 100%)",
+            border: `1px solid ${activePlanet.color}28`,
+            borderRadius: 20, padding: "32px 30px 28px",
+            backdropFilter: "blur(32px)",
+            boxShadow: `0 0 0 1px rgba(0,0,0,0.6), 0 32px 80px rgba(0,0,0,0.7), 0 0 60px ${activePlanet.glow}22`,
+            animation: "modalIn 0.28s cubic-bezier(0.16,1,0.3,1) forwards",
+          }}>
+            {/* Glow accent top */}
+            <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 120, height: 1, background: `linear-gradient(90deg, transparent, ${activePlanet.color}80, transparent)` }} />
+
+            {/* Close */}
+            <button onClick={() => setActivePlanet(null)} style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)", width: 26, height: 26, borderRadius: 6, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}>✕</button>
+
+            {/* Planet icon + name row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, ${activePlanet.color}cc 0%, ${activePlanet.color}44 60%, transparent 100%)`, boxShadow: `0 0 0 1px ${activePlanet.color}30, 0 0 24px ${activePlanet.glow}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 22, color: "#fff", textShadow: `0 0 12px ${activePlanet.glow}` }}>{activePlanet.symbol}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: activePlanet.color, letterSpacing: 2.5, textTransform: "uppercase", marginBottom: 5, opacity: 0.8 }}>Application</div>
+                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 19, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{activePlanet.name}</div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginBottom: 22, lineHeight: 1.65, fontWeight: 300 }}>{activePlanet.desc}</div>
+
+            {/* Stats chips */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
+              {[["Free", "Plan"], ["All", "Devices"], ["Offline", "Ready"]].map(([v, l]) => (
+                <div key={l} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "7px 4px", textAlign: "center" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{v}</div>
+                  <div style={{ fontSize: 8, color: "rgba(255,255,255,0.22)", letterSpacing: 0.5 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 18 }} />
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setActivePlanet(null)} style={{ flex: 1, fontSize: 12, fontWeight: 500, padding: "10px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.18s", fontFamily: "'DM Sans', sans-serif" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}>Dismiss</button>
+              <button onClick={() => { if (activePlanet.appId) { launchApp(activePlanet.appId); setActivePlanet(null); } }}
+                style={{ flex: 2, fontSize: 12, fontWeight: 700, padding: "10px 0", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${activePlanet.color}, ${activePlanet.glow})`, color: "rgba(0,0,0,0.85)", cursor: "pointer", transition: "all 0.18s", boxShadow: `0 4px 20px ${activePlanet.glow}44`, fontFamily: "'DM Sans', sans-serif" }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}>Launch App →</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        planets={PLANETS}
+        onSelect={(p) => { setActivePlanet(p); setSidebarOpen(false); }}
+        activePlanet={activePlanet}
+        user={user}
+        openAuth={openAuth}
+        onLogout={handleLogout}
+        recentApps={recentApps}
+        onLaunch={(appId) => { launchApp(appId); setSidebarOpen(false); }}
+      />
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
+      {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} />}
+    </div>
+  );
+}
