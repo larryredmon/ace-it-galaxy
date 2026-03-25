@@ -1,4 +1,28 @@
 import { useState, useEffect, useRef } from "react";
+import { auth, db, googleProvider } from "./firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  serverTimestamp,
+} from "firebase/firestore";
 
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
@@ -6334,79 +6358,116 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
 // ─── Auth Modal ──────────────────────────────────────────────────────────────
 function AuthModal({ onClose, onAuth, initialMode = "login" }) {
-  const [mode, setMode]             = useState(initialMode); // login | signup
-  const [step, setStep]             = useState("form");      // form | success
-  const [name, setName]             = useState("");
-  const [email, setEmail]           = useState("");
-  const [password, setPassword]     = useState("");
-  const [confirm, setConfirm]       = useState("");
-  const [showPass, setShowPass]     = useState(false);
-  const [showConf, setShowConf]     = useState(false);
-  const [errors, setErrors]         = useState({});
-  const [loading, setLoading]       = useState(false);
+  const [mode, setMode]         = useState(initialMode);
+  const [step, setStep]         = useState("form");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm]   = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConf, setShowConf] = useState(false);
+  const [errors, setErrors]     = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); };
+  const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
   const passStrength = (p) => {
     if (!p) return 0;
     let s = 0;
-    if (p.length >= 8)             s++;
-    if (/[A-Z]/.test(p))           s++;
-    if (/[0-9]/.test(p))           s++;
-    if (/[^A-Za-z0-9]/.test(p))   s++;
+    if (p.length >= 8)           s++;
+    if (/[A-Z]/.test(p))         s++;
+    if (/[0-9]/.test(p))         s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
     return s;
   };
-  const strength = passStrength(password);
+  const strength      = passStrength(password);
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
   const strengthColor = ["", "#E85D3F", "#F5C842", "#4F6EF7", "#2BAE7E"][strength];
 
   const validate = () => {
     const e = {};
-    if (mode === "signup" && !name.trim())      e.name     = "Name is required";
-    if (!email.trim())                          e.email    = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(email))      e.email    = "Enter a valid email";
-    if (!password)                              e.password = "Password is required";
-    else if (password.length < 8)              e.password = "At least 8 characters";
-    if (mode === "signup" && password !== confirm) e.confirm = "Passwords don't match";
+    if (mode === "signup" && !name.trim())         e.name     = "Name is required";
+    if (!email.trim())                             e.email    = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email))        e.email    = "Enter a valid email";
+    if (!password)                                 e.password = "Password is required";
+    else if (password.length < 8)                 e.password = "At least 8 characters";
+    if (mode === "signup" && password !== confirm) e.confirm  = "Passwords don't match";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setLoading(true);
-    setTimeout(() => {
+    setLoading(true); setErrors({});
+    try {
+      if (mode === "signup") {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(cred.user, { displayName: name });
+        await setDoc(doc(db, "users", cred.user.uid), { name, email, createdAt: serverTimestamp(), plan: "free" });
+        setStep("success");
+        setTimeout(() => onAuth({ uid: cred.user.uid, name, email, avatar: name[0].toUpperCase() }), 1400);
+      } else {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const snap = await getDoc(doc(db, "users", cred.user.uid));
+        const displayName = snap.exists() ? snap.data().name : cred.user.displayName || email.split("@")[0];
+        setStep("success");
+        setTimeout(() => onAuth({ uid: cred.user.uid, name: displayName, email, avatar: displayName[0].toUpperCase() }), 1400);
+      }
+    } catch (err) {
+      const msg = err.code === "auth/email-already-in-use" ? "An account with this email already exists."
+                : err.code === "auth/user-not-found"       ? "No account found with this email."
+                : err.code === "auth/wrong-password"       ? "Incorrect password. Try again."
+                : err.code === "auth/invalid-credential"   ? "Incorrect email or password."
+                : err.code === "auth/too-many-requests"    ? "Too many attempts. Try again later."
+                : "Something went wrong. Please try again.";
+      setErrors({ general: msg });
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true); setErrors({});
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const u = cred.user;
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (!snap.exists()) await setDoc(doc(db, "users", u.uid), { name: u.displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
+      const displayName = snap.exists() ? snap.data().name : u.displayName;
       setStep("success");
-      setTimeout(() => {
-        onAuth({ name: name || email.split("@")[0], email, avatar: (name || email)[0].toUpperCase() });
-      }, 1400);
-    }, 900);
+      setTimeout(() => onAuth({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() }), 1400);
+    } catch (err) {
+      if (err.code !== "auth/popup-closed-by-user") setErrors({ general: "Google sign in failed. Please try again." });
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) { setErrors({ email: "Enter your email above first" }); return; }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch {
+      setErrors({ general: "Could not send reset email. Check your email address." });
+    } finally { setLoading(false); }
   };
 
   const inputStyle = (field) => ({
     width: "100%", padding: "12px 14px",
     border: `1.5px solid ${errors[field] ? "#E85D3F" : "#E8E5E0"}`,
     borderRadius: 8, fontSize: 14, color: "#1A1814", outline: "none",
-    fontFamily: "'DM Sans', sans-serif", background: "#FAFAF8",
-    transition: "border-color 0.18s",
+    fontFamily: "'DM Sans', sans-serif", background: "#FAFAF8", transition: "border-color 0.18s",
   });
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
-      {/* Backdrop */}
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)" }} />
-
-      {/* Modal card */}
       <div style={{ position: "relative", width: "100%", maxWidth: 860, minHeight: 0, display: "flex", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards", margin: "auto" }}>
-
-        {/* ── LEFT — Brand panel ── */}
+        {/* LEFT */}
         <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
-          {/* BG glow */}
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-          {/* Logo */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F5C842", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -6414,96 +6475,80 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
               </div>
               <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>ACE IT</span>
             </div>
-
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 900, color: "#F7F6F2", lineHeight: 1.2, marginBottom: 16 }}>
               {mode === "login" ? "Welcome back." : "Start your journey."}
             </h2>
             <p style={{ fontSize: 14, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, fontWeight: 300 }}>
-              {mode === "login"
-                ? "Sign in to access your Galaxy, flashcard decks, and study tools."
-                : "Create a free account and start mastering your subjects today."}
+              {mode === "login" ? "Sign in to access your Galaxy, flashcard decks, and study tools." : "Create a free account and start mastering your subjects today."}
             </p>
           </div>
-
-          {/* Floating card decoration */}
           <div style={{ marginBottom: 32 }}>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderTop: "2px solid #C8B8FF", borderRadius: 12, padding: "18px 20px", marginBottom: 10 }}>
               <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Ace It Flash Cards</div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Ace It Flash Cards</div>
               <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: "100%", width: "65%", background: "#C8B8FF", borderRadius: 2 }} /></div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, marginLeft: 20 }}>
-              <span style={{ fontSize: 16 }}>🔓</span>
-              <span style={{ fontSize: 12, color: "rgba(247,246,242,0.4)" }}>New card unlocked! <span style={{ color: "#2BAE7E", fontWeight: 600 }}>Escrow</span></span>
-            </div>
           </div>
-
-          {/* Tagline */}
           <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It Galaxy</div>
         </div>
 
-        {/* ── RIGHT — Form panel ── */}
+        {/* RIGHT */}
         <div style={{ flex: 1, background: "#fff", padding: "48px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto" }}>
-          {/* Close */}
-          <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; e.currentTarget.style.color = "#1A1814"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; e.currentTarget.style.color = "#8C8880"; }}>✕</button>
+          <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
-          {/* Success screen */}
           {step === "success" ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#2BAE7E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 24, boxShadow: "0 0 0 8px #2BAE7E18" }}>✓</div>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 10 }}>
-                {mode === "login" ? "Welcome back!" : "Account created!"}
-              </h3>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 10 }}>{mode === "login" ? "Welcome back!" : "Account created!"}</h3>
               <p style={{ fontSize: 14, color: "#8C8880" }}>Taking you in…</p>
             </div>
           ) : (
             <>
-              {/* Tab switcher */}
               <div style={{ display: "flex", background: "#F7F6F2", borderRadius: 10, padding: 4, marginBottom: 32, gap: 4 }}>
                 {[["login", "Sign In"], ["signup", "Create Account"]].map(([m, label]) => (
                   <button key={m} onClick={() => switchMode(m)} style={{ flex: 1, padding: "9px 0", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", background: mode === m ? "#fff" : "transparent", color: mode === m ? "#1A1814" : "#8C8880", boxShadow: mode === m ? "0 1px 6px rgba(0,0,0,0.08)" : "none" }}>{label}</button>
                 ))}
               </div>
 
-              {/* Social buttons */}
+              {errors.general && <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#E85D3F", fontWeight: 500 }}>{errors.general}</div>}
+              {resetSent && <div style={{ background: "#F0FFF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#166534", fontWeight: 500 }}>✓ Password reset email sent — check your inbox.</div>}
+
               <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-                {[["G", "Continue with Google", "#fff", "#3A3830", "#E8E5E0"], ["", "Continue with Apple", "#1A1814", "#F7F6F2", "#1A1814"]].map(([icon, label, bg, color, border]) => (
-                  <button key={label} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: `1.5px solid ${border}`, background: bg, color, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", fontFamily: "'DM Sans', sans-serif" }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                    <span style={{ fontSize: 14, fontWeight: 900 }}>{icon || "🍎"}</span> {label}
-                  </button>
-                ))}
+                <button onClick={handleGoogle} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: "1.5px solid #E8E5E0", background: "#fff", color: "#3A3830", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                  <span style={{ fontSize: 15, fontWeight: 900 }}>G</span> Continue with Google
+                </button>
+                <button disabled style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: "1.5px solid #1A1814", background: "#1A1814", color: "#F7F6F2", fontSize: 12, fontWeight: 600, cursor: "not-allowed", opacity: 0.5, fontFamily: "'DM Sans', sans-serif" }}>
+                  <span>🍎</span> Continue with Apple
+                </button>
               </div>
 
-              {/* Divider */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
                 <div style={{ flex: 1, height: 1, background: "#ECEAE4" }} />
                 <span style={{ fontSize: 11, color: "#A8A59E", fontWeight: 500 }}>or continue with email</span>
                 <div style={{ flex: 1, height: 1, background: "#ECEAE4" }} />
               </div>
 
-              {/* Fields */}
               <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Full Name</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Full Name</label>
                     <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.name ? "#E85D3F" : "#E8E5E0"} />
                     {errors.name && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.name}</div>}
                   </div>
                 )}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Email Address</label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Email Address</label>
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
                     onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.email ? "#E85D3F" : "#E8E5E0"} />
                   {errors.email && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.email}</div>}
                 </div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", letterSpacing: 0.3 }}>Password</label>
-                    {mode === "login" && <span style={{ fontSize: 11, color: "#4F6EF7", cursor: "pointer", fontWeight: 600 }}>Forgot password?</span>}
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752" }}>Password</label>
+                    {mode === "login" && <span onClick={handleForgotPassword} style={{ fontSize: 11, color: "#4F6EF7", cursor: "pointer", fontWeight: 600 }}>{loading ? "Sending…" : "Forgot password?"}</span>}
                   </div>
                   <div style={{ position: "relative" }}>
                     <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
@@ -6522,7 +6567,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                 </div>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, letterSpacing: 0.3 }}>Confirm Password</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Confirm Password</label>
                     <div style={{ position: "relative" }}>
                       <input type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
                         onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.confirm ? "#E85D3F" : "#E8E5E0"} />
@@ -6533,10 +6578,8 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                 )}
               </div>
 
-              {/* Submit */}
               <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "13px 0", borderRadius: 9, border: "none", background: "#1A1814", color: "#F7F6F2", fontSize: 14, fontWeight: 700, cursor: loading ? "default" : "pointer", letterSpacing: 0.5, transition: "all 0.2s", opacity: loading ? 0.7 : 1, marginBottom: 18 }}
-                onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.86"; }}
-                onMouseLeave={e => e.currentTarget.style.opacity = loading ? "0.7" : "1"}>
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.86"; }} onMouseLeave={e => e.currentTarget.style.opacity = loading ? "0.7" : "1"}>
                 {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
               </button>
 
@@ -7915,7 +7958,24 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
 
   const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
   const handleAuth = (userData) => { setUser(userData); setShowAuth(false); setShowHome(false); };
-  const handleLogout = () => { setUser(null); setShowHome(true); setCurrentApp(null); };
+  const handleLogout = async () => {
+    try { await signOut(auth); } catch {}
+    setUser(null); setShowHome(true); setCurrentApp(null);
+  };
+
+  // Keep user logged in across page refreshes
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const snap = await getDoc(doc(db, "users", firebaseUser.uid));
+        const data = snap.exists() ? snap.data() : {};
+        const displayName = data.name || firebaseUser.displayName || firebaseUser.email.split("@")[0];
+        setUser({ uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() });
+        setShowHome(false);
+      }
+    });
+    return () => unsub();
+  }, []); // eslint-disable-line
 
   // Show landing page
   if (showHome && !user) {
