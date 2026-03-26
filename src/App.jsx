@@ -10,6 +10,8 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  browserLocalPersistence,
+  setPersistence,
 } from "firebase/auth";
 import {
   doc,
@@ -7696,7 +7698,8 @@ export default function AceItGalaxy() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
-  const [user, setUser]       = useState(null);
+  const [user, setUser]             = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [recentApps, setRecentApps] = useState([]);
@@ -7961,12 +7964,14 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
 
   // Keep user logged in across page refreshes + handle Google redirect result
   useEffect(() => {
-    // Handle Google redirect result
+    // Set persistence to local so user stays logged in
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+    // Handle Google redirect result first
     getRedirectResult(auth).then(async (result) => {
       if (result?.user) {
         const u = result.user;
         const displayName = u.displayName || u.email.split("@")[0];
-        // Try to save to Firestore but don't block login if it fails
         try {
           const snap = await getDoc(doc(db, "users", u.uid));
           if (!snap.exists()) {
@@ -7975,33 +7980,45 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         } catch {}
         setUser({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() });
         setShowHome(false);
+        setShowAuth(false);
       }
     }).catch(() => {});
 
+    // Listen for auth state changes
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Set user immediately from Firebase auth — don't wait for Firestore
         const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
         setUser({ uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() });
         setShowHome(false);
-        // Try to enrich with Firestore data in background
+        setShowAuth(false);
+        // Enrich with Firestore name in background
         getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
           if (snap.exists() && snap.data().name) {
             const name = snap.data().name;
-            setUser(u => ({ ...u, name, avatar: name[0].toUpperCase() }));
+            setUser(u => u ? { ...u, name, avatar: name[0].toUpperCase() } : u);
           }
         }).catch(() => {});
+      } else {
+        setUser(null);
       }
+      setAuthLoading(false);
     });
     return () => unsub();
   }, []); // eslint-disable-line
 
-  // Show landing page
+  // Show splash while Firebase resolves auth state
+  if (authLoading) return (
+    <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Ace It ✦</div>
+    </div>
+  );
+
+  // Show landing page only if no user AND not in the middle of a redirect
   if (showHome && !user) {
     return (
       <>
         <LandingPage onEnter={() => setShowHome(false)} openAuth={(mode) => { openAuth(mode); }} />
-        {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={(userData) => { setUser(userData); setShowAuth(false); setShowHome(false); }} initialMode={authMode} />}
       </>
     );
   }
