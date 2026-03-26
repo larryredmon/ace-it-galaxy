@@ -5468,6 +5468,47 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
   );
 }
 
+// ── Stable chat input bar — lives outside PA so typing doesn't re-render the whole app
+function ChatInputBar({ onSend, loading, PA_GLOW, PA_COLOR }) {
+  const [input, setInput] = useState("");
+  const textareaRef = useRef(null);
+
+  const handleSend = () => {
+    if (!input.trim() || loading) return;
+    onSend(input);
+    setInput("");
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  return (
+    <div style={{ padding: "14px 20px 20px", borderTop: "1px solid #E4EEF8", flexShrink: 0, background: "#fff" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-end", background: "#F4F8FF", border: "1.5px solid #D8ECFF", borderRadius: 14, padding: "10px 12px", transition: "border-color 0.18s" }}
+        onFocusCapture={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.boxShadow = `0 0 0 3px ${PA_GLOW}18`; }}
+        onBlurCapture={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.boxShadow = "none"; }}>
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === " ") e.stopPropagation();
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+          }}
+          placeholder="Ask me anything…"
+          rows={1}
+          style={{ flex: 1, padding: "2px 0", fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans',sans-serif", outline: "none", resize: "none", lineHeight: 1.6, background: "transparent", border: "none", maxHeight: 140, overflowY: "auto" }}
+        />
+        <button onClick={handleSend} disabled={!input.trim() || loading}
+          style={{ width: 38, height: 38, borderRadius: 10, border: "none", background: input.trim() && !loading ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#D8ECFF", cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", flexShrink: 0, fontSize: 16, color: input.trim() && !loading ? "#fff" : "#A8B4C0" }}>
+          {loading
+            ? <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "pa-bounce 0.8s linear infinite" }} />
+            : "↑"}
+        </button>
+      </div>
+      <div style={{ fontSize: 10, color: "#C0CDD8", marginTop: 7, textAlign: "center" }}>Enter to send · Shift+Enter for new line · Powered by Claude</div>
+    </div>
+  );
+}
+
 function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAvatar, showFloating, setShowFloating, aiContext, userProfile, onGoalsChange }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [view, setView]               = useState("home");
@@ -5539,7 +5580,6 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   };
   // ─────────────────────────────────────────────────────────────────────────────
   const [loading, setLoading]         = useState(false);
-  const [input, setInput]             = useState("");
   const [goals, setGoals]             = useState([
     { id: 1, text: "Complete my first flashcard deck",    done: false, priority: "high"   },
     { id: 2, text: "Try all three study modes",           done: false, priority: "medium" },
@@ -5587,9 +5627,8 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   };
 
   const sendMessage = async (text) => {
-    const userText = text || input.trim();
+    const userText = typeof text === "string" ? text.trim() : "";
     if (!userText || loading) return;
-    setInput("");
 
     if (messages.length === 0) {
       setConversations(cs => cs.map(c => c.id === activeConvoId ? { ...c, title: autoTitle(userText) } : c));
@@ -5663,26 +5702,28 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         </p>
 
         {/* Inline chat bar — sends and opens chat view */}
-        <div style={{ display: "flex", gap: 10, marginTop: 20, maxWidth: 580 }}>
-          <div style={{ flex: 1, position: "relative" }}>
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === " ") e.stopPropagation(); if (e.key === "Enter" && input.trim()) { setView("chat"); setTimeout(() => sendMessage(input), 80); } }}
-              placeholder="Ask me anything…"
-              style={{ width: "100%", padding: "14px 18px", borderRadius: 12, border: `1.5px solid #D8ECFF`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: "none", color: "#0A1628", background: "#F4F8FF", boxSizing: "border-box", transition: "border-color 0.18s, box-shadow 0.18s" }}
-              onFocus={e => { e.target.style.borderColor = PA_GLOW; e.target.style.boxShadow = `0 0 0 3px ${PA_COLOR}22`; e.target.style.background = "#fff"; }}
-              onBlur={e => { e.target.style.borderColor = "#D8ECFF"; e.target.style.boxShadow = "none"; e.target.style.background = "#F4F8FF"; }}
-            />
-          </div>
-          <button
-            onClick={() => { if (input.trim()) { setView("chat"); setTimeout(() => sendMessage(input), 80); } }}
-            style={{ padding: "14px 22px", borderRadius: 12, border: "none", background: input.trim() ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#E4EEF8", color: input.trim() ? "#fff" : "#A8B4C0", fontSize: 14, fontWeight: 700, cursor: input.trim() ? "pointer" : "default", transition: "all 0.18s", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" }}
-            onMouseEnter={e => { if (input.trim()) e.currentTarget.style.opacity = "0.88"; }}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-            Send →
-          </button>
-        </div>
+        {(() => {
+          const [homeInput, setHomeInput] = useState("");
+          return (
+            <div style={{ display: "flex", gap: 10, marginTop: 20, maxWidth: 580 }}>
+              <div style={{ flex: 1, position: "relative" }}>
+                <input
+                  value={homeInput}
+                  onChange={e => setHomeInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === " ") e.stopPropagation(); if (e.key === "Enter" && homeInput.trim()) { setView("chat"); setTimeout(() => sendMessage(homeInput), 80); setHomeInput(""); } }}
+                  placeholder="Ask me anything…"
+                  style={{ width: "100%", padding: "14px 18px", borderRadius: 12, border: "1.5px solid #D8ECFF", fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: "none", color: "#0A1628", background: "#F4F8FF", boxSizing: "border-box", transition: "border-color 0.18s" }}
+                  onFocus={e => { e.target.style.borderColor = PA_GLOW; e.target.style.background = "#fff"; }}
+                  onBlur={e => { e.target.style.borderColor = "#D8ECFF"; e.target.style.background = "#F4F8FF"; }}
+                />
+              </div>
+              <button onClick={() => { if (homeInput.trim()) { setView("chat"); setTimeout(() => sendMessage(homeInput), 80); setHomeInput(""); } }}
+                style={{ padding: "14px 22px", borderRadius: 12, border: "none", background: homeInput.trim() ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#E4EEF8", color: homeInput.trim() ? "#fff" : "#A8B4C0", fontSize: 14, fontWeight: 700, cursor: homeInput.trim() ? "pointer" : "default", transition: "all 0.18s", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" }}>
+                Send →
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Quick start — suggested prompts */}
@@ -5941,38 +5982,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           </div>
 
           {/* ── Input bar ── */}
-          <div style={{ padding: "14px 20px 20px", borderTop: "1px solid #E4EEF8", flexShrink: 0, background: "#fff" }}>
-            {/* Quick-reply chips when messages exist */}
-            {messages.length > 0 && !loading && (
-              <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-                {["Explain that differently", "Give me an example", "Quiz me on this", "Make it simpler", "Go deeper", "Summarize this"].map(s => (
-                  <button key={s} onClick={() => sendMessage(s)}
-                    style={{ padding: "4px 11px", borderRadius: 20, border: "1px solid #D8ECFF", background: "#F4F8FF", fontSize: 11, color: PA_GLOW, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.15s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = `${PA_COLOR}22`; e.currentTarget.style.borderColor = PA_GLOW; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#F4F8FF"; e.currentTarget.style.borderColor = "#D8ECFF"; }}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", background: "#F4F8FF", border: `1.5px solid #D8ECFF`, borderRadius: 14, padding: "10px 12px", transition: "border-color 0.18s" }}
-              onFocusCapture={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.boxShadow = `0 0 0 3px ${PA_GLOW}18`; }}
-              onBlurCapture={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.boxShadow = "none"; }}>
-              <textarea value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } if (e.key === " ") e.stopPropagation(); }}
-                placeholder="Ask me anything…"
-                rows={1}
-                style={{ flex: 1, padding: "2px 0", fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans',sans-serif", outline: "none", resize: "none", lineHeight: 1.6, background: "transparent", border: "none", maxHeight: 140, overflowY: "auto" }} />
-              <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
-                style={{ width: 38, height: 38, borderRadius: 10, border: "none", background: input.trim() && !loading ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#D8ECFF", cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", boxShadow: input.trim() && !loading ? `0 4px 14px ${PA_GLOW}44` : "none", flexShrink: 0, fontSize: 16, color: input.trim() && !loading ? "#fff" : "#A8B4C0" }}>
-                {loading
-                  ? <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "pa-bounce 0.8s linear infinite" }} />
-                  : "↑"}
-              </button>
-            </div>
-            <div style={{ fontSize: 10, color: "#C0CDD8", marginTop: 7, textAlign: "center" }}>Enter to send · Shift+Enter for new line · Powered by Claude</div>
-          </div>
+          <ChatInputBar onSend={sendMessage} loading={loading} PA_GLOW={PA_GLOW} PA_COLOR={PA_COLOR} />
         </div>
       </div>
     );
@@ -6350,13 +6360,13 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
       {/* Main content */}
       <main style={{ overflowY: view === "chat" ? "hidden" : "auto" }}>
-        {view === "home"     && <HomeView />}
-        {view === "chat"     && <ChatView />}
-        {view === "planner"  && <PlannerView />}
-        {view === "goals"    && <GoalsView />}
-        {view === "progress" && <ProgressView />}
-        {view === "avatar"   && <AvatarView />}
-        {view === "prefs"    && <PrefsView />}
+        {view === "home"     && HomeView()}
+        {view === "chat"     && ChatView()}
+        {view === "planner"  && PlannerView()}
+        {view === "goals"    && GoalsView()}
+        {view === "progress" && ProgressView()}
+        {view === "avatar"   && AvatarView()}
+        {view === "prefs"    && PrefsView()}
       </main>
     </div>
   );
