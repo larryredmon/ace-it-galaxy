@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -6429,15 +6431,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const handleGoogle = async () => {
     setLoading(true); setErrors({});
     try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      const u = cred.user;
-      const snap = await getDoc(doc(db, "users", u.uid));
-      if (!snap.exists()) await setDoc(doc(db, "users", u.uid), { name: u.displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
-      const displayName = snap.exists() ? snap.data().name : u.displayName;
-      setStep("success");
-      setTimeout(() => onAuth({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() }), 1400);
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
-      if (err.code !== "auth/popup-closed-by-user") setErrors({ general: "Google sign in failed. Please try again." });
+      setErrors({ general: "Google sign in failed. Please try again." });
       setLoading(false);
     }
   };
@@ -7963,8 +7959,22 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     setUser(null); setShowHome(true); setCurrentApp(null);
   };
 
-  // Keep user logged in across page refreshes
+  // Keep user logged in across page refreshes + handle Google redirect result
   useEffect(() => {
+    // Handle Google redirect result
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        const u = result.user;
+        const snap = await getDoc(doc(db, "users", u.uid));
+        if (!snap.exists()) {
+          await setDoc(doc(db, "users", u.uid), { name: u.displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
+        }
+        const displayName = snap.exists() ? snap.data().name : u.displayName;
+        setUser({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() });
+        setShowHome(false);
+      }
+    }).catch(() => {});
+
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const snap = await getDoc(doc(db, "users", firebaseUser.uid));
