@@ -6457,9 +6457,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)" }} />
-      <div style={{ position: "relative", width: "100%", maxWidth: 860, minHeight: 0, display: "flex", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards", margin: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
         <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
@@ -6489,7 +6489,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
         </div>
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: "48px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto" }}>
+        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
@@ -7965,23 +7965,32 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     getRedirectResult(auth).then(async (result) => {
       if (result?.user) {
         const u = result.user;
-        const snap = await getDoc(doc(db, "users", u.uid));
-        if (!snap.exists()) {
-          await setDoc(doc(db, "users", u.uid), { name: u.displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
-        }
-        const displayName = snap.exists() ? snap.data().name : u.displayName;
+        const displayName = u.displayName || u.email.split("@")[0];
+        // Try to save to Firestore but don't block login if it fails
+        try {
+          const snap = await getDoc(doc(db, "users", u.uid));
+          if (!snap.exists()) {
+            await setDoc(doc(db, "users", u.uid), { name: displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
+          }
+        } catch {}
         setUser({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() });
         setShowHome(false);
       }
     }).catch(() => {});
 
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-        const data = snap.exists() ? snap.data() : {};
-        const displayName = data.name || firebaseUser.displayName || firebaseUser.email.split("@")[0];
+        // Set user immediately from Firebase auth — don't wait for Firestore
+        const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
         setUser({ uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() });
         setShowHome(false);
+        // Try to enrich with Firestore data in background
+        getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
+          if (snap.exists() && snap.data().name) {
+            const name = snap.data().name;
+            setUser(u => ({ ...u, name, avatar: name[0].toUpperCase() }));
+          }
+        }).catch(() => {});
       }
     });
     return () => unsub();
