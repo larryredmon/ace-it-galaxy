@@ -5956,9 +5956,11 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", background: "#F4F8FF", border: `1.5px solid ${input ? PA_GLOW : "#D8ECFF"}`, borderRadius: 14, padding: "10px 12px", transition: "border-color 0.18s", boxShadow: input ? `0 0 0 3px ${PA_GLOW}18` : "none" }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", background: "#F4F8FF", border: `1.5px solid #D8ECFF`, borderRadius: 14, padding: "10px 12px", transition: "border-color 0.18s" }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.boxShadow = `0 0 0 3px ${PA_GLOW}18`; }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.boxShadow = "none"; }}>
               <textarea value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } if (e.key === " ") e.stopPropagation(); }}
                 placeholder="Ask me anything…"
                 rows={1}
                 style={{ flex: 1, padding: "2px 0", fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans',sans-serif", outline: "none", resize: "none", lineHeight: 1.6, background: "transparent", border: "none", maxHeight: 140, overflowY: "auto" }} />
