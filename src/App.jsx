@@ -6457,11 +6457,11 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
-        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div>
@@ -8041,7 +8041,8 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         @keyframes coronaPulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.04); } }
         @keyframes fadeSlideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes modalIn { from { opacity:0; transform:translate(-50%,-48%) scale(0.96); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+        @keyframes modalIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
