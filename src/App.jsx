@@ -7698,14 +7698,18 @@ export default function AceItGalaxy() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
-  const [user, setUser]             = useState(null);
+  const [user, setUser]             = useState(() => {
+    try { const s = localStorage.getItem("aceIt_user"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [recentApps, setRecentApps] = useState([]);
   const [avatar, setAvatar]         = useState(null);
   const [showFloating, setShowFloating] = useState(true);
-  const [showHome, setShowHome]     = useState(true);
+  const [showHome, setShowHome]     = useState(() => {
+    try { return !localStorage.getItem("aceIt_user"); } catch { return true; }
+  });
 
   // ── Ace It AI Engine ─────────────────────────────────────────────────────────
   // Central intelligence layer — reads all live user data and powers every AI
@@ -7956,9 +7960,13 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   };
 
   const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
-  const handleAuth = (userData) => { setUser(userData); setShowAuth(false); setShowHome(false); };
+  const handleAuth = (userData) => {
+    try { localStorage.setItem("aceIt_user", JSON.stringify(userData)); } catch {}
+    setUser(userData); setShowAuth(false); setShowHome(false);
+  };
   const handleLogout = async () => {
     try { await signOut(auth); } catch {}
+    try { localStorage.removeItem("aceIt_user"); } catch {}
     setUser(null); setShowHome(true); setCurrentApp(null);
   };
 
@@ -7988,17 +7996,22 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
-        setUser({ uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() });
+        const userData = { uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() };
+        try { localStorage.setItem("aceIt_user", JSON.stringify(userData)); } catch {}
+        setUser(userData);
         setShowHome(false);
         setShowAuth(false);
         // Enrich with Firestore name in background
         getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
           if (snap.exists() && snap.data().name) {
             const name = snap.data().name;
-            setUser(u => u ? { ...u, name, avatar: name[0].toUpperCase() } : u);
+            const enriched = { ...userData, name, avatar: name[0].toUpperCase() };
+            try { localStorage.setItem("aceIt_user", JSON.stringify(enriched)); } catch {}
+            setUser(u => u ? enriched : u);
           }
         }).catch(() => {});
       } else {
+        try { localStorage.removeItem("aceIt_user"); } catch {}
         setUser(null);
       }
       setAuthLoading(false);
