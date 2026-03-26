@@ -7701,7 +7701,10 @@ export default function AceItGalaxy() {
   const [user, setUser]             = useState(() => {
     try { const s = localStorage.getItem("aceIt_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(() => {
+    // If we have a cached user, don't show loading splash
+    try { return !localStorage.getItem("aceIt_user"); } catch { return true; }
+  });
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [recentApps, setRecentApps] = useState([]);
@@ -8011,8 +8014,10 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
           }
         }).catch(() => {});
       } else {
-        try { localStorage.removeItem("aceIt_user"); } catch {}
-        setUser(null);
+        // Only clear if we don't have a localStorage backup
+        // Safari blocks Firebase sessions so we keep localStorage as fallback
+        const cached = localStorage.getItem("aceIt_user");
+        if (!cached) setUser(null);
       }
       setAuthLoading(false);
     });
@@ -8031,7 +8036,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     return (
       <>
         <LandingPage onEnter={() => setShowHome(false)} openAuth={(mode) => { openAuth(mode); }} />
-        {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={(userData) => { setUser(userData); setShowAuth(false); setShowHome(false); }} initialMode={authMode} />}
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       </>
     );
   }
