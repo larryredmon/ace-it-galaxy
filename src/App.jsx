@@ -5468,6 +5468,28 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
   );
 }
 
+// ── Home view input bar for PA
+function HomeInputBar({ onSend, PA_GLOW, PA_COLOR }) {
+  const [homeInput, setHomeInput] = useState("");
+  return (
+    <div style={{ display: "flex", gap: 10, marginTop: 20, maxWidth: 580 }}>
+      <input
+        value={homeInput}
+        onChange={e => setHomeInput(e.target.value)}
+        onKeyDown={e => { if (e.key === " ") e.stopPropagation(); if (e.key === "Enter" && homeInput.trim()) { onSend(homeInput); setHomeInput(""); } }}
+        placeholder="Ask me anything…"
+        style={{ flex: 1, padding: "14px 18px", borderRadius: 12, border: "1.5px solid #D8ECFF", fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: "none", color: "#0A1628", background: "#F4F8FF", boxSizing: "border-box", transition: "border-color 0.18s" }}
+        onFocus={e => { e.target.style.borderColor = PA_GLOW; e.target.style.background = "#fff"; }}
+        onBlur={e => { e.target.style.borderColor = "#D8ECFF"; e.target.style.background = "#F4F8FF"; }}
+      />
+      <button onClick={() => { if (homeInput.trim()) { onSend(homeInput); setHomeInput(""); } }}
+        style={{ padding: "14px 22px", borderRadius: 12, border: "none", background: homeInput.trim() ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#E4EEF8", color: homeInput.trim() ? "#fff" : "#A8B4C0", fontSize: 14, fontWeight: 700, cursor: homeInput.trim() ? "pointer" : "default", transition: "all 0.18s", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" }}>
+        Send →
+      </button>
+    </div>
+  );
+}
+
 // ── Stable chat input bar — lives outside PA so typing doesn't re-render the whole app
 function ChatInputBar({ onSend, loading, PA_GLOW, PA_COLOR }) {
   const [input, setInput] = useState("");
@@ -5702,28 +5724,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         </p>
 
         {/* Inline chat bar — sends and opens chat view */}
-        {(() => {
-          const [homeInput, setHomeInput] = useState("");
-          return (
-            <div style={{ display: "flex", gap: 10, marginTop: 20, maxWidth: 580 }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <input
-                  value={homeInput}
-                  onChange={e => setHomeInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === " ") e.stopPropagation(); if (e.key === "Enter" && homeInput.trim()) { setView("chat"); setTimeout(() => sendMessage(homeInput), 80); setHomeInput(""); } }}
-                  placeholder="Ask me anything…"
-                  style={{ width: "100%", padding: "14px 18px", borderRadius: 12, border: "1.5px solid #D8ECFF", fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: "none", color: "#0A1628", background: "#F4F8FF", boxSizing: "border-box", transition: "border-color 0.18s" }}
-                  onFocus={e => { e.target.style.borderColor = PA_GLOW; e.target.style.background = "#fff"; }}
-                  onBlur={e => { e.target.style.borderColor = "#D8ECFF"; e.target.style.background = "#F4F8FF"; }}
-                />
-              </div>
-              <button onClick={() => { if (homeInput.trim()) { setView("chat"); setTimeout(() => sendMessage(homeInput), 80); setHomeInput(""); } }}
-                style={{ padding: "14px 22px", borderRadius: 12, border: "none", background: homeInput.trim() ? `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})` : "#E4EEF8", color: homeInput.trim() ? "#fff" : "#A8B4C0", fontSize: 14, fontWeight: 700, cursor: homeInput.trim() ? "pointer" : "default", transition: "all 0.18s", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" }}>
-                Send →
-              </button>
-            </div>
-          );
-        })()}
+        <HomeInputBar onSend={(text) => { setView("chat"); setTimeout(() => sendMessage(text), 80); }} PA_GLOW={PA_GLOW} PA_COLOR={PA_COLOR} />
       </div>
 
       {/* Quick start — suggested prompts */}
