@@ -1422,7 +1422,11 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       cardCount: deckData.cards.filter(c => c.term.trim() || c.definition.trim()).length,
       lastStudied: "Just now",
       mastery: 0,
-      folderKey: deckData.folderKey || null,   // which folder this deck belongs to
+      folderKey: deckData.folderKey || null,
+      isPublic: deckData.isPublic || false,
+      author: deckData.author || "Anonymous",
+      ratings: [],   // array of { userId, stars }
+      createdAt: new Date().toISOString(),
       cards: deckData.cards.filter(c => c.term.trim() || c.definition.trim()).map((c, i) => ({
         id: i + 1,
         term: c.term.trim(),
@@ -1497,8 +1501,8 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
 
           {/* Nav links */}
           <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            {[["Home", "home"], ["My Library", "library"]].map(([label, v]) => (
-              <span key={v} className="fc-nav-link" onClick={() => setView(v)} style={{ fontSize: 14, fontWeight: 500, color: view === v ? "#1A1814" : "#8C8880", cursor: "pointer", borderBottom: view === v ? "2px solid #1A1814" : "2px solid transparent", paddingBottom: 2 }}>{label}</span>
+            {[["Home", "home"], ["My Library", "library"], ["🌐 Public Library", "public"]].map(([label, v]) => (
+              <span key={v} className="fc-nav-link" onClick={() => setView(v)} style={{ fontSize: 14, fontWeight: 500, color: view === v ? "#1A1814" : "#8C8880", cursor: "pointer", borderBottom: view === v ? "2px solid #1A1814" : "2px solid transparent", paddingBottom: 2, whiteSpace:"nowrap" }}>{label}</span>
             ))}
           </div>
 
@@ -1530,8 +1534,9 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => setView("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} />}
-      {view === "create"  && <FCCreateDeck onBack={() => setView("library")} onSave={(deckData) => { const newDeck = saveDeck(deckData); if (onDeckCreated) onDeckCreated(newDeck); setView("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} user={user} />}
+      {view === "create"  && <FCCreateDeck onBack={() => setView("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); setView("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
+      {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => setView("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => setView("deck")} onStart={(cfg) => { setStudyConfig(cfg); setView("study"); }} />}
       {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => setView("setup")} onBackToLibrary={() => setView("library")} />}
     </div>
@@ -2800,6 +2805,115 @@ Rules:
 }
 
 // ── Library View (hierarchical) ───────────────────────────────────────────────
+// ─── Public Library ────────────────────────────────────────────────────────────
+function FCPublicLibrary({ allDecks, onStudy, onBack, user, onRate }) {
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("rating"); // rating | newest | cards
+  const [hoveredStars, setHoveredStars] = useState({}); // deckId → star
+
+  const publicDecks = allDecks.filter(d => d.isPublic);
+
+  const filtered = publicDecks
+    .filter(d => !search.trim() || d.title.toLowerCase().includes(search.toLowerCase()) || (d.subject||"").toLowerCase().includes(search.toLowerCase()) || (d.author||"").toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === "rating") {
+        const avgA = a.ratings?.length ? a.ratings.reduce((s,r)=>s+r.stars,0)/a.ratings.length : 0;
+        const avgB = b.ratings?.length ? b.ratings.reduce((s,r)=>s+r.stars,0)/b.ratings.length : 0;
+        return avgB - avgA;
+      }
+      if (sortBy === "newest") return new Date(b.createdAt||0) - new Date(a.createdAt||0);
+      if (sortBy === "cards") return (b.cards?.length||0) - (a.cards?.length||0);
+      return 0;
+    });
+
+  const StarDisplay = ({ deck }) => {
+    const avg = deck.ratings?.length ? (deck.ratings.reduce((s,r)=>s+r.stars,0)/deck.ratings.length) : 0;
+    const userRating = user ? deck.ratings?.find(r=>r.userId===user.uid)?.stars||0 : 0;
+    const hovered = hoveredStars[deck.id] || 0;
+    return (
+      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+        <div style={{ display:"flex", gap:2 }}>
+          {[1,2,3,4,5].map(s => (
+            <span key={s}
+              onMouseEnter={() => user && setHoveredStars(h=>({...h,[deck.id]:s}))}
+              onMouseLeave={() => setHoveredStars(h=>({...h,[deck.id]:0}))}
+              onClick={e => { e.stopPropagation(); user && onRate && onRate(deck.id, s, user.uid); }}
+              style={{ fontSize:16, cursor:user?"pointer":"default", color: s<=(hovered||userRating||avg) ? "#F5C842" : "#D8D5CE", transition:"color 0.1s" }}>★</span>
+          ))}
+        </div>
+        <span style={{ fontSize:11, color:"#8C8880" }}>
+          {avg ? `${avg.toFixed(1)} (${deck.ratings.length})` : "No ratings"}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ maxWidth:1000, margin:"0 auto", padding:"40px 24px" }}>
+      {/* Header */}
+      <div style={{ marginBottom:32 }}>
+        <button onClick={onBack} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C8880", marginBottom:20, transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>← Back</button>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:32, fontWeight:900, letterSpacing:-0.8, marginBottom:8 }}>🌐 Public Library</h1>
+        <p style={{ fontSize:14, color:"#8C8880", lineHeight:1.7 }}>Browse flashcard decks shared by the community. Rate decks to help others find the best ones.</p>
+      </div>
+
+      {/* Search + sort */}
+      <div style={{ display:"flex", gap:12, marginBottom:28, flexWrap:"wrap" }}>
+        <div style={{ position:"relative", flex:1, minWidth:200 }}>
+          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A8A59E", pointerEvents:"none" }}>🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search decks, subjects, authors…"
+            style={{ width:"100%", padding:"10px 14px 10px 36px", borderRadius:10, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
+            onFocus={e=>e.target.style.borderColor="#4F6EF7"} onBlur={e=>e.target.style.borderColor="#ECEAE4"}
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}} />
+        </div>
+        <div style={{ display:"flex", gap:6 }}>
+          {[["rating","⭐ Top Rated"],["newest","🆕 Newest"],["cards","📇 Most Cards"]].map(([v,label])=>(
+            <button key={v} onClick={()=>setSortBy(v)}
+              style={{ padding:"10px 16px", borderRadius:10, border:`1.5px solid ${sortBy===v?"#1A1814":"#ECEAE4"}`, background:sortBy===v?"#1A1814":"#fff", color:sortBy===v?"#F7F6F2":"#5A5752", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"60px 0", color:"#A8A59E" }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#5A5752", marginBottom:8 }}>
+            {publicDecks.length === 0 ? "No public decks yet" : "No results found"}
+          </div>
+          <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>
+            {publicDecks.length === 0 ? "Be the first to share a deck! Open any deck and click 🌐 Public." : "Try a different search term."}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:16 }}>
+          {filtered.map(deck => (
+            <div key={deck.id} style={{ background:"#fff", border:"1px solid #ECEAE4", borderTop:`3px solid ${deck.color}`, borderRadius:14, padding:"22px 20px", transition:"all 0.2s", cursor:"pointer" }}
+              onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.08)";e.currentTarget.style.transform="translateY(-2px)";}}
+              onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:deck.color, marginBottom:8 }}>{deck.subject}</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", marginBottom:6, lineHeight:1.3 }}>{deck.title}</div>
+              {deck.description && <div style={{ fontSize:12, color:"#8C8880", marginBottom:10, lineHeight:1.5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>{deck.description}</div>}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <span style={{ fontSize:11, color:"#A8A59E" }}>{deck.cards?.length||0} cards · by {deck.author||"Anonymous"}</span>
+              </div>
+              <StarDisplay deck={deck} />
+              <button onClick={() => onStudy(deck)}
+                style={{ width:"100%", marginTop:14, padding:"9px 0", borderRadius:8, border:"none", background:"#1A1814", color:"#F7F6F2", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
+                onMouseEnter={e=>e.currentTarget.style.opacity="0.85"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                Study This Deck →
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts = [], onDeleteDeck, userFolders = [], setUserFolders }) {
   const [folderPath, setFolderPath]     = useState([]);
   const [searchQuery, setSearchQuery]   = useState("");
@@ -3214,10 +3328,17 @@ function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
 }
 
 // ── Deck View (overview + card list) ─────────────────────────────────────────
-function FCDeckView({ deck, onBack, onStudy, onDelete }) {
+function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, user }) {
   const [previewCard, setPreviewCard] = useState(null);
   const [flipped, setFlipped]         = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [hoveredStar, setHoveredStar] = useState(0);
+
+  const avgRating = deck.ratings?.length
+    ? (deck.ratings.reduce((a, r) => a + r.stars, 0) / deck.ratings.length).toFixed(1)
+    : null;
+  const userRating = user ? deck.ratings?.find(r => r.userId === user.uid)?.stars || 0 : 0;
+  const ratingCount = deck.ratings?.length || 0;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
@@ -3237,6 +3358,25 @@ function FCDeckView({ deck, onBack, onStudy, onDelete }) {
             <span>{deck.cardCount || deck.cards?.length || 0} cards</span>
             <span>·</span>
             <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#8C8880", fontWeight: deck.mastery === 100 ? 600 : 400 }}>{deck.mastery || 0}% mastered</span>
+            {deck.author && <><span>·</span><span>by {deck.author}</span></>}
+          </div>
+
+          {/* Star rating */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:10 }}>
+            <div style={{ display:"flex", gap:3 }}>
+              {[1,2,3,4,5].map(star => (
+                <span key={star}
+                  onMouseEnter={() => setHoveredStar(star)}
+                  onMouseLeave={() => setHoveredStar(0)}
+                  onClick={() => user && onRate && onRate(deck.id, star, user.uid)}
+                  style={{ fontSize:20, cursor: user ? "pointer" : "default", color: star <= (hoveredStar || userRating) ? "#F5C842" : "#D8D5CE", transition:"color 0.1s" }}>★</span>
+              ))}
+            </div>
+            {avgRating
+              ? <span style={{ fontSize:12, color:"#8C8880" }}>{avgRating} ({ratingCount} {ratingCount===1?"rating":"ratings"})</span>
+              : <span style={{ fontSize:12, color:"#C8C5BE" }}>No ratings yet</span>
+            }
+            {!user && <span style={{ fontSize:11, color:"#A8A59E" }}>· Log in to rate</span>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3252,6 +3392,11 @@ function FCDeckView({ deck, onBack, onStudy, onDelete }) {
             </div>
           )}
           <button style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752" }}>Edit Deck</button>
+          <button onClick={() => onTogglePublic && onTogglePublic(deck.id)}
+            style={{ background: deck.isPublic ? "#2BAE7E" : "#fff", border: `1px solid ${deck.isPublic ? "#2BAE7E" : "#D8D5CE"}`, borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: deck.isPublic ? "#fff" : "#5A5752", transition:"all 0.2s", display:"flex", alignItems:"center", gap:6 }}
+            title={deck.isPublic ? "Click to make private" : "Click to make public"}>
+            {deck.isPublic ? "🌐 Public" : "🔒 Private"}
+          </button>
           <button className="fc-btn" onClick={onStudy} style={{ background: "#1A1814", border: "none", borderRadius: 8, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>Study Now →</button>
         </div>
       </div>
