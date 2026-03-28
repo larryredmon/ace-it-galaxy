@@ -5672,11 +5672,14 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
           max_tokens: 1000,
-          system: activePrompt,
-          messages: newMsgs.map(m => ({ role: m.role, content: m.content })),
+          system: typeof activePrompt === "string" ? activePrompt.slice(0, 10000) : "You are a helpful study assistant.",
+          messages: newMsgs.map(m => ({ role: m.role, content: String(m.content) })),
         }),
       });
       const data  = await res.json();
+      if (data.error) {
+        console.error("Claude API error:", JSON.stringify(data.error));
+      }
       const reply = data.content?.find(b => b.type === "text")?.text || "Sorry, I couldn't respond. Please try again.";
       setMessages(m => [...m, { role: "assistant", content: reply, ts: new Date() }]);
     } catch {
