@@ -1823,6 +1823,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [description, setDesc]  = useState("");
   const [subject, setSubject]   = useState("");
   const [color, setColor]       = useState("#4F6EF7");
+  const [isPublic, setIsPublic] = useState(false);
   // Quick Build
   const [qbText, setQbText]         = useState("");
   const [qbGenerating, setQbGenerating] = useState(false);
@@ -2637,6 +2638,21 @@ Rules:
                   {COLORS.map(c => (
                     <button key={c} onClick={() => setColor(c)}
                       style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: `3px solid ${color === c ? "#1A1814" : "transparent"}`, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2, cursor: "pointer", transition: "all 0.15s" }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Visibility */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Visibility</label>
+                <div style={{ display:"flex", gap:10 }}>
+                  {[false, true].map(pub => (
+                    <button key={String(pub)} onClick={() => setIsPublic(pub)}
+                      style={{ flex:1, padding:"12px 16px", borderRadius:10, border:`1.5px solid ${isPublic===pub ? (pub?"#2BAE7E":"#4F6EF7") : "#ECEAE4"}`, background: isPublic===pub ? (pub?"#2BAE7E18":"#4F6EF718") : "#fff", cursor:"pointer", transition:"all 0.18s", textAlign:"left" }}>
+                      <div style={{ fontSize:18, marginBottom:4 }}>{pub ? "🌐" : "🔒"}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color: isPublic===pub ? (pub?"#1A6B4A":"#1A1877") : "#5A5752" }}>{pub ? "Public" : "Private"}</div>
+                      <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? "Visible to everyone in the community" : "Only you can see this deck"}</div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -4382,6 +4398,11 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
     setActiveMap(am => am ? { ...am, nodes, title: mapTitle } : am);
   };
 
+  const updateMap = (id, changes) => {
+    setMaps(ms => ms.map(m => m.id === id ? { ...m, ...changes } : m));
+    setActiveMap(am => am?.id === id ? { ...am, ...changes } : am);
+  };
+
   if (view === "canvas" && activeMap) {
     return (
       <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0C0B18", minHeight: "100vh" }}>
@@ -4494,8 +4515,8 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             </div>
           </div>
           <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
-            {[["home","Home"],["maps","All Maps"]].map(([v,label]) => (
-              <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.13)" : "transparent", color: view === v ? "#F7F6F2" : "rgba(255,255,255,0.4)", transition: "all 0.18s" }}>{label}</button>
+            {[["home","Home"],["maps","All Maps"],["explore","🌐 Explore"]].map(([v,label]) => (
+              <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.13)" : "transparent", color: view === v ? "#F7F6F2" : "rgba(255,255,255,0.4)", transition: "all 0.18s", whiteSpace:"nowrap" }}>{label}</button>
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -4622,14 +4643,32 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {maps.map(m => (
-              <div key={m.id} className="bm-card" onClick={() => openMap(m)}
-                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
-                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
-                    <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
-                  ))}
+              <div key={m.id} className="bm-card"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
+                <div onClick={() => openMap(m)}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+                    {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
+                      <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
+                    ))}
+                  </div>
+                </div>
+                {/* Public/Private toggle + rating */}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:10, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+                  <button onClick={e => { e.stopPropagation(); updateMap(m.id, { isPublic: !m.isPublic }); }}
+                    style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.15)"}`, background: m.isPublic ? "#2BAE7E18" : "transparent", fontSize:11, fontWeight:700, cursor:"pointer", color: m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.4)", transition:"all 0.18s" }}>
+                    {m.isPublic ? "🌐 Public" : "🔒 Private"}
+                  </button>
+                  {m.isPublic && (
+                    <div style={{ display:"flex", gap:2 }}>
+                      {[1,2,3,4,5].map(s => {
+                        const avg = m.ratings?.length ? m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length : 0;
+                        return <span key={s} style={{ fontSize:13, color: s<=Math.round(avg) ? "#F5C842" : "rgba(255,255,255,0.15)" }}>★</span>;
+                      })}
+                      {m.ratings?.length > 0 && <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginLeft:4 }}>({m.ratings.length})</span>}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -4639,6 +4678,66 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Create New Map</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── EXPLORE view ── */}
+      {view === "explore" && (
+        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Community</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#F7F6F2", marginBottom: 8 }}>🌐 Public Brain Maps</h2>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7 }}>Browse mind maps shared by the community. Rate maps to help others find the best ones.</p>
+          </div>
+          {maps.filter(m => m.isPublic).length === 0 ? (
+            <div style={{ textAlign:"center", padding:"60px 0", color:"rgba(255,255,255,0.3)" }}>
+              <div style={{ fontSize:40, marginBottom:12 }}>🗺️</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"rgba(255,255,255,0.5)", marginBottom:8 }}>No public maps yet</div>
+              <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>Be the first to share a map! Go to All Maps and click 🔒 Private to make it public.</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              {maps.filter(m => m.isPublic).map(m => {
+                const avg = m.ratings?.length ? m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length : 0;
+                const userRating = user ? m.ratings?.find(r=>r.userId===user.uid)?.stars||0 : 0;
+                return (
+                  <div key={m.id} className="bm-card"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 18px" }}>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · by {m.author || user?.name || "Anonymous"}</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 16 }}>
+                      {m.nodes.filter(n => n.parentId === "root").slice(0, 5).map(n => (
+                        <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
+                      ))}
+                    </div>
+                    {/* Star rating */}
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                      <div style={{ display:"flex", gap:2 }}>
+                        {[1,2,3,4,5].map(s => (
+                          <span key={s}
+                            onClick={() => {
+                              if (!user) { openAuth("login"); return; }
+                              const newRatings = [...(m.ratings||[]).filter(r=>r.userId!==user.uid), { userId:user.uid, stars:s }];
+                              updateMap(m.id, { ratings: newRatings });
+                            }}
+                            style={{ fontSize:18, cursor: user ? "pointer" : "default", color: s<=(userRating||Math.round(avg)) ? "#F5C842" : "rgba(255,255,255,0.15)", transition:"color 0.1s" }}>★</span>
+                        ))}
+                      </div>
+                      <span style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>
+                        {avg ? `${avg.toFixed(1)} (${m.ratings.length} ${m.ratings.length===1?"rating":"ratings"})` : "No ratings yet"}
+                      </span>
+                      {!user && <span style={{ fontSize:11, color:"rgba(255,255,255,0.25)" }}>· Log in to rate</span>}
+                    </div>
+                    <button onClick={() => openMap(m)}
+                      style={{ width:"100%", padding:"9px 0", borderRadius:8, border:"none", background:"#F0A8C0", color:"#1A1814", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
+                      onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                      Open Map →
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
