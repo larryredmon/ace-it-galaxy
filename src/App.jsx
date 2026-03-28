@@ -1906,7 +1906,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 1500,
           messages: [{
             role: "user",
@@ -2001,7 +2001,7 @@ ${qbText}`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 300,
           messages: [{
             role: "user",
@@ -2048,7 +2048,7 @@ Text: "${text}"`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 150,
           messages: [{
             role: "user",
@@ -2080,7 +2080,7 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 200,
           messages: [{
             role: "user",
@@ -4571,7 +4571,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 1000,
           system: aiContext || "You are a helpful text simplification assistant.",
           messages: [{ role: "user", content: buildPrompt() }],
@@ -4605,7 +4605,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 1500,
           messages: [{ role: "user", content: cfg.prompt("", ytUrl) }],
         }),
@@ -5242,7 +5242,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
         : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
-      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
+      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
     } catch { setMessages(h => [...h, { role:"assistant", content:"Connection error. Please try again." }]); }
@@ -5670,7 +5670,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 1000,
           system: activePrompt,
           messages: newMsgs.map(m => ({ role: m.role, content: m.content })),
@@ -6728,7 +6728,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 500,
           system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
