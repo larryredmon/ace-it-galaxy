@@ -2805,25 +2805,37 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   const [searchQuery, setSearchQuery]   = useState("");
   const [treeExpanded, setTreeExpanded] = useState({ y2025: true, fall25: true });
   const [addingFolder, setAddingFolder] = useState(false);
+  const [addingSubFolder, setAddingSubFolder] = useState(null); // folder id to add subfolder to
   const [newFolderName, setNewFolderName] = useState("");
 
   const isUserFolder   = folderPath[0] === "__uf__";
   const isDraftsFolder = folderPath[0] === "__drafts__";
-  const activeFolderName = isUserFolder ? folderPath[1] : null;
+  const activeFolderId = isUserFolder ? folderPath[1] : null;
+  const activeFolder   = userFolders.find(f => f.id === activeFolderId);
+  const activeFolderName = activeFolder?.name || null;
 
   const currentNode = (!isUserFolder && !isDraftsFolder && folderPath.length > 0)
     ? fcFindNode(FC_TREE, folderPath[folderPath.length - 1])
     : null;
   const currentChildren = currentNode ? (currentNode.children || []) : (isUserFolder || isDraftsFolder) ? [] : FC_TREE;
 
+  // Get all deck ids in a user folder including subfolders recursively
+  const getAllDeckIdsInUserFolder = (folderId) => {
+    const folder = userFolders.find(f => f.id === folderId);
+    if (!folder) return [];
+    const direct = allDecks.filter(d => d.folderKey === folder.id || d.folderKey === folder.name).map(d => d.id);
+    const children = userFolders.filter(f => f.parentId === folderId);
+    return [...direct, ...children.flatMap(c => getAllDeckIdsInUserFolder(c.id))];
+  };
+
   // Which decks to show in the right panel
-  const currentDecks = isUserFolder
-    ? allDecks.filter(d => d.folderKey === activeFolderName)
+  const currentDecks = isUserFolder && activeFolderId
+    ? allDecks.filter(d => d.folderKey === activeFolderId || d.folderKey === activeFolderName)
     : isDraftsFolder
       ? []
       : currentNode
         ? allDecks.filter(d => fcGetAllDeckIds(currentNode).includes(d.id) || d.folderKey === currentNode.label || d.folderKey?.includes(currentNode.label))
-        : allDecks;   // "All Folders" root → every deck
+        : allDecks;
 
   const allHere = currentDecks;
 
@@ -2836,11 +2848,62 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   const goRoot       = ()   => setFolderPath([]);
   const toggleTree   = (id) => setTreeExpanded(e => ({ ...e, [id]: !e[id] }));
 
-  const createUserFolder = () => {
+  const createUserFolder = (parentId = null) => {
     const name = newFolderName.trim();
-    if (!name) { setAddingFolder(false); return; }
-    setUserFolders && setUserFolders(fs => [...fs, { id: `uf-${Date.now()}`, name, parentId: null }]);
-    setAddingFolder(false); setNewFolderName("");
+    if (!name) { setAddingFolder(false); setAddingSubFolder(null); return; }
+    const newFolder = { id: `uf-${Date.now()}`, name, parentId };
+    setUserFolders && setUserFolders(fs => [...fs, newFolder]);
+    setAddingFolder(false); setAddingSubFolder(null); setNewFolderName("");
+    // Navigate into the new subfolder if it has a parent
+    if (parentId) setFolderPath(["__uf__", newFolder.id]);
+  };
+
+  // Recursive renderer for user folders
+  const renderUserFolder = (folder, depth = 0) => {
+    const isActive = isUserFolder && folderPath[1] === folder.id;
+    const subFolders = userFolders.filter(f => f.parentId === folder.id);
+    const deckCount = allDecks.filter(d => d.folderKey === folder.id || d.folderKey === folder.name).length;
+    const expanded = treeExpanded[folder.id];
+    const hasKids = subFolders.length > 0;
+    return (
+      <div key={folder.id}>
+        <div style={{ position:"relative", marginBottom:1 }}
+          onMouseEnter={e => e.currentTarget.querySelector(".uf-del")?.style && (e.currentTarget.querySelector(".uf-del").style.opacity = "1")}
+          onMouseLeave={e => e.currentTarget.querySelector(".uf-del")?.style && (e.currentTarget.querySelector(".uf-del").style.opacity = "0")}>
+          <div onClick={() => { if (hasKids) setTreeExpanded(e => ({ ...e, [folder.id]: !e[folder.id] })); setFolderPath(["__uf__", folder.id]); }}
+            style={{ display:"flex", alignItems:"center", gap:7, padding:`7px 8px 7px ${8+depth*14}px`, borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s" }}
+            onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
+            onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
+            <span style={{ fontSize:8, color:isActive?"rgba(247,246,242,0.4)":"#C8C5BE", width:10, flexShrink:0, display:"inline-block", transform:hasKids&&expanded?"rotate(90deg)":"rotate(0)", transition:"transform 0.2s" }}>{hasKids?"▶":" "}</span>
+            <span style={{ fontSize:11 }}>📁</span>
+            <span style={{ fontSize:12, fontWeight:isActive?700:500, color:isActive?"#F7F6F2":"#3A3830", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{folder.name}</span>
+            <span style={{ fontSize:10, color:isActive?"rgba(247,246,242,0.35)":"#C8C5BE", marginRight:16 }}>{deckCount}</span>
+          </div>
+          <button className="uf-del"
+            onClick={e => {
+              e.stopPropagation();
+              if (window.confirm(`Delete folder "${folder.name}"? Decks inside will move to All Folders.`)) {
+                setUserFolders && setUserFolders(fs => fs.filter(x => x.id !== folder.id && x.parentId !== folder.id));
+                if (isActive) setFolderPath([]);
+              }
+            }}
+            style={{ position:"absolute", right:6, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:10, color:"#A8A59E", cursor:"pointer", opacity:0, transition:"opacity 0.15s", padding:"2px 4px", lineHeight:1, zIndex:2 }}
+            title="Delete folder">✕</button>
+        </div>
+        {/* Subfolder creation input */}
+        {addingSubFolder === folder.id && (
+          <div style={{ padding:`4px 8px 8px ${8+(depth+1)*14}px` }}>
+            <input autoFocus value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
+              onKeyDown={e => { if (e.key==="Enter") createUserFolder(folder.id); if (e.key==="Escape") { setAddingSubFolder(null); setNewFolderName(""); } }}
+              placeholder="Subfolder name…"
+              style={{ width:"100%", padding:"6px 10px", borderRadius:7, border:"1.5px solid #4F6EF7", fontSize:12, outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
+            <div style={{ fontSize:10, color:"#A8A59E", marginTop:3 }}>Enter to confirm · Esc to cancel</div>
+          </div>
+        )}
+        {/* Subfolders */}
+        {hasKids && expanded && subFolders.map(sub => renderUserFolder(sub, depth + 1))}
+      </div>
+    );
   };
 
   // Recursive left-panel tree renderer for FC_TREE
@@ -2887,44 +2950,14 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
           {/* FC_TREE structured folders */}
           {FC_TREE.map(n => renderTreeNode(n, 0))}
 
-          {/* ── User folders — inline in same tree, no separator ── */}
-          {userFolders.map(f => {
-            const isActive = isUserFolder && folderPath[1] === f.name;
-            const deckCount = allDecks.filter(d => d.folderKey === f.name).length;
-            return (
-              <div key={f.id} style={{ position:"relative", marginBottom:1 }}
-                onMouseEnter={e => e.currentTarget.querySelector(".uf-del")?.style && (e.currentTarget.querySelector(".uf-del").style.opacity = "1")}
-                onMouseLeave={e => e.currentTarget.querySelector(".uf-del")?.style && (e.currentTarget.querySelector(".uf-del").style.opacity = "0")}>
-                <div
-                  onClick={() => setFolderPath(["__uf__", f.name])}
-                  style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 8px", borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s" }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
-                  <span style={{ fontSize:9, color:"transparent", width:10, flexShrink:0 }}>·</span>
-                  <span style={{ fontSize:11 }}>📁</span>
-                  <span style={{ fontSize:12, fontWeight:isActive?700:500, color:isActive?"#F7F6F2":"#3A3830", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</span>
-                  <span style={{ fontSize:10, color:isActive?"rgba(247,246,242,0.35)":"#C8C5BE", marginRight:16 }}>{deckCount}</span>
-                </div>
-                {/* Delete button — revealed on hover */}
-                <button className="uf-del"
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (window.confirm(`Delete folder "${f.name}"? Decks inside will move to All Folders.`)) {
-                      setUserFolders && setUserFolders(fs => fs.filter(x => x.id !== f.id));
-                      if (isActive) setFolderPath([]);
-                    }
-                  }}
-                  style={{ position:"absolute", right:6, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:10, color:"#A8A59E", cursor:"pointer", opacity:0, transition:"opacity 0.15s", padding:"2px 4px", lineHeight:1, zIndex:2 }}
-                  title="Delete folder">✕</button>
-              </div>
-            );
-          })}
+          {/* ── User folders — recursive tree ── */}
+          {userFolders.filter(f => !f.parentId).map(f => renderUserFolder(f, 0))}
 
           {/* Inline new folder input — appears right in the tree */}
           {addingFolder && (
             <div style={{ padding:"4px 8px 8px" }}>
               <input autoFocus value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
-                onKeyDown={e => { if (e.key==="Enter") createUserFolder(); if (e.key==="Escape") { setAddingFolder(false); setNewFolderName(""); } }}
+                onKeyDown={e => { if (e.key==="Enter") createUserFolder(null); if (e.key==="Escape") { setAddingFolder(false); setNewFolderName(""); } }}
                 placeholder="Folder name…"
                 style={{ width:"100%", padding:"6px 10px", borderRadius:7, border:"1.5px solid #4F6EF7", fontSize:12, outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
               <div style={{ fontSize:10, color:"#A8A59E", marginTop:3 }}>Enter to confirm · Esc to cancel</div>
@@ -2948,12 +2981,20 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
 
         {/* Bottom actions */}
         <div style={{ padding:"12px 10px", borderTop:"1px solid #ECEAE4", display:"flex", flexDirection:"column", gap:8 }}>
-          <button onClick={() => { setAddingFolder(true); setNewFolderName(""); setFolderPath([]); }}
+          <button onClick={() => { setAddingFolder(true); setAddingSubFolder(null); setNewFolderName(""); setFolderPath([]); }}
             style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"8px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="#4F6EF7"; e.currentTarget.style.color="#4F6EF7"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
             📁 New Folder
           </button>
+          {isUserFolder && activeFolderId && (
+            <button onClick={() => { setAddingSubFolder(activeFolderId); setAddingFolder(false); setNewFolderName(""); }}
+              style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"8px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor="#4F6EF7"; e.currentTarget.style.color="#4F6EF7"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
+              📂 New Subfolder
+            </button>
+          )}
           <button onClick={onNewDeck}
             style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"9px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="#1A1814"; e.currentTarget.style.color="#1A1814"; }}
