@@ -8600,7 +8600,7 @@ function LandingPage({ onEnter, openAuth }) {
         {/* Apple mascot + headline */}
         <div className="lp-fade" style={{ animationDelay:"0.05s", fontSize:72, marginBottom:8, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
 
-        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(44px, 6.5vw, 86px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:20, maxWidth:860 }}>
+        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(44px, 6.5vw, 86px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:20, maxWidth:860, color:"#F7F6F2" }}>
           The smartest student<br/>
           in the room is <em style={{ color:"#F5C842", fontStyle:"italic" }}>you.</em>
         </h1>
