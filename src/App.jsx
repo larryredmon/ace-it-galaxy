@@ -8511,10 +8511,10 @@ const LANDING_STATS = [
 ];
 
 function LandingPage({ onEnter, openAuth }) {
-  const [scrolled, setScrolled]         = useState(false);
-  const [showSticky, setShowSticky]     = useState(false);
-  const [quizStep, setQuizStep]         = useState(0);   // 0=not started, 1=question, 2=result
-  const [quizAnswer, setQuizAnswer]     = useState(null);
+  const [scrolled, setScrolled]     = useState(false);
+  const [showSticky, setShowSticky] = useState(false);
+  const [quizStep, setQuizStep]     = useState(0);
+  const [quizAnswer, setQuizAnswer] = useState(null);
   const heroRef = useRef(null);
 
   useEffect(() => {
@@ -8527,17 +8527,17 @@ function LandingPage({ onEnter, openAuth }) {
   }, []);
 
   const QUIZ_OPTIONS = [
-    { id:"student",  emoji:"🎓", label:"Student",         sub:"I'm in school and need to study smarter" },
-    { id:"career",   emoji:"🚀", label:"Career Builder",  sub:"I'm upskilling or changing careers" },
-    { id:"curious",  emoji:"🌍", label:"Lifelong Learner", sub:"I just love learning new things" },
-    { id:"adhd",     emoji:"⚡", label:"Neurodiverse",     sub:"I need tools that work with my brain" },
+    { id:"student",  emoji:"🎓", label:"Student",          sub:"I\'m in school and need to study smarter" },
+    { id:"career",   emoji:"🚀", label:"Career Builder",   sub:"I\'m upskilling or changing careers" },
+    { id:"curious",  emoji:"🌍", label:"Lifelong Learner",  sub:"I just love learning new things" },
+    { id:"adhd",     emoji:"⚡", label:"Neurodiverse",      sub:"I need tools that work with my brain" },
   ];
 
   const QUIZ_RESULTS = {
-    student:  { headline:"You need Teacher's Pet Flash Cards + EchoNote", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","EchoNote","Brain Map"] },
-    career:   { headline:"You need Career Compass + Ace Studio",   desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
-    curious:  { headline:"You need Universe + Earth's Record",     desc:"Dive into any topic, explore the world's knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth's Record","Text Simplifier"] },
-    adhd:     { headline:"You need Ace Flow + Study Buddy",        desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
+    student:  { headline:"You need Flash Cards + EchoNote", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","EchoNote","Brain Map"] },
+    career:   { headline:"You need Career Compass + Studio", desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
+    curious:  { headline:"You need Universe + Earth\'s Record", desc:"Dive into any topic, explore the world\'s knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth\'s Record","Text Simplifier"] },
+    adhd:     { headline:"You need Flow + Study Buddy", desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
   };
 
   return (
@@ -8550,7 +8550,6 @@ function LandingPage({ onEnter, openAuth }) {
         @keyframes lp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
         @keyframes lp-fade { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lp-glow { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        @keyframes lp-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes lp-pulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.08)} }
         .lp-fade { animation: lp-fade 0.7s ease both; }
         .lp-app-card:hover { transform: translateY(-6px) !important; box-shadow: 0 20px 50px rgba(0,0,0,0.35) !important; }
@@ -8559,169 +8558,100 @@ function LandingPage({ onEnter, openAuth }) {
         .lp-cta-btn { transition: all 0.2s ease; }
         .lp-nav-link { opacity: 0.55; transition: opacity 0.18s; cursor: pointer; }
         .lp-nav-link:hover { opacity: 1; }
+        .lp-step-card:hover { transform: translateY(-4px) !important; }
+        .lp-step-card { transition: transform 0.2s ease; }
       `}</style>
 
       {/* ── STICKY NAV ── */}
-      <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.95)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "none", transition:"all 0.3s" }}>
-        {/* Logo */}
+      <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:900, color:"#1A1814" }}>A</span>
-          </div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:16, fontWeight:800, letterSpacing:1, color:"#F7F6F2" }}>TEACHER'S PET</span>
+          <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
+          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Teacher's Pet</span>
         </div>
-
-        {/* Nav links */}
-        <div style={{ display:"flex", gap:36, alignItems:"center" }}>
-          {["Features","Apps","How It Works"].map(l => (
+        <div style={{ display:"flex", gap:32, alignItems:"center" }}>
+          {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
             <span key={l} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2" }}
-              onClick={() => document.getElementById(l.replace(" ","").toLowerCase())?.scrollIntoView({ behavior:"smooth" })}>
+              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>
               {l}
             </span>
           ))}
         </div>
-
-        {/* Auth */}
         <div style={{ display:"flex", gap:10 }}>
           <button onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.18s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>
-            Log In
-          </button>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>Log In</button>
           <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>
-            Sign Up Free
+            Get Started Free
           </button>
         </div>
       </nav>
 
       {/* ── HERO ── */}
       <section ref={heroRef} style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
-        {/* Background orbs */}
-        <div style={{ position:"absolute", width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.08) 0%, transparent 70%)", top:"-10%", left:"-5%", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"5%", right:"5%", pointerEvents:"none" }} />
-
-        {/* Floating planet orbs — decorative */}
-        <div style={{ position:"absolute", width:420, height:420, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.03)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:640, height:640, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.02)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", width:800, height:800, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.07) 0%, transparent 70%)", top:"-15%", left:"-10%", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"0%", right:"-5%", pointerEvents:"none" }} />
 
         {/* Badge */}
-        <div className="lp-fade" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.12)", border:"1px solid rgba(232,93,63,0.35)", borderRadius:20, padding:"6px 18px", marginBottom:28 }}>
+        <div className="lp-fade" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.12)", border:"1px solid rgba(232,93,63,0.35)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
           <span style={{ width:7, height:7, borderRadius:"50%", background:"#E85D3F", animation:"lp-glow 2s infinite", display:"inline-block" }} />
           <span style={{ fontSize:12, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#FF8A6A" }}>Early Access — Free While We Launch</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(48px, 7vw, 90px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:900 }}>
-          One platform.<br />
-          <em style={{ color:"#F5C842", fontStyle:"italic" }}>Every way</em> you learn.
+        {/* Apple mascot + headline */}
+        <div className="lp-fade" style={{ animationDelay:"0.05s", fontSize:72, marginBottom:8, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
+
+        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(44px, 6.5vw, 86px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:20, maxWidth:860 }}>
+          The smartest student<br/>
+          in the room is <em style={{ color:"#F5C842", fontStyle:"italic" }}>you.</em>
         </h1>
 
-        {/* Subheadline */}
-        <p className="lp-fade" style={{ animationDelay:"0.2s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.75, maxWidth:620, marginBottom:44 }}>
-          Teacher's Pet combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
+        <p className="lp-fade" style={{ animationDelay:"0.18s", fontSize:"clamp(16px,2vw,19px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.8, maxWidth:580, marginBottom:40 }}>
+          Teacher's Pet is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
         </p>
 
-        {/* CTAs */}
-        <div className="lp-fade" style={{ animationDelay:"0.3s", display:"flex", flexDirection:"column", alignItems:"center", gap:14, marginBottom:52 }}>
-          <div style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
-            {/* Pulsing glow CTA */}
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.35, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"18px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                Claim Your Free Account
-              </button>
-            </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"18px 36px", fontSize:17, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              Explore the Galaxy ✦
-            </button>
-          </div>
-          {/* Urgency line */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.08)", border:"1px solid rgba(232,93,63,0.2)", borderRadius:20, padding:"5px 16px" }}>
-            <span style={{ fontSize:13 }}>⏳</span>
-            <span style={{ fontSize:12, color:"#FF8A6A", fontWeight:600 }}>Free during launch — paid plans coming soon. Lock in free access now.</span>
-          </div>
-          {/* Trust line */}
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            {["✓ No credit card","✓ Start in 30 seconds"].map((t, i) => (
-              <span key={i} style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontWeight:500 }}>{t}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="lp-fade" style={{ animationDelay:"0.4s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
-          {LANDING_STATS.map(({ value, label }, i) => (
-            <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < LANDING_STATS.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", marginBottom:4 }}>{value}</div>
-              <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.35)", letterSpacing:1.5, textTransform:"uppercase" }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── HERO ── */}
-      <section ref={heroRef} style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
-        {/* Background orbs */}
-        <div style={{ position:"absolute", width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.08) 0%, transparent 70%)", top:"-10%", left:"-5%", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.07) 0%, transparent 70%)", bottom:"5%", right:"5%", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:420, height:420, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.03)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:640, height:640, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.02)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
-
-        {/* Social proof strip — above headline */}
-        <div className="lp-fade" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:30, padding:"8px 20px", marginBottom:24 }}>
-          {/* Stacked avatars */}
-          <div style={{ display:"flex", marginRight:4 }}>
+        {/* Social proof */}
+        <div className="lp-fade" style={{ animationDelay:"0.22s", display:"inline-flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:30, padding:"8px 20px", marginBottom:32 }}>
+          <div style={{ display:"flex" }}>
             {["#C8B8FF","#F0D080","#F0A8C0","#6ED9B8","#90C8F8"].map((c, i) => (
               <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:`linear-gradient(135deg, ${c}88, ${c})`, border:"2px solid #06040E", marginLeft: i===0?0:-8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#1A1814", zIndex:5-i }}>
                 {["S","M","J","A","R"][i]}
               </div>
             ))}
           </div>
-          <span style={{ fontSize:13, fontWeight:600, color:"rgba(247,246,242,0.7)" }}>Join learners already studying smarter</span>
-          <span style={{ fontSize:13, color:"#F5C842" }}>✦</span>
+          <span style={{ fontSize:13, fontWeight:600, color:"rgba(247,246,242,0.65)" }}>Join students already studying smarter</span>
+          <span style={{ fontSize:13, color:"#F5C842" }}>🍎</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(48px, 7vw, 90px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:900 }}>
-          One platform.<br />
-          <em style={{ color:"#F5C842", fontStyle:"italic" }}>Every way</em> you learn.
-        </h1>
-
-        {/* Subheadline */}
-        <p className="lp-fade" style={{ animationDelay:"0.2s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.75, maxWidth:580, marginBottom:44 }}>
-          Teacher's Pet combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
-        </p>
-
         {/* CTAs */}
-        <div className="lp-fade" style={{ animationDelay:"0.3s", display:"flex", flexDirection:"column", alignItems:"center", gap:14, marginBottom:52 }}>
+        <div className="lp-fade" style={{ animationDelay:"0.28s", display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginBottom:52 }}>
           <div style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
-            {/* Pulsing glow CTA */}
             <div style={{ position:"relative" }}>
               <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.35, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"18px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                Get Started — It's Free
+              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"17px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
+                🍎 Claim Free Access
               </button>
             </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"18px 36px", fontSize:17, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
+            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"17px 36px", fontSize:16, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              Explore the Galaxy ✦
+              See the Platform ✦
             </button>
           </div>
-          {/* Trust line — directly under button */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.08)", border:"1px solid rgba(232,93,63,0.2)", borderRadius:20, padding:"5px 16px" }}>
+            <span style={{ fontSize:13 }}>⏳</span>
+            <span style={{ fontSize:12, color:"#FF8A6A", fontWeight:600 }}>Free during launch — paid plans coming soon.</span>
+          </div>
           <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            {["✓ No credit card","✓ Start in 30 seconds"].map((t, i) => (
-              <span key={i} style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontWeight:500 }}>{t}</span>
+            {["✓ No credit card","✓ Start in 30 seconds","✓ Cancel anytime"].map((t, i) => (
+              <span key={i} style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontWeight:500 }}>{t}</span>
             ))}
           </div>
         </div>
 
         {/* Stats */}
-        <div className="lp-fade" style={{ animationDelay:"0.4s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
-          {LANDING_STATS.map(({ value, label }, i) => (
-            <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < LANDING_STATS.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+        <div className="lp-fade" style={{ animationDelay:"0.35s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
+          {[["15+","Learning Apps"],["AI","Powered"],["Free","To Start"],["∞","Curiosity"]].map(([value, label], i, arr) => (
+            <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", marginBottom:4 }}>{value}</div>
               <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.35)", letterSpacing:1.5, textTransform:"uppercase" }}>{label}</div>
             </div>
@@ -8729,46 +8659,99 @@ function LandingPage({ onEnter, openAuth }) {
         </div>
       </section>
 
-      {/* ── ALL APPS ── */}
-      <section id="apps" style={{ padding:"100px 48px", background:"rgba(255,255,255,0.015)", borderTop:"1px solid rgba(255,255,255,0.05)", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto" }}>
+      {/* ── HOW IT WORKS ── */}
+      <section id="howitworks" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:1000, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:64 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>All 13 Apps</span>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>How It Works</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,4vw,52px)", fontWeight:900, letterSpacing:-1, marginBottom:16 }}>Your entire learning universe.</h2>
-            <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:520, margin:"0 auto", lineHeight:1.75 }}>
-              Every app works on its own — and works better together.
-            </p>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Study smarter in 3 steps.</h2>
+            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, maxWidth:480, margin:"0 auto" }}>No learning curve. Just better results from day one.</p>
           </div>
-
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap:16 }}>
-            {LANDING_APPS.map((app, i) => (
-              <div key={app.name} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-                  <div style={{ width:40, height:40, borderRadius:"50%", background:`radial-gradient(circle, ${app.glow}44 0%, ${app.color}22 70%)`, border:`1.5px solid ${app.color}44`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <span style={{ fontSize:18, color:app.color }}>{app.icon}</span>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet {app.name}</div>
-                    <div style={{ width:28, height:2, borderRadius:1, background:app.color, marginTop:4 }} />
-                  </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
+            {[
+              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Teacher's Pet reads it all." },
+              { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
+              { step:"03", icon:"🎓", color:"#6ED9B8", glow:"#2BAE7E", title:"Study & Master It", desc:"Use flashcards, quizzes, brain maps, and your AI tutor to drill the material until it sticks. Chat with your notes anytime." },
+            ].map(s => (
+              <div key={s.step} className="lp-step-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:`radial-gradient(circle, ${s.glow}33 0%, ${s.color}11 70%)`, border:`1.5px solid ${s.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{s.icon}</div>
+                  <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2 }}>STEP {s.step}</span>
                 </div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.5)", lineHeight:1.7, margin:0 }}>{app.desc}</p>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{s.title}</div>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.5)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── QUIZ — What kind of learner are you? ── */}
-      <section style={{ padding:"100px 48px", background:"rgba(255,255,255,0.015)", borderTop:"1px solid rgba(255,255,255,0.05)", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+      {/* ── FEATURES ── */}
+      <section id="features" style={{ padding:"80px 48px", background:"rgba(255,255,255,0.01)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:1000, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:56 }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Features</span>
+            </div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Everything a serious student needs.</h2>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14 }}>
+            {[
+              { icon:"🎙", title:"Record & Transcribe", desc:"Record any lecture. AI transcribes every word and turns it into structured notes instantly." },
+              { icon:"📇", title:"AI Flashcards", desc:"Paste any content and AI generates a full flashcard deck. Study with 9 modes including spaced repetition." },
+              { icon:"🧠", title:"Brain Mapping", desc:"Build visual mind maps and attach flashcard decks directly to any topic node." },
+              { icon:"💬", title:"Chat with Notes", desc:"Ask your notes anything. Your AI tutor answers based on your specific course content." },
+              { icon:"📺", title:"YouTube to Notes", desc:"Paste any YouTube lecture URL and get comprehensive study notes in seconds." },
+              { icon:"🎯", title:"Exam Prep", desc:"AI identifies what you're most likely to be tested on and creates quizzes from your notes." },
+              { icon:"🔤", title:"Text Simplifier", desc:"Paste any complex passage and get it simplified to your exact reading level." },
+              { icon:"📊", title:"Progress Tracking", desc:"Track your mastery across all decks and subjects. Know exactly what needs more work." },
+            ].map(f => (
+              <div key={f.title} style={{ background:"rgba(255,255,255,0.025)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, padding:"22px 20px" }}>
+                <div style={{ fontSize:28, marginBottom:12 }}>{f.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2", marginBottom:8 }}>{f.title}</div>
+                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ALL APPS ── */}
+      <section id="apps" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:1200, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:64 }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>15 Apps</span>
+            </div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Your entire learning universe.</h2>
+            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:500, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own — and works better together.</p>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
+            {LANDING_APPS.map((app) => (
+              <div key={app.name} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+                  <div style={{ width:38, height:38, borderRadius:"50%", background:`radial-gradient(circle, ${app.glow}44 0%, ${app.color}22 70%)`, border:`1.5px solid ${app.color}44`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <span style={{ fontSize:17, color:app.color }}>{app.icon}</span>
+                  </div>
+                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#F7F6F2" }}>{app.name}</div>
+                </div>
+                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{app.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── QUIZ ── */}
+      <section style={{ padding:"100px 48px", background:"rgba(255,255,255,0.015)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth:720, margin:"0 auto", textAlign:"center" }}>
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Find Your Path</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>What kind of learner are you?</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which Teacher's Pet apps are built for you.</p>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,42px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>What kind of learner are you?</h2>
+          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which apps are built for you.</p>
 
           {quizStep === 0 && (
             <button onClick={() => setQuizStep(1)} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"16px 36px", fontSize:16, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
@@ -8805,12 +8788,12 @@ function LandingPage({ onEnter, openAuth }) {
                 <p style={{ fontSize:15, color:"rgba(247,246,242,0.55)", lineHeight:1.75, marginBottom:24 }}>{result.desc}</p>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:28 }}>
                   {result.apps.map(app => (
-                    <span key={app} style={{ background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.25)", borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:"#F5C842" }}>✦ {app}</span>
+                    <span key={app} style={{ background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.25)", borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:"#F5C842" }}>🍎 {app}</span>
                   ))}
                 </div>
                 <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
                   <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:9, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 20px rgba(245,200,66,0.35)" }}>
-                    Claim Free Access →
+                    Get Started Free →
                   </button>
                   <button onClick={() => { setQuizStep(1); setQuizAnswer(null); }} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", borderRadius:9, padding:"13px 22px", fontSize:13, cursor:"pointer", color:"rgba(255,255,255,0.5)", transition:"all 0.15s" }}
                     onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
@@ -8825,27 +8808,21 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── COMPARISON TABLE ── */}
-      <section style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
+      <section id="compare" style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:56 }}>
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
           <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
         </div>
-
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"separate", borderSpacing:0, fontSize:14 }}>
             <thead>
               <tr>
                 <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
-                {[
-                  { name:"Teacher's Pet", highlight:true },
-                  { name:"Quizlet", highlight:false },
-                  { name:"Anki", highlight:false },
-                  { name:"ChatGPT", highlight:false },
-                ].map(col => (
-                  <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", borderRadius: col.highlight ? "8px 8px 0 0" : 0, minWidth:110 }}>
+                {[{ name:"Teacher's Pet 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
+                  <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", minWidth:110 }}>
                     {col.highlight && <div style={{ fontSize:10, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase", marginBottom:4 }}>★ Best</div>}
                     {col.name}
                   </th>
@@ -8854,24 +8831,24 @@ function LandingPage({ onEnter, openAuth }) {
             </thead>
             <tbody>
               {[
-                ["AI flashcard generation",       "✦","✓","✕","✓"],
-                ["Lecture recording + transcription","✦","✕","✕","✕"],
-                ["Brain mapping",                 "✦","✕","✕","✕"],
-                ["Spaced repetition",             "✦","✓","✓","✕"],
-                ["YouTube video summaries",       "✦","✕","✕","✓"],
-                ["Mental health tools",           "✦","✕","✕","✕"],
-                ["Career planning",               "✦","✕","✕","✕"],
-                ["Cross-app AI assistant",        "✦","✕","✕","~"],
-                ["ADHD / neurodiverse mode",      "✦","✕","✕","✕"],
-                ["Free to start",                 "✦","~","✓","~"],
-              ].map(([feature, ace, quizlet, anki, gpt], i) => (
+                ["AI note generation from uploads", "🍎","✕","✕","~"],
+                ["Lecture recording + transcription","🍎","✕","✕","✕"],
+                ["Chat with your notes",            "🍎","✕","✕","✓"],
+                ["AI flashcard generation",          "🍎","✓","✕","✓"],
+                ["Brain mapping",                   "🍎","✕","✕","✕"],
+                ["Spaced repetition",               "🍎","✓","✓","✕"],
+                ["YouTube to notes",                "🍎","✕","✕","✓"],
+                ["Mental health tools",             "🍎","✕","✕","✕"],
+                ["Career planning",                 "🍎","✕","✕","✕"],
+                ["Free to start",                   "🍎","~","✓","~"],
+              ].map(([feature, tp, quizlet, anki, gpt], i) => (
                 <tr key={feature} style={{ background: i%2===0 ? "rgba(255,255,255,0.01)" : "transparent" }}>
-                  <td style={{ padding:"14px 20px", color:"rgba(247,246,242,0.6)", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>{feature}</td>
-                  {[ace, quizlet, anki, gpt].map((val, ci) => (
-                    <td key={ci} style={{ padding:"14px 20px", textAlign:"center", borderBottom:"1px solid rgba(255,255,255,0.04)", background: ci===0 ? "rgba(245,200,66,0.03)" : "transparent", fontSize:16 }}>
-                      {val === "✦" ? <span style={{ color:"#F5C842", fontWeight:800, fontSize:17 }}>✦</span>
+                  <td style={{ padding:"13px 20px", color:"rgba(247,246,242,0.6)", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>{feature}</td>
+                  {[tp, quizlet, anki, gpt].map((val, ci) => (
+                    <td key={ci} style={{ padding:"13px 20px", textAlign:"center", borderBottom:"1px solid rgba(255,255,255,0.04)", background: ci===0 ? "rgba(245,200,66,0.03)" : "transparent", fontSize:16 }}>
+                      {val === "🍎" ? <span style={{ fontSize:18 }}>🍎</span>
                        : val === "✓" ? <span style={{ color:"#2BAE7E", fontSize:18 }}>✓</span>
-                       : val === "~" ? <span style={{ color:"rgba(255,255,255,0.25)", fontSize:13 }}>Partial</span>
+                       : val === "~" ? <span style={{ color:"rgba(255,255,255,0.25)", fontSize:12 }}>Partial</span>
                        : <span style={{ color:"rgba(255,255,255,0.15)", fontSize:18 }}>✕</span>}
                     </td>
                   ))}
@@ -8888,31 +8865,31 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section style={{ padding:"100px 48px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+      <section style={{ padding:"100px 48px", textAlign:"center", position:"relative", overflow:"hidden", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.07) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
         <div style={{ position:"relative", maxWidth:680, margin:"0 auto" }}>
-          {/* Urgency banner */}
+          <div style={{ fontSize:64, marginBottom:16, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.1)", border:"1px solid rgba(232,93,63,0.3)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
             <span style={{ fontSize:13 }}>⏳</span>
             <span style={{ fontSize:12, fontWeight:700, color:"#FF8A6A", letterSpacing:1, textTransform:"uppercase" }}>Free During Launch — Paid Plans Coming Soon</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(36px,5vw,64px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20 }}>
-            Get in free<br/>before prices go live.
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(34px,5vw,62px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20 }}>
+            Be the teacher's pet.<br/>Ace everything.
           </h2>
-          <p style={{ fontSize:18, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, marginBottom:44 }}>
-            Teacher's Pet is free right now while we're in early launch. Once paid plans go live, founding members who signed up early will be taken care of. Don't miss your window.
+          <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:520, margin:"0 auto 44px" }}>
+            Teacher's Pet is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
           </p>
-          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:20 }}>
+          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
             <div style={{ position:"relative" }}>
               <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.3, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
               <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:12, padding:"18px 44px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.35)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                Claim My Free Account →
+                🍎 Claim My Free Account →
               </button>
             </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"18px 44px", fontSize:18, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
+            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"18px 40px", fontSize:17, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              Browse the Galaxy
+              See the Platform
             </button>
           </div>
           <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>No credit card required · Cancel anytime</div>
@@ -8922,10 +8899,8 @@ function LandingPage({ onEnter, openAuth }) {
       {/* ── FOOTER ── */}
       <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:26, height:26, borderRadius:7, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:900, color:"#1A1814" }}>A</span>
-          </div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:1 }}>TEACHER'S PET</span>
+          <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
+          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Teacher's Pet</span>
         </div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
         <div style={{ display:"flex", gap:20 }}>
@@ -8937,11 +8912,11 @@ function LandingPage({ onEnter, openAuth }) {
         </div>
       </footer>
 
-      {/* ── STICKY CTA BAR — appears after scrolling past hero ── */}
+      {/* ── STICKY CTA BAR ── */}
       {showSticky && (
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.96)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontSize:18 }}>⏳</span>
+            <span style={{ fontSize:20 }}>🍎</span>
             <div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Free while we launch — paid plans coming soon.</div>
               <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>Sign up now and lock in free access before pricing goes live.</div>
@@ -8951,10 +8926,10 @@ function LandingPage({ onEnter, openAuth }) {
             <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>
-              Explore First
+              See Platform
             </button>
             <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 16px rgba(245,200,66,0.4)" }}>
-              Claim Free Access →
+              🍎 Claim Free Access →
             </button>
           </div>
         </div>
