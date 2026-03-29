@@ -6895,6 +6895,975 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   );
 }
 
+// ─── Ace It EchoNote ─────────────────────────────────────────────────────────
+
+const EN_COLOR  = "#D4A830";
+const EN_LIGHT  = "#F0D080";
+const EN_DARK   = "#8B6914";
+const EN_BG     = "#FDFCF7";
+
+const EN_FORMATS = [
+  { id:"h1",    label:"H1",    icon:"H₁" },
+  { id:"h2",    label:"H2",    icon:"H₂" },
+  { id:"bold",  label:"Bold",  icon:"B"  },
+  { id:"italic",label:"Italic",icon:"I"  },
+  { id:"ul",    label:"List",  icon:"≡"  },
+  { id:"ol",    label:"Ordered",icon:"1." },
+];
+
+function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
+  const [view, setView]             = useState("home"); // home | editor | folders | upload
+  const [notes, setNotes]           = useState(() => {
+    try { const s = localStorage.getItem("aceIt_echonotes"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [folders, setFolders]       = useState(() => {
+    try { const s = localStorage.getItem("aceIt_en_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [activeNote, setActiveNote] = useState(null);
+  const [filterFolder, setFilterFolder] = useState("all");
+  const [searchQ, setSearchQ]       = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Editor state
+  const [title, setTitle]           = useState("");
+  const [content, setContent]       = useState("");
+  const [folder, setFolder]         = useState("");
+  const [attachedDecks, setAttachedDecks] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [aiLoading, setAiLoading]   = useState(false);
+  const [aiResult, setAiResult]     = useState("");
+  const [aiMode, setAiMode]         = useState("");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [saveAnim, setSaveAnim]     = useState(false);
+  const [newFolder, setNewFolder]   = useState("");
+  const [addingFolder, setAddingFolder] = useState(false);
+
+  // Upload state
+  const [uploadText, setUploadText] = useState("");
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadObjectives, setUploadObjectives] = useState("");
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadTab, setUploadTab]   = useState("file"); // file | paste | youtube | website
+  const [uploadUrl, setUploadUrl]   = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  // Chat with notes
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput]   = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [showChat, setShowChat]     = useState(false);
+  const fileInputRef                = useRef(null);
+  const recognitionRef              = useRef(null);
+  const editorRef                   = useRef(null);
+
+  useEffect(() => {
+    try { localStorage.setItem("aceIt_echonotes", JSON.stringify(notes)); } catch {}
+  }, [notes]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aceIt_en_folders", JSON.stringify(folders)); } catch {}
+  }, [folders]);
+
+  const newNote = (preTitle = "", preContent = "") => {
+    setTitle(preTitle); setContent(preContent); setFolder("");
+    setAttachedDecks([]); setAiResult(""); setShowAiPanel(false);
+    setActiveNote(null); setView("editor");
+  };
+
+  const openNote = (note) => {
+    setTitle(note.title); setContent(note.content); setFolder(note.folder||"");
+    setAttachedDecks(note.attachedDecks||[]); setAiResult(""); setShowAiPanel(false);
+    setActiveNote(note); setView("editor");
+  };
+
+  const saveNote = () => {
+    if (!content.trim() && !title.trim()) return;
+    const noteData = {
+      id: activeNote?.id || Date.now(),
+      title: title.trim() || `Note — ${new Date().toLocaleDateString([],{month:"long",day:"numeric"})}`,
+      content, folder, attachedDecks,
+      wordCount: content.trim().split(/\s+/).filter(Boolean).length,
+      updatedAt: new Date().toISOString(),
+      createdAt: activeNote?.createdAt || new Date().toISOString(),
+    };
+    setNotes(prev => activeNote
+      ? prev.map(n => n.id === activeNote.id ? noteData : n)
+      : [noteData, ...prev]);
+    setSaveAnim(true);
+    setTimeout(() => { setSaveAnim(false); setView("home"); }, 800);
+  };
+
+  const deleteNote = (id) => {
+    setNotes(prev => prev.filter(n => n.id !== id));
+    setView("home");
+  };
+
+  const [uploadProgress, setUploadProgress] = useState("");
+
+  // ── Fetch website content ──────────────────────────────────────────────────
+  const fetchWebContent = async (url) => {
+    setUploadLoading(true);
+    setUploadProgress("Fetching page content…");
+    try {
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      const text = data.contents?.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,12000) || "";
+      const domain = new URL(url).hostname;
+      setUploadText(text);
+      if (!uploadTitle) setUploadTitle(domain);
+      setUploadLoading(false); setUploadProgress("");
+    } catch {
+      setUploadText(`Source URL: ${url}\n\nNote: Could not automatically fetch this page. Please paste the content manually.`);
+      setUploadLoading(false); setUploadProgress("");
+    }
+  };
+
+  const fetchYouTube = async (url) => {
+    const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
+    if (!videoId) { alert("Invalid YouTube URL"); return; }
+    const text = `YouTube Video URL: ${url}\nVideo ID: ${videoId}\n\nThis is a YouTube video submitted for note generation. Create comprehensive study notes based on what this educational video is likely about from the URL context. Apply all standard note sections.`;
+    setUploadText(text);
+    if (!uploadTitle) setUploadTitle(`YouTube Notes`);
+  };
+
+  // ── Chat with notes ────────────────────────────────────────────────────────
+  const sendChatMessage = async (msg) => {
+    const text = msg || chatInput;
+    if (!text.trim() || chatLoading || !content.trim()) return;
+    const userMsg = { role:"user", content:text };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const history = [...chatMessages, userMsg];
+      const res = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-5-20250929",
+          max_tokens:800,
+          system:`You are a helpful study tutor. The student has these notes and is asking questions about them. Answer concisely and clearly based on the notes plus your broader knowledge.\n\n=== STUDENT'S NOTES ===\n${content.slice(0,8000)}`,
+          messages: history.map(m=>({role:m.role,content:m.content})),
+        }),
+      });
+      const data = await res.json();
+      const reply = data.content?.find(b=>b.type==="text")?.text || "I couldn't answer that. Try rephrasing.";
+      setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role:"assistant", content:"Something went wrong. Please try again." }]);
+    }
+    setChatLoading(false);
+  };
+
+  // ── File reading ────────────────────────────────────────────────────────────
+  const readFile = (file) => {
+    return new Promise((resolve) => {
+      if (file.type === "application/pdf") {
+        // For PDF we read as text using FileReader
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ text: `[PDF uploaded: ${file.name}]\n\nNote: PDF text extraction works best with text-based PDFs.\n\n${e.target.result?.slice(0,8000)||""}`, name: file.name });
+        reader.readAsText(file);
+        return;
+      }
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ text: null, imageData: e.target.result.split(",")[1], name: file.name, isImage: true });
+        reader.readAsDataURL(file);
+        return;
+      }
+      // Text files
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ text: e.target.result, name: file.name });
+      reader.readAsText(file);
+    });
+  };
+
+  const handleFileDrop = async (e) => {
+    e.preventDefault(); setIsDragging(false);
+    const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
+    if (!file) return;
+    const result = await readFile(file);
+    const cleanName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    setUploadTitle(cleanName);
+    if (result.isImage) {
+      setUploadText(`[Image: ${file.name}]`);
+      generateSmartNotes(null, result.imageData, cleanName, uploadObjectives);
+    } else {
+      setUploadText(result.text || "");
+    }
+  };
+
+  // ── Generate smart notes from content ─────────────────────────────────────
+  const generateSmartNotes = async (text, imageData, titleHint, objectives) => {
+    if ((!text?.trim() && !imageData) || uploadLoading) return;
+    setUploadLoading(true);
+    setUploadProgress("Reading your content…");
+
+    const systemPrompt = `You are an expert academic note-taker and study coach. When given course content, lecture notes, textbook pages, or any study material, you create comprehensive, well-structured study notes.
+
+Your notes always include:
+1. **Chapter/Topic Overview** — a 2-3 sentence summary of what this content is about
+2. **Chapter Objectives** — what the student should know/be able to do after studying this (if not provided, infer from content)
+3. **Key Concepts** — the most important ideas, clearly explained
+4. **Key Terms & Definitions** — important vocabulary with clear definitions
+5. **Detailed Notes** — organized, structured notes covering all important content
+6. **Summary** — a concise recap of the most critical points
+7. **Study Tips** — 2-3 specific tips for mastering this material
+
+Format everything with clear headings using # and ##. Use bullet points, bold key terms, and make it easy to scan. Write as if you're the world's best study partner helping a student truly understand this material.`;
+
+    const userContent = imageData
+      ? [
+          { type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } },
+          { type:"text", text:`Please create comprehensive study notes from this image${titleHint ? ` (Topic: ${titleHint})` : ""}.${objectives ? `\n\nChapter Objectives provided by student:\n${objectives}` : ""}\n\nCreate full structured notes following the format in your instructions.` }
+        ]
+      : `Please create comprehensive study notes from the following content${titleHint ? ` (Topic: ${titleHint})` : ""}.\n${objectives ? `\nChapter Objectives provided:\n${objectives}\n` : ""}\nContent:\n\n${text?.slice(0,12000)}`;
+
+    setTimeout(() => setUploadProgress("Analyzing content structure…"), 1200);
+    setTimeout(() => setUploadProgress("Identifying key concepts…"), 2500);
+    setTimeout(() => setUploadProgress("Building your study notes…"), 3800);
+
+    try {
+      const res = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-5-20250929",
+          max_tokens:4000,
+          system: systemPrompt,
+          messages:[{ role:"user", content: userContent }],
+        }),
+      });
+      const data = await res.json();
+      const generatedNotes = data.content?.find(b=>b.type==="text")?.text || "Could not generate notes. Please try again.";
+
+      // Extract title from first heading if available
+      const firstHeading = generatedNotes.match(/^#\s+(.+)/m)?.[1];
+      const noteTitle = titleHint || firstHeading || "AI Generated Notes";
+
+      // Auto-save as a new note and open it
+      const noteData = {
+        id: Date.now(),
+        title: noteTitle,
+        content: generatedNotes,
+        folder: "", attachedDecks: [],
+        wordCount: generatedNotes.trim().split(/\s+/).length,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        aiGenerated: true,
+      };
+      setNotes(prev => [noteData, ...prev]);
+      setTitle(noteTitle);
+      setContent(generatedNotes);
+      setActiveNote(noteData);
+      setUploadText(""); setUploadObjectives(""); setUploadTitle("");
+      setView("editor");
+    } catch {
+      setUploadProgress("Something went wrong. Please try again.");
+    } finally {
+      setUploadLoading(false);
+      setUploadProgress("");
+    }
+  };
+
+  // Web Speech API recording
+  const toggleRecording = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { alert("Your browser doesn't support speech recognition. Try Chrome."); return; }
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    let final = "";
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+        else interim = e.results[i][0].transcript;
+      }
+      setContent(prev => {
+        const base = prev.replace(/\[Listening…[^\]]*\]/, "").trimEnd();
+        return base + (base ? " " : "") + final + (interim ? `[Listening… ${interim}]` : "");
+      });
+    };
+    rec.onend = () => { setIsRecording(false); setContent(prev => prev.replace(/\[Listening…[^\]]*\]/, "").trim()); };
+    rec.start();
+    recognitionRef.current = rec;
+    setIsRecording(true);
+  };
+
+  // Format helpers
+  const applyFormat = (type) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = content.slice(start, end);
+    let newContent = content;
+    if (type === "bold")   newContent = content.slice(0,start) + `**${selected||"bold text"}**` + content.slice(end);
+    if (type === "italic") newContent = content.slice(0,start) + `_${selected||"italic text"}_` + content.slice(end);
+    if (type === "h1")     newContent = content.slice(0,start) + `\n# ${selected||"Heading 1"}\n` + content.slice(end);
+    if (type === "h2")     newContent = content.slice(0,start) + `\n## ${selected||"Heading 2"}\n` + content.slice(end);
+    if (type === "ul")     newContent = content.slice(0,start) + `\n- ${selected||"list item"}\n` + content.slice(end);
+    if (type === "ol")     newContent = content.slice(0,start) + `\n1. ${selected||"list item"}\n` + content.slice(end);
+    setContent(newContent);
+    setTimeout(() => textarea.focus(), 30);
+  };
+
+  // Render markdown-ish content
+  const renderContent = (text) => {
+    if (!text) return null;
+    return text.split("\n").map((line, i) => {
+      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", margin:"16px 0 8px" }}>{line.slice(2)}</h1>;
+      if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:19, fontWeight:800, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(3)}</h2>;
+      if (line.startsWith("- "))  return <li key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.8, marginLeft:20 }}>{line.slice(2)}</li>;
+      if (/^\d+\.\s/.test(line))  return <li key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.8, marginLeft:20, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
+      const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
+      const rendered = parts.map((p,j) => {
+        if (p.startsWith("**") && p.endsWith("**")) return <strong key={j}>{p.slice(2,-2)}</strong>;
+        if (p.startsWith("_") && p.endsWith("_"))   return <em key={j}>{p.slice(1,-1)}</em>;
+        return p;
+      });
+      return line.trim() ? <p key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.85, margin:"4px 0" }}>{rendered}</p> : <br key={i} />;
+    });
+  };
+
+  // AI actions
+  const runAI = async (mode) => {
+    if (!content.trim() || aiLoading) return;
+    setAiMode(mode); setAiLoading(true); setShowAiPanel(true); setAiResult("");
+    const prompts = {
+      summarize:    `You are an expert study coach. Summarize these notes into a clear, scannable study guide. Include:\n- 3-5 sentence overview\n- Key takeaways as bullet points\n- Most important terms to remember\n\nNotes:\n${content}`,
+      improve:      `You are an expert note editor. Rewrite and improve these notes to be clearer, better structured, and more comprehensive. Add any obvious missing context, fix grammar, add proper headings, and make them excellent study notes.\n\nOriginal Notes:\n${content}`,
+      flashcards:   `Create 10-15 high-quality flashcard Q&A pairs from these notes. Focus on the most important concepts, definitions, and facts a student needs to memorize. Format as:\nQ: [clear question]\nA: [concise answer]\n\nNotes:\n${content}`,
+      quiz:         `Create a 10-question multiple choice quiz from these notes. Include a mix of recall, comprehension, and application questions. Format as:\n1. [Question]\na) [option]\nb) [option]\nc) [option]\nd) [option]\nAnswer: [letter] - [brief explanation]\n\nNotes:\n${content}`,
+      objectives:   `Based on these notes, identify and write out:\n1. Learning Objectives (what a student should understand after studying this)\n2. Key Skills (what a student should be able to do)\n3. Common Exam Topics (what is most likely to appear on a test)\n4. Areas That Need Extra Attention\n\nNotes:\n${content}`,
+      explain:      `You are a patient tutor. Explain the main concepts in these notes as if talking to a student who is confused. Use simple language, real-world examples, and analogies. Make it click.\n\nNotes:\n${content}`,
+    };
+    try {
+      const res = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-5-20250929",
+          max_tokens:2000,
+          system:"You are an expert study coach and academic tutor helping students master their course material.",
+          messages:[{role:"user", content:prompts[mode]}],
+        }),
+      });
+      const data = await res.json();
+      setAiResult(data.content?.find(b=>b.type==="text")?.text || "Something went wrong.");
+    } catch { setAiResult("Something went wrong. Please try again."); }
+    setAiLoading(false);
+  };
+
+  const filteredNotes = notes.filter(n => {
+    const matchFolder = filterFolder==="all" || n.folder===filterFolder;
+    const matchSearch = !searchQ.trim() || n.title.toLowerCase().includes(searchQ.toLowerCase()) || n.content.toLowerCase().includes(searchQ.toLowerCase());
+    return matchFolder && matchSearch;
+  });
+
+  const totalWords = notes.reduce((a,n) => a + (n.wordCount||0), 0);
+
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:EN_BG, minHeight:"100vh", color:"#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing:border-box; }
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-thumb { background:${EN_LIGHT}; border-radius:3px; }
+        @keyframes en-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes en-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .en-card:hover { transform:translateY(-3px) !important; box-shadow:0 10px 28px rgba(212,168,48,0.12) !important; }
+        .en-card { transition:transform 0.2s, box-shadow 0.2s; }
+        .en-fmt-btn:hover { background:${EN_LIGHT}44 !important; }
+      `}</style>
+
+      {/* ── SIDEBAR ── */}
+      {sidebarOpen && <div onClick={()=>setSidebarOpen(false)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(26,18,0,0.35)",backdropFilter:"blur(4px)" }} />}
+      <div style={{ position:"fixed",left:0,top:0,bottom:0,width:268,background:"#fff",borderRight:`1px solid ${EN_LIGHT}`,display:"flex",flexDirection:"column",zIndex:201,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.38s cubic-bezier(0.16,1,0.3,1)",boxShadow:sidebarOpen?`4px 0 32px rgba(212,168,48,0.1)`:"none" }}>
+        <div style={{ padding:"18px 18px",borderBottom:`1px solid ${EN_LIGHT}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>⬡</div>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>EchoNote</span>
+          </div>
+          <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+        </div>
+        <div style={{ flex:1,overflowY:"auto",padding:"14px 12px" }}>
+          {/* User */}
+          <div style={{ background:`${EN_COLOR}10`,border:`1px solid ${EN_COLOR}25`,borderRadius:10,padding:"12px 14px",marginBottom:14 }}>
+            {user ? (
+              <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+                <div style={{ width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
+                <div><div style={{ fontSize:13,fontWeight:800,color:"#1A1814" }}>{user.name}</div><div style={{ fontSize:11,color:"#8C7A4A" }}>Free Plan</div></div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize:12,fontWeight:700,color:"#1A1814",marginBottom:8 }}>Sign in to save notes</div>
+                <div style={{ display:"flex",gap:7 }}>
+                  <button onClick={()=>{openAuth("login");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:`1px solid ${EN_LIGHT}`,background:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",color:"#5A4A2A" }}>Log In</button>
+                  <button onClick={()=>{openAuth("signup");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:"none",background:EN_COLOR,fontSize:11,fontWeight:700,cursor:"pointer",color:"#fff" }}>Sign Up</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Nav */}
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Navigation</div>
+          {[["📝","All Notes","home"],["🎙","Record","record"],["📁","Folders","folders"]].map(([icon,label,v])=>(
+            <button key={v} onClick={()=>{setView(v==="record"?"editor":v);if(v==="record")newNote();setSidebarOpen(false);}}
+              style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${EN_COLOR}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}
+              onMouseEnter={e=>{if(view!==v)e.currentTarget.style.background=`${EN_COLOR}08`;}}
+              onMouseLeave={e=>{if(view!==v)e.currentTarget.style.background="transparent";}}>
+              <span style={{ fontSize:14 }}>{icon}</span>
+              <span style={{ fontSize:13,fontWeight:view===v?700:500,color:view===v?EN_COLOR:"#3A3020" }}>{label}</span>
+              {view===v && <div style={{ marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:EN_COLOR }} />}
+            </button>
+          ))}
+
+          {/* Folders */}
+          {folders.length > 0 && (
+            <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${EN_LIGHT}66` }}>
+              <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Folders</div>
+              {[{id:"all",name:"All Notes",emoji:"📖",count:notes.length},...folders.map(f=>({...f,emoji:"📁",count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
+                <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");setSidebarOpen(false);}}
+                  style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${EN_COLOR}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}>
+                  <span style={{ fontSize:13 }}>{f.emoji}</span>
+                  <span style={{ fontSize:12,fontWeight:500,color:"#3A3020",flex:1,textAlign:"left" }}>{f.name}</span>
+                  <span style={{ fontSize:11,color:"#B8A06A",background:`${EN_COLOR}10`,borderRadius:10,padding:"1px 7px",fontWeight:600 }}>{f.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Stats */}
+          <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${EN_LIGHT}66` }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Stats</div>
+            {[["📝",notes.length,"Notes"],["📁",folders.length,"Folders"],["✍",totalWords.toLocaleString(),"Words"]].map(([icon,val,label])=>(
+              <div key={label} style={{ display:"flex",alignItems:"center",gap:10,padding:"6px 10px" }}>
+                <span style={{ fontSize:13 }}>{icon}</span>
+                <span style={{ fontSize:13,fontWeight:700,color:EN_COLOR }}>{val}</span>
+                <span style={{ fontSize:12,color:"#8C7A4A" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding:"12px",borderTop:`1px solid ${EN_LIGHT}` }}>
+          <button onClick={onBack} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}
+            onMouseEnter={e=>e.currentTarget.style.background=`${EN_COLOR}08`}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <span style={{ fontSize:13,color:"#B8A06A" }}>←</span>
+            <span style={{ fontSize:13,fontWeight:500,color:"#8C7A4A" }}>Back to Galaxy</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── NAV ── */}
+      <nav style={{ background:"#fff",borderBottom:`1px solid ${EN_LIGHT}66`,position:"sticky",top:0,zIndex:100,height:60,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+          <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.background=`${EN_COLOR}08`;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.background="none";}}>
+            <div style={{ width:14,height:1.5,background:EN_COLOR,borderRadius:1 }} />
+            <div style={{ width:10,height:1.5,background:"#B8A06A",borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:EN_COLOR,borderRadius:1 }} />
+          </button>
+          <div style={{ width:1,height:20,background:EN_LIGHT }} />
+          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>⬡</div>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
+              <span style={{ color:EN_COLOR }}>Ace It</span> EchoNote
+            </span>
+          </div>
+        </div>
+        <div style={{ display:"flex",gap:6 }}>
+          {[["📝","home","Notes"],["🤖","upload","AI Upload"],["📁","folders","Folders"]].map(([icon,v,label])=>(
+            <button key={v} onClick={()=>setView(v)}
+              style={{ padding:"7px 14px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.18s",background:view===v?v==="upload"?"#4F6EF7":EN_COLOR:"transparent",color:view===v?"#fff":"#8C7A4A" }}
+              onKeyDown={e=>{if(e.key===" ")e.preventDefault();}}>
+              {icon} {label}
+            </button>
+          ))}
+        </div>
+        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+          <button onClick={()=>newNote()} style={{ background:EN_COLOR,border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",display:"flex",alignItems:"center",gap:6,boxShadow:`0 4px 16px ${EN_COLOR}44` }}>
+            + New Note
+          </button>
+          {user ? (
+            <div style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer" }} onClick={()=>setSidebarOpen(true)}>
+              <div style={{ width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
+            </div>
+          ) : (
+            <button onClick={()=>openAuth("signup")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A" }}>Sign In</button>
+          )}
+        </div>
+      </nav>
+
+      {/* ── HOME VIEW ── */}
+      {view === "home" && (
+        <div style={{ maxWidth:980,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
+
+          {/* Header */}
+          <div style={{ marginBottom:32 }}>
+            <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:900,color:"#1A1814",lineHeight:1.15,marginBottom:8 }}>
+              Your Notes <span style={{ color:EN_COLOR }}>✦</span>
+            </h1>
+            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. AI can summarize, improve, or turn your notes into flashcards.</p>
+          </div>
+
+          {/* Quick actions */}
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
+            {[
+              { icon:"🤖", label:"AI from Upload",  sub:"Upload notes, textbook, image → AI builds your notes", action:()=>setView("upload"), color:"#4F6EF7", highlight:true },
+              { icon:"✍",  label:"New Note",        sub:"Write or type notes yourself", action:()=>newNote(), color:EN_COLOR },
+              { icon:"🎙",  label:"Record Audio",    sub:"Transcribe speech to text", action:()=>{newNote();setTimeout(()=>toggleRecording(),300);}, color:"#E85D3F" },
+              { icon:"📁",  label:"New Folder",      sub:"Organize your notes", action:()=>setView("folders"), color:"#2BAE7E" },
+            ].map(q=>(
+              <div key={q.label} onClick={q.action}
+                style={{ background: q.highlight ? `linear-gradient(135deg, #4F6EF7, #7B5EE8)` : "#fff", border: q.highlight ? "none" : `1.5px solid ${EN_LIGHT}88`, borderRadius:14, padding:"20px 18px", cursor:"pointer", transition:"all 0.2s", boxShadow: q.highlight ? "0 8px 28px #4F6EF744" : "none" }}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";if(!q.highlight){e.currentTarget.style.borderColor=q.color;e.currentTarget.style.boxShadow=`0 8px 24px ${q.color}18`;}}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="none";if(!q.highlight){e.currentTarget.style.borderColor=`${EN_LIGHT}88`;e.currentTarget.style.boxShadow="none";}}}>
+                <div style={{ fontSize:28,marginBottom:10 }}>{q.icon}</div>
+                <div style={{ fontSize:14,fontWeight:700,color:q.highlight?"#fff":"#1A1814",marginBottom:3 }}>{q.label}</div>
+                <div style={{ fontSize:11,color:q.highlight?"rgba(255,255,255,0.7)":"#8C7A4A",lineHeight:1.5 }}>{q.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div style={{ position:"relative",marginBottom:20 }}>
+            <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}>🔍</span>
+            <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search notes…"
+              onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+              style={{ width:"100%",padding:"10px 14px 10px 36px",borderRadius:10,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s",boxSizing:"border-box" }}
+              onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+          </div>
+
+          {/* Notes grid */}
+          {filteredNotes.length === 0 ? (
+            <div style={{ textAlign:"center",padding:"60px 0",color:"#B8A06A" }}>
+              <div style={{ fontSize:48,marginBottom:14 }}>📝</div>
+              <div style={{ fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No notes yet</div>
+              <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note — write freely, record your voice, or paste lecture content.</p>
+              <button onClick={()=>newNote()} style={{ background:EN_COLOR,border:"none",borderRadius:10,padding:"12px 28px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 6px 20px ${EN_COLOR}44` }}>Create First Note →</button>
+            </div>
+          ) : (
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14 }}>
+              {filteredNotes.map(n => {
+                const fld = folders.find(f=>f.id===n.folder);
+                return (
+                  <div key={n.id} className="en-card" onClick={()=>openNote(n)}
+                    style={{ background:"#fff",border:`1px solid ${EN_LIGHT}88`,borderLeft:`4px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 18px",cursor:"pointer" }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
+                      <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:8 }}>{n.title}</div>
+                      <div style={{ fontSize:10,color:"#B8A06A",flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
+                    </div>
+                    {fld && <div style={{ fontSize:10,fontWeight:700,color:EN_COLOR,background:`${EN_COLOR}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}>📁 {fld.name}</div>}
+                    <div style={{ fontSize:12,color:"#8C7A4A",lineHeight:1.55,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical" }}>
+                      {n.content.replace(/[#*_]/g,"").slice(0,160)}{n.content.length>160?"…":""}
+                    </div>
+                    <div style={{ fontSize:10,color:"#C8B88A",marginTop:10 }}>{n.wordCount} words {n.attachedDecks?.length ? `· ${n.attachedDecks.length} deck${n.attachedDecks.length>1?"s":""}` : ""}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── EDITOR VIEW ── */}
+      {view === "editor" && (
+        <div style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"en-fade 0.4s ease both" }}>
+
+          {/* Back + meta */}
+          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
+            <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.color=EN_COLOR;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.color="#8C7A4A";}}>← Notes</button>
+            <div style={{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" }}>
+              {/* Folder selector */}
+              <select value={folder} onChange={e=>setFolder(e.target.value)}
+                style={{ padding:"6px 10px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:12,fontWeight:600,color:"#5A4A2A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
+                <option value="">📁 No Folder</option>
+                {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+              {/* Record button */}
+              <button onClick={toggleRecording}
+                style={{ padding:"7px 14px",borderRadius:8,border:`1.5px solid ${isRecording?"#E85D3F":EN_LIGHT}`,background:isRecording?"#FEF2F2":"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:isRecording?"#E85D3F":"#8C7A4A",display:"flex",alignItems:"center",gap:6,transition:"all 0.18s" }}>
+                {isRecording ? <><span style={{ width:8,height:8,borderRadius:"50%",background:"#E85D3F",animation:"en-pulse 1s infinite" }} />Recording…</> : "🎙 Record"}
+              </button>
+            </div>
+          </div>
+
+          {/* Format toolbar */}
+          <div style={{ display:"flex",gap:4,marginBottom:14,padding:"8px 10px",background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:10,flexWrap:"wrap" }}>
+            {EN_FORMATS.map(f=>(
+              <button key={f.id} onClick={()=>applyFormat(f.id)} className="en-fmt-btn"
+                style={{ padding:"5px 10px",borderRadius:6,border:"none",background:"transparent",fontSize:13,fontWeight:700,cursor:"pointer",color:"#5A4A2A",minWidth:34,transition:"all 0.15s" }}
+                title={f.label}>{f.icon}</button>
+            ))}
+            <div style={{ width:1,height:20,background:EN_LIGHT,margin:"auto 4px" }} />
+            {/* Attach decks */}
+            {decks.length > 0 && (
+              <select onChange={e=>{if(e.target.value&&!attachedDecks.includes(e.target.value)){setAttachedDecks(prev=>[...prev,e.target.value]);}e.target.value="";}}
+                style={{ padding:"4px 8px",borderRadius:6,border:`1px solid ${EN_LIGHT}`,background:"#fff",fontSize:11,fontWeight:600,color:"#8C7A4A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
+                <option value="">📇 Attach Deck…</option>
+                {decks.map(d=><option key={d.id} value={d.id}>{d.title}</option>)}
+              </select>
+            )}
+          </div>
+
+          {/* Attached decks */}
+          {attachedDecks.length > 0 && (
+            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:14 }}>
+              {attachedDecks.map(id=>{
+                const d = decks.find(x=>x.id===id);
+                return d ? (
+                  <div key={id} style={{ display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:`${EN_COLOR}15`,border:`1px solid ${EN_COLOR}44`,fontSize:11,fontWeight:700,color:EN_DARK }}>
+                    📇 {d.title}
+                    <button onClick={()=>setAttachedDecks(prev=>prev.filter(x=>x!==id))} style={{ background:"none",border:"none",cursor:"pointer",fontSize:10,color:EN_COLOR,lineHeight:1,padding:0,marginLeft:2 }}>✕</button>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          )}
+
+          {/* Title */}
+          <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Note title…"
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+            style={{ width:"100%",padding:"12px 0",border:"none",borderBottom:`2px solid ${EN_LIGHT}`,background:"transparent",fontSize:24,fontFamily:"'Playfair Display',serif",fontWeight:900,color:"#1A1814",outline:"none",marginBottom:18,transition:"border-color 0.18s" }}
+            onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+
+          {/* Editor area — split: textarea left, preview right */}
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
+            {/* Textarea */}
+            <div>
+              <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Write</div>
+              <textarea ref={editorRef} value={content} onChange={e=>setContent(e.target.value)}
+                placeholder="Start writing… Use the toolbar above for formatting."
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                style={{ width:"100%",height:"100%",minHeight:360,padding:"14px",border:`1.5px solid ${EN_LIGHT}`,borderRadius:10,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.8,transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+            </div>
+            {/* Preview */}
+            <div>
+              <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Preview</div>
+              <div style={{ minHeight:360,padding:"14px 16px",border:`1.5px solid ${EN_LIGHT}88`,borderRadius:10,background:`${EN_COLOR}04`,fontSize:14,lineHeight:1.8,overflowY:"auto" }}>
+                {content.trim() ? renderContent(content) : <span style={{ color:"#C8B88A",fontSize:13 }}>Preview will appear here…</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* AI Toolbar */}
+          <div style={{ marginTop:20,padding:"14px 16px",background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:12 }}>
+            <div style={{ fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#B8A06A",marginBottom:10 }}>AI Tools</div>
+            <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+              {[
+                ["summarize","✦ Summarize"],
+                ["improve","✨ Improve Notes"],
+                ["flashcards","📇 Flashcards"],
+                ["quiz","❓ Quiz"],
+                ["objectives","🎯 Objectives"],
+                ["explain","💬 Explain It"],
+              ].map(([mode,label])=>(
+                <button key={mode} onClick={()=>runAI(mode)} disabled={!content.trim()||aiLoading}
+                  style={{ padding:"8px 14px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:12,fontWeight:700,cursor:content.trim()&&!aiLoading?"pointer":"default",color:content.trim()?EN_COLOR:"#C8B88A",transition:"all 0.15s" }}
+                  onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=EN_COLOR;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=EN_COLOR;}}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=content.trim()?EN_COLOR:"#C8B88A";e.currentTarget.style.borderColor=EN_LIGHT;}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Result panel */}
+          {showAiPanel && (
+            <div style={{ marginTop:14,background:`${EN_COLOR}06`,border:`1.5px solid ${EN_COLOR}30`,borderRadius:12,padding:"20px",animation:"en-fade 0.3s ease both" }}>
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
+                <div style={{ fontSize:12,fontWeight:700,letterSpacing:1,color:EN_COLOR,textTransform:"uppercase" }}>
+                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved Notes":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives & Exam Topics":"💬 Explanation"}
+                </div>
+                <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:13 }}>✕</button>
+              </div>
+              {aiLoading ? (
+                <div style={{ display:"flex",gap:6,alignItems:"center",color:"#B8A06A" }}>
+                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s infinite" }} />
+                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s 0.2s infinite" }} />
+                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s 0.4s infinite" }} />
+                  <span style={{ fontSize:13,marginLeft:4 }}>Working on it…</span>
+                </div>
+              ) : (
+                <div>
+                  <pre style={{ fontSize:13,color:"#3A2A10",lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif",margin:0 }}>{aiResult}</pre>
+                  {aiMode === "improve" && (
+                    <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:EN_COLOR,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                      Use Improved Version
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Chat with Notes */}
+          <div style={{ marginTop:14,background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:12,overflow:"hidden" }}>
+            <button onClick={()=>setShowChat(c=>!c)}
+              style={{ width:"100%",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif" }}>
+              <span style={{ fontSize:13,fontWeight:700,color:EN_DARK }}>💬 Chat with your notes — ask AI anything about this content</span>
+              <span style={{ fontSize:11,color:"#B8A06A",fontWeight:600 }}>{showChat?"▲ Close":"▼ Open"}</span>
+            </button>
+            {showChat && (
+              <div style={{ borderTop:`1px solid ${EN_LIGHT}` }}>
+                {/* Suggested questions */}
+                {chatMessages.length === 0 && (
+                  <div style={{ padding:"12px 14px",display:"flex",gap:8,flexWrap:"wrap",borderBottom:`1px solid ${EN_LIGHT}66` }}>
+                    {["Summarize this in one paragraph","What are the most important terms?","What am I most likely to be tested on?","Explain the hardest concept simply"].map(q=>(
+                      <button key={q} onClick={()=>sendChatMessage(q)}
+                        style={{ padding:"5px 12px",borderRadius:20,border:`1px solid ${EN_LIGHT}`,background:`${EN_COLOR}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:EN_DARK,transition:"all 0.15s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.background=EN_COLOR;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=EN_COLOR;}}
+                        onMouseLeave={e=>{e.currentTarget.style.background=`${EN_COLOR}08`;e.currentTarget.style.color=EN_DARK;e.currentTarget.style.borderColor=EN_LIGHT;}}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Messages */}
+                {chatMessages.length > 0 && (
+                  <div style={{ maxHeight:280,overflowY:"auto",padding:"14px" }}>
+                    {chatMessages.map((m,i)=>(
+                      <div key={i} style={{ marginBottom:12,display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start" }}>
+                        <div style={{ maxWidth:"85%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",background:m.role==="user"?EN_COLOR:"#F5F3EC",color:m.role==="user"?"#fff":"#1A1814",fontSize:13,lineHeight:1.65 }}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div style={{ display:"flex",gap:5,alignItems:"center",padding:"8px 0" }}>
+                        {[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:EN_COLOR,animation:`en-pulse 1s ${i*0.2}s infinite` }} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Input */}
+                <div style={{ padding:"10px 12px",borderTop:`1px solid ${EN_LIGHT}66`,display:"flex",gap:8 }}>
+                  <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")sendChatMessage();}}
+                    placeholder={content.trim()?"Ask anything about these notes…":"Write some notes first, then chat with them"}
+                    disabled={!content.trim()}
+                    style={{ flex:1,padding:"9px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+                  <button onClick={()=>sendChatMessage()} disabled={!chatInput.trim()||chatLoading||!content.trim()}
+                    style={{ padding:"9px 16px",borderRadius:9,border:"none",background:chatInput.trim()&&content.trim()?EN_COLOR:"#E8D8A0",color:chatInput.trim()&&content.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()&&content.trim()?"pointer":"default",transition:"all 0.18s" }}>
+                    ↑
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Save / Delete */}
+          <div style={{ display:"flex",gap:10,marginTop:24,paddingTop:18,borderTop:`1px solid ${EN_LIGHT}66` }}>
+            <button onClick={saveNote} disabled={!content.trim()&&!title.trim()}
+              style={{ flex:1,padding:"13px 0",borderRadius:10,border:"none",background:saveAnim?"#2BAE7E":content.trim()||title.trim()?EN_COLOR:"#E8D8A0",color:content.trim()||title.trim()?"#fff":"#B8A06A",fontSize:14,fontWeight:800,cursor:content.trim()||title.trim()?"pointer":"default",transition:"all 0.3s",fontFamily:"'DM Sans',sans-serif" }}>
+              {saveAnim ? "✓ Saved!" : activeNote ? "Save Changes" : "Save Note"}
+            </button>
+            {activeNote && (
+              <button onClick={()=>{if(window.confirm("Delete this note?"))deleteNote(activeNote.id);}}
+                style={{ padding:"13px 18px",borderRadius:10,border:"1px solid #FECACA",background:"transparent",color:"#E85D3F",fontSize:13,fontWeight:600,cursor:"pointer" }}>
+                🗑 Delete
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── UPLOAD VIEW ── */}
+      {view === "upload" && (
+        <div style={{ maxWidth:760,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
+          <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24,transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.color=EN_COLOR;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.color="#8C7A4A";}}>← Back</button>
+
+          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}>🤖 AI Note Builder</h2>
+          <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,marginBottom:24,maxWidth:520 }}>Give AI your course content in any format — file, text, YouTube video, or website. It reads everything and builds comprehensive study notes instantly.</p>
+
+          {/* Input type tabs */}
+          <div style={{ display:"flex",gap:6,marginBottom:20,background:"#F5F3EC",borderRadius:10,padding:4 }}>
+            {[["file","📄 File"],["paste","📋 Paste Text"],["youtube","▶ YouTube"],["website","🌐 Website"]].map(([t,label])=>(
+              <button key={t} onClick={()=>setUploadTab(t)}
+                style={{ flex:1,padding:"8px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:uploadTab===t?"#fff":"transparent",color:uploadTab===t?EN_DARK:"#8C7A4A",transition:"all 0.18s",boxShadow:uploadTab===t?"0 1px 6px rgba(0,0,0,0.08)":"none" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* File tab */}
+          {uploadTab === "file" && (
+            <div
+              onDragOver={e=>{e.preventDefault();setIsDragging(true);}}
+              onDragLeave={()=>setIsDragging(false)}
+              onDrop={handleFileDrop}
+              onClick={()=>fileInputRef.current?.click()}
+              style={{ border:`2px dashed ${isDragging?EN_COLOR:EN_LIGHT}`,borderRadius:16,padding:"52px 32px",textAlign:"center",cursor:"pointer",background:isDragging?`${EN_COLOR}08`:`${EN_COLOR}04`,transition:"all 0.2s",marginBottom:16 }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.background=`${EN_COLOR}08`;}}
+              onMouseLeave={e=>{if(!isDragging){e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.background=`${EN_COLOR}04`;}}}>
+              <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.jpg,.jpeg,.png,.webp" style={{ display:"none" }} onChange={handleFileDrop} />
+              <div style={{ fontSize:52,marginBottom:14 }}>📄</div>
+              <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814",marginBottom:8 }}>Drop your file here</div>
+              <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images (JPG, PNG) · Text files · Markdown</p>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:EN_COLOR,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}>📎 Choose File</div>
+            </div>
+          )}
+
+          {/* Paste tab */}
+          {uploadTab === "paste" && (
+            <textarea value={uploadText} onChange={e=>setUploadText(e.target.value)}
+              placeholder="Paste your lecture notes, textbook content, syllabus, or any course material here…"
+              onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+              style={{ width:"100%",minHeight:220,padding:"14px",borderRadius:12,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"vertical",lineHeight:1.7,transition:"border-color 0.18s",boxSizing:"border-box",marginBottom:16 }}
+              onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+          )}
+
+          {/* YouTube tab */}
+          {uploadTab === "youtube" && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ background:"#fff",border:`1.5px solid ${EN_LIGHT}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
+                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>▶ Paste a YouTube lecture or tutorial URL</div>
+                <div style={{ display:"flex",gap:10 }}>
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}}
+                    placeholder="https://youtube.com/watch?v=..."
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+                  <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()}
+                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?EN_COLOR:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
+                    Load →
+                  </button>
+                </div>
+              </div>
+              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Video loaded — AI will generate notes from this content</div>}
+              <p style={{ fontSize:12,color:"#B8A06A",lineHeight:1.6,marginTop:10 }}>💡 Works best with educational/lecture videos. AI analyzes the video topic and generates structured study notes.</p>
+            </div>
+          )}
+
+          {/* Website tab */}
+          {uploadTab === "website" && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ background:"#fff",border:`1.5px solid ${EN_LIGHT}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
+                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
+                <div style={{ display:"flex",gap:10 }}>
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}}
+                    placeholder="https://example.com/article"
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+                  <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading}
+                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?EN_COLOR:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
+                    {uploadLoading?"Fetching…":"Load →"}
+                  </button>
+                </div>
+              </div>
+              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Page content loaded — ready to generate notes</div>}
+            </div>
+          )}
+
+          {/* Optional fields */}
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
+            <div>
+              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Topic / Title <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
+              <input value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} placeholder="e.g. Chapter 5 — Cell Biology"
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+            </div>
+            <div>
+              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Chapter Objectives <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
+              <input value={uploadObjectives} onChange={e=>setUploadObjectives(e.target.value)} placeholder="e.g. Understand mitosis, define organelles…"
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+            </div>
+          </div>
+
+          {/* What AI generates */}
+          <div style={{ background:`${EN_COLOR}08`,border:`1px solid ${EN_LIGHT}`,borderRadius:12,padding:"14px 18px",marginBottom:20 }}>
+            <div style={{ fontSize:12,fontWeight:700,color:EN_DARK,marginBottom:10 }}>✦ AI generates automatically:</div>
+            <div style={{ display:"flex",flexWrap:"wrap",gap:7 }}>
+              {["📋 Overview","🎯 Objectives","💡 Key Concepts","📖 Key Terms","📝 Full Notes","📌 Summary","🧠 Study Tips"].map(item=>(
+                <span key={item} style={{ fontSize:11,fontWeight:600,color:EN_DARK,background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:20,padding:"3px 10px" }}>{item}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Loading */}
+          {uploadLoading && uploadProgress && (
+            <div style={{ background:"#fff",border:`1.5px solid ${EN_COLOR}`,borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16,animation:"en-fade 0.3s ease both" }}>
+              <div style={{ display:"flex",justifyContent:"center",gap:8,marginBottom:14 }}>
+                {[0,1,2].map(i=><div key={i} style={{ width:10,height:10,borderRadius:"50%",background:EN_COLOR,animation:`en-pulse 1s ${i*0.2}s infinite` }} />)}
+              </div>
+              <div style={{ fontSize:14,fontWeight:700,color:EN_COLOR,marginBottom:4 }}>{uploadProgress}</div>
+              <div style={{ fontSize:12,color:"#B8A06A" }}>This takes 10–20 seconds for longer content</div>
+            </div>
+          )}
+
+          <button
+            onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)}
+            disabled={!uploadText.trim()||uploadLoading}
+            style={{ width:"100%",padding:"15px 0",borderRadius:11,border:"none",background:uploadText.trim()&&!uploadLoading?`linear-gradient(135deg, #4F6EF7, #7B5EE8)`:"#E8E5E0",color:uploadText.trim()&&!uploadLoading?"#fff":"#A8A59E",fontSize:15,fontWeight:800,cursor:uploadText.trim()&&!uploadLoading?"pointer":"default",transition:"all 0.2s",boxShadow:uploadText.trim()&&!uploadLoading?"0 8px 28px #4F6EF744":"none",fontFamily:"'DM Sans',sans-serif" }}>
+            {uploadLoading ? "Building your notes…" : "🤖 Build My Notes with AI →"}
+          </button>
+        </div>
+      )}
+
+      {/* ── FOLDERS VIEW ── */}
+      {view === "folders" && (
+        <div style={{ maxWidth:800,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814" }}>Folders</h2>
+            <button onClick={()=>setAddingFolder(true)} style={{ background:EN_COLOR,border:"none",borderRadius:9,padding:"9px 20px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff" }}>+ New Folder</button>
+          </div>
+
+          {addingFolder && (
+            <div style={{ background:"#fff",border:`1.5px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 20px",marginBottom:16,animation:"en-fade 0.3s ease both" }}>
+              <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`en-f-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:14,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }} />
+              <div style={{ fontSize:11,color:"#B8A06A",marginTop:6 }}>Enter to save · Esc to cancel</div>
+            </div>
+          )}
+
+          {folders.length === 0 && !addingFolder ? (
+            <div style={{ textAlign:"center",padding:"50px 0",color:"#B8A06A" }}>
+              <div style={{ fontSize:40,marginBottom:12 }}>📁</div>
+              <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No folders yet</div>
+              <p style={{ fontSize:14,lineHeight:1.7 }}>Create folders to organize your notes by subject, class, or project.</p>
+            </div>
+          ) : (
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12 }}>
+              {folders.map(f => {
+                const count = notes.filter(n=>n.folder===f.id).length;
+                return (
+                  <div key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");}}
+                    style={{ background:"#fff",border:`1px solid ${EN_LIGHT}88`,borderTop:`3px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 18px",cursor:"pointer",transition:"all 0.2s",position:"relative" }}
+                    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${EN_COLOR}18`;}}
+                    onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                    <div style={{ fontSize:28,marginBottom:8 }}>📁</div>
+                    <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:4 }}>{f.name}</div>
+                    <div style={{ fontSize:12,color:"#8C7A4A" }}>{count} {count===1?"note":"notes"}</div>
+                    <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete folder "${f.name}"?`)){setFolders(prev=>prev.filter(x=>x.id!==f.id));}}}
+                      style={{ position:"absolute",top:10,right:10,background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#C8B88A",opacity:0,transition:"opacity 0.15s" }}
+                      onMouseEnter={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.color="#E85D3F";}}
+                      onMouseLeave={e=>e.currentTarget.style.opacity="0"}>✕</button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Ace It Journal ──────────────────────────────────────────────────────────
 
 const J_COLOR   = "#B060D0";
@@ -8359,6 +9328,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} aiContext={aiContext} />}{floatingWidget}</>;
+  if (currentApp === 'echonote')   return <>{<EchoNoteApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} decks={(() => { try { const s = localStorage.getItem("aceIt_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; } })()} />}{floatingWidget}</>;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
     if (planet) return <>{<AppLanding planet={planet} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
