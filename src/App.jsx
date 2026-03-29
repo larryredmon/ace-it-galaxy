@@ -112,17 +112,17 @@ function Sun() {
           display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
         }}>
           <span style={{
-            fontFamily: "'Montserrat', sans-serif", fontSize: 18, fontWeight: 800,
-            color: "rgba(20,10,0,0.85)", letterSpacing: 4,
+            fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 800,
+            color: "rgba(20,10,0,0.85)", letterSpacing: 2,
             textTransform: "uppercase", lineHeight: 1,
-            paddingLeft: 4, // compensate for trailing letter-spacing
-          }}>ACE</span>
+            paddingLeft: 2,
+          }}>TEACHER'S</span>
           <span style={{
-            fontFamily: "'Montserrat', sans-serif", fontSize: 18, fontWeight: 800,
-            color: "rgba(20,10,0,0.85)", letterSpacing: 4,
+            fontFamily: "'Montserrat', sans-serif", fontSize: 13, fontWeight: 800,
+            color: "rgba(20,10,0,0.85)", letterSpacing: 2,
             textTransform: "uppercase", lineHeight: 1,
-            paddingLeft: 4,
-          }}>IT</span>
+            paddingLeft: 2,
+          }}>PET</span>
         </div>
       </div>
       {/* Wordmark below */}
@@ -296,7 +296,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
             <div style={{
               fontFamily: "'Montserrat', sans-serif", fontSize: 17, fontWeight: 800,
               color: "#F5D96A", letterSpacing: 2, textTransform: "uppercase",
-            }}>Ace It</div>
+            }}>Teacher's Pet</div>
             <div style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 400,
               color: "rgba(255,255,255,0.28)", letterSpacing: 4, textTransform: "uppercase",
@@ -503,7 +503,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
           fontFamily: "'DM Sans', sans-serif", fontSize: 9,
           color: "rgba(255,255,255,0.15)", letterSpacing: 1,
         }}>
-          © 2026 Ace It Galaxy
+          © 2026 Teacher's Pet
         </div>
       </div>
     </>
@@ -620,7 +620,7 @@ function NavDropdown({ links, label, color = "#C8B8FF", glow = "#9B7FFF" }) {
 const APP_CONFIGS = {
   echonote: {
     badge: "AI Lecture Assistant",
-    headline: ["Ace It", "EchoNote."],
+    headline: ["Teacher's Pet", "EchoNote."],
     highlight: 1,
     sub: "Record any lecture, class, or meeting and watch it transform into organized notes, flashcards, and quizzes — automatically. Never miss a concept again.",
     cta: "Start Recording",
@@ -641,7 +641,7 @@ const APP_CONFIGS = {
   },
   academy: {
     badge: "AI-Powered Education",
-    headline: ["Ace It", "Academy."],
+    headline: ["Teacher's Pet", "Academy."],
     highlight: 1,
     sub: "A complete AI school — from elementary through college. Adaptive lessons, cinematic learning, and personalized paths that replace traditional studying with something far more powerful.",
     cta: "Start Learning",
@@ -662,7 +662,7 @@ const APP_CONFIGS = {
   },
   studio: {
     badge: "Real-World Skills",
-    headline: ["Ace It", "Studio."],
+    headline: ["Teacher's Pet", "Studio."],
     highlight: 1,
     sub: "Learn the skills school never taught you. Music production, car mechanics, investing, creative arts, and hundreds more — with AI coaching every step of the way.",
     cta: "Explore Skills",
@@ -683,7 +683,7 @@ const APP_CONFIGS = {
   },
   universe: {
     badge: "AI Knowledge Encyclopedia",
-    headline: ["Ace It", "Universe."],
+    headline: ["Teacher's Pet", "Universe."],
     highlight: 1,
     sub: "Replace fragmented web searching with one verified, AI-powered knowledge hub. Deep dive any topic, check facts automatically, and watch knowledge connect across every field of human understanding.",
     cta: "Explore the Universe",
@@ -704,7 +704,7 @@ const APP_CONFIGS = {
   },
   earthrecord: {
     badge: "Global Historical Archive",
-    headline: ["Ace It", "Earth's Record."],
+    headline: ["Teacher's Pet", "Earth's Record."],
     highlight: 1,
     sub: "The complete, tamper-resistant record of human history, culture, and knowledge — from ancient civilizations to today. Every perspective. Every culture. Preserved forever.",
     cta: "Open the Record",
@@ -725,7 +725,7 @@ const APP_CONFIGS = {
   },
   careercompass: {
     badge: "Life & Career Planning",
-    headline: ["Ace It", "Career Compass."],
+    headline: ["Teacher's Pet", "Career Compass."],
     highlight: 1,
     sub: "Map your path from where you are to where you want to be. Discover careers, identify skill gaps, track certifications, and get AI-powered guidance at every step of your professional journey.",
     cta: "Find My Direction",
@@ -746,7 +746,7 @@ const APP_CONFIGS = {
   },
   assistant: {
     badge: "Your AI Guide",
-    headline: ["Ace It", "Personal Assistant."],
+    headline: ["Teacher's Pet", "Personal Assistant."],
     highlight: 1,
     sub: "The AI that follows you across every app on the platform. Ask anything, get organized, detect cognitive fatigue, and receive personalized coaching — all from one intelligent companion that knows how you learn.",
     cta: "Meet Your Assistant",
@@ -767,7 +767,7 @@ const APP_CONFIGS = {
   },
   mentalhealth: {
     badge: "Emotional Wellness & Balance",
-    headline: ["Ace It", "Mental Health."],
+    headline: ["Teacher's Pet", "Mental Health."],
     highlight: 1,
     sub: "You can't pour from an empty cup. Built for students who push themselves hard, this app helps you manage stress, track your emotional health, and build the resilience to go the distance.",
     cta: "Start Your Practice",
@@ -788,7 +788,7 @@ const APP_CONFIGS = {
   },
   flow: {
     badge: "Learning Style Optimization",
-    headline: ["Ace It", "Flow."],
+    headline: ["Teacher's Pet", "Flow."],
     highlight: 1,
     sub: "Your personal study optimization engine. Ace Flow detects how your brain works best, builds your ideal study environment, and eliminates the wasted time between sitting down and actually learning.",
     cta: "Find Your Flow",
@@ -809,7 +809,7 @@ const APP_CONFIGS = {
   },
   studybuddy: {
     badge: "AI Study Partner",
-    headline: ["Ace It", "Study Buddy."],
+    headline: ["Teacher's Pet", "Study Buddy."],
     highlight: 1,
     sub: "Never study alone again. Study Buddy is your real-time AI companion — quiz you, explain concepts, keep you motivated, and celebrate every win alongside you.",
     cta: "Meet Your Buddy",
@@ -830,9 +830,9 @@ const APP_CONFIGS = {
   },
   settings: {
     badge: "Platform Preferences",
-    headline: ["Ace It", "Settings."],
+    headline: ["Teacher's Pet", "Settings."],
     highlight: 1,
-    sub: "Customize your entire Ace It experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
+    sub: "Customize your entire Teacher's Pet experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
     cta: "Open Settings",
     stats: [{ value:"50+", label:"Customization Options" },{ value:"ADHD", label:"Friendly Mode" },{ value:"A11y", label:"Accessibility First" },{ value:"Your Way", label:"Learning Style" }],
     features: [
@@ -904,7 +904,7 @@ function AppLanding({ planet, onBack }) {
               fontSize:13, color:"rgba(0,0,0,0.75)", fontFamily:"'Montserrat', sans-serif", fontWeight:800,
             }}>{symbol}</div>
             <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:14, fontWeight:700, letterSpacing:0.5 }}>
-              <span style={{ color }}> Ace It</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
+              <span style={{ color }}> Teacher's Pet</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
             </span>
           </div>
         </div>
@@ -1143,9 +1143,9 @@ function AppLanding({ planet, onBack }) {
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <div style={{ width:22, height:22, borderRadius:"50%", background:`linear-gradient(135deg, ${glow}, ${color})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontFamily:"'Montserrat', sans-serif", fontWeight:800, color:"rgba(0,0,0,0.75)" }}>{symbol}</div>
           <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:12, fontWeight:700, color:`${color}99`, letterSpacing:0.5 }}>{name}</span>
-          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Ace It Galaxy</span>
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Teacher's Pet</span>
         </div>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Ace It Galaxy · All rights reserved</div>
+        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Teacher's Pet · All rights reserved</div>
         <div style={{ display:"flex", gap:22 }}>
           {["Privacy","Terms","Support"].map(l => (
             <span key={l} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.18s" }}
@@ -1206,7 +1206,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             <div style={{ width: 30, height: 30, background: "#1A1814", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ color: "#F7F6F2", fontSize: 14, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Ace Cards</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Teacher's Pet</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
@@ -1367,7 +1367,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <span style={{ fontSize: 13, color: "#8C8880" }}>←</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Ace It Galaxy</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Teacher's Pet</span>
           </div>
         </div>
       </div>
@@ -1389,7 +1389,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
   // ── Deck state — initialized from localStorage, falls back to sample decks ──
   const [decks, setDecks] = useState(() => {
     try {
-      const saved = localStorage.getItem("aceIt_fc_decks");
+      const saved = localStorage.getItem("tp_fc_decks");
       if (saved) return JSON.parse(saved);
     } catch {}
     return FC_DECKS;
@@ -1398,18 +1398,18 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
   // ── User-created folders — persisted separately ────────────────────────────
   const [userFolders, setUserFolders] = useState(() => {
     try {
-      const saved = localStorage.getItem("aceIt_fc_folders");
+      const saved = localStorage.getItem("tp_fc_folders");
       if (saved) return JSON.parse(saved);
     } catch {}
     return [];
   });
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_fc_decks", JSON.stringify(decks)); } catch {}
+    try { localStorage.setItem("tp_fc_decks", JSON.stringify(decks)); } catch {}
   }, [decks]);
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_fc_folders", JSON.stringify(userFolders)); } catch {}
+    try { localStorage.setItem("tp_fc_folders", JSON.stringify(userFolders)); } catch {}
   }, [userFolders]);
 
   const saveDeck = (deckData) => {
@@ -1495,7 +1495,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
               <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
               </div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Ace Cards</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Teacher's Pet</span>
             </div>
           </div>
 
@@ -1551,10 +1551,10 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
       <section style={{ background: "#1A1814", color: "#F7F6F2", padding: "80px 24px 72px" }}>
         <div style={{ maxWidth: 740, margin: "0 auto", textAlign: "center" }}>
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
-            Ace It Flash Cards
+            Teacher's Pet Flash Cards
           </div>
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
-            <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
+            <span style={{ color: "#F5C842" }}>Teacher's Pet</span> Flash Cards
           </h1>
           <p className="fc-fade-up" style={{ animationDelay: "0.16s", fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.7, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
             Build flash card decks, flip through terms, and track your mastery — built for students who are serious about passing.
@@ -1642,7 +1642,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
 
       {/* Footer */}
       <footer style={{ padding: "32px 24px", textAlign: "center" }}>
-        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Ace Cards · Part of Ace It Galaxy</span>
+        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Teacher's Pet · Part of Teacher's Pet</span>
       </footer>
     </div>
   );
@@ -4367,7 +4367,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [view,        setView]       = useState("home");
   const [maps,        setMaps]       = useState(() => {
-    try { const s = localStorage.getItem("aceIt_bm_maps"); if (s) return JSON.parse(s); } catch {}
+    try { const s = localStorage.getItem("tp_bm_maps"); if (s) return JSON.parse(s); } catch {}
     return BM_INITIAL_MAPS;
   });
   const [activeMap,   setActiveMap]  = useState(null);
@@ -4376,7 +4376,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [newTitle,    setNewTitle]   = useState("");
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_bm_maps", JSON.stringify(maps)); } catch {}
+    try { localStorage.setItem("tp_bm_maps", JSON.stringify(maps)); } catch {}
   }, [maps]);
 
   const openMap  = (map) => { setActiveMap(map); setView("canvas"); };
@@ -4441,8 +4441,8 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 268, zIndex: 151, background: "linear-gradient(160deg, rgba(12,10,28,0.99) 0%, rgba(6,4,18,0.99) 100%)", borderRight: "1px solid rgba(255,255,255,0.06)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It Galaxy</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Teacher's Pet Brain Map</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Teacher's Pet</div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
@@ -4511,7 +4511,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: "#F0A8C0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✺</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</span>
             </div>
           </div>
           <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
@@ -4545,7 +4545,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               ✺ Visual Mind Mapping
             </div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, color: "#F7F6F2", lineHeight: 1.08, marginBottom: 20, letterSpacing: -1.5 }}>
-              <span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</h1>
+              <span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</h1>
             <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 40px" }}>
               Build beautiful mind maps and attach flash card decks directly to topics — so studying and understanding happen in the same place.
             </p>
@@ -5026,7 +5026,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>≋</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Ace It</span> Text Simplifier</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Teacher's Pet</span> Text Simplifier</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -5526,7 +5526,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
     try {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
-        : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
+        : `You are the Teacher's Pet AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
       const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
@@ -5552,7 +5552,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
               {hasAvatar ? <AvatarHead avatar={avatar} size={34}/> : <span style={{fontSize:18}}>⊕</span>}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Ace It Assistant</div>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Teacher's Pet Assistant</div>
               <div style={{ fontSize:10, color:`${PA_COLOR}cc`, fontWeight:600 }}>● Online · Always here</div>
             </div>
             <button onClick={() => onOpen()} style={{ background:"rgba(255,255,255,0.1)", border:"none", borderRadius:7, padding:"5px 10px", fontSize:11, color:"rgba(255,255,255,0.7)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Open Full ↗</button>
@@ -5611,7 +5611,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
         onMouseDown={onMouseDown}
         onClick={() => { if (!dragging) setExpanded(e => !e); }}
         style={{ width:btnSize, height:btnSize, borderRadius:"50%", cursor:"grab", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow:`0 6px 28px ${PA_GLOW}55, 0 2px 8px rgba(0,0,0,0.2)`, background: hasAvatar ? "#fff" : `linear-gradient(135deg,${PA_DARK},${PA_GLOW})`, border:`3px solid ${expanded?PA_COLOR:"rgba(255,255,255,0.3)"}`, transition:"border-color 0.2s, box-shadow 0.2s", position:"relative" }}
-        title="Ace It Assistant"
+        title="Teacher's Pet Assistant"
       >
         {hasAvatar
           ? <AvatarHead avatar={avatar} size={btnSize - 8} />
@@ -5678,7 +5678,7 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 15 }}>⊕</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Ace It Assistant</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Teacher's Pet Assistant</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#90C8F8"; e.currentTarget.style.color = PA_GLOW; }}
@@ -5913,7 +5913,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
   useEffect(() => { setDraftAvatar(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); }, [avatar]);
 
-  const systemPrompt = aiContext || `You are Ace It Personal Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
+  const systemPrompt = aiContext || `You are Teacher's Pet Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
   // Per-message intent detection — adds behavior block dynamically each call
   const buildSmartBehavior = (msg) => {
@@ -6001,7 +6001,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
           <span style={{ fontSize: 11 }}>⊕</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Personal Assistant</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Teacher's Pet Assistant</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
           Hey {user?.name?.split(" ")[0] || "there"} 👋<br />
@@ -6225,7 +6225,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                       <div style={{ flex: 1, maxWidth: "calc(100% - 44px)" }}>
                         {/* Name + time */}
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Ace It Assistant"}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Teacher's Pet Assistant"}</span>
                           <span style={{ fontSize: 10, color: "#C0CDD8" }}>{m.ts ? new Date(m.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : ""}</span>
                         </div>
 
@@ -6258,7 +6258,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 20, animation: "pa-fadein 0.2s ease both" }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>⊕</div>
                     <div style={{ paddingTop: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Ace It Assistant</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Teacher's Pet Assistant</div>
                       <div style={{ padding: "12px 16px", borderRadius: "4px 18px 18px 18px", background: "#F4F8FF", border: "1.5px solid #E4EEF8", display: "flex", gap: 5, alignItems: "center" }}>
                         {[0, 0.18, 0.36].map((d, i) => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: PA_COLOR, animation: `pa-bounce 1.2s ${d}s infinite` }} />)}
                       </div>
@@ -6532,7 +6532,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Configuration</div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Preferences</h2>
-        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Ace It.</p>
+        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Teacher's Pet.</p>
       </div>
 
       {/* Floating assistant toggle */}
@@ -6541,7 +6541,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ width:44, height:44, borderRadius:12, background:`${PA_COLOR}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>⊕</div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>Floating Assistant Button</div>
-            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Ace It apps so you can get help from anywhere.</div>
+            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Teacher's Pet apps so you can get help from anywhere.</div>
           </div>
           <div onClick={() => setShowFloating(s => !s)} style={{ width:48, height:26, borderRadius:13, background:showFloating?PA_GLOW:"#D8ECFF", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
             <div style={{ position:"absolute", top:3, left:showFloating?24:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
@@ -6613,7 +6613,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⊕</div>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#0A1628" }}>
-              <span style={{ color: PA_GLOW }}>Ace It</span> Personal Assistant
+              <span style={{ color: PA_GLOW }}>Teacher's Pet</span> Personal Assistant
             </span>
           </div>
         </div>
@@ -6772,7 +6772,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F5C842", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 900, color: "#1A1814" }}>A</span>
               </div>
-              <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>ACE IT</span>
+              <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>TEACHER'S PET</span>
             </div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 900, color: "#F7F6F2", lineHeight: 1.2, marginBottom: 16 }}>
               {mode === "login" ? "Welcome back." : "Start your journey."}
@@ -6783,12 +6783,12 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
           </div>
           <div style={{ marginBottom: 32 }}>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderTop: "2px solid #C8B8FF", borderRadius: 12, padding: "18px 20px", marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Ace It Flash Cards</div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Ace It Flash Cards</div>
+              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Teacher's Pet Flash Cards</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Teacher's Pet Flash Cards</div>
               <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: "100%", width: "65%", background: "#C8B8FF", borderRadius: 2 }} /></div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It Galaxy</div>
+          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Teacher's Pet</div>
         </div>
 
         {/* RIGHT */}
@@ -6895,7 +6895,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   );
 }
 
-// ─── Ace It EchoNote ─────────────────────────────────────────────────────────
+// ─── Teacher's Pet EchoNote ─────────────────────────────────────────────────────────
 
 const EN_COLOR  = "#D4A830";
 const EN_LIGHT  = "#F0D080";
@@ -6914,10 +6914,10 @@ const EN_FORMATS = [
 function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
   const [view, setView]             = useState("home"); // home | editor | folders | upload
   const [notes, setNotes]           = useState(() => {
-    try { const s = localStorage.getItem("aceIt_echonotes"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_echonotes"); return s ? JSON.parse(s) : []; } catch { return []; }
   });
   const [folders, setFolders]       = useState(() => {
-    try { const s = localStorage.getItem("aceIt_en_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_en_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
   });
   const [activeNote, setActiveNote] = useState(null);
   const [filterFolder, setFilterFolder] = useState("all");
@@ -6956,11 +6956,11 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
   const editorRef                   = useRef(null);
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_echonotes", JSON.stringify(notes)); } catch {}
+    try { localStorage.setItem("tp_echonotes", JSON.stringify(notes)); } catch {}
   }, [notes]);
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_en_folders", JSON.stringify(folders)); } catch {}
+    try { localStorage.setItem("tp_en_folders", JSON.stringify(folders)); } catch {}
   }, [folders]);
 
   const newNote = (preTitle = "", preContent = "") => {
@@ -7371,7 +7371,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
             <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>⬡</div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
-              <span style={{ color:EN_COLOR }}>Ace It</span> EchoNote
+              <span style={{ color:EN_COLOR }}>Teacher's Pet</span> EchoNote
             </span>
           </div>
         </div>
@@ -7864,7 +7864,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
   );
 }
 
-// ─── Ace It Journal ──────────────────────────────────────────────────────────
+// ─── Teacher's Pet Journal ──────────────────────────────────────────────────────────
 
 const J_COLOR   = "#B060D0";
 const J_LIGHT   = "#E8C4F0";
@@ -7909,7 +7909,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
   const [view, setView]               = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [entries, setEntries]   = useState(() => {
-    try { const s = localStorage.getItem("aceIt_journal"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_journal"); return s ? JSON.parse(s) : []; } catch { return []; }
   });
   const [activeEntry, setActiveEntry] = useState(null);
   const [filterCat, setFilterCat]     = useState("all");
@@ -7930,7 +7930,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_journal", JSON.stringify(entries)); } catch {}
+    try { localStorage.setItem("tp_journal", JSON.stringify(entries)); } catch {}
   }, [entries]);
 
   useEffect(() => {
@@ -7987,7 +7987,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
           max_tokens: 500,
-          system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
+          system: `You are a warm, empathetic journal companion inside the Teacher's Pet Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
 - Gently notice any patterns, emotions, or themes they may not have explicitly named
 - Ask ONE thoughtful follow-up question that might help them go deeper
@@ -8051,7 +8051,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         <div style={{ padding:"18px 20px", borderBottom:`1px solid ${J_LIGHT}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✍</div>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Ace It Journal</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Teacher's Pet Journal</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#8C6A9A", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
@@ -8168,7 +8168,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#1A1814" }}>
-              <span style={{ color:J_COLOR }}>Ace It</span> Journal
+              <span style={{ color:J_COLOR }}>Teacher's Pet</span> Journal
             </span>
           </div>
         </div>
@@ -8534,7 +8534,7 @@ function LandingPage({ onEnter, openAuth }) {
   ];
 
   const QUIZ_RESULTS = {
-    student:  { headline:"You need Ace It Flash Cards + EchoNote", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","EchoNote","Brain Map"] },
+    student:  { headline:"You need Teacher's Pet Flash Cards + EchoNote", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","EchoNote","Brain Map"] },
     career:   { headline:"You need Career Compass + Ace Studio",   desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
     curious:  { headline:"You need Universe + Earth's Record",     desc:"Dive into any topic, explore the world's knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth's Record","Text Simplifier"] },
     adhd:     { headline:"You need Ace Flow + Study Buddy",        desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
@@ -8568,7 +8568,7 @@ function LandingPage({ onEnter, openAuth }) {
           <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:900, color:"#1A1814" }}>A</span>
           </div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:16, fontWeight:800, letterSpacing:1, color:"#F7F6F2" }}>ACE IT</span>
+          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:16, fontWeight:800, letterSpacing:1, color:"#F7F6F2" }}>TEACHER'S PET</span>
         </div>
 
         {/* Nav links */}
@@ -8618,7 +8618,7 @@ function LandingPage({ onEnter, openAuth }) {
 
         {/* Subheadline */}
         <p className="lp-fade" style={{ animationDelay:"0.2s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.75, maxWidth:620, marginBottom:44 }}>
-          Ace It combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
+          Teacher's Pet combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
         </p>
 
         {/* CTAs */}
@@ -8691,7 +8691,7 @@ function LandingPage({ onEnter, openAuth }) {
 
         {/* Subheadline */}
         <p className="lp-fade" style={{ animationDelay:"0.2s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.75, maxWidth:580, marginBottom:44 }}>
-          Ace It combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
+          Teacher's Pet combines school, research, study tools, mental health, career planning, and real-world skills into one unified AI-powered ecosystem — built for learners who are serious about growing.
         </p>
 
         {/* CTAs */}
@@ -8750,7 +8750,7 @@ function LandingPage({ onEnter, openAuth }) {
                     <span style={{ fontSize:18, color:app.color }}>{app.icon}</span>
                   </div>
                   <div>
-                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Ace It {app.name}</div>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet {app.name}</div>
                     <div style={{ width:28, height:2, borderRadius:1, background:app.color, marginTop:4 }} />
                   </div>
                 </div>
@@ -8768,7 +8768,7 @@ function LandingPage({ onEnter, openAuth }) {
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Find Your Path</span>
           </div>
           <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>What kind of learner are you?</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which Ace It apps are built for you.</p>
+          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which Teacher's Pet apps are built for you.</p>
 
           {quizStep === 0 && (
             <button onClick={() => setQuizStep(1)} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"16px 36px", fontSize:16, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
@@ -8830,7 +8830,7 @@ function LandingPage({ onEnter, openAuth }) {
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Ace It vs everything else.</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
           <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
         </div>
 
@@ -8840,7 +8840,7 @@ function LandingPage({ onEnter, openAuth }) {
               <tr>
                 <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
                 {[
-                  { name:"Ace It", highlight:true },
+                  { name:"Teacher's Pet", highlight:true },
                   { name:"Quizlet", highlight:false },
                   { name:"Anki", highlight:false },
                   { name:"ChatGPT", highlight:false },
@@ -8882,7 +8882,7 @@ function LandingPage({ onEnter, openAuth }) {
         </div>
         <div style={{ textAlign:"center", marginTop:36 }}>
           <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"14px 34px", fontSize:15, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-            Switch to Ace It — Free While It Lasts →
+            Switch to Teacher's Pet — Free While It Lasts →
           </button>
         </div>
       </section>
@@ -8900,7 +8900,7 @@ function LandingPage({ onEnter, openAuth }) {
             Get in free<br/>before prices go live.
           </h2>
           <p style={{ fontSize:18, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, marginBottom:44 }}>
-            Ace It is free right now while we're in early launch. Once paid plans go live, founding members who signed up early will be taken care of. Don't miss your window.
+            Teacher's Pet is free right now while we're in early launch. Once paid plans go live, founding members who signed up early will be taken care of. Don't miss your window.
           </p>
           <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:20 }}>
             <div style={{ position:"relative" }}>
@@ -8925,9 +8925,9 @@ function LandingPage({ onEnter, openAuth }) {
           <div style={{ width:26, height:26, borderRadius:7, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:900, color:"#1A1814" }}>A</span>
           </div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:1 }}>ACE IT</span>
+          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:1 }}>TEACHER'S PET</span>
         </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All learning, one platform.</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
         <div style={{ display:"flex", gap:20 }}>
           {["Privacy Policy","Terms of Service","Contact"].map(l => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
@@ -8969,11 +8969,11 @@ export default function AceItGalaxy() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
   const [user, setUser]             = useState(() => {
-    try { const s = localStorage.getItem("aceIt_user"); return s ? JSON.parse(s) : null; } catch { return null; }
+    try { const s = localStorage.getItem("tp_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
   const [authLoading, setAuthLoading] = useState(() => {
     // If we have a cached user, don't show loading splash
-    try { return !localStorage.getItem("aceIt_user"); } catch { return true; }
+    try { return !localStorage.getItem("tp_user"); } catch { return true; }
   });
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -8981,10 +8981,10 @@ export default function AceItGalaxy() {
   const [avatar, setAvatar]         = useState(null);
   const [showFloating, setShowFloating] = useState(true);
   const [showHome, setShowHome]     = useState(() => {
-    try { return !localStorage.getItem("aceIt_user"); } catch { return true; }
+    try { return !localStorage.getItem("tp_user"); } catch { return true; }
   });
 
-  // ── Ace It AI Engine ─────────────────────────────────────────────────────────
+  // ── Teacher's Pet AI Engine ─────────────────────────────────────────────────────────
   // Central intelligence layer — reads all live user data and powers every AI
   // call across the platform. Level 2 ready: DB queries would replace localStorage
   // reads below (marked with // L2: replace with db.query(...))
@@ -8992,7 +8992,7 @@ export default function AceItGalaxy() {
 
   const [userProfile, setUserProfile] = useState(() => {
     try {
-      const saved = localStorage.getItem("aceIt_userProfile");
+      const saved = localStorage.getItem("tp_userProfile");
       if (saved) return JSON.parse(saved);
     } catch {}
     return {
@@ -9015,22 +9015,22 @@ export default function AceItGalaxy() {
   });
 
   useEffect(() => {
-    try { localStorage.setItem("aceIt_userProfile", JSON.stringify(userProfile)); } catch {}
+    try { localStorage.setItem("tp_userProfile", JSON.stringify(userProfile)); } catch {}
   }, [userProfile]);
 
   // ── Live data readers — these give the AI real-time knowledge of user's content
   const readLiveDecks = () => {
     // L2: replace with await db.getDecks(userId)
-    try { const s = localStorage.getItem("aceIt_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveMaps = () => {
     // L2: replace with await db.getMaps(userId)
-    try { const s = localStorage.getItem("aceIt_bm_maps"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_bm_maps"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveFolders = () => {
-    try { const s = localStorage.getItem("aceIt_fc_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
+    try { const s = localStorage.getItem("tp_fc_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   // ── Profile update trackers ───────────────────────────────────────────────────
@@ -9177,7 +9177,7 @@ Help them see connections ACROSS their apps. For example:
 
     // ── Always-on platform context ────────────────────────────────────────────
     const platformContext = `
-You are the Ace It AI — an intelligent, deeply personalized assistant built into the Ace It learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
+You are the Teacher's Pet AI — an intelligent, deeply personalized assistant built into the Teacher's Pet learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
 
 ═══ USER IDENTITY ═══
 Name: ${name}
@@ -9202,7 +9202,7 @@ ${prof.recentTopics.length ? `RECENT TOPICS: ${prof.recentTopics.join(", ")}` : 
 ${prof.weakSubjects?.length ? `STRUGGLING WITH: ${prof.weakSubjects.join(", ")}` : ""}
 ${prof.strongSubjects?.length ? `MASTERED: ${prof.strongSubjects.join(", ")}` : ""}
 
-═══ THE 13 ACE IT APPS YOU CAN HELP WITH ═══
+═══ THE 13 TEACHER'S PET APPS YOU CAN HELP WITH ═══
 Flash Cards — build decks, study with spaced repetition, Quick Build from text
 EchoNote — record lectures, auto-transcribe, generate study material
 Brain Map — visual mind maps connected to flashcard decks
@@ -9234,12 +9234,12 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
 
   const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
   const handleAuth = (userData) => {
-    try { localStorage.setItem("aceIt_user", JSON.stringify(userData)); } catch {}
+    try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
   };
   const handleLogout = async () => {
     try { await signOut(auth); } catch {}
-    try { localStorage.removeItem("aceIt_user"); } catch {}
+    try { localStorage.removeItem("tp_user"); } catch {}
     setUser(null); setShowHome(true); setCurrentApp(null);
   };
 
@@ -9270,7 +9270,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
         const userData = { uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() };
-        try { localStorage.setItem("aceIt_user", JSON.stringify(userData)); } catch {}
+        try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
@@ -9279,14 +9279,14 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
           if (snap.exists() && snap.data().name) {
             const name = snap.data().name;
             const enriched = { ...userData, name, avatar: name[0].toUpperCase() };
-            try { localStorage.setItem("aceIt_user", JSON.stringify(enriched)); } catch {}
+            try { localStorage.setItem("tp_user", JSON.stringify(enriched)); } catch {}
             setUser(u => u ? enriched : u);
           }
         }).catch(() => {});
       } else {
         // Only clear if we don't have a localStorage backup
         // Safari blocks Firebase sessions so we keep localStorage as fallback
-        const cached = localStorage.getItem("aceIt_user");
+        const cached = localStorage.getItem("tp_user");
         if (!cached) setUser(null);
       }
       setAuthLoading(false);
@@ -9297,7 +9297,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   // Show splash while Firebase resolves auth state
   if (authLoading) return (
     <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Ace It ✦</div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Teacher's Pet ✦</div>
     </div>
   );
 
@@ -9328,7 +9328,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} aiContext={aiContext} />}{floatingWidget}</>;
-  if (currentApp === 'echonote')   return <>{<EchoNoteApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} decks={(() => { try { const s = localStorage.getItem("aceIt_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; } })()} />}{floatingWidget}</>;
+  if (currentApp === 'echonote')   return <>{<EchoNoteApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} decks={(() => { try { const s = localStorage.getItem("tp_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; } })()} />}{floatingWidget}</>;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
     if (planet) return <>{<AppLanding planet={planet} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
@@ -9394,7 +9394,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
           <div style={{ width: 24, height: 24, borderRadius: 6, background: "linear-gradient(135deg, #F5D96A, #E8A82A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 12, fontWeight: 900, color: "#1A1814" }}>A</span>
           </div>
-          <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 3, textTransform: "uppercase" }}>Ace It Galaxy</span>
+          <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 3, textTransform: "uppercase" }}>Teacher's Pet</span>
         </div>
 
         {/* Right — auth */}
