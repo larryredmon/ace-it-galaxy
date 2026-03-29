@@ -9310,182 +9310,216 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   }
 
   return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "radial-gradient(ellipse at 48% 52%, #0a0818 0%, #060410 45%, #020208 100%)",
-      overflow: "hidden",
-    }}>
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
+    <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#F8F7FF", minHeight:"100vh", color:"#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
       <style>{`
-        @keyframes starPulse { 0% { opacity: var(--lo, 0.1); } 100% { opacity: var(--hi, 0.6); } }
-        @keyframes coronaPulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.04); } }
-        @keyframes fadeSlideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes modalIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
-        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
         * { box-sizing: border-box; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+        .gx-card { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s !important; cursor: pointer; }
+        .gx-card:hover { transform: translateY(-4px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.12) !important; }
+        .gx-nav-btn { transition: all 0.18s; }
+        .gx-nav-btn:hover { background: rgba(0,0,0,0.04) !important; }
       `}</style>
 
-      {/* Subtle deep nebula atmosphere */}
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
-        background: "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(80,50,160,0.06) 0%, transparent 70%)" }} />
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
-        background: "radial-gradient(ellipse 60% 50% at 80% 80%, rgba(30,80,160,0.05) 0%, transparent 70%)" }} />
-
-      <Stars />
-
-      {/* Header bar — glassmorphism, cleaner */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 400,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 28px",
-        height: 56,
-        background: "rgba(4,2,14,0.72)",
-        backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-        animation: "fadeUp 0.8s ease 0.2s both",
-      }}>
-        {/* Menu button */}
-        <button onClick={() => setSidebarOpen(prev => !prev)} style={{
-          background: "none", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 6, width: 34, height: 34, cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
-          transition: "all 0.2s",
-        }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,217,106,0.4)"; e.currentTarget.style.background = "rgba(245,217,106,0.06)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "none"; }}
-        >
-          <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
-          <div style={{ width: 10, height: 1.5, background: "rgba(255,255,255,0.35)", borderRadius: 1 }} />
-          <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 1 }} />
-        </button>
-
-        {/* Center brand */}
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "linear-gradient(135deg, #F5D96A, #E8A82A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 12, fontWeight: 900, color: "#1A1814" }}>A</span>
-          </div>
-          <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 3, textTransform: "uppercase" }}>Teacher's Pet</span>
+      {/* ── NAV ── */}
+      <nav style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(248,247,255,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(0,0,0,0.07)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
+        {/* Logo */}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none", border:"1px solid rgba(0,0,0,0.1)", borderRadius:8, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, marginRight:6, transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(0,0,0,0.04)";e.currentTarget.style.borderColor="rgba(0,0,0,0.18)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.borderColor="rgba(0,0,0,0.1)";}}>
+            <div style={{ width:14,height:1.5,background:"rgba(0,0,0,0.5)",borderRadius:1 }} />
+            <div style={{ width:10,height:1.5,background:"rgba(0,0,0,0.3)",borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:"rgba(0,0,0,0.5)",borderRadius:1 }} />
+          </button>
+          <div style={{ width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#F5D96A,#E8A82A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>🍎</div>
+          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:15, fontWeight:800, color:"#1A1814", letterSpacing:0.3 }}>Teacher's Pet</span>
         </div>
 
-        {/* Right — auth */}
+        {/* Search */}
+        <div style={{ position:"relative", width:280 }}>
+          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"rgba(0,0,0,0.3)",pointerEvents:"none" }}>🔍</span>
+          <input placeholder="Search apps…"
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+            style={{ width:"100%",padding:"9px 14px 9px 36px",borderRadius:10,border:"1.5px solid rgba(0,0,0,0.1)",background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+            onFocus={e=>e.target.style.borderColor="#6B5EE4"}
+            onBlur={e=>e.target.style.borderColor="rgba(0,0,0,0.1)"} />
+        </div>
+
+        {/* Auth */}
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(245,217,106,0.9)" }}>{user.name}</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 1, letterSpacing: 0.5 }}>FREE PLAN</div>
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"#1A1814" }}>{user.name}</div>
+              <div style={{ fontSize:10,color:"rgba(0,0,0,0.35)",letterSpacing:0.5 }}>Free Plan</div>
             </div>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #9B7FFF, #F5D96A)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 800, color: "#1A1814", cursor: "pointer", border: "2px solid rgba(255,255,255,0.12)" }}
-              onClick={() => setSidebarOpen(true)}>
+            <div onClick={()=>setSidebarOpen(true)} style={{ width:34,height:34,borderRadius:"50%",background:"linear-gradient(135deg,#9B7FFF,#F5D96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#1A1814",cursor:"pointer",border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 2px 8px rgba(0,0,0,0.12)" }}>
               {user.avatar}
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={() => openAuth("login")} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 500, padding: "6px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 6, color: "rgba(255,255,255,0.6)", cursor: "pointer", transition: "all 0.18s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}>
-              Log In
-            </button>
-            <button onClick={() => openAuth("signup")} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, padding: "6px 18px", background: "#F5D96A", border: "none", borderRadius: 6, color: "rgba(0,0,0,0.8)", cursor: "pointer", transition: "all 0.18s", boxShadow: "0 2px 12px rgba(245,217,106,0.25)" }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-              Sign Up
-            </button>
+          <div style={{ display:"flex",gap:8 }}>
+            <button onClick={()=>openAuth("login")} style={{ background:"none",border:"1.5px solid rgba(0,0,0,0.12)",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:600,cursor:"pointer",color:"rgba(0,0,0,0.6)",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(0,0,0,0.3)";e.currentTarget.style.color="#1A1814";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(0,0,0,0.12)";e.currentTarget.style.color="rgba(0,0,0,0.6)";}}>Log In</button>
+            <button onClick={()=>openAuth("signup")} style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:800,cursor:"pointer",color:"#1A1814",boxShadow:"0 4px 16px rgba(245,200,66,0.35)" }}>Sign Up Free</button>
+          </div>
+        )}
+      </nav>
+
+      {/* ── MAIN ── */}
+      <div style={{ maxWidth:1200,margin:"0 auto",padding:"40px 32px 80px" }}>
+
+        {/* Welcome header */}
+        <div style={{ marginBottom:36, animation:"fadeUp 0.5s ease both" }}>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,3vw,38px)", fontWeight:900, color:"#1A1814", marginBottom:6, letterSpacing:-0.5 }}>
+            {user ? `Welcome back, ${user.name?.split(" ")[0]} 🍎` : "Welcome to Teacher's Pet 🍎"}
+          </h1>
+          <p style={{ fontSize:15,color:"rgba(0,0,0,0.45)",lineHeight:1.7,maxWidth:520 }}>
+            {user ? "Pick up where you left off, or explore something new." : "Your all-in-one AI study platform. Sign up free to save your progress."}
+          </p>
+        </div>
+
+        {/* Quick stats row — only if logged in */}
+        {user && (
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:36,animation:"fadeUp 0.5s 0.05s ease both" }}>
+            {[
+              { icon:"📇", label:"Decks Created",   value: (() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })() },
+              { icon:"🧠", label:"Brain Maps",      value: (() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })() },
+              { icon:"📝", label:"Notes",           value: (() => { try { return JSON.parse(localStorage.getItem("aceIt_echonotes")||"[]").length; } catch { return 0; } })() },
+              { icon:"📖", label:"Journal Entries", value: (() => { try { return JSON.parse(localStorage.getItem("aceIt_journal")||"[]").length; } catch { return 0; } })() },
+            ].map(s => (
+              <div key={s.label} style={{ background:"#fff",borderRadius:14,padding:"18px 20px",border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div style={{ fontSize:22,marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:900,color:"#1A1814",marginBottom:2 }}>{s.value}</div>
+                <div style={{ fontSize:11,fontWeight:700,color:"rgba(0,0,0,0.35)",textTransform:"uppercase",letterSpacing:1 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent apps — only if used some */}
+        {recentApps.length > 0 && (
+          <div style={{ marginBottom:36,animation:"fadeUp 0.5s 0.1s ease both" }}>
+            <div style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"rgba(0,0,0,0.35)",marginBottom:14 }}>Recently Used</div>
+            <div style={{ display:"flex",gap:10 }}>
+              {recentApps.map(appId => {
+                const p = PLANETS.find(x=>x.appId===appId);
+                if (!p) return null;
+                return (
+                  <button key={appId} onClick={()=>launchApp(appId)}
+                    style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderRadius:12,border:`1.5px solid ${p.color}44`,background:"#fff",cursor:"pointer",transition:"all 0.18s",boxShadow:"0 2px 8px rgba(0,0,0,0.05)",fontFamily:"'DM Sans',sans-serif" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=p.color;e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${p.color}22`;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=`${p.color}44`;e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.05)";}}>
+                    <div style={{ width:28,height:28,borderRadius:8,background:`linear-gradient(135deg,${p.color}44,${p.glow}22)`,border:`1px solid ${p.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>{p.symbol}</div>
+                    <span style={{ fontSize:13,fontWeight:700,color:"#1A1814" }}>{p.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Category sections */}
+        {[
+          {
+            label:"Study Tools",
+            emoji:"📚",
+            color:"#9B7FFF",
+            apps:["flashcards","echonote","brainmap","simplifier"]
+          },
+          {
+            label:"AI Assistants",
+            emoji:"🤖",
+            color:"#4898E8",
+            apps:["assistant","studybuddy"]
+          },
+          {
+            label:"Personal Growth",
+            emoji:"🌱",
+            color:"#2BAE7E",
+            apps:["journal","mentalhealth","flow","careercompass"]
+          },
+          {
+            label:"Knowledge & Learning",
+            emoji:"🌍",
+            color:"#D4A830",
+            apps:["academy","studio","universe","earthrecord"]
+          },
+          {
+            label:"Settings",
+            emoji:"⚙️",
+            color:"#8C9AAC",
+            apps:["settings"]
+          },
+        ].map((cat,ci) => {
+          const catPlanets = PLANETS.filter(p=>cat.apps.includes(p.appId));
+          if (!catPlanets.length) return null;
+          return (
+            <div key={cat.label} style={{ marginBottom:40,animation:`fadeUp 0.5s ${0.1+ci*0.06}s ease both` }}>
+              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:16 }}>
+                <span style={{ fontSize:16 }}>{cat.emoji}</span>
+                <div style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:cat.color }}>{cat.label}</div>
+                <div style={{ flex:1,height:1,background:`${cat.color}20`,marginLeft:8 }} />
+              </div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12 }}>
+                {catPlanets.map(p => (
+                  <div key={p.id} className="gx-card" onClick={()=>launchApp(p.appId)}
+                    style={{ background:"#fff",border:`1px solid rgba(0,0,0,0.07)`,borderTop:`3px solid ${p.color}`,borderRadius:14,padding:"20px 20px 18px",boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+                    {/* Icon + name */}
+                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:10 }}>
+                      <div style={{ width:42,height:42,borderRadius:12,background:`linear-gradient(135deg,${p.color}22,${p.glow}11)`,border:`1.5px solid ${p.color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0 }}>
+                        {p.symbol}
+                      </div>
+                      <div>
+                        <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.2 }}>{p.name}</div>
+                        <div style={{ fontSize:10,fontWeight:700,color:p.color,textTransform:"uppercase",letterSpacing:1,marginTop:2 }}>Teacher's Pet</div>
+                      </div>
+                    </div>
+                    {/* Description */}
+                    <p style={{ fontSize:12,color:"rgba(0,0,0,0.45)",lineHeight:1.65,margin:"0 0 14px" }}>{p.desc}</p>
+                    {/* Launch button */}
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                      <span style={{ fontSize:11,fontWeight:700,color:p.color,background:`${p.color}12`,borderRadius:20,padding:"3px 10px" }}>Open →</span>
+                      {recentApps.includes(p.appId) && <span style={{ fontSize:10,color:"rgba(0,0,0,0.25)",fontWeight:600 }}>Recent</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* CTA if not logged in */}
+        {!user && (
+          <div style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)",borderRadius:20,padding:"36px 40px",textAlign:"center",marginTop:20,boxShadow:"0 12px 40px rgba(245,200,66,0.3)",animation:"fadeUp 0.5s 0.4s ease both" }}>
+            <div style={{ fontSize:36,marginBottom:12 }}>🍎</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,32px)",fontWeight:900,color:"#1A1814",marginBottom:8 }}>Sign up free — it only takes 30 seconds.</h2>
+            <p style={{ fontSize:15,color:"rgba(26,24,20,0.65)",lineHeight:1.7,marginBottom:24,maxWidth:440,margin:"0 auto 24px" }}>Save your notes, decks, and progress. Access everything from any device.</p>
+            <div style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap" }}>
+              <button onClick={()=>openAuth("signup")} style={{ background:"#1A1814",border:"none",borderRadius:10,padding:"13px 32px",fontSize:14,fontWeight:800,cursor:"pointer",color:"#F5C842",fontFamily:"'Montserrat',sans-serif",boxShadow:"0 4px 20px rgba(0,0,0,0.25)",transition:"all 0.18s" }}
+                onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                Create Free Account →
+              </button>
+              <button onClick={()=>openAuth("login")} style={{ background:"rgba(26,24,20,0.1)",border:"none",borderRadius:10,padding:"13px 24px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#1A1814",transition:"all 0.18s" }}>
+                Log In
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Galaxy scene */}
-      <div style={{ position: "absolute", inset: 0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <Sun />
-        {PLANETS.map((planet) => (
-          <Planet key={planet.id} planet={planet} onClick={setActivePlanet} isActive={activePlanet?.id === planet.id} />
-        ))}
-      </div>
+      {/* Auth modal */}
+      {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
 
-      {/* Planet detail modal — modern glass design */}
-      {activePlanet && (
-        <>
-          <div onClick={() => setActivePlanet(null)} style={{ position: "fixed", inset: 0, zIndex: 499, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(3px)" }} />
-          <div style={{
-            position: "fixed", left: "50%", top: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 500, width: 340,
-            background: "linear-gradient(160deg, rgba(12,9,28,0.97) 0%, rgba(6,4,18,0.97) 100%)",
-            border: `1px solid ${activePlanet.color}28`,
-            borderRadius: 20, padding: "32px 30px 28px",
-            backdropFilter: "blur(32px)",
-            boxShadow: `0 0 0 1px rgba(0,0,0,0.6), 0 32px 80px rgba(0,0,0,0.7), 0 0 60px ${activePlanet.glow}22`,
-            animation: "modalIn 0.28s cubic-bezier(0.16,1,0.3,1) forwards",
-          }}>
-            {/* Glow accent top */}
-            <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 120, height: 1, background: `linear-gradient(90deg, transparent, ${activePlanet.color}80, transparent)` }} />
+      {/* Sidebar */}
+      <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
 
-            {/* Close */}
-            <button onClick={() => setActivePlanet(null)} style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)", width: 26, height: 26, borderRadius: 6, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}>✕</button>
-
-            {/* Planet icon + name row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, ${activePlanet.color}cc 0%, ${activePlanet.color}44 60%, transparent 100%)`, boxShadow: `0 0 0 1px ${activePlanet.color}30, 0 0 24px ${activePlanet.glow}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 22, color: "#fff", textShadow: `0 0 12px ${activePlanet.glow}` }}>{activePlanet.symbol}</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: activePlanet.color, letterSpacing: 2.5, textTransform: "uppercase", marginBottom: 5, opacity: 0.8 }}>Application</div>
-                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 19, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{activePlanet.name}</div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginBottom: 22, lineHeight: 1.65, fontWeight: 300 }}>{activePlanet.desc}</div>
-
-            {/* Stats chips */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
-              {[["Free", "Plan"], ["All", "Devices"], ["Offline", "Ready"]].map(([v, l]) => (
-                <div key={l} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "7px 4px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{v}</div>
-                  <div style={{ fontSize: 8, color: "rgba(255,255,255,0.22)", letterSpacing: 0.5 }}>{l}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 18 }} />
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setActivePlanet(null)} style={{ flex: 1, fontSize: 12, fontWeight: 500, padding: "10px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.18s", fontFamily: "'DM Sans', sans-serif" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}>Dismiss</button>
-              <button onClick={() => { if (activePlanet.appId) { launchApp(activePlanet.appId); setActivePlanet(null); } }}
-                style={{ flex: 2, fontSize: 12, fontWeight: 700, padding: "10px 0", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${activePlanet.color}, ${activePlanet.glow})`, color: "rgba(0,0,0,0.85)", cursor: "pointer", transition: "all 0.18s", boxShadow: `0 4px 20px ${activePlanet.glow}44`, fontFamily: "'DM Sans', sans-serif" }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}>Launch App →</button>
-            </div>
-          </div>
-        </>
-      )}
-
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        planets={PLANETS}
-        onSelect={(p) => { setActivePlanet(p); setSidebarOpen(false); }}
-        activePlanet={activePlanet}
-        user={user}
-        openAuth={openAuth}
-        onLogout={handleLogout}
-        recentApps={recentApps}
-        onLaunch={(appId) => { launchApp(appId); setSidebarOpen(false); }}
-      />
-
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
-      {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />}
+      {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
     </div>
   );
 }
