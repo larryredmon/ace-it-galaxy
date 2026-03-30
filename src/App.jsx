@@ -9484,7 +9484,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
       <div className="gx-main" style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
 
         {/* Welcome */}
-        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both" }}>
+        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both", textAlign:"center" }}>
           <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(245,200,66,0.08)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:20,padding:"5px 14px",marginBottom:16 }}>
             <span style={{ width:6,height:6,borderRadius:"50%",background:"#F5C842",animation:"gx-glow 2s infinite",display:"inline-block" }} />
             <span style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#F5C842" }}>{user ? "Your Dashboard" : "Welcome"}</span>
@@ -9492,7 +9492,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,3.5vw,46px)", fontWeight:900, color:"#F7F6F2", marginBottom:10, letterSpacing:-1, lineHeight:1.1 }}>
             {user ? `Good to see you, ${user.name?.split(" ")[0]}.` : "The smarter way to study."}
           </h1>
-          <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,maxWidth:480,fontWeight:300 }}>
+          <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,maxWidth:480,fontWeight:300,textAlign:"center",margin:"0 auto" }}>
             {user ? "Your apps, your notes, your progress — all in one place." : "Sign up free and unlock AI-powered notes, flashcards, brain maps, and more."}
           </p>
         </div>
