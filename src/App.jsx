@@ -31,7 +31,8 @@ import {
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
   { id: 1,  appId: "flashcards",   name: "Flash Cards",             symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
-  { id: 2,  appId: "echonote",     name: "EchoNote",                symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Record lectures, auto-transcribe, and generate study material instantly." },
+  { id: 2,  appId: "notes",     name: "Notes",           symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
+  { id: 16, appId: "tracker",   name: "Tracker",         symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system. Pulls from all your courses automatically." },
   { id: 3,  appId: "brainmap",     name: "Brain Map",               symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
   { id: 4,  appId: "simplifier",   name: "Text Simplifier",         symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
   { id: 5,  appId: "academy",      name: "Academy",                 symbol: "◎", color: "#7FD4C8", glow: "#4FBFB0", size: 46, orbitRadius: 280, speed: 33, desc: "Structured courses and guided learning." },
@@ -455,7 +456,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
           padding: appsOpen ? "4px 10px 12px" : "0 10px",
         }}>
           {[
-            { label:"Study Tools",       emoji:"📚", ids:["flashcards","echonote","brainmap","simplifier"] },
+            { label:"Study Tools",       emoji:"📚", ids:["flashcards","notes","brainmap","simplifier"] },
             { label:"AI Assistants",     emoji:"🤖", ids:["assistant","studybuddy"] },
             { label:"Personal Growth",   emoji:"🌱", ids:["journal","mentalhealth","flow","careercompass"] },
             { label:"Knowledge",         emoji:"🌍", ids:["academy","studio","universe","earthrecord"] },
@@ -608,9 +609,9 @@ function NavDropdown({ links, label, color = "#C8B8FF", glow = "#9B7FFF" }) {
 // ─── App Configs & Shared Landing ───────────────────────────────────────────
 
 const APP_CONFIGS = {
-  echonote: {
+  notes: {
     badge: "AI Lecture Assistant",
-    headline: ["Teacher's Pet", "EchoNote."],
+    headline: ["Teacher's Pet", "Notes."],
     highlight: 1,
     sub: "Record any lecture, class, or meeting and watch it transform into organized notes, flashcards, and quizzes — automatically. Never miss a concept again.",
     cta: "Start Recording",
@@ -620,11 +621,11 @@ const APP_CONFIGS = {
       { icon:"✦", title:"Instant Flashcards",        desc:"Highlight any sentence in your transcript and instantly convert it into a flashcard ready to study." },
       { icon:"⟡", title:"AI Lecture Summaries",     desc:"Get a clean, structured summary of any lecture in seconds. Key points, definitions, and takeaways organized automatically." },
       { icon:"◈", title:"Ask About Your Lecture",   desc:"Type any question about what was said in class and get a precise answer pulled directly from the recording." },
-      { icon:"◎", title:"Auto Quiz Generation",     desc:"EchoNote auto-generates quiz questions from your lecture so you can test yourself immediately after class." },
+      { icon:"◎", title:"Auto Quiz Generation",     desc:"Notes auto-generates quiz questions from your lecture so you can test yourself immediately after class." },
       { icon:"⊕", title:"Cross-App Linking",        desc:"Automatically links lecture content to your Flashcard decks, Encyclopedia entries, and Academy courses." },
     ],
     steps: [
-      { num:"01", title:"Record Your Lecture",   desc:"Hit record before class starts. EchoNote captures audio, filters noise, and transcribes in real time." },
+      { num:"01", title:"Record Your Lecture",   desc:"Hit record before class starts. Notes captures audio, filters noise, and transcribes in real time." },
       { num:"02", title:"Highlight & Extract",   desc:"Click any word for a definition. Highlight sentences to create flashcards, notes, or summaries instantly." },
       { num:"03", title:"Study From It",         desc:"Use AI-generated quizzes, flashcard decks, and summaries to turn one lecture into a full study session." },
     ],
@@ -6930,7 +6931,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   );
 }
 
-// ─── Teacher's Pet EchoNote ─────────────────────────────────────────────────────────
+// ─── Teacher's Pet Notes ─────────────────────────────────────────────────────────
 
 const EN_COLOR  = "#D4A830";
 const EN_LIGHT  = "#F0D080";
@@ -6946,13 +6947,17 @@ const EN_FORMATS = [
   { id:"ol",    label:"Ordered",icon:"1." },
 ];
 
-function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
-  const [view, setView]             = useState("home"); // home | editor | folders | upload
-  const [notes, setNotes]           = useState(() => {
-    try { const s = localStorage.getItem("tp_echonotes"); return s ? JSON.parse(s) : []; } catch { return []; }
+function NotesApp({ onBack, user, openAuth }) {
+  const NC = "#D4A830";
+  const NL = "#F0D080";
+  const ND = "#8B6914";
+
+  const [view, setView]           = useState("home"); // home | editor | folders | upload
+  const [notes, setNotes]         = useState(() => {
+    try { return JSON.parse(localStorage.getItem("tp_notes")||"[]"); } catch { return []; }
   });
-  const [folders, setFolders]       = useState(() => {
-    try { const s = localStorage.getItem("tp_en_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
+  const [folders, setFolders]     = useState(() => {
+    try { return JSON.parse(localStorage.getItem("tp_note_folders")||"[]"); } catch { return []; }
   });
   const [activeNote, setActiveNote] = useState(null);
   const [filterFolder, setFilterFolder] = useState("all");
@@ -6963,7 +6968,6 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
   const [title, setTitle]           = useState("");
   const [content, setContent]       = useState("");
   const [folder, setFolder]         = useState("");
-  const [attachedDecks, setAttachedDecks] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [aiLoading, setAiLoading]   = useState(false);
   const [aiResult, setAiResult]     = useState("");
@@ -6972,16 +6976,17 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
   const [saveAnim, setSaveAnim]     = useState(false);
   const [newFolder, setNewFolder]   = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
+  const [showCourseToast, setShowCourseToast] = useState(false);
 
   // Upload state
   const [uploadText, setUploadText] = useState("");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadObjectives, setUploadObjectives] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [uploadTab, setUploadTab]   = useState("file"); // file | paste | youtube | website
+  const [uploadProgress, setUploadProgress] = useState("");
+  const [uploadTab, setUploadTab]   = useState("file");
   const [uploadUrl, setUploadUrl]   = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  // Chat with notes
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput]   = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -6991,23 +6996,22 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
   const editorRef                   = useRef(null);
 
   useEffect(() => {
-    try { localStorage.setItem("tp_echonotes", JSON.stringify(notes)); } catch {}
+    try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {}
   }, [notes]);
-
   useEffect(() => {
-    try { localStorage.setItem("tp_en_folders", JSON.stringify(folders)); } catch {}
+    try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {}
   }, [folders]);
 
   const newNote = (preTitle = "", preContent = "") => {
     setTitle(preTitle); setContent(preContent); setFolder("");
-    setAttachedDecks([]); setAiResult(""); setShowAiPanel(false);
-    setActiveNote(null); setView("editor");
+    setAiResult(""); setShowAiPanel(false); setShowChat(false);
+    setChatMessages([]); setActiveNote(null); setView("editor");
   };
 
   const openNote = (note) => {
     setTitle(note.title); setContent(note.content); setFolder(note.folder||"");
-    setAttachedDecks(note.attachedDecks||[]); setAiResult(""); setShowAiPanel(false);
-    setActiveNote(note); setView("editor");
+    setAiResult(""); setShowAiPanel(false); setShowChat(false);
+    setChatMessages([]); setActiveNote(note); setView("editor");
   };
 
   const saveNote = () => {
@@ -7015,10 +7019,11 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
     const noteData = {
       id: activeNote?.id || Date.now(),
       title: title.trim() || `Note — ${new Date().toLocaleDateString([],{month:"long",day:"numeric"})}`,
-      content, folder, attachedDecks,
+      content, folder,
       wordCount: content.trim().split(/\s+/).filter(Boolean).length,
       updatedAt: new Date().toISOString(),
       createdAt: activeNote?.createdAt || new Date().toISOString(),
+      aiGenerated: activeNote?.aiGenerated || false,
     };
     setNotes(prev => activeNote
       ? prev.map(n => n.id === activeNote.id ? noteData : n)
@@ -7027,187 +7032,14 @@ function EchoNoteApp({ onBack, user, openAuth, decks = [] }) {
     setTimeout(() => { setSaveAnim(false); setView("home"); }, 800);
   };
 
-  const deleteNote = (id) => {
-    setNotes(prev => prev.filter(n => n.id !== id));
-    setView("home");
-  };
+  const deleteNote = (id) => { setNotes(prev => prev.filter(n => n.id !== id)); setView("home"); };
 
-  const [uploadProgress, setUploadProgress] = useState("");
-
-  // ── Fetch website content ──────────────────────────────────────────────────
-  const fetchWebContent = async (url) => {
-    setUploadLoading(true);
-    setUploadProgress("Fetching page content…");
-    try {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      const text = data.contents?.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,12000) || "";
-      const domain = new URL(url).hostname;
-      setUploadText(text);
-      if (!uploadTitle) setUploadTitle(domain);
-      setUploadLoading(false); setUploadProgress("");
-    } catch {
-      setUploadText(`Source URL: ${url}\n\nNote: Could not automatically fetch this page. Please paste the content manually.`);
-      setUploadLoading(false); setUploadProgress("");
-    }
-  };
-
-  const fetchYouTube = async (url) => {
-    const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
-    if (!videoId) { alert("Invalid YouTube URL"); return; }
-    const text = `YouTube Video URL: ${url}\nVideo ID: ${videoId}\n\nThis is a YouTube video submitted for note generation. Create comprehensive study notes based on what this educational video is likely about from the URL context. Apply all standard note sections.`;
-    setUploadText(text);
-    if (!uploadTitle) setUploadTitle(`YouTube Notes`);
-  };
-
-  // ── Chat with notes ────────────────────────────────────────────────────────
-  const sendChatMessage = async (msg) => {
-    const text = msg || chatInput;
-    if (!text.trim() || chatLoading || !content.trim()) return;
-    const userMsg = { role:"user", content:text };
-    setChatMessages(prev => [...prev, userMsg]);
-    setChatInput("");
-    setChatLoading(true);
-    try {
-      const history = [...chatMessages, userMsg];
-      const res = await fetch("/api/claude", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-5-20250929",
-          max_tokens:800,
-          system:`You are a helpful study tutor. The student has these notes and is asking questions about them. Answer concisely and clearly based on the notes plus your broader knowledge.\n\n=== STUDENT'S NOTES ===\n${content.slice(0,8000)}`,
-          messages: history.map(m=>({role:m.role,content:m.content})),
-        }),
-      });
-      const data = await res.json();
-      const reply = data.content?.find(b=>b.type==="text")?.text || "I couldn't answer that. Try rephrasing.";
-      setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
-    } catch {
-      setChatMessages(prev => [...prev, { role:"assistant", content:"Something went wrong. Please try again." }]);
-    }
-    setChatLoading(false);
-  };
-
-  // ── File reading ────────────────────────────────────────────────────────────
-  const readFile = (file) => {
-    return new Promise((resolve) => {
-      if (file.type === "application/pdf") {
-        // For PDF we read as text using FileReader
-        const reader = new FileReader();
-        reader.onload = (e) => resolve({ text: `[PDF uploaded: ${file.name}]\n\nNote: PDF text extraction works best with text-based PDFs.\n\n${e.target.result?.slice(0,8000)||""}`, name: file.name });
-        reader.readAsText(file);
-        return;
-      }
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve({ text: null, imageData: e.target.result.split(",")[1], name: file.name, isImage: true });
-        reader.readAsDataURL(file);
-        return;
-      }
-      // Text files
-      const reader = new FileReader();
-      reader.onload = (e) => resolve({ text: e.target.result, name: file.name });
-      reader.readAsText(file);
-    });
-  };
-
-  const handleFileDrop = async (e) => {
-    e.preventDefault(); setIsDragging(false);
-    const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
-    if (!file) return;
-    const result = await readFile(file);
-    const cleanName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-    setUploadTitle(cleanName);
-    if (result.isImage) {
-      setUploadText(`[Image: ${file.name}]`);
-      generateSmartNotes(null, result.imageData, cleanName, uploadObjectives);
-    } else {
-      setUploadText(result.text || "");
-    }
-  };
-
-  // ── Generate smart notes from content ─────────────────────────────────────
-  const generateSmartNotes = async (text, imageData, titleHint, objectives) => {
-    if ((!text?.trim() && !imageData) || uploadLoading) return;
-    setUploadLoading(true);
-    setUploadProgress("Reading your content…");
-
-    const systemPrompt = `You are an expert academic note-taker and study coach. When given course content, lecture notes, textbook pages, or any study material, you create comprehensive, well-structured study notes.
-
-Your notes always include:
-1. **Chapter/Topic Overview** — a 2-3 sentence summary of what this content is about
-2. **Chapter Objectives** — what the student should know/be able to do after studying this (if not provided, infer from content)
-3. **Key Concepts** — the most important ideas, clearly explained
-4. **Key Terms & Definitions** — important vocabulary with clear definitions
-5. **Detailed Notes** — organized, structured notes covering all important content
-6. **Summary** — a concise recap of the most critical points
-7. **Study Tips** — 2-3 specific tips for mastering this material
-
-Format everything with clear headings using # and ##. Use bullet points, bold key terms, and make it easy to scan. Write as if you're the world's best study partner helping a student truly understand this material.`;
-
-    const userContent = imageData
-      ? [
-          { type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } },
-          { type:"text", text:`Please create comprehensive study notes from this image${titleHint ? ` (Topic: ${titleHint})` : ""}.${objectives ? `\n\nChapter Objectives provided by student:\n${objectives}` : ""}\n\nCreate full structured notes following the format in your instructions.` }
-        ]
-      : `Please create comprehensive study notes from the following content${titleHint ? ` (Topic: ${titleHint})` : ""}.\n${objectives ? `\nChapter Objectives provided:\n${objectives}\n` : ""}\nContent:\n\n${text?.slice(0,12000)}`;
-
-    setTimeout(() => setUploadProgress("Analyzing content structure…"), 1200);
-    setTimeout(() => setUploadProgress("Identifying key concepts…"), 2500);
-    setTimeout(() => setUploadProgress("Building your study notes…"), 3800);
-
-    try {
-      const res = await fetch("/api/claude", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-5-20250929",
-          max_tokens:4000,
-          system: systemPrompt,
-          messages:[{ role:"user", content: userContent }],
-        }),
-      });
-      const data = await res.json();
-      const generatedNotes = data.content?.find(b=>b.type==="text")?.text || "Could not generate notes. Please try again.";
-
-      // Extract title from first heading if available
-      const firstHeading = generatedNotes.match(/^#\s+(.+)/m)?.[1];
-      const noteTitle = titleHint || firstHeading || "AI Generated Notes";
-
-      // Auto-save as a new note and open it
-      const noteData = {
-        id: Date.now(),
-        title: noteTitle,
-        content: generatedNotes,
-        folder: "", attachedDecks: [],
-        wordCount: generatedNotes.trim().split(/\s+/).length,
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        aiGenerated: true,
-      };
-      setNotes(prev => [noteData, ...prev]);
-      setTitle(noteTitle);
-      setContent(generatedNotes);
-      setActiveNote(noteData);
-      setUploadText(""); setUploadObjectives(""); setUploadTitle("");
-      setView("editor");
-    } catch {
-      setUploadProgress("Something went wrong. Please try again.");
-    } finally {
-      setUploadLoading(false);
-      setUploadProgress("");
-    }
-  };
-
-  // Web Speech API recording
+  // Recording
   const toggleRecording = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("Your browser doesn't support speech recognition. Try Chrome."); return; }
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-    const rec = new SpeechRecognition();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Your browser doesn't support speech recognition. Try Chrome."); return; }
+    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); return; }
+    const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
     let final = "";
     rec.onresult = (e) => {
@@ -7222,68 +7054,65 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
       });
     };
     rec.onend = () => { setIsRecording(false); setContent(prev => prev.replace(/\[Listening…[^\]]*\]/, "").trim()); };
-    rec.start();
-    recognitionRef.current = rec;
-    setIsRecording(true);
+    rec.start(); recognitionRef.current = rec; setIsRecording(true);
   };
 
-  // Format helpers
+  // Format
+  const EN_FORMATS = [
+    { id:"h1", label:"H1", icon:"H₁" }, { id:"h2", label:"H2", icon:"H₂" },
+    { id:"bold", label:"Bold", icon:"B" }, { id:"italic", label:"Italic", icon:"I" },
+    { id:"ul", label:"List", icon:"≡" }, { id:"ol", label:"Ordered", icon:"1." },
+  ];
   const applyFormat = (type) => {
-    const textarea = editorRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const textarea = editorRef.current; if (!textarea) return;
+    const start = textarea.selectionStart, end = textarea.selectionEnd;
     const selected = content.slice(start, end);
-    let newContent = content;
-    if (type === "bold")   newContent = content.slice(0,start) + `**${selected||"bold text"}**` + content.slice(end);
-    if (type === "italic") newContent = content.slice(0,start) + `_${selected||"italic text"}_` + content.slice(end);
-    if (type === "h1")     newContent = content.slice(0,start) + `\n# ${selected||"Heading 1"}\n` + content.slice(end);
-    if (type === "h2")     newContent = content.slice(0,start) + `\n## ${selected||"Heading 2"}\n` + content.slice(end);
-    if (type === "ul")     newContent = content.slice(0,start) + `\n- ${selected||"list item"}\n` + content.slice(end);
-    if (type === "ol")     newContent = content.slice(0,start) + `\n1. ${selected||"list item"}\n` + content.slice(end);
-    setContent(newContent);
-    setTimeout(() => textarea.focus(), 30);
+    let nc = content;
+    if (type==="bold")   nc = content.slice(0,start)+`**${selected||"bold text"}**`+content.slice(end);
+    if (type==="italic") nc = content.slice(0,start)+`_${selected||"italic text"}_`+content.slice(end);
+    if (type==="h1")     nc = content.slice(0,start)+`\n# ${selected||"Heading 1"}\n`+content.slice(end);
+    if (type==="h2")     nc = content.slice(0,start)+`\n## ${selected||"Heading 2"}\n`+content.slice(end);
+    if (type==="ul")     nc = content.slice(0,start)+`\n- ${selected||"list item"}\n`+content.slice(end);
+    if (type==="ol")     nc = content.slice(0,start)+`\n1. ${selected||"list item"}\n`+content.slice(end);
+    setContent(nc); setTimeout(() => textarea.focus(), 30);
   };
 
-  // Render markdown-ish content
+  // Render markdown
   const renderContent = (text) => {
     if (!text) return null;
     return text.split("\n").map((line, i) => {
-      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", margin:"16px 0 8px" }}>{line.slice(2)}</h1>;
-      if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:19, fontWeight:800, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(3)}</h2>;
-      if (line.startsWith("- "))  return <li key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.8, marginLeft:20 }}>{line.slice(2)}</li>;
-      if (/^\d+\.\s/.test(line))  return <li key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.8, marginLeft:20, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
+      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
+      if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", margin:"12px 0 5px" }}>{line.slice(3)}</h2>;
+      if (line.startsWith("- "))  return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18 }}>{line.slice(2)}</li>;
+      if (/^\d+\.\s/.test(line)) return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
       const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
       const rendered = parts.map((p,j) => {
-        if (p.startsWith("**") && p.endsWith("**")) return <strong key={j}>{p.slice(2,-2)}</strong>;
-        if (p.startsWith("_") && p.endsWith("_"))   return <em key={j}>{p.slice(1,-1)}</em>;
+        if (p.startsWith("**")&&p.endsWith("**")) return <strong key={j}>{p.slice(2,-2)}</strong>;
+        if (p.startsWith("_")&&p.endsWith("_"))   return <em key={j}>{p.slice(1,-1)}</em>;
         return p;
       });
-      return line.trim() ? <p key={i} style={{ fontSize:15, color:"#1A1814", lineHeight:1.85, margin:"4px 0" }}>{rendered}</p> : <br key={i} />;
+      return line.trim() ? <p key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.85, margin:"3px 0" }}>{rendered}</p> : <br key={i}/>;
     });
   };
 
-  // AI actions
+  // AI tools
   const runAI = async (mode) => {
     if (!content.trim() || aiLoading) return;
     setAiMode(mode); setAiLoading(true); setShowAiPanel(true); setAiResult("");
     const prompts = {
-      summarize:    `You are an expert study coach. Summarize these notes into a clear, scannable study guide. Include:\n- 3-5 sentence overview\n- Key takeaways as bullet points\n- Most important terms to remember\n\nNotes:\n${content}`,
-      improve:      `You are an expert note editor. Rewrite and improve these notes to be clearer, better structured, and more comprehensive. Add any obvious missing context, fix grammar, add proper headings, and make them excellent study notes.\n\nOriginal Notes:\n${content}`,
-      flashcards:   `Create 10-15 high-quality flashcard Q&A pairs from these notes. Focus on the most important concepts, definitions, and facts a student needs to memorize. Format as:\nQ: [clear question]\nA: [concise answer]\n\nNotes:\n${content}`,
-      quiz:         `Create a 10-question multiple choice quiz from these notes. Include a mix of recall, comprehension, and application questions. Format as:\n1. [Question]\na) [option]\nb) [option]\nc) [option]\nd) [option]\nAnswer: [letter] - [brief explanation]\n\nNotes:\n${content}`,
-      objectives:   `Based on these notes, identify and write out:\n1. Learning Objectives (what a student should understand after studying this)\n2. Key Skills (what a student should be able to do)\n3. Common Exam Topics (what is most likely to appear on a test)\n4. Areas That Need Extra Attention\n\nNotes:\n${content}`,
-      explain:      `You are a patient tutor. Explain the main concepts in these notes as if talking to a student who is confused. Use simple language, real-world examples, and analogies. Make it click.\n\nNotes:\n${content}`,
+      summarize:  `Summarize these notes into a clear, scannable study guide with a 3-5 sentence overview and key takeaways as bullet points:\n\n${content}`,
+      improve:    `Rewrite and improve these notes — fix grammar, add structure with proper headings, make them excellent study notes:\n\n${content}`,
+      flashcards: `Create 10-15 high-quality flashcard Q&A pairs from these notes. Format as:\nQ: [question]\nA: [answer]\n\nNotes:\n${content}`,
+      quiz:       `Create a 10-question multiple choice quiz from these notes with answer explanations. Format as:\n1. [Question]\na) b) c) d)\nAnswer: [letter] - [explanation]\n\nNotes:\n${content}`,
+      objectives: `Based on these notes, identify: Learning Objectives, Key Skills, Common Exam Topics, and Areas Needing Extra Attention:\n\n${content}`,
+      explain:    `Explain the main concepts in these notes simply, using real-world examples and analogies. Make it click:\n\n${content}`,
     };
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-5-20250929",
-          max_tokens:2000,
-          system:"You are an expert study coach and academic tutor helping students master their course material.",
-          messages:[{role:"user", content:prompts[mode]}],
-        }),
+        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:2000,
+          system:"You are an expert study coach helping students master their notes.",
+          messages:[{role:"user", content:prompts[mode]}] }),
       });
       const data = await res.json();
       setAiResult(data.content?.find(b=>b.type==="text")?.text || "Something went wrong.");
@@ -7291,184 +7120,282 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
     setAiLoading(false);
   };
 
+  // Chat with notes
+  const sendChatMessage = async (msg) => {
+    const text = msg || chatInput;
+    if (!text.trim() || chatLoading || !content.trim()) return;
+    const userMsg = { role:"user", content:text };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:800,
+          system:`You are a helpful study tutor. Answer questions based on these notes plus your broader knowledge.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
+          messages:[...chatMessages, userMsg].map(m=>({role:m.role,content:m.content})) }),
+      });
+      const data = await res.json();
+      const reply = data.content?.find(b=>b.type==="text")?.text || "Try rephrasing.";
+      setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
+    } catch { setChatMessages(prev => [...prev, { role:"assistant", content:"Something went wrong." }]); }
+    setChatLoading(false);
+  };
+
+  // Upload / AI generate notes
+  const readFile = (file) => new Promise((resolve) => {
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ text:null, imageData:e.target.result.split(",")[1], name:file.name, isImage:true });
+      reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ text:e.target.result, name:file.name });
+      reader.readAsText(file);
+    }
+  });
+
+  const handleFileDrop = async (e) => {
+    e.preventDefault(); setIsDragging(false);
+    const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
+    if (!file) return;
+    const result = await readFile(file);
+    const cleanName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    setUploadTitle(cleanName);
+    if (result.isImage) { setUploadText(`[Image: ${file.name}]`); generateSmartNotes(null, result.imageData, cleanName, uploadObjectives); }
+    else setUploadText(result.text || "");
+  };
+
+  const fetchWebContent = async (url) => {
+    setUploadLoading(true); setUploadProgress("Fetching page content…");
+    try {
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      const text = data.contents?.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,12000)||"";
+      setUploadText(text); if (!uploadTitle) setUploadTitle(new URL(url).hostname);
+    } catch { setUploadText(`Source: ${url}\n\nCould not auto-fetch. Please paste content manually.`); }
+    setUploadLoading(false); setUploadProgress("");
+  };
+
+  const fetchYouTube = async (url) => {
+    const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
+    if (!videoId) { alert("Invalid YouTube URL"); return; }
+    setUploadText(`YouTube: ${url}\nVideo ID: ${videoId}\n\nGenerate comprehensive notes from this educational video.`);
+    if (!uploadTitle) setUploadTitle("YouTube Notes");
+  };
+
+  const generateSmartNotes = async (text, imageData, titleHint, objectives) => {
+    if ((!text?.trim() && !imageData) || uploadLoading) return;
+    setUploadLoading(true);
+    setUploadProgress("Reading your content…");
+    const progressSteps = ["Analyzing content structure…","Identifying key concepts…","Building your study notes…"];
+    let si = 0;
+    const interval = setInterval(() => { si++; if (si < progressSteps.length) setUploadProgress(progressSteps[si]); }, 1500);
+
+    const systemPrompt = `You are an expert academic note-taker. Create comprehensive, well-structured study notes including:
+1. Chapter/Topic Overview (2-3 sentences)
+2. Learning Objectives (what to know after studying)
+3. Key Concepts (most important ideas clearly explained)
+4. Key Terms & Definitions
+5. Detailed Structured Notes (full coverage)
+6. Summary (critical points)
+7. Study Tips (2-3 specific tips)
+Format with clear # and ## headings, bullet points, bold key terms.`;
+
+    const userContent = imageData
+      ? [{ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } }, { type:"text", text:`Create comprehensive study notes from this image${titleHint?` (Topic: ${titleHint})`:""}.${objectives?`\nObjectives: ${objectives}`:""}`}]
+      : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
+
+    try {
+      const res = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:4000, system:systemPrompt, messages:[{role:"user",content:userContent}] }),
+      });
+      const data = await res.json();
+      const generated = data.content?.find(b=>b.type==="text")?.text || "Could not generate notes.";
+      const firstHeading = generated.match(/^#\s+(.+)/m)?.[1];
+      const noteTitle = titleHint || firstHeading || "AI Notes";
+      const noteData = {
+        id: Date.now(), title: noteTitle, content: generated, folder: "",
+        wordCount: generated.trim().split(/\s+/).length,
+        updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), aiGenerated: true,
+      };
+      setNotes(prev => [noteData, ...prev]);
+      setTitle(noteTitle); setContent(generated); setActiveNote(noteData);
+      setUploadText(""); setUploadObjectives(""); setUploadTitle("");
+      setView("editor");
+    } catch { setUploadProgress("Something went wrong. Please try again."); }
+    finally { clearInterval(interval); setUploadLoading(false); setUploadProgress(""); }
+  };
+
   const filteredNotes = notes.filter(n => {
     const matchFolder = filterFolder==="all" || n.folder===filterFolder;
     const matchSearch = !searchQ.trim() || n.title.toLowerCase().includes(searchQ.toLowerCase()) || n.content.toLowerCase().includes(searchQ.toLowerCase());
     return matchFolder && matchSearch;
   });
-
-  const totalWords = notes.reduce((a,n) => a + (n.wordCount||0), 0);
+  const totalWords = notes.reduce((a,n) => a+(n.wordCount||0), 0);
 
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:EN_BG, minHeight:"100vh", color:"#1A1814" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#FDFCF7", minHeight:"100vh", color:"#1A1814" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <style>{`
         * { box-sizing:border-box; }
         ::-webkit-scrollbar { width:5px; }
-        ::-webkit-scrollbar-thumb { background:${EN_LIGHT}; border-radius:3px; }
-        @keyframes en-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes en-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .en-card:hover { transform:translateY(-3px) !important; box-shadow:0 10px 28px rgba(212,168,48,0.12) !important; }
-        .en-card { transition:transform 0.2s, box-shadow 0.2s; }
-        .en-fmt-btn:hover { background:${EN_LIGHT}44 !important; }
-        @media (max-width: 768px) {
-          .en-nav-tabs { display: none !important; }
-          .en-editor-split { grid-template-columns: 1fr !important; }
-          .en-upload-grid { grid-template-columns: 1fr !important; }
-          .en-main { padding: 20px 14px !important; }
-          .en-quick-grid { grid-template-columns: 1fr 1fr !important; }
-          .en-folders-grid { grid-template-columns: 1fr 1fr !important; }
+        ::-webkit-scrollbar-thumb { background:${NL}; border-radius:3px; }
+        @keyframes notes-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes notes-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .notes-card { transition:transform 0.2s,box-shadow 0.2s !important; cursor:pointer; }
+        .notes-card:hover { transform:translateY(-3px) !important; box-shadow:0 10px 28px rgba(212,168,48,0.12) !important; }
+        .notes-fmt-btn:hover { background:${NL}44 !important; }
+        @media (max-width:768px) {
+          .notes-nav-tabs { display:none !important; }
+          .notes-main { padding:20px 14px !important; }
+          .notes-editor-split { grid-template-columns:1fr !important; }
+          .notes-upload-grid { grid-template-columns:1fr !important; }
+          .notes-quick-grid { grid-template-columns:1fr 1fr !important; }
         }
-        @media (max-width: 480px) {
-          .en-quick-grid { grid-template-columns: 1fr !important; }
-          .en-folders-grid { grid-template-columns: 1fr !important; }
+        @media (max-width:480px) {
+          .notes-quick-grid { grid-template-columns:1fr !important; }
         }
       `}</style>
 
-      {/* ── SIDEBAR ── */}
+      {/* Sidebar */}
       {sidebarOpen && <div onClick={()=>setSidebarOpen(false)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(26,18,0,0.35)",backdropFilter:"blur(4px)" }} />}
-      <div style={{ position:"fixed",left:0,top:0,bottom:0,width:268,background:"#fff",borderRight:`1px solid ${EN_LIGHT}`,display:"flex",flexDirection:"column",zIndex:201,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.38s cubic-bezier(0.16,1,0.3,1)",boxShadow:sidebarOpen?`4px 0 32px rgba(212,168,48,0.1)`:"none" }}>
-        <div style={{ padding:"18px 18px",borderBottom:`1px solid ${EN_LIGHT}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
+      <div style={{ position:"fixed",left:0,top:0,bottom:0,width:268,background:"#fff",borderRight:`1px solid ${NL}`,display:"flex",flexDirection:"column",zIndex:201,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.38s cubic-bezier(0.16,1,0.3,1)" }}>
+        <div style={{ padding:"18px 18px",borderBottom:`1px solid ${NL}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-            <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>⬡</div>
-            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>EchoNote</span>
+            <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>📝</div>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Notes</span>
           </div>
-          <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+          <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A" }}>✕</button>
         </div>
         <div style={{ flex:1,overflowY:"auto",padding:"14px 12px" }}>
-          {/* User */}
-          <div style={{ background:`${EN_COLOR}10`,border:`1px solid ${EN_COLOR}25`,borderRadius:10,padding:"12px 14px",marginBottom:14 }}>
-            {user ? (
-              <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                <div style={{ width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
-                <div><div style={{ fontSize:13,fontWeight:800,color:"#1A1814" }}>{user.name}</div><div style={{ fontSize:11,color:"#8C7A4A" }}>Free Plan</div></div>
+          {user ? (
+            <div style={{ background:`${NC}10`,border:`1px solid ${NC}25`,borderRadius:10,padding:"12px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10 }}>
+              <div style={{ width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
+              <div><div style={{ fontSize:13,fontWeight:800,color:"#1A1814" }}>{user.name}</div><div style={{ fontSize:11,color:"#8C7A4A" }}>Free Plan</div></div>
+            </div>
+          ) : (
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"#1A1814",marginBottom:8 }}>Sign in to save notes</div>
+              <div style={{ display:"flex",gap:7 }}>
+                <button onClick={()=>{openAuth("login");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:`1px solid ${NL}`,background:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",color:"#5A4A2A" }}>Log In</button>
+                <button onClick={()=>{openAuth("signup");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:"none",background:NC,fontSize:11,fontWeight:700,cursor:"pointer",color:"#fff" }}>Sign Up</button>
               </div>
-            ) : (
-              <div>
-                <div style={{ fontSize:12,fontWeight:700,color:"#1A1814",marginBottom:8 }}>Sign in to save notes</div>
-                <div style={{ display:"flex",gap:7 }}>
-                  <button onClick={()=>{openAuth("login");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:`1px solid ${EN_LIGHT}`,background:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",color:"#5A4A2A" }}>Log In</button>
-                  <button onClick={()=>{openAuth("signup");setSidebarOpen(false);}} style={{ flex:1,padding:"6px 0",borderRadius:7,border:"none",background:EN_COLOR,fontSize:11,fontWeight:700,cursor:"pointer",color:"#fff" }}>Sign Up</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Nav */}
+            </div>
+          )}
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Navigation</div>
-          {[["📝","All Notes","home"],["🎙","Record","record"],["📁","Folders","folders"]].map(([icon,label,v])=>(
-            <button key={v} onClick={()=>{setView(v==="record"?"editor":v);if(v==="record")newNote();setSidebarOpen(false);}}
-              style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${EN_COLOR}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}
-              onMouseEnter={e=>{if(view!==v)e.currentTarget.style.background=`${EN_COLOR}08`;}}
-              onMouseLeave={e=>{if(view!==v)e.currentTarget.style.background="transparent";}}>
+          {[["📝","Notes","home"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
+            <button key={v} onClick={()=>{setView(v);setSidebarOpen(false);}}
+              style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${NC}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif" }}>
               <span style={{ fontSize:14 }}>{icon}</span>
-              <span style={{ fontSize:13,fontWeight:view===v?700:500,color:view===v?EN_COLOR:"#3A3020" }}>{label}</span>
-              {view===v && <div style={{ marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:EN_COLOR }} />}
+              <span style={{ fontSize:13,fontWeight:view===v?700:500,color:view===v?NC:"#3A3020" }}>{label}</span>
             </button>
           ))}
-
-          {/* Folders */}
           {folders.length > 0 && (
-            <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${EN_LIGHT}66` }}>
+            <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Folders</div>
-              {[{id:"all",name:"All Notes",emoji:"📖",count:notes.length},...folders.map(f=>({...f,emoji:"📁",count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
+              {[{id:"all",name:"All Notes",count:notes.length},...folders.map(f=>({...f,count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
                 <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");setSidebarOpen(false);}}
-                  style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${EN_COLOR}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}>
-                  <span style={{ fontSize:13 }}>{f.emoji}</span>
+                  style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${NC}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif" }}>
+                  <span style={{ fontSize:13 }}>{f.id==="all"?"📖":"📁"}</span>
                   <span style={{ fontSize:12,fontWeight:500,color:"#3A3020",flex:1,textAlign:"left" }}>{f.name}</span>
-                  <span style={{ fontSize:11,color:"#B8A06A",background:`${EN_COLOR}10`,borderRadius:10,padding:"1px 7px",fontWeight:600 }}>{f.count}</span>
+                  <span style={{ fontSize:11,color:"#B8A06A",background:`${NC}10`,borderRadius:10,padding:"1px 7px",fontWeight:600 }}>{f.count}</span>
                 </button>
               ))}
             </div>
           )}
-
-          {/* Stats */}
-          <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${EN_LIGHT}66` }}>
+          <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
             <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Stats</div>
             {[["📝",notes.length,"Notes"],["📁",folders.length,"Folders"],["✍",totalWords.toLocaleString(),"Words"]].map(([icon,val,label])=>(
               <div key={label} style={{ display:"flex",alignItems:"center",gap:10,padding:"6px 10px" }}>
                 <span style={{ fontSize:13 }}>{icon}</span>
-                <span style={{ fontSize:13,fontWeight:700,color:EN_COLOR }}>{val}</span>
+                <span style={{ fontSize:13,fontWeight:700,color:NC }}>{val}</span>
                 <span style={{ fontSize:12,color:"#8C7A4A" }}>{label}</span>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ padding:"12px",borderTop:`1px solid ${EN_LIGHT}` }}>
-          <button onClick={onBack} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}
-            onMouseEnter={e=>e.currentTarget.style.background=`${EN_COLOR}08`}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+        <div style={{ padding:"12px",borderTop:`1px solid ${NL}` }}>
+          <button onClick={onBack} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}
+            onMouseEnter={e=>e.currentTarget.style.background=`${NC}08`} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
             <span style={{ fontSize:13,color:"#B8A06A" }}>←</span>
             <span style={{ fontSize:13,fontWeight:500,color:"#8C7A4A" }}>Back to Galaxy</span>
           </button>
         </div>
       </div>
 
-      {/* ── NAV ── */}
-      <nav style={{ background:"#fff",borderBottom:`1px solid ${EN_LIGHT}66`,position:"sticky",top:0,zIndex:100,height:60,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px" }}>
+      {/* Nav */}
+      <nav style={{ background:"#fff",borderBottom:`1px solid ${NL}66`,position:"sticky",top:0,zIndex:100,height:62,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px" }}>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-          <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4 }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.background=`${EN_COLOR}08`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.background="none";}}>
-            <div style={{ width:14,height:1.5,background:EN_COLOR,borderRadius:1 }} />
+          <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.background=`${NC}08`;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.background="none";}}>
+            <div style={{ width:14,height:1.5,background:NC,borderRadius:1 }} />
             <div style={{ width:10,height:1.5,background:"#B8A06A",borderRadius:1 }} />
-            <div style={{ width:14,height:1.5,background:EN_COLOR,borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:NC,borderRadius:1 }} />
           </button>
-          <div style={{ width:1,height:20,background:EN_LIGHT }} />
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
-            <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>⬡</div>
+            <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>📝</div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
-              <span style={{ color:EN_COLOR }}>Teacher's Pet</span> EchoNote
+              <span style={{ color:NC }}>Teacher's Pet</span> Notes
             </span>
           </div>
         </div>
-        <div className="en-nav-tabs" style={{ display:"flex",gap:6 }}>
+        <div className="notes-nav-tabs" style={{ display:"flex",gap:6 }}>
           {[["📝","home","Notes"],["🤖","upload","AI Upload"],["📁","folders","Folders"]].map(([icon,v,label])=>(
             <button key={v} onClick={()=>setView(v)}
-              style={{ padding:"7px 14px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.18s",background:view===v?v==="upload"?"#4F6EF7":EN_COLOR:"transparent",color:view===v?"#fff":"#8C7A4A" }}
+              style={{ padding:"7px 14px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.18s",background:view===v?v==="upload"?"#4F6EF7":NC:"transparent",color:view===v?"#fff":"#8C7A4A" }}
               onKeyDown={e=>{if(e.key===" ")e.preventDefault();}}>
               {icon} {label}
             </button>
           ))}
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <button onClick={()=>newNote()} style={{ background:EN_COLOR,border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",display:"flex",alignItems:"center",gap:6,boxShadow:`0 4px 16px ${EN_COLOR}44` }}>
+          <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 4px 16px ${NC}44` }}>
             + New Note
           </button>
           {user ? (
             <div style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer" }} onClick={()=>setSidebarOpen(true)}>
-              <div style={{ width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${EN_COLOR},${EN_DARK})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
+              <div style={{ width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
             </div>
           ) : (
-            <button onClick={()=>openAuth("signup")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A" }}>Sign In</button>
+            <button onClick={()=>openAuth("signup")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A" }}>Sign In</button>
           )}
         </div>
       </nav>
 
-      {/* ── HOME VIEW ── */}
-      {view === "home" && (
-        <div style={{ maxWidth:980,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
+      {/* "Turn into Course" coming soon toast */}
+      {showCourseToast && (
+        <div style={{ position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:500,background:"#1A1814",color:"#F7F6F2",borderRadius:12,padding:"14px 24px",fontSize:13,fontWeight:600,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",display:"flex",alignItems:"center",gap:10,animation:"notes-fade 0.3s ease both" }}>
+          <span style={{ fontSize:16 }}>🎓</span>
+          Turning notes into courses is coming soon to Academy!
+          <button onClick={()=>setShowCourseToast(false)} style={{ background:"none",border:"none",color:"rgba(247,246,242,0.5)",cursor:"pointer",fontSize:13,marginLeft:4 }}>✕</button>
+        </div>
+      )}
 
-          {/* Header */}
+      {/* ── HOME VIEW ── */}
+      {view==="home" && (
+        <div className="notes-main" style={{ maxWidth:980,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ marginBottom:32 }}>
             <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:900,color:"#1A1814",lineHeight:1.15,marginBottom:8 }}>
-              Your Notes <span style={{ color:EN_COLOR }}>✦</span>
+              Your Notes <span style={{ color:NC }}>✦</span>
             </h1>
-            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. AI can summarize, improve, or turn your notes into flashcards.</p>
+            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. Upload any material and AI builds smart study notes instantly.</p>
           </div>
 
           {/* Quick actions */}
-          <div className="en-quick-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
+          <div className="notes-quick-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
             {[
-              { icon:"🤖", label:"AI from Upload",  sub:"Upload notes, textbook, image → AI builds your notes", action:()=>setView("upload"), color:"#4F6EF7", highlight:true },
-              { icon:"✍",  label:"New Note",        sub:"Write or type notes yourself", action:()=>newNote(), color:EN_COLOR },
-              { icon:"🎙",  label:"Record Audio",    sub:"Transcribe speech to text", action:()=>{newNote();setTimeout(()=>toggleRecording(),300);}, color:"#E85D3F" },
-              { icon:"📁",  label:"New Folder",      sub:"Organize your notes", action:()=>setView("folders"), color:"#2BAE7E" },
+              { icon:"🤖", label:"AI from Upload",  sub:"File, YouTube, or website → smart notes", action:()=>setView("upload"), color:"#4F6EF7", highlight:true },
+              { icon:"✍",  label:"New Note",        sub:"Write or type notes yourself", action:()=>newNote(), color:NC },
+              { icon:"🎙",  label:"Record Audio",   sub:"Transcribe speech to text", action:()=>{newNote();setTimeout(()=>toggleRecording(),300);}, color:"#E85D3F" },
+              { icon:"📁",  label:"New Folder",     sub:"Organize your notes", action:()=>setView("folders"), color:"#2BAE7E" },
             ].map(q=>(
               <div key={q.label} onClick={q.action}
-                style={{ background: q.highlight ? `linear-gradient(135deg, #4F6EF7, #7B5EE8)` : "#fff", border: q.highlight ? "none" : `1.5px solid ${EN_LIGHT}88`, borderRadius:14, padding:"20px 18px", cursor:"pointer", transition:"all 0.2s", boxShadow: q.highlight ? "0 8px 28px #4F6EF744" : "none" }}
+                style={{ background:q.highlight?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#fff",border:q.highlight?"none":`1.5px solid ${NL}88`,borderRadius:14,padding:"20px 18px",cursor:"pointer",transition:"all 0.2s",boxShadow:q.highlight?"0 8px 28px #4F6EF744":"none" }}
                 onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";if(!q.highlight){e.currentTarget.style.borderColor=q.color;e.currentTarget.style.boxShadow=`0 8px 24px ${q.color}18`;}}}
-                onMouseLeave={e=>{e.currentTarget.style.transform="none";if(!q.highlight){e.currentTarget.style.borderColor=`${EN_LIGHT}88`;e.currentTarget.style.boxShadow="none";}}}>
+                onMouseLeave={e=>{e.currentTarget.style.transform="none";if(!q.highlight){e.currentTarget.style.borderColor=`${NL}88`;e.currentTarget.style.boxShadow="none";}}}>
                 <div style={{ fontSize:28,marginBottom:10 }}>{q.icon}</div>
                 <div style={{ fontSize:14,fontWeight:700,color:q.highlight?"#fff":"#1A1814",marginBottom:3 }}>{q.label}</div>
                 <div style={{ fontSize:11,color:q.highlight?"rgba(255,255,255,0.7)":"#8C7A4A",lineHeight:1.5 }}>{q.sub}</div>
@@ -7481,34 +7408,43 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
             <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}>🔍</span>
             <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search notes…"
               onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-              style={{ width:"100%",padding:"10px 14px 10px 36px",borderRadius:10,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s",boxSizing:"border-box" }}
-              onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+              style={{ width:"100%",padding:"10px 14px 10px 36px",borderRadius:10,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s",boxSizing:"border-box" }}
+              onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
           </div>
 
           {/* Notes grid */}
-          {filteredNotes.length === 0 ? (
+          {filteredNotes.length===0 ? (
             <div style={{ textAlign:"center",padding:"60px 0",color:"#B8A06A" }}>
               <div style={{ fontSize:48,marginBottom:14 }}>📝</div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No notes yet</div>
-              <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note — write freely, record your voice, or paste lecture content.</p>
-              <button onClick={()=>newNote()} style={{ background:EN_COLOR,border:"none",borderRadius:10,padding:"12px 28px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 6px 20px ${EN_COLOR}44` }}>Create First Note →</button>
+              <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note — write freely, record your voice, or let AI build notes from any material you upload.</p>
+              <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:10,padding:"12px 28px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 6px 20px ${NC}44` }}>Create First Note →</button>
             </div>
           ) : (
             <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14 }}>
               {filteredNotes.map(n => {
                 const fld = folders.find(f=>f.id===n.folder);
                 return (
-                  <div key={n.id} className="en-card" onClick={()=>openNote(n)}
-                    style={{ background:"#fff",border:`1px solid ${EN_LIGHT}88`,borderLeft:`4px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 18px",cursor:"pointer" }}>
+                  <div key={n.id} className="notes-card" onClick={()=>openNote(n)}
+                    style={{ background:"#fff",border:`1px solid ${NL}88`,borderLeft:`4px solid ${NC}`,borderRadius:12,padding:"18px 18px",position:"relative" }}>
+                    {n.aiGenerated && <span style={{ position:"absolute",top:12,right:12,fontSize:9,fontWeight:700,color:"#4F6EF7",background:"#EEF2FF",borderRadius:8,padding:"2px 7px",letterSpacing:1 }}>AI</span>}
                     <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
-                      <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:8 }}>{n.title}</div>
+                      <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:n.aiGenerated?24:8 }}>{n.title}</div>
                       <div style={{ fontSize:10,color:"#B8A06A",flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
                     </div>
-                    {fld && <div style={{ fontSize:10,fontWeight:700,color:EN_COLOR,background:`${EN_COLOR}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}>📁 {fld.name}</div>}
+                    {fld && <div style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}>📁 {fld.name}</div>}
                     <div style={{ fontSize:12,color:"#8C7A4A",lineHeight:1.55,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical" }}>
                       {n.content.replace(/[#*_]/g,"").slice(0,160)}{n.content.length>160?"…":""}
                     </div>
-                    <div style={{ fontSize:10,color:"#C8B88A",marginTop:10 }}>{n.wordCount} words {n.attachedDecks?.length ? `· ${n.attachedDecks.length} deck${n.attachedDecks.length>1?"s":""}` : ""}</div>
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10 }}>
+                      <span style={{ fontSize:10,color:"#C8B88A" }}>{n.wordCount} words</span>
+                      <button onClick={e=>{e.stopPropagation();setShowCourseToast(true);setTimeout(()=>setShowCourseToast(false),4000);}}
+                        style={{ fontSize:10,fontWeight:700,color:"#8C7A4A",background:"transparent",border:`1px solid ${NL}`,borderRadius:8,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
+                        🎓 Turn into Course
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -7517,201 +7453,270 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
         </div>
       )}
 
-      {/* ── EDITOR VIEW ── */}
-      {view === "editor" && (
-        <div style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"en-fade 0.4s ease both" }}>
+      {/* ── UPLOAD VIEW ── */}
+      {view==="upload" && (
+        <div className="notes-main" style={{ maxWidth:760,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
+          <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Back</button>
+          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}>🤖 AI Note Builder</h2>
+          <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,marginBottom:24,maxWidth:520 }}>Give AI your content in any format — file, text, YouTube, or website. It reads everything and builds comprehensive study notes instantly.</p>
 
-          {/* Back + meta */}
+          <div style={{ display:"flex",gap:4,marginBottom:20,background:"#F5F3EC",borderRadius:10,padding:4 }}>
+            {[["file","📄 File"],["paste","📋 Paste"],["youtube","▶ YouTube"],["website","🌐 Website"]].map(([t,label])=>(
+              <button key={t} onClick={()=>setUploadTab(t)}
+                style={{ flex:1,padding:"8px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:uploadTab===t?"#fff":"transparent",color:uploadTab===t?ND:"#8C7A4A",transition:"all 0.18s",boxShadow:uploadTab===t?"0 1px 6px rgba(0,0,0,0.08)":"none" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {uploadTab==="file" && (
+            <div onDragOver={e=>{e.preventDefault();setIsDragging(true);}} onDragLeave={()=>setIsDragging(false)} onDrop={handleFileDrop}
+              onClick={()=>fileInputRef.current?.click()}
+              style={{ border:`2px dashed ${isDragging?NC:NL}`,borderRadius:16,padding:"52px 32px",textAlign:"center",cursor:"pointer",background:isDragging?`${NC}08`:`${NC}04`,transition:"all 0.2s",marginBottom:16 }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.background=`${NC}08`;}}
+              onMouseLeave={e=>{if(!isDragging){e.currentTarget.style.borderColor=NL;e.currentTarget.style.background=`${NC}04`;}}}>
+              <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.jpg,.jpeg,.png,.webp" style={{ display:"none" }} onChange={handleFileDrop} />
+              <div style={{ fontSize:52,marginBottom:14 }}>📄</div>
+              <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814",marginBottom:8 }}>Drop your file here</div>
+              <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images (JPG, PNG) · Text files · Markdown</p>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:NC,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}>📎 Choose File</div>
+            </div>
+          )}
+
+          {uploadTab==="paste" && (
+            <textarea value={uploadText} onChange={e=>setUploadText(e.target.value)}
+              placeholder="Paste your lecture notes, textbook content, syllabus, or any material here…"
+              onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+              style={{ width:"100%",minHeight:220,padding:"14px",borderRadius:12,border:`1.5px solid ${NL}`,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"vertical",lineHeight:1.7,transition:"border-color 0.18s",boxSizing:"border-box",marginBottom:16 }}
+              onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+          )}
+
+          {uploadTab==="youtube" && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ background:"#fff",border:`1.5px solid ${NL}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
+                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>▶ Paste a YouTube lecture or tutorial URL</div>
+                <div style={{ display:"flex",gap:10 }}>
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}}
+                    placeholder="https://youtube.com/watch?v=..."
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+                  <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()}
+                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
+                    Load →
+                  </button>
+                </div>
+              </div>
+              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Video loaded — ready to generate notes</div>}
+            </div>
+          )}
+
+          {uploadTab==="website" && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ background:"#fff",border:`1.5px solid ${NL}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
+                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
+                <div style={{ display:"flex",gap:10 }}>
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}}
+                    placeholder="https://example.com/article"
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+                  <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading}
+                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
+                    {uploadLoading?"Fetching…":"Load →"}
+                  </button>
+                </div>
+              </div>
+              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Page loaded — ready to generate notes</div>}
+            </div>
+          )}
+
+          <div className="notes-upload-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
+            <div>
+              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Topic / Title <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
+              <input value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} placeholder="e.g. Chapter 5 — Cell Biology"
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+            </div>
+            <div>
+              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Learning Objectives <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
+              <input value={uploadObjectives} onChange={e=>setUploadObjectives(e.target.value)} placeholder="e.g. Understand mitosis, define organelles…"
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+            </div>
+          </div>
+
+          <div style={{ background:`${NC}08`,border:`1px solid ${NL}`,borderRadius:12,padding:"14px 18px",marginBottom:20 }}>
+            <div style={{ fontSize:12,fontWeight:700,color:ND,marginBottom:10 }}>✦ AI generates automatically:</div>
+            <div style={{ display:"flex",flexWrap:"wrap",gap:7 }}>
+              {["📋 Overview","🎯 Objectives","💡 Key Concepts","📖 Key Terms","📝 Full Notes","📌 Summary","🧠 Study Tips"].map(item=>(
+                <span key={item} style={{ fontSize:11,fontWeight:600,color:ND,background:"#fff",border:`1px solid ${NL}`,borderRadius:20,padding:"3px 10px" }}>{item}</span>
+              ))}
+            </div>
+          </div>
+
+          {uploadLoading && uploadProgress && (
+            <div style={{ background:"#fff",border:`1.5px solid ${NC}`,borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16,animation:"notes-fade 0.3s ease both" }}>
+              <div style={{ display:"flex",justifyContent:"center",gap:8,marginBottom:14 }}>
+                {[0,1,2].map(i=><div key={i} style={{ width:10,height:10,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}
+              </div>
+              <div style={{ fontSize:14,fontWeight:700,color:NC,marginBottom:4 }}>{uploadProgress}</div>
+              <div style={{ fontSize:12,color:"#B8A06A" }}>This takes 10–20 seconds</div>
+            </div>
+          )}
+
+          <button onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)}
+            disabled={!uploadText.trim()||uploadLoading}
+            style={{ width:"100%",padding:"15px 0",borderRadius:11,border:"none",background:uploadText.trim()&&!uploadLoading?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#E8E5E0",color:uploadText.trim()&&!uploadLoading?"#fff":"#A8A59E",fontSize:15,fontWeight:800,cursor:uploadText.trim()&&!uploadLoading?"pointer":"default",transition:"all 0.2s",boxShadow:uploadText.trim()&&!uploadLoading?"0 8px 28px #4F6EF744":"none",fontFamily:"'DM Sans',sans-serif" }}>
+            {uploadLoading?"Building your notes…":"🤖 Build My Notes with AI →"}
+          </button>
+        </div>
+      )}
+
+      {/* ── EDITOR VIEW ── */}
+      {view==="editor" && (
+        <div className="notes-main" style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
-            <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.color=EN_COLOR;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.color="#8C7A4A";}}>← Notes</button>
+            <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Notes</button>
             <div style={{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" }}>
-              {/* Folder selector */}
               <select value={folder} onChange={e=>setFolder(e.target.value)}
-                style={{ padding:"6px 10px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:12,fontWeight:600,color:"#5A4A2A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
+                style={{ padding:"6px 10px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#fff",fontSize:12,fontWeight:600,color:"#5A4A2A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
                 <option value="">📁 No Folder</option>
                 {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
-              {/* Record button */}
               <button onClick={toggleRecording}
-                style={{ padding:"7px 14px",borderRadius:8,border:`1.5px solid ${isRecording?"#E85D3F":EN_LIGHT}`,background:isRecording?"#FEF2F2":"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:isRecording?"#E85D3F":"#8C7A4A",display:"flex",alignItems:"center",gap:6,transition:"all 0.18s" }}>
-                {isRecording ? <><span style={{ width:8,height:8,borderRadius:"50%",background:"#E85D3F",animation:"en-pulse 1s infinite" }} />Recording…</> : "🎙 Record"}
+                style={{ padding:"7px 14px",borderRadius:8,border:`1.5px solid ${isRecording?"#E85D3F":NL}`,background:isRecording?"#FEF2F2":"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:isRecording?"#E85D3F":"#8C7A4A",display:"flex",alignItems:"center",gap:6,transition:"all 0.18s" }}>
+                {isRecording?<><span style={{ width:8,height:8,borderRadius:"50%",background:"#E85D3F",animation:"notes-pulse 1s infinite" }} />Recording…</>:"🎙 Record"}
               </button>
             </div>
           </div>
 
           {/* Format toolbar */}
-          <div style={{ display:"flex",gap:4,marginBottom:14,padding:"8px 10px",background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:10,flexWrap:"wrap" }}>
+          <div style={{ display:"flex",gap:4,marginBottom:14,padding:"8px 10px",background:"#fff",border:`1px solid ${NL}`,borderRadius:10,flexWrap:"wrap" }}>
             {EN_FORMATS.map(f=>(
-              <button key={f.id} onClick={()=>applyFormat(f.id)} className="en-fmt-btn"
-                style={{ padding:"5px 10px",borderRadius:6,border:"none",background:"transparent",fontSize:13,fontWeight:700,cursor:"pointer",color:"#5A4A2A",minWidth:34,transition:"all 0.15s" }}
-                title={f.label}>{f.icon}</button>
+              <button key={f.id} onClick={()=>applyFormat(f.id)} className="notes-fmt-btn"
+                style={{ padding:"5px 10px",borderRadius:6,border:"none",background:"transparent",fontSize:13,fontWeight:700,cursor:"pointer",color:"#5A4A2A",minWidth:34,transition:"all 0.15s" }}>{f.icon}</button>
             ))}
-            <div style={{ width:1,height:20,background:EN_LIGHT,margin:"auto 4px" }} />
-            {/* Attach decks */}
-            {decks.length > 0 && (
-              <select onChange={e=>{if(e.target.value&&!attachedDecks.includes(e.target.value)){setAttachedDecks(prev=>[...prev,e.target.value]);}e.target.value="";}}
-                style={{ padding:"4px 8px",borderRadius:6,border:`1px solid ${EN_LIGHT}`,background:"#fff",fontSize:11,fontWeight:600,color:"#8C7A4A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
-                <option value="">📇 Attach Deck…</option>
-                {decks.map(d=><option key={d.id} value={d.id}>{d.title}</option>)}
-              </select>
-            )}
           </div>
 
-          {/* Attached decks */}
-          {attachedDecks.length > 0 && (
-            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:14 }}>
-              {attachedDecks.map(id=>{
-                const d = decks.find(x=>x.id===id);
-                return d ? (
-                  <div key={id} style={{ display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:`${EN_COLOR}15`,border:`1px solid ${EN_COLOR}44`,fontSize:11,fontWeight:700,color:EN_DARK }}>
-                    📇 {d.title}
-                    <button onClick={()=>setAttachedDecks(prev=>prev.filter(x=>x!==id))} style={{ background:"none",border:"none",cursor:"pointer",fontSize:10,color:EN_COLOR,lineHeight:1,padding:0,marginLeft:2 }}>✕</button>
-                  </div>
-                ) : null;
-              })}
-            </div>
-          )}
-
-          {/* Title */}
           <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Note title…"
             onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-            style={{ width:"100%",padding:"12px 0",border:"none",borderBottom:`2px solid ${EN_LIGHT}`,background:"transparent",fontSize:24,fontFamily:"'Playfair Display',serif",fontWeight:900,color:"#1A1814",outline:"none",marginBottom:18,transition:"border-color 0.18s" }}
-            onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+            style={{ width:"100%",padding:"12px 0",border:"none",borderBottom:`2px solid ${NL}`,background:"transparent",fontSize:24,fontFamily:"'Playfair Display',serif",fontWeight:900,color:"#1A1814",outline:"none",marginBottom:18,transition:"border-color 0.18s",boxSizing:"border-box" }}
+            onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
 
-          {/* Editor area — split: textarea left, preview right */}
-          <div className="en-editor-split" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
-            {/* Textarea */}
+          <div className="notes-editor-split" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
             <div>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Write</div>
               <textarea ref={editorRef} value={content} onChange={e=>setContent(e.target.value)}
-                placeholder="Start writing… Use the toolbar above for formatting."
+                placeholder="Start writing…"
                 onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",height:"100%",minHeight:360,padding:"14px",border:`1.5px solid ${EN_LIGHT}`,borderRadius:10,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.8,transition:"border-color 0.18s",boxSizing:"border-box" }}
-                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+                style={{ width:"100%",height:"100%",minHeight:360,padding:"14px",border:`1.5px solid ${NL}`,borderRadius:10,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.8,transition:"border-color 0.18s",boxSizing:"border-box" }}
+                onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
             </div>
-            {/* Preview */}
             <div>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Preview</div>
-              <div style={{ minHeight:360,padding:"14px 16px",border:`1.5px solid ${EN_LIGHT}88`,borderRadius:10,background:`${EN_COLOR}04`,fontSize:14,lineHeight:1.8,overflowY:"auto" }}>
-                {content.trim() ? renderContent(content) : <span style={{ color:"#C8B88A",fontSize:13 }}>Preview will appear here…</span>}
+              <div style={{ minHeight:360,padding:"14px 16px",border:`1.5px solid ${NL}88`,borderRadius:10,background:`${NC}04`,fontSize:14,lineHeight:1.8,overflowY:"auto" }}>
+                {content.trim() ? renderContent(content) : <span style={{ color:"#C8B88A",fontSize:13 }}>Preview appears here…</span>}
               </div>
             </div>
           </div>
 
-          {/* AI Toolbar */}
-          <div style={{ marginTop:20,padding:"14px 16px",background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:12 }}>
+          {/* AI Tools */}
+          <div style={{ marginTop:20,padding:"14px 16px",background:"#fff",border:`1px solid ${NL}`,borderRadius:12 }}>
             <div style={{ fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#B8A06A",marginBottom:10 }}>AI Tools</div>
             <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-              {[
-                ["summarize","✦ Summarize"],
-                ["improve","✨ Improve Notes"],
-                ["flashcards","📇 Flashcards"],
-                ["quiz","❓ Quiz"],
-                ["objectives","🎯 Objectives"],
-                ["explain","💬 Explain It"],
-              ].map(([mode,label])=>(
+              {[["summarize","✦ Summarize"],["improve","✨ Improve"],["flashcards","📇 Flashcards"],["quiz","❓ Quiz"],["objectives","🎯 Objectives"],["explain","💬 Explain It"]].map(([mode,label])=>(
                 <button key={mode} onClick={()=>runAI(mode)} disabled={!content.trim()||aiLoading}
-                  style={{ padding:"8px 14px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:12,fontWeight:700,cursor:content.trim()&&!aiLoading?"pointer":"default",color:content.trim()?EN_COLOR:"#C8B88A",transition:"all 0.15s" }}
-                  onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=EN_COLOR;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=EN_COLOR;}}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=content.trim()?EN_COLOR:"#C8B88A";e.currentTarget.style.borderColor=EN_LIGHT;}}>
+                  style={{ padding:"8px 14px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#fff",fontSize:12,fontWeight:700,cursor:content.trim()&&!aiLoading?"pointer":"default",color:content.trim()?NC:"#C8B88A",transition:"all 0.15s" }}
+                  onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=content.trim()?NC:"#C8B88A";e.currentTarget.style.borderColor=NL;}}>
                   {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* AI Result panel */}
+          {/* AI Result */}
           {showAiPanel && (
-            <div style={{ marginTop:14,background:`${EN_COLOR}06`,border:`1.5px solid ${EN_COLOR}30`,borderRadius:12,padding:"20px",animation:"en-fade 0.3s ease both" }}>
+            <div style={{ marginTop:14,background:`${NC}06`,border:`1.5px solid ${NC}30`,borderRadius:12,padding:"20px",animation:"notes-fade 0.3s ease both" }}>
               <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
-                <div style={{ fontSize:12,fontWeight:700,letterSpacing:1,color:EN_COLOR,textTransform:"uppercase" }}>
-                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved Notes":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives & Exam Topics":"💬 Explanation"}
+                <div style={{ fontSize:12,fontWeight:700,letterSpacing:1,color:NC,textTransform:"uppercase" }}>
+                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved Notes":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
                 </div>
                 <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:13 }}>✕</button>
               </div>
               {aiLoading ? (
                 <div style={{ display:"flex",gap:6,alignItems:"center",color:"#B8A06A" }}>
-                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s infinite" }} />
-                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s 0.2s infinite" }} />
-                  <div style={{ width:8,height:8,borderRadius:"50%",background:EN_COLOR,animation:"en-pulse 1s 0.4s infinite" }} />
+                  {[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}
                   <span style={{ fontSize:13,marginLeft:4 }}>Working on it…</span>
                 </div>
               ) : (
                 <div>
                   <pre style={{ fontSize:13,color:"#3A2A10",lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif",margin:0 }}>{aiResult}</pre>
-                  {aiMode === "improve" && (
-                    <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:EN_COLOR,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
-                      Use Improved Version
-                    </button>
-                  )}
+                  {aiMode==="improve" && <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:NC,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>Use Improved Version</button>}
                 </div>
               )}
             </div>
           )}
 
           {/* Chat with Notes */}
-          <div style={{ marginTop:14,background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:12,overflow:"hidden" }}>
+          <div style={{ marginTop:14,background:"#fff",border:`1px solid ${NL}`,borderRadius:12,overflow:"hidden" }}>
             <button onClick={()=>setShowChat(c=>!c)}
               style={{ width:"100%",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif" }}>
-              <span style={{ fontSize:13,fontWeight:700,color:EN_DARK }}>💬 Chat with your notes — ask AI anything about this content</span>
+              <span style={{ fontSize:13,fontWeight:700,color:ND }}>💬 Chat with your notes</span>
               <span style={{ fontSize:11,color:"#B8A06A",fontWeight:600 }}>{showChat?"▲ Close":"▼ Open"}</span>
             </button>
             {showChat && (
-              <div style={{ borderTop:`1px solid ${EN_LIGHT}` }}>
-                {/* Suggested questions */}
-                {chatMessages.length === 0 && (
-                  <div style={{ padding:"12px 14px",display:"flex",gap:8,flexWrap:"wrap",borderBottom:`1px solid ${EN_LIGHT}66` }}>
-                    {["Summarize this in one paragraph","What are the most important terms?","What am I most likely to be tested on?","Explain the hardest concept simply"].map(q=>(
+              <div style={{ borderTop:`1px solid ${NL}` }}>
+                {chatMessages.length===0 && (
+                  <div style={{ padding:"12px 14px",display:"flex",gap:8,flexWrap:"wrap",borderBottom:`1px solid ${NL}66` }}>
+                    {["Summarize in one paragraph","What are the most important terms?","What am I most likely to be tested on?","Explain the hardest concept simply"].map(q=>(
                       <button key={q} onClick={()=>sendChatMessage(q)}
-                        style={{ padding:"5px 12px",borderRadius:20,border:`1px solid ${EN_LIGHT}`,background:`${EN_COLOR}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:EN_DARK,transition:"all 0.15s" }}
-                        onMouseEnter={e=>{e.currentTarget.style.background=EN_COLOR;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=EN_COLOR;}}
-                        onMouseLeave={e=>{e.currentTarget.style.background=`${EN_COLOR}08`;e.currentTarget.style.color=EN_DARK;e.currentTarget.style.borderColor=EN_LIGHT;}}>
+                        style={{ padding:"5px 12px",borderRadius:20,border:`1px solid ${NL}`,background:`${NC}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:ND,transition:"all 0.15s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}
+                        onMouseLeave={e=>{e.currentTarget.style.background=`${NC}08`;e.currentTarget.style.color=ND;e.currentTarget.style.borderColor=NL;}}>
                         {q}
                       </button>
                     ))}
                   </div>
                 )}
-                {/* Messages */}
-                {chatMessages.length > 0 && (
+                {chatMessages.length>0 && (
                   <div style={{ maxHeight:280,overflowY:"auto",padding:"14px" }}>
                     {chatMessages.map((m,i)=>(
                       <div key={i} style={{ marginBottom:12,display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start" }}>
-                        <div style={{ maxWidth:"85%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",background:m.role==="user"?EN_COLOR:"#F5F3EC",color:m.role==="user"?"#fff":"#1A1814",fontSize:13,lineHeight:1.65 }}>
+                        <div style={{ maxWidth:"85%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",background:m.role==="user"?NC:"#F5F3EC",color:m.role==="user"?"#fff":"#1A1814",fontSize:13,lineHeight:1.65 }}>
                           {m.content}
                         </div>
                       </div>
                     ))}
-                    {chatLoading && (
-                      <div style={{ display:"flex",gap:5,alignItems:"center",padding:"8px 0" }}>
-                        {[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:EN_COLOR,animation:`en-pulse 1s ${i*0.2}s infinite` }} />)}
-                      </div>
-                    )}
+                    {chatLoading && <div style={{ display:"flex",gap:5,padding:"8px 0" }}>{[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}</div>}
                   </div>
                 )}
-                {/* Input */}
-                <div style={{ padding:"10px 12px",borderTop:`1px solid ${EN_LIGHT}66`,display:"flex",gap:8 }}>
+                <div style={{ padding:"10px 12px",borderTop:`1px solid ${NL}66`,display:"flex",gap:8 }}>
                   <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
                     onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")sendChatMessage();}}
-                    placeholder={content.trim()?"Ask anything about these notes…":"Write some notes first, then chat with them"}
+                    placeholder={content.trim()?"Ask anything about these notes…":"Write some notes first"}
                     disabled={!content.trim()}
-                    style={{ flex:1,padding:"9px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
-                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
+                    style={{ flex:1,padding:"9px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                    onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
                   <button onClick={()=>sendChatMessage()} disabled={!chatInput.trim()||chatLoading||!content.trim()}
-                    style={{ padding:"9px 16px",borderRadius:9,border:"none",background:chatInput.trim()&&content.trim()?EN_COLOR:"#E8D8A0",color:chatInput.trim()&&content.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()&&content.trim()?"pointer":"default",transition:"all 0.18s" }}>
-                    ↑
-                  </button>
+                    style={{ padding:"9px 16px",borderRadius:9,border:"none",background:chatInput.trim()&&content.trim()?NC:"#E8D8A0",color:chatInput.trim()&&content.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()&&content.trim()?"pointer":"default" }}>↑</button>
                 </div>
               </div>
             )}
           </div>
 
           {/* Save / Delete */}
-          <div style={{ display:"flex",gap:10,marginTop:24,paddingTop:18,borderTop:`1px solid ${EN_LIGHT}66` }}>
+          <div style={{ display:"flex",gap:10,marginTop:24,paddingTop:18,borderTop:`1px solid ${NL}66` }}>
             <button onClick={saveNote} disabled={!content.trim()&&!title.trim()}
-              style={{ flex:1,padding:"13px 0",borderRadius:10,border:"none",background:saveAnim?"#2BAE7E":content.trim()||title.trim()?EN_COLOR:"#E8D8A0",color:content.trim()||title.trim()?"#fff":"#B8A06A",fontSize:14,fontWeight:800,cursor:content.trim()||title.trim()?"pointer":"default",transition:"all 0.3s",fontFamily:"'DM Sans',sans-serif" }}>
-              {saveAnim ? "✓ Saved!" : activeNote ? "Save Changes" : "Save Note"}
+              style={{ flex:1,padding:"13px 0",borderRadius:10,border:"none",background:saveAnim?"#2BAE7E":content.trim()||title.trim()?NC:"#E8D8A0",color:content.trim()||title.trim()?"#fff":"#B8A06A",fontSize:14,fontWeight:800,cursor:content.trim()||title.trim()?"pointer":"default",transition:"all 0.3s",fontFamily:"'DM Sans',sans-serif" }}>
+              {saveAnim?"✓ Saved!":activeNote?"Save Changes":"Save Note"}
             </button>
             {activeNote && (
               <button onClick={()=>{if(window.confirm("Delete this note?"))deleteNote(activeNote.id);}}
@@ -7723,162 +7728,22 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
         </div>
       )}
 
-      {/* ── UPLOAD VIEW ── */}
-      {view === "upload" && (
-        <div style={{ maxWidth:760,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
-          <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${EN_LIGHT}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24,transition:"all 0.15s" }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.color=EN_COLOR;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.color="#8C7A4A";}}>← Back</button>
-
-          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}>🤖 AI Note Builder</h2>
-          <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,marginBottom:24,maxWidth:520 }}>Give AI your course content in any format — file, text, YouTube video, or website. It reads everything and builds comprehensive study notes instantly.</p>
-
-          {/* Input type tabs */}
-          <div style={{ display:"flex",gap:6,marginBottom:20,background:"#F5F3EC",borderRadius:10,padding:4 }}>
-            {[["file","📄 File"],["paste","📋 Paste Text"],["youtube","▶ YouTube"],["website","🌐 Website"]].map(([t,label])=>(
-              <button key={t} onClick={()=>setUploadTab(t)}
-                style={{ flex:1,padding:"8px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:uploadTab===t?"#fff":"transparent",color:uploadTab===t?EN_DARK:"#8C7A4A",transition:"all 0.18s",boxShadow:uploadTab===t?"0 1px 6px rgba(0,0,0,0.08)":"none" }}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* File tab */}
-          {uploadTab === "file" && (
-            <div
-              onDragOver={e=>{e.preventDefault();setIsDragging(true);}}
-              onDragLeave={()=>setIsDragging(false)}
-              onDrop={handleFileDrop}
-              onClick={()=>fileInputRef.current?.click()}
-              style={{ border:`2px dashed ${isDragging?EN_COLOR:EN_LIGHT}`,borderRadius:16,padding:"52px 32px",textAlign:"center",cursor:"pointer",background:isDragging?`${EN_COLOR}08`:`${EN_COLOR}04`,transition:"all 0.2s",marginBottom:16 }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=EN_COLOR;e.currentTarget.style.background=`${EN_COLOR}08`;}}
-              onMouseLeave={e=>{if(!isDragging){e.currentTarget.style.borderColor=EN_LIGHT;e.currentTarget.style.background=`${EN_COLOR}04`;}}}>
-              <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.jpg,.jpeg,.png,.webp" style={{ display:"none" }} onChange={handleFileDrop} />
-              <div style={{ fontSize:52,marginBottom:14 }}>📄</div>
-              <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814",marginBottom:8 }}>Drop your file here</div>
-              <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images (JPG, PNG) · Text files · Markdown</p>
-              <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:EN_COLOR,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}>📎 Choose File</div>
-            </div>
-          )}
-
-          {/* Paste tab */}
-          {uploadTab === "paste" && (
-            <textarea value={uploadText} onChange={e=>setUploadText(e.target.value)}
-              placeholder="Paste your lecture notes, textbook content, syllabus, or any course material here…"
-              onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-              style={{ width:"100%",minHeight:220,padding:"14px",borderRadius:12,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"vertical",lineHeight:1.7,transition:"border-color 0.18s",boxSizing:"border-box",marginBottom:16 }}
-              onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
-          )}
-
-          {/* YouTube tab */}
-          {uploadTab === "youtube" && (
-            <div style={{ marginBottom:16 }}>
-              <div style={{ background:"#fff",border:`1.5px solid ${EN_LIGHT}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
-                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>▶ Paste a YouTube lecture or tutorial URL</div>
-                <div style={{ display:"flex",gap:10 }}>
-                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
-                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}}
-                    placeholder="https://youtube.com/watch?v=..."
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
-                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
-                  <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()}
-                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?EN_COLOR:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
-                    Load →
-                  </button>
-                </div>
-              </div>
-              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Video loaded — AI will generate notes from this content</div>}
-              <p style={{ fontSize:12,color:"#B8A06A",lineHeight:1.6,marginTop:10 }}>💡 Works best with educational/lecture videos. AI analyzes the video topic and generates structured study notes.</p>
-            </div>
-          )}
-
-          {/* Website tab */}
-          {uploadTab === "website" && (
-            <div style={{ marginBottom:16 }}>
-              <div style={{ background:"#fff",border:`1.5px solid ${EN_LIGHT}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
-                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
-                <div style={{ display:"flex",gap:10 }}>
-                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
-                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}}
-                    placeholder="https://example.com/article"
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
-                    onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
-                  <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading}
-                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?EN_COLOR:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
-                    {uploadLoading?"Fetching…":"Load →"}
-                  </button>
-                </div>
-              </div>
-              {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Page content loaded — ready to generate notes</div>}
-            </div>
-          )}
-
-          {/* Optional fields */}
-          <div className="en-upload-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
-            <div>
-              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Topic / Title <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
-              <input value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} placeholder="e.g. Chapter 5 — Cell Biology"
-                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
-                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
-            </div>
-            <div>
-              <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Chapter Objectives <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
-              <input value={uploadObjectives} onChange={e=>setUploadObjectives(e.target.value)} placeholder="e.g. Understand mitosis, define organelles…"
-                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${EN_LIGHT}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
-                onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
-            </div>
-          </div>
-
-          {/* What AI generates */}
-          <div style={{ background:`${EN_COLOR}08`,border:`1px solid ${EN_LIGHT}`,borderRadius:12,padding:"14px 18px",marginBottom:20 }}>
-            <div style={{ fontSize:12,fontWeight:700,color:EN_DARK,marginBottom:10 }}>✦ AI generates automatically:</div>
-            <div style={{ display:"flex",flexWrap:"wrap",gap:7 }}>
-              {["📋 Overview","🎯 Objectives","💡 Key Concepts","📖 Key Terms","📝 Full Notes","📌 Summary","🧠 Study Tips"].map(item=>(
-                <span key={item} style={{ fontSize:11,fontWeight:600,color:EN_DARK,background:"#fff",border:`1px solid ${EN_LIGHT}`,borderRadius:20,padding:"3px 10px" }}>{item}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Loading */}
-          {uploadLoading && uploadProgress && (
-            <div style={{ background:"#fff",border:`1.5px solid ${EN_COLOR}`,borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16,animation:"en-fade 0.3s ease both" }}>
-              <div style={{ display:"flex",justifyContent:"center",gap:8,marginBottom:14 }}>
-                {[0,1,2].map(i=><div key={i} style={{ width:10,height:10,borderRadius:"50%",background:EN_COLOR,animation:`en-pulse 1s ${i*0.2}s infinite` }} />)}
-              </div>
-              <div style={{ fontSize:14,fontWeight:700,color:EN_COLOR,marginBottom:4 }}>{uploadProgress}</div>
-              <div style={{ fontSize:12,color:"#B8A06A" }}>This takes 10–20 seconds for longer content</div>
-            </div>
-          )}
-
-          <button
-            onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)}
-            disabled={!uploadText.trim()||uploadLoading}
-            style={{ width:"100%",padding:"15px 0",borderRadius:11,border:"none",background:uploadText.trim()&&!uploadLoading?`linear-gradient(135deg, #4F6EF7, #7B5EE8)`:"#E8E5E0",color:uploadText.trim()&&!uploadLoading?"#fff":"#A8A59E",fontSize:15,fontWeight:800,cursor:uploadText.trim()&&!uploadLoading?"pointer":"default",transition:"all 0.2s",boxShadow:uploadText.trim()&&!uploadLoading?"0 8px 28px #4F6EF744":"none",fontFamily:"'DM Sans',sans-serif" }}>
-            {uploadLoading ? "Building your notes…" : "🤖 Build My Notes with AI →"}
-          </button>
-        </div>
-      )}
-
       {/* ── FOLDERS VIEW ── */}
-      {view === "folders" && (
-        <div style={{ maxWidth:800,margin:"0 auto",padding:"40px 24px",animation:"en-fade 0.4s ease both" }}>
+      {view==="folders" && (
+        <div className="notes-main" style={{ maxWidth:800,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
             <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814" }}>Folders</h2>
-            <button onClick={()=>setAddingFolder(true)} style={{ background:EN_COLOR,border:"none",borderRadius:9,padding:"9px 20px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff" }}>+ New Folder</button>
+            <button onClick={()=>setAddingFolder(true)} style={{ background:NC,border:"none",borderRadius:9,padding:"9px 20px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff" }}>+ New Folder</button>
           </div>
-
           {addingFolder && (
-            <div style={{ background:"#fff",border:`1.5px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 20px",marginBottom:16,animation:"en-fade 0.3s ease both" }}>
+            <div style={{ background:"#fff",border:`1.5px solid ${NC}`,borderRadius:12,padding:"18px 20px",marginBottom:16,animation:"notes-fade 0.3s ease both" }}>
               <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
-                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`en-f-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${EN_LIGHT}`,background:"#FDFCF7",fontSize:14,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }} />
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:14,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }} />
               <div style={{ fontSize:11,color:"#B8A06A",marginTop:6 }}>Enter to save · Esc to cancel</div>
             </div>
           )}
-
-          {folders.length === 0 && !addingFolder ? (
+          {folders.length===0&&!addingFolder ? (
             <div style={{ textAlign:"center",padding:"50px 0",color:"#B8A06A" }}>
               <div style={{ fontSize:40,marginBottom:12 }}>📁</div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No folders yet</div>
@@ -7890,13 +7755,13 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
                 const count = notes.filter(n=>n.folder===f.id).length;
                 return (
                   <div key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");}}
-                    style={{ background:"#fff",border:`1px solid ${EN_LIGHT}88`,borderTop:`3px solid ${EN_COLOR}`,borderRadius:12,padding:"18px 18px",cursor:"pointer",transition:"all 0.2s",position:"relative" }}
-                    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${EN_COLOR}18`;}}
+                    style={{ background:"#fff",border:`1px solid ${NL}88`,borderTop:`3px solid ${NC}`,borderRadius:12,padding:"18px 18px",cursor:"pointer",transition:"all 0.2s",position:"relative" }}
+                    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${NC}18`;}}
                     onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
                     <div style={{ fontSize:28,marginBottom:8 }}>📁</div>
                     <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:4 }}>{f.name}</div>
                     <div style={{ fontSize:12,color:"#8C7A4A" }}>{count} {count===1?"note":"notes"}</div>
-                    <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete folder "${f.name}"?`)){setFolders(prev=>prev.filter(x=>x.id!==f.id));}}}
+                    <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete "${f.name}"?`)){setFolders(prev=>prev.filter(x=>x.id!==f.id));}}}
                       style={{ position:"absolute",top:10,right:10,background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#C8B88A",opacity:0,transition:"opacity 0.15s" }}
                       onMouseEnter={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.color="#E85D3F";}}
                       onMouseLeave={e=>e.currentTarget.style.opacity="0"}>✕</button>
@@ -7907,6 +7772,406 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Tracker App ─────────────────────────────────────────────────────────────
+
+function TrackerApp({ onBack, user, openAuth }) {
+  const TR = "#2BAE7E";
+  const TRL = "#6ED9B8";
+  const TRD = "#1A6B4A";
+
+  const [tab, setTab]     = useState("todo");  // todo | calendar | reminders | progress
+  const [tasks, setTasks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("tp_tracker_tasks")||"[]"); } catch { return []; }
+  });
+  const [newTask, setNewTask]       = useState("");
+  const [newDate, setNewDate]       = useState("");
+  const [newCourse, setNewCourse]   = useState("");
+  const [newPriority, setNewPriority] = useState("medium");
+  const [calMonth, setCalMonth]     = useState(new Date());
+  const [filter, setFilter]         = useState("all");
+
+  const courses = (() => { try { return JSON.parse(localStorage.getItem("tp_courses")||"[]"); } catch { return []; } })();
+
+  useEffect(() => {
+    try { localStorage.setItem("tp_tracker_tasks", JSON.stringify(tasks)); } catch {}
+  }, [tasks]);
+
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    const task = {
+      id: Date.now(),
+      title: newTask.trim(),
+      course: newCourse,
+      courseColor: courses.find(c=>c.name===newCourse)?.color || TR,
+      date: newDate,
+      priority: newPriority,
+      done: false,
+      reminder: false,
+      createdAt: new Date().toISOString(),
+    };
+    setTasks(prev => [task, ...prev]);
+    setNewTask(""); setNewDate(""); setNewCourse(""); setNewPriority("medium");
+  };
+
+  const toggleTask = (id) => setTasks(prev => prev.map(t => t.id===id ? {...t, done:!t.done} : t));
+  const deleteTask = (id) => setTasks(prev => prev.filter(t => t.id!==id));
+
+  const downloadICS = (task) => {
+    const now = new Date();
+    const dtStamp = now.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+    const dtStart = task.date ? task.date.replace(/-/g,"")+"T090000Z" : dtStamp;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Teachers Pet//EN",
+      "BEGIN:VEVENT",
+      `DTSTAMP:${dtStamp}`,
+      `DTSTART:${dtStart}`,
+      `SUMMARY:${task.title}${task.course ? ` (${task.course})` : ""}`,
+      `DESCRIPTION:Course: ${task.course||"General"} | Priority: ${task.priority}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const blob = new Blob([ics], { type:"text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${task.title.replace(/\s+/g,"-")}.ics`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredTasks = tasks.filter(t => {
+    if (filter==="all") return true;
+    if (filter==="active") return !t.done;
+    if (filter==="done") return t.done;
+    return t.course === filter;
+  });
+
+  // Calendar helpers
+  const getDaysInMonth = (d) => new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  const getFirstDay = (d) => new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+  const calDays = getDaysInMonth(calMonth);
+  const firstDay = getFirstDay(calMonth);
+
+  const tasksForDay = (day) => {
+    const dateStr = `${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    return tasks.filter(t => t.date===dateStr);
+  };
+
+  // Progress per course
+  const courseProgress = courses.map(c => {
+    const courseTasks = tasks.filter(t => t.course===c.name);
+    const done = courseTasks.filter(t => t.done).length;
+    return { ...c, total: courseTasks.length, done, pct: courseTasks.length ? Math.round(done/courseTasks.length*100) : 0 };
+  });
+
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#F4FFF9", minHeight:"100vh", color:"#1A1814" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing:border-box; }
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-thumb { background:${TRL}; border-radius:3px; }
+        @keyframes tr-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .tr-task:hover { background: #F0FFF8 !important; }
+        .tr-task { transition: background 0.15s; }
+        @media (max-width:768px) {
+          .tr-nav { padding: 0 14px !important; }
+          .tr-main { padding: 20px 14px !important; }
+          .tr-tabs { gap: 4px !important; }
+          .tr-tabs button { padding: 7px 10px !important; font-size: 11px !important; }
+          .tr-cal-grid { font-size: 11px !important; }
+          .tr-progress-grid { grid-template-columns: 1fr !important; }
+          .tr-add-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* Nav */}
+      <nav className="tr-nav" style={{ background:"#fff", borderBottom:`1px solid ${TRL}66`, position:"sticky", top:0, zIndex:100, height:62, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 24px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button onClick={onBack} style={{ background:"none", border:`1px solid ${TRL}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#3A8A6A", transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=TR;e.currentTarget.style.color=TR;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=TRL;e.currentTarget.style.color="#3A8A6A";}}>← Galaxy</button>
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${TR},${TRD})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>◷</div>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
+              <span style={{ color:TR }}>Teacher's Pet</span> Tracker
+            </span>
+          </div>
+        </div>
+
+        <div className="tr-tabs" style={{ display:"flex", background:"#F0FFF9", borderRadius:10, padding:3, gap:4 }}>
+          {[["✅","todo","To-Do"],["📅","calendar","Calendar"],["🔔","reminders","Reminders"],["📊","progress","Progress"]].map(([icon,t,label])=>(
+            <button key={t} onClick={()=>setTab(t)}
+              style={{ padding:"7px 16px", borderRadius:8, border:"none", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.18s", background:tab===t?TR:"transparent", color:tab===t?"#fff":"#3A8A6A", whiteSpace:"nowrap" }}>
+              {icon} {label}
+            </button>
+          ))}
+        </div>
+
+        <div>
+          {user ? (
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:"#1A1814" }}>{user.name}</span>
+              <div style={{ width:32, height:32, borderRadius:"50%", background:`linear-gradient(135deg,${TR},${TRD})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"#fff" }}>{user.name?.[0]||"U"}</div>
+            </div>
+          ) : (
+            <button onClick={()=>openAuth("signup")} style={{ background:TR, border:"none", borderRadius:8, padding:"8px 16px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>Sign Up Free</button>
+          )}
+        </div>
+      </nav>
+
+      <div className="tr-main" style={{ maxWidth:1000, margin:"0 auto", padding:"36px 28px", animation:"tr-fade 0.4s ease both" }}>
+
+        {/* ── TO-DO TAB ── */}
+        {tab==="todo" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:24 }}>
+              <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814" }}>To-Do List</h2>
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                {[["all","All"],["active","Active"],["done","Done"],...courses.map(c=>[c.name,c.name])].map(([val,label])=>(
+                  <button key={val} onClick={()=>setFilter(val)}
+                    style={{ padding:"6px 14px", borderRadius:20, border:`1.5px solid ${filter===val?TR:TRL}`, background:filter===val?TR:"#fff", color:filter===val?"#fff":"#3A8A6A", fontSize:11, fontWeight:700, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Add task */}
+            <div style={{ background:"#fff", border:`1.5px solid ${TRL}`, borderRadius:14, padding:"18px 20px", marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#3A8A6A", marginBottom:12 }}>+ Add Task</div>
+              <div className="tr-add-grid" style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:10, marginBottom:12 }}>
+                <input value={newTask} onChange={e=>setNewTask(e.target.value)} placeholder="Task or assignment…"
+                  onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")addTask();}}
+                  style={{ padding:"10px 12px", borderRadius:9, border:`1.5px solid ${TRL}`, background:"#F4FFF9", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.18s" }}
+                  onFocus={e=>e.target.style.borderColor=TR} onBlur={e=>e.target.style.borderColor=TRL} />
+                <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)}
+                  style={{ padding:"10px 12px", borderRadius:9, border:`1.5px solid ${TRL}`, background:"#F4FFF9", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif" }} />
+                <select value={newCourse} onChange={e=>setNewCourse(e.target.value)}
+                  style={{ padding:"10px 12px", borderRadius:9, border:`1.5px solid ${TRL}`, background:"#F4FFF9", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
+                  <option value="">No Course</option>
+                  {courses.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+                <select value={newPriority} onChange={e=>setNewPriority(e.target.value)}
+                  style={{ padding:"10px 12px", borderRadius:9, border:`1.5px solid ${TRL}`, background:"#F4FFF9", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
+                  <option value="high">🔴 High</option>
+                  <option value="medium">🔵 Medium</option>
+                  <option value="low">🟢 Low</option>
+                </select>
+              </div>
+              <button onClick={addTask} disabled={!newTask.trim()}
+                style={{ padding:"10px 24px", borderRadius:9, border:"none", background:newTask.trim()?TR:"#C8E8D8", color:newTask.trim()?"#fff":"#6AAA8A", fontSize:13, fontWeight:700, cursor:newTask.trim()?"pointer":"default", transition:"all 0.18s" }}>
+                Add Task
+              </button>
+            </div>
+
+            {/* Tasks */}
+            {filteredTasks.length===0 ? (
+              <div style={{ textAlign:"center", padding:"60px 0", color:TRL }}>
+                <div style={{ fontSize:48, marginBottom:14 }}>✅</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:TRD, marginBottom:8 }}>All clear!</div>
+                <p style={{ fontSize:14, lineHeight:1.7, color:"#3A8A6A" }}>No tasks here. Add one above or generate a study plan in Notes.</p>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {filteredTasks.map(t => {
+                  const pc = t.priority==="high"?"#E85D3F":t.priority==="medium"?TR:"#2BAE7E";
+                  return (
+                    <div key={t.id} className="tr-task" style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 18px", background:"#fff", border:`1px solid ${TRL}66`, borderRadius:12, borderLeft:`4px solid ${t.courseColor||TR}` }}>
+                      <div onClick={()=>toggleTask(t.id)}
+                        style={{ width:22, height:22, borderRadius:7, border:`2px solid ${t.done?TR:TRL}`, background:t.done?TR:"#fff", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.15s" }}>
+                        {t.done && <span style={{ color:"#fff", fontSize:11, fontWeight:900 }}>✓</span>}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:14, fontWeight:600, color:t.done?"#A8A59E":"#1A1814", textDecoration:t.done?"line-through":"none", lineHeight:1.4 }}>{t.title}</div>
+                        <div style={{ display:"flex", gap:8, marginTop:4, flexWrap:"wrap" }}>
+                          {t.course && <span style={{ fontSize:11, color:"#fff", background:t.courseColor||TR, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{t.course}</span>}
+                          {t.date && <span style={{ fontSize:11, color:"#3A8A6A", fontWeight:600 }}>📅 {new Date(t.date+"T12:00:00").toLocaleDateString([],{month:"short",day:"numeric"})}</span>}
+                          <span style={{ fontSize:11, color:pc, fontWeight:700, textTransform:"uppercase", letterSpacing:0.5 }}>{t.priority}</span>
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:6 }}>
+                        {t.date && (
+                          <button onClick={()=>downloadICS(t)} title="Add to Calendar"
+                            style={{ background:"none", border:`1px solid ${TRL}`, borderRadius:7, padding:"5px 10px", fontSize:11, fontWeight:700, cursor:"pointer", color:TR, transition:"all 0.15s", whiteSpace:"nowrap" }}
+                            onMouseEnter={e=>{e.currentTarget.style.background=TR;e.currentTarget.style.color="#fff";}}
+                            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=TR;}}>
+                            📅 Add to Calendar
+                          </button>
+                        )}
+                        <button onClick={()=>deleteTask(t.id)}
+                          style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, color:TRL, padding:"4px 6px", transition:"all 0.15s" }}
+                          onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"}
+                          onMouseLeave={e=>e.currentTarget.style.color=TRL}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CALENDAR TAB ── */}
+        {tab==="calendar" && (
+          <div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+              <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814" }}>
+                {calMonth.toLocaleDateString([],{month:"long",year:"numeric"})}
+              </h2>
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={()=>setCalMonth(new Date(calMonth.getFullYear(),calMonth.getMonth()-1))}
+                  style={{ padding:"8px 16px", borderRadius:9, border:`1px solid ${TRL}`, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:TR }}>← Prev</button>
+                <button onClick={()=>setCalMonth(new Date())}
+                  style={{ padding:"8px 16px", borderRadius:9, border:`1px solid ${TRL}`, background:TR, fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>Today</button>
+                <button onClick={()=>setCalMonth(new Date(calMonth.getFullYear(),calMonth.getMonth()+1))}
+                  style={{ padding:"8px 16px", borderRadius:9, border:`1px solid ${TRL}`, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:TR }}>Next →</button>
+              </div>
+            </div>
+
+            <div style={{ background:"#fff", border:`1px solid ${TRL}`, borderRadius:16, overflow:"hidden" }}>
+              {/* Day headers */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", background:`${TR}18`, borderBottom:`1px solid ${TRL}` }}>
+                {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>(
+                  <div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:11, fontWeight:700, color:TR, letterSpacing:1, textTransform:"uppercase" }}>{d}</div>
+                ))}
+              </div>
+              {/* Day cells */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)" }}>
+                {Array.from({length:firstDay}).map((_,i)=>(
+                  <div key={`e${i}`} style={{ minHeight:80, padding:"8px", borderRight:`1px solid ${TRL}33`, borderBottom:`1px solid ${TRL}33`, background:"#FAFAFA" }} />
+                ))}
+                {Array.from({length:calDays}).map((_,i)=>{
+                  const day = i+1;
+                  const dayTasks = tasksForDay(day);
+                  const isToday = new Date().getDate()===day && new Date().getMonth()===calMonth.getMonth() && new Date().getFullYear()===calMonth.getFullYear();
+                  return (
+                    <div key={day} style={{ minHeight:80, padding:"8px", borderRight:`1px solid ${TRL}33`, borderBottom:`1px solid ${TRL}33`, background:isToday?`${TR}08`:"#fff" }}>
+                      <div style={{ width:26, height:26, borderRadius:"50%", background:isToday?TR:"transparent", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:4 }}>
+                        <span style={{ fontSize:12, fontWeight:isToday?700:500, color:isToday?"#fff":"#1A1814" }}>{day}</span>
+                      </div>
+                      {dayTasks.slice(0,2).map(t=>(
+                        <div key={t.id} style={{ fontSize:10, fontWeight:600, color:"#fff", background:t.courseColor||TR, borderRadius:4, padding:"2px 6px", marginBottom:3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          {t.title}
+                        </div>
+                      ))}
+                      {dayTasks.length>2 && <div style={{ fontSize:10, color:TR, fontWeight:600 }}>+{dayTasks.length-2} more</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── REMINDERS TAB ── */}
+        {tab==="reminders" && (
+          <div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814", marginBottom:8 }}>Reminders</h2>
+            <p style={{ fontSize:14, color:"#3A8A6A", lineHeight:1.7, marginBottom:28 }}>Click "Add to Calendar" to add any task to your device calendar — works with Apple Calendar, Google Calendar, and Outlook.</p>
+
+            <div style={{ background:`${TR}08`, border:`1px solid ${TRL}`, borderRadius:14, padding:"18px 20px", marginBottom:24 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
+                <span style={{ fontSize:24 }}>📅</span>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#1A1814" }}>How device calendar works</div>
+              </div>
+              <p style={{ fontSize:13, color:"#3A8A6A", lineHeight:1.75, margin:0 }}>
+                Clicking "Add to Calendar" downloads an .ics file. Open it and your device will add it to Apple Calendar, Google Calendar, Outlook, or whatever calendar app you use — automatically. Works on iPhone, Android, Mac, and Windows.
+              </p>
+            </div>
+
+            {tasks.filter(t=>t.date).length===0 ? (
+              <div style={{ textAlign:"center", padding:"60px 0", color:TRL }}>
+                <div style={{ fontSize:48, marginBottom:14 }}>🔔</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:TRD, marginBottom:8 }}>No dated tasks yet</div>
+                <p style={{ fontSize:14, lineHeight:1.7, color:"#3A8A6A" }}>Add a due date to any task in the To-Do tab to see it here.</p>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {tasks.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(t=>{
+                  const isOverdue = !t.done && t.date && new Date(t.date) < new Date(new Date().toDateString());
+                  const pc = t.priority==="high"?"#E85D3F":t.priority==="medium"?TR:"#2BAE7E";
+                  return (
+                    <div key={t.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"16px 20px", background:"#fff", border:`1.5px solid ${isOverdue?"#FECACA":TRL}66`, borderRadius:12, borderLeft:`4px solid ${isOverdue?"#E85D3F":t.courseColor||TR}` }}>
+                      <div style={{ fontSize:28 }}>{isOverdue?"⚠️":"🔔"}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:14, fontWeight:700, color:t.done?"#A8A59E":"#1A1814", textDecoration:t.done?"line-through":"none" }}>{t.title}</div>
+                        <div style={{ display:"flex", gap:8, marginTop:4, flexWrap:"wrap" }}>
+                          {t.course && <span style={{ fontSize:11, color:"#fff", background:t.courseColor||TR, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{t.course}</span>}
+                          <span style={{ fontSize:12, fontWeight:700, color:isOverdue?"#E85D3F":TR }}>
+                            {isOverdue?"Overdue — ":""}{new Date(t.date+"T12:00:00").toLocaleDateString([],{weekday:"short",month:"long",day:"numeric"})}
+                          </span>
+                        </div>
+                      </div>
+                      <button onClick={()=>downloadICS(t)}
+                        style={{ padding:"8px 16px", borderRadius:9, border:`1.5px solid ${TR}`, background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:TR, transition:"all 0.18s", whiteSpace:"nowrap" }}
+                        onMouseEnter={e=>{e.currentTarget.style.background=TR;e.currentTarget.style.color="#fff";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=TR;}}>
+                        📅 Add to Calendar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── PROGRESS TAB ── */}
+        {tab==="progress" && (
+          <div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814", marginBottom:24 }}>Progress</h2>
+
+            {/* Overall stats */}
+            <div className="tr-progress-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:32 }}>
+              {[
+                { icon:"✅", label:"Tasks Done",   value:`${tasks.filter(t=>t.done).length}/${tasks.length}`, color:TR },
+                { icon:"🔥", label:"On Track",     value:`${courseProgress.filter(c=>c.pct>=50).length}/${courses.length} courses`, color:"#D4A830" },
+                { icon:"⚠️", label:"Overdue",      value:tasks.filter(t=>!t.done&&t.date&&new Date(t.date)<new Date(new Date().toDateString())).length, color:"#E85D3F" },
+              ].map(s=>(
+                <div key={s.label} style={{ background:"#fff", border:`1px solid ${TRL}`, borderRadius:14, padding:"20px 18px", textAlign:"center" }}>
+                  <div style={{ fontSize:28, marginBottom:10 }}>{s.icon}</div>
+                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:s.color, marginBottom:4 }}>{s.value}</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#3A8A6A", textTransform:"uppercase", letterSpacing:1 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Per-course progress */}
+            {courseProgress.length===0 ? (
+              <div style={{ textAlign:"center", padding:"40px 0", color:TRL }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>📚</div>
+                <p style={{ fontSize:14, color:"#3A8A6A" }}>Create courses in Notes and generate study plans to see progress here.</p>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                {courseProgress.map(c=>(
+                  <div key={c.id} style={{ background:"#fff", border:`1px solid ${TRL}`, borderRadius:14, padding:"20px 22px" }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ width:12, height:12, borderRadius:"50%", background:c.color }} />
+                        <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#1A1814" }}>{c.name}</span>
+                      </div>
+                      <span style={{ fontSize:13, fontWeight:700, color:c.color }}>{c.pct}% complete</span>
+                    </div>
+                    <div style={{ height:10, background:`${c.color}18`, borderRadius:5, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${c.pct}%`, background:c.color, borderRadius:5, transition:"width 0.6s ease" }} />
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, fontSize:11, color:"#3A8A6A", fontWeight:600 }}>
+                      <span>{c.done} tasks done</span>
+                      <span>{c.total-c.done} remaining</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -8547,11 +8812,11 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 // ─── Landing / Welcome Page ───────────────────────────────────────────────────
 const LANDING_APPS = [
   { icon:"✦", name:"Flash Cards",        color:"#C8B8FF", glow:"#9B7FFF", desc:"Build decks from any text, paste notes for instant AI-generated cards, and study with 9 smart modes including spaced repetition and focus mode." },
-  { icon:"⬡", name:"EchoNote",           color:"#F0D080", glow:"#D4A830", desc:"Record any lecture or class. AI transcribes every word in real time, then automatically turns it into flashcards, notes, and quizzes." },
+  { icon:"⬡", name:"Notes",           color:"#F0D080", glow:"#D4A830", desc:"Write, record, and organize your notes. Upload any material — AI instantly builds comprehensive study notes, flashcards, and summaries." },
   { icon:"✺", name:"Brain Map",          color:"#F0A8C0", glow:"#D4607A", desc:"Build visual mind maps that connect ideas. Attach flashcard decks directly to any node so studying and understanding happen in the same place." },
   { icon:"≋", name:"Text Simplifier",    color:"#6ED9B8", glow:"#2BAE7E", desc:"Paste any complex text or drop a YouTube link. Choose how much detail you want and get a clean, organized version you can actually understand." },
   { icon:"◎", name:"Ace Academy",        color:"#7FD4C8", glow:"#4FBFB0", desc:"A complete AI school from elementary through college. Adaptive lessons, cinematic story-based learning, and personalized paths for every learner." },
-  { icon:"◈", name:"Studio",             color:"#F8C898", glow:"#E89040", desc:"Learn real-world skills school never taught you — music production, car mechanics, investing, creative arts — with AI coaching every step." },
+  { icon:"◷", name:"Tracker",          color:"#6ED9B8", glow:"#2BAE7E", desc:"Your all-in-one planner, calendar, to-do list, and reminder system. Syncs with your courses and adds due dates directly to your device calendar." },
   { icon:"⟡", name:"Universe",           color:"#D0A8F8", glow:"#A060E8", desc:"Replace scattered web searches with one verified AI knowledge hub. Deep dive any topic, check facts, and watch how all knowledge connects." },
   { icon:"◉", name:"Earth's Record",     color:"#88D8A8", glow:"#40B870", desc:"A tamper-resistant global archive of human history, culture, and knowledge — every perspective, every civilization, preserved forever." },
   { icon:"◇", name:"Career Compass",     color:"#F8E070", glow:"#D4B820", desc:"Map your path from where you are to where you want to be. Discover careers, close skill gaps, and track every certification you're working toward." },
@@ -8592,7 +8857,7 @@ function LandingPage({ onEnter, openAuth }) {
   ];
 
   const QUIZ_RESULTS = {
-    student:  { headline:"You need Flash Cards + EchoNote", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","EchoNote","Brain Map"] },
+    student:  { headline:"You need Flash Cards + Notes", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","Notes","Brain Map"] },
     career:   { headline:"You need Career Compass + Studio", desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
     curious:  { headline:"You need Universe + Earth\'s Record", desc:"Dive into any topic, explore the world\'s knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth\'s Record","Text Simplifier"] },
     adhd:     { headline:"You need Flow + Study Buddy", desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
@@ -9265,7 +9530,7 @@ ${prof.strongSubjects?.length ? `MASTERED: ${prof.strongSubjects.join(", ")}` : 
 
 ═══ THE 13 TEACHER'S PET APPS YOU CAN HELP WITH ═══
 Flash Cards — build decks, study with spaced repetition, Quick Build from text
-EchoNote — record lectures, auto-transcribe, generate study material
+Notes — record lectures, auto-transcribe, generate study material
 Brain Map — visual mind maps connected to flashcard decks
 Text Simplifier — simplify text or summarize YouTube videos
 Ace Academy — full AI school, adaptive courses
@@ -9389,7 +9654,8 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} aiContext={aiContext} />}{floatingWidget}</>;
-  if (currentApp === 'echonote')   return <>{<EchoNoteApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} decks={(() => { try { const s = localStorage.getItem("tp_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; } })()} />}{floatingWidget}</>;
+  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
     if (planet) return <>{<AppLanding planet={planet} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
@@ -9503,7 +9769,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
             {[
               { icon:"📇", label:"Decks",   value:(() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })(), color:"#C8B8FF" },
               { icon:"🧠", label:"Maps",    value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })(), color:"#F0A8C0" },
-              { icon:"📝", label:"Notes",   value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_echonotes")||"[]").length; } catch { return 0; } })(), color:"#F0D080" },
+              { icon:"📝", label:"Notes",   value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_notess")||"[]").length; } catch { return 0; } })(), color:"#F0D080" },
               { icon:"📖", label:"Journal", value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_journal")||"[]").length; } catch { return 0; } })(), color:"#6ED9B8" },
             ].map(s => (
               <div key={s.label} className="gx-stat" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"22px 22px", position:"relative", overflow:"hidden" }}>
@@ -9541,7 +9807,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
 
         {/* App categories */}
         {[
-          { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","echonote","brainmap","simplifier"] },
+          { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","notes","brainmap","simplifier","tracker"] },
           { label:"AI Assistants",     emoji:"🤖", color:"#4898E8", ids:["assistant","studybuddy"] },
           { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal","mentalhealth","flow","careercompass"] },
           { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["academy","studio","universe","earthrecord"] },
