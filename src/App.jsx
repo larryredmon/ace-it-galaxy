@@ -1467,6 +1467,18 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
         .fc-btn:hover { opacity: 0.85; transform: translateY(-1px); }
         .fc-nav-link { transition: color 0.18s; }
         .fc-nav-link:hover { color: #1A1814 !important; }
+        @media (max-width: 768px) {
+          .fc-nav-links { display: none !important; }
+          .fc-nav-inner { padding: 0 16px !important; }
+          .fc-main { padding: 24px 16px !important; }
+          .fc-grid { grid-template-columns: 1fr !important; }
+          .fc-study-grid { grid-template-columns: 1fr 1fr !important; }
+          .fc-editor-split { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .fc-study-grid { grid-template-columns: 1fr !important; }
+          .fc-nav-user-name { display: none !important; }
+        }
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
@@ -1490,7 +1502,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
           </div>
 
           {/* Nav links */}
-          <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+          <div className="fc-nav-links" style={{ display: "flex", gap: 28, alignItems: "center" }}>
             {[["Home", "home"], ["My Library", "library"], ["🌐 Public Library", "public"]].map(([label, v]) => (
               <span key={v} className="fc-nav-link" onClick={() => setView(v)} style={{ fontSize: 14, fontWeight: 500, color: view === v ? "#1A1814" : "#8C8880", cursor: "pointer", borderBottom: view === v ? "2px solid #1A1814" : "2px solid transparent", paddingBottom: 2, whiteSpace:"nowrap" }}>{label}</span>
             ))}
@@ -4490,10 +4502,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0C0B18", minHeight: "100vh", color: "#F7F6F2" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      <style>{`* { box-sizing: border-box; } ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; } @keyframes bm-pop { from { opacity:0; transform:scale(0.9) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } } @keyframes bm-fade { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } } .bm-card { transition: all 0.22s !important; } .bm-card:hover { transform: translateY(-4px) !important; background: rgba(255,255,255,0.07) !important; }`}</style>
+      <style>{`* { box-sizing: border-box; } ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; } @keyframes bm-pop { from { opacity:0; transform:scale(0.9) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } } @keyframes bm-fade { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } } .bm-card { transition: all 0.22s !important; } .bm-card:hover { transform: translateY(-4px) !important; background: rgba(255,255,255,0.07) !important; } @media (max-width: 768px) { .bm-nav-tabs { display: none !important; } .bm-nav { padding: 0 16px !important; } .bm-main { padding: 28px 16px 60px !important; } .bm-hero { padding: 48px 20px 40px !important; } .bm-cards-grid { grid-template-columns: 1fr !important; } .bm-stats-grid { grid-template-columns: 1fr 1fr !important; } .bm-feats-grid { grid-template-columns: 1fr 1fr !important; } } @media (max-width: 480px) { .bm-feats-grid { grid-template-columns: 1fr !important; } }`}</style>
 
       {/* Nav */}
-      <nav style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
+      <nav className="bm-nav" style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
@@ -4504,7 +4516,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</span>
             </div>
           </div>
-          <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
+          <div className="bm-nav-tabs" style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
             {[["home","Home"],["maps","All Maps"],["explore","🌐 Explore"]].map(([v,label]) => (
               <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.13)" : "transparent", color: view === v ? "#F7F6F2" : "rgba(255,255,255,0.4)", transition: "all 0.18s", whiteSpace:"nowrap" }}>{label}</button>
             ))}
@@ -4529,7 +4541,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
       {view === "home" && (
         <div>
           {/* Hero */}
-          <div style={{ padding: "80px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+          <div className="bm-hero" style={{ padding: "80px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(240,168,192,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(240,168,192,0.1)", border: "1px solid rgba(240,168,192,0.22)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#F0A8C0", marginBottom: 24 }}>
               ✺ Visual Mind Mapping
@@ -4550,7 +4562,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
 
           {/* Stats strip */}
           <div style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+            <div className="bm-stats-grid" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
               {[
                 [maps.length.toString(), "Brain Maps"],
                 [maps.reduce((a, m) => a + m.nodes.length, 0).toString(), "Total Nodes"],
@@ -4574,7 +4586,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               </div>
               <button onClick={() => setView("maps")} style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#F0A8C0", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>View all →</button>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
               {maps.map(m => (
                 <div key={m.id} className="bm-card" onClick={() => openMap(m)}
                   style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
@@ -4600,7 +4612,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "60px 24px" }}>
             <div style={{ maxWidth: 1100, margin: "0 auto" }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#F7F6F2", textAlign: "center", marginBottom: 40 }}>Built for deep understanding</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+              <div className="bm-feats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                 {[
                   { emoji: "🧠", title: "Infinite Canvas",       desc: "Pan and zoom freely across an infinite workspace. Your map grows as your ideas do." },
                   { emoji: "🎨", title: "Color Branches",        desc: "12 branch colors to organize topics visually. Change any node instantly from the panel." },
@@ -4631,7 +4643,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             </div>
             <button onClick={() => setShowNewMap(true)} style={{ background: "#F0A8C0", border: "none", borderRadius: 9, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>+ New Map</button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {maps.map(m => (
               <div key={m.id} className="bm-card"
                 style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
@@ -4686,7 +4698,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>Be the first to share a map! Go to All Maps and click 🔒 Private to make it public.</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
               {maps.filter(m => m.isPublic).map(m => {
                 const avg = m.ratings?.length ? m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length : 0;
                 const userRating = user ? m.ratings?.find(r=>r.userId===user.uid)?.stars||0 : 0;
@@ -5005,6 +5017,18 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         .ts-fade { animation: ts-fade 0.4s ease both; }
         .ts-chip:hover { border-color: #1A1814 !important; color: #1A1814 !important; }
         .yt-detail:hover { border-color: #2BAE7E !important; transform: translateY(-2px); }
+        @media (max-width: 768px) {
+          .ts-nav-name { display: none !important; }
+          .ts-main { padding: 20px 14px !important; }
+          .ts-tools-grid { flex-wrap: wrap !important; }
+          .ts-levels-grid { flex-wrap: wrap !important; gap: 6px !important; }
+          .ts-split { grid-template-columns: 1fr !important; }
+          .ts-modes-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .ts-tools-grid { grid-template-columns: 1fr !important; }
+          .ts-split { gap: 12px !important; }
+        }
       `}</style>
 
       {/* ── Nav ── */}
@@ -5025,8 +5049,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             </button>
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</span>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, #1A1814, ${accentColor})`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#F7F6F2" }}>{user.avatar}</div>
+                <span className="ts-nav-name" style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</span>
               </div>
             ) : (
               <>
@@ -5072,7 +5095,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       </div>
 
       {/* ── Main workspace ── */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
+      <div className="ts-main" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
 
         {/* ══ TEXT MODE ══ */}
         {inputMode === "text" && (
@@ -5081,7 +5104,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 28, alignItems: "flex-start" }}>
               <div style={{ flex: 1, minWidth: 260 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>What should I do?</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div className="ts-tools-grid" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {TS_TOOLS.map(t => (
                     <button key={t.id} onClick={() => setActiveTool(t.id)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
                       <span>{t.emoji}</span> {t.label}
@@ -5091,7 +5114,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
               </div>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Reading Level</div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="ts-levels-grid" style={{ display: "flex", gap: 8 }}>
                   {READING_LEVELS.map(l => (
                     <button key={l.id} onClick={() => setLevel(l.id)} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
                       <span style={{ fontSize: 16 }}>{l.emoji}</span>
@@ -5103,7 +5126,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             </div>
 
             {/* Input / Output panels */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+            <div className="ts-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
               <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #ECEAE4", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 <div style={{ padding: "14px 18px", borderBottom: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E" }}>Input Text</span>
@@ -5221,7 +5244,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             {/* Detail Level selector */}
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 14 }}>How much do you want from this video?</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div className="ts-modes-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 {YT_DETAIL_LEVELS.map(dl => (
                   <div key={dl.id} className="yt-detail" onClick={() => setYtDetailLevel(dl.id)}
                     style={{ background: "#fff", border: `2px solid ${ytDetailLevel === dl.id ? accentColor : "#ECEAE4"}`, borderRadius: 14, padding: "20px 20px", cursor: "pointer", transition: "all 0.2s", position: "relative", overflow: "hidden" }}>
@@ -6047,7 +6070,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
     const grouped = groupConvos(filtered);
 
     return (
-      <div style={{ display: "flex", height: "calc(100vh - 64px)", overflow: "hidden" }}>
+      <div className="pa-layout" style={{ display: "flex", height: "calc(100vh - 64px)", overflow: "hidden" }}>
         <style>{`
           @keyframes pa-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
           @keyframes pa-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -6274,7 +6297,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Study Planner</h2>
         <p style={{ fontSize: 14, color: "#6A7888" }}>Check off tasks, add new ones, and build your weekly rhythm.</p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+      <div className="pa-planner-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
         {planDays.map((day, di) => {
           const allDone  = day.done.every(Boolean);
           const someDone = day.done.some(Boolean);
@@ -6406,7 +6429,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628" }}>My Progress</h2>
       </div>
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 }}>
+      <div className="pa-progress-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 }}>
         {[
           { val: messages.length, label: "AI Conversations", icon: "💬" },
           { val: `${goals.filter(g => g.done).length}/${goals.length}`, label: "Goals Completed", icon: "🎯" },
@@ -6589,12 +6612,34 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F4F8FF", minHeight: "100vh", color: "#1A1814" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet" />
-      <style>{`*{box-sizing:border-box} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:#D8ECFF;border-radius:3px}`}</style>
+      <style>{`
+        *{box-sizing:border-box}
+        ::-webkit-scrollbar{width:5px}
+        ::-webkit-scrollbar-thumb{background:#D8ECFF;border-radius:3px}
+        @media (max-width: 768px) {
+          .pa-layout { flex-direction: column !important; }
+          .pa-sidebar { width: 100% !important; min-width: unset !important; max-width: unset !important; height: auto !important; border-right: none !important; border-bottom: 1px solid #E4EEF8 !important; }
+          .pa-sidebar-list { max-height: 120px !important; overflow-y: auto !important; }
+          .pa-main { flex: 1 !important; min-height: 60vh !important; }
+          .pa-nav { padding: 0 14px !important; }
+          .pa-nav-tabs { gap: 4px !important; }
+          .pa-nav-tabs button { padding: 6px 10px !important; font-size: 11px !important; }
+          .pa-nav-name { display: none !important; }
+          .pa-goals-grid { grid-template-columns: 1fr !important; }
+          .pa-prefs-grid { grid-template-columns: 1fr !important; }
+          .pa-progress-grid { grid-template-columns: 1fr 1fr !important; }
+          .pa-planner-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .pa-progress-grid { grid-template-columns: 1fr !important; }
+          .pa-nav-tabs { display: none !important; }
+        }
+      `}</style>
 
       <PASidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} view={view} setView={setView} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} avatar={avatar} />
 
       {/* Top nav */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #E4EEF8", position: "sticky", top: 0, zIndex: 100, height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px" }}>
+      <nav className="pa-nav" style={{ background: "#fff", borderBottom: "1px solid #E4EEF8", position: "sticky", top: 0, zIndex: 100, height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "#5A6878", fontSize: 16, transition: "all 0.15s", lineHeight: 1 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
@@ -6609,7 +6654,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         </div>
 
         {/* View tabs */}
-        <div style={{ display: "flex", background: "#F0F6FF", borderRadius: 9, padding: 3, gap: 2 }}>
+        <div className="pa-nav-tabs" style={{ display: "flex", background: "#F0F6FF", borderRadius: 9, padding: 3, gap: 2 }}>
           {[["⌂","home"],["💬","chat"],["📅","planner"],["🎯","goals"],["📊","progress"],["🧑","avatar"],["⚙","prefs"]].map(([icon, v]) => (
             <button key={v} onClick={() => setView(v)} title={VIEW_TITLES[v]}
               onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
@@ -6623,7 +6668,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#3A4858" }}>{user.name}</span>
+              <span className="pa-nav-name" style={{ fontSize: 12, fontWeight: 700, color: "#3A4858" }}>{user.name}</span>
               <div style={{ width: 34, height: 34, borderRadius: "50%", overflow:"hidden", background: avatar?.skinTone ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", border:`2px solid ${PA_COLOR}` }}>
                 {avatar?.skinTone ? <AvatarHead avatar={avatar} size={34}/> : user.avatar}
               </div>
@@ -6638,7 +6683,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       </nav>
 
       {/* Main content */}
-      <main style={{ overflowY: view === "chat" ? "hidden" : "auto" }}>
+      <main className="pa-main" style={{ overflowY: view === "chat" ? "hidden" : "auto" }}>
         {view === "home"     && HomeView()}
         {view === "chat"     && ChatView()}
         {view === "planner"  && PlannerView()}
@@ -7266,6 +7311,18 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
         .en-card:hover { transform:translateY(-3px) !important; box-shadow:0 10px 28px rgba(212,168,48,0.12) !important; }
         .en-card { transition:transform 0.2s, box-shadow 0.2s; }
         .en-fmt-btn:hover { background:${EN_LIGHT}44 !important; }
+        @media (max-width: 768px) {
+          .en-nav-tabs { display: none !important; }
+          .en-editor-split { grid-template-columns: 1fr !important; }
+          .en-upload-grid { grid-template-columns: 1fr !important; }
+          .en-main { padding: 20px 14px !important; }
+          .en-quick-grid { grid-template-columns: 1fr 1fr !important; }
+          .en-folders-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .en-quick-grid { grid-template-columns: 1fr !important; }
+          .en-folders-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ── SIDEBAR ── */}
@@ -7365,7 +7422,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
             </span>
           </div>
         </div>
-        <div style={{ display:"flex",gap:6 }}>
+        <div className="en-nav-tabs" style={{ display:"flex",gap:6 }}>
           {[["📝","home","Notes"],["🤖","upload","AI Upload"],["📁","folders","Folders"]].map(([icon,v,label])=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ padding:"7px 14px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.18s",background:view===v?v==="upload"?"#4F6EF7":EN_COLOR:"transparent",color:view===v?"#fff":"#8C7A4A" }}
@@ -7401,7 +7458,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
           </div>
 
           {/* Quick actions */}
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
+          <div className="en-quick-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
             {[
               { icon:"🤖", label:"AI from Upload",  sub:"Upload notes, textbook, image → AI builds your notes", action:()=>setView("upload"), color:"#4F6EF7", highlight:true },
               { icon:"✍",  label:"New Note",        sub:"Write or type notes yourself", action:()=>newNote(), color:EN_COLOR },
@@ -7524,7 +7581,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
             onFocus={e=>e.target.style.borderColor=EN_COLOR} onBlur={e=>e.target.style.borderColor=EN_LIGHT} />
 
           {/* Editor area — split: textarea left, preview right */}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
+          <div className="en-editor-split" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
             {/* Textarea */}
             <div>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Write</div>
@@ -7757,7 +7814,7 @@ Format everything with clear headings using # and ##. Use bullet points, bold ke
           )}
 
           {/* Optional fields */}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
+          <div className="en-upload-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
             <div>
               <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Topic / Title <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
               <input value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} placeholder="e.g. Chapter 5 — Cell Biology"
@@ -8031,6 +8088,17 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         .j-entry-card { transition: transform 0.2s, box-shadow 0.2s; }
         .j-mood-btn:hover { transform:scale(1.1) !important; }
         .j-mood-btn { transition: transform 0.15s; }
+        @media (max-width: 768px) {
+          .j-layout { flex-direction: column !important; }
+          .j-sidebar { width: 100% !important; min-width: unset !important; max-width: unset !important; position: relative !important; border-right: none !important; border-bottom: 1px solid rgba(176,96,208,0.15) !important; padding: 16px !important; }
+          .j-main { padding: 20px 14px !important; }
+          .j-prompts-grid { grid-template-columns: 1fr !important; }
+          .j-entries-grid { grid-template-columns: 1fr !important; }
+          .j-cats-grid { grid-template-columns: 1fr 1fr !important; }
+          .j-moods-grid { flex-wrap: wrap !important; gap: 8px !important; }
+          .j-nav-name { display: none !important; }
+          .j-stats-strip { grid-template-columns: 1fr 1fr !important; }
+        }
       `}</style>
 
       {/* ── SIDEBAR ── */}
@@ -8173,7 +8241,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         </div>
         {user ? (
           <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }} onClick={() => setSidebarOpen(true)}>
-            <span style={{ fontSize:12, fontWeight:700, color:"#5A3A6A" }}>{user.name}</span>
+            <span className="j-nav-name" style={{ fontSize:12, fontWeight:700, color:"#5A3A6A" }}>{user.name}</span>
             <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"#fff" }}>{user.name?.[0]||"U"}</div>
           </div>
         ) : (
@@ -8183,7 +8251,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
       {/* ── HOME VIEW ── */}
       {view === "home" && (
-        <div style={{ maxWidth:900, margin:"0 auto", padding:"48px 28px", animation:"j-fade 0.5s ease both" }}>
+        <div className="j-main" style={{ maxWidth:900, margin:"0 auto", padding:"48px 28px", animation:"j-fade 0.5s ease both" }}>
 
           {/* Welcome header */}
           <div style={{ marginBottom:40 }}>
@@ -8200,7 +8268,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           </div>
 
           {/* Stats bar */}
-          <div style={{ display:"flex", gap:12, marginBottom:36 }}>
+          <div className="j-stats-strip" style={{ display:"flex", gap:12, marginBottom:36 }}>
             {[
               { label:"Entries",    value:entries.length,       icon:"📝" },
               { label:"Day Streak", value:`${streakDays}d`,     icon:"🔥" },
@@ -8216,7 +8284,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           </div>
 
           {/* Quick write + today's prompt */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:36 }}>
+          <div className="j-prompts-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:36 }}>
             <div onClick={() => setView("write")} style={{ background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, borderRadius:16, padding:"28px 26px", cursor:"pointer", transition:"all 0.2s", color:"#fff" }}
               onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 14px 40px ${J_COLOR}44`;}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
@@ -8286,7 +8354,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
       {/* ── WRITE VIEW ── */}
       {view === "write" && (
-        <div style={{ maxWidth:800, margin:"0 auto", padding:"40px 28px", animation:"j-fade 0.4s ease both" }}>
+        <div className="j-main" style={{ maxWidth:800, margin:"0 auto", padding:"40px 28px", animation:"j-fade 0.4s ease both" }}>
 
           {/* Writing prompt tooltip */}
           {showPrompt && (
@@ -8414,7 +8482,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
       {/* ── BROWSE VIEW ── */}
       {view === "browse" && (
-        <div style={{ maxWidth:900, margin:"0 auto", padding:"40px 28px", animation:"j-fade 0.4s ease both" }}>
+        <div className="j-main" style={{ maxWidth:900, margin:"0 auto", padding:"40px 28px", animation:"j-fade 0.4s ease both" }}>
           <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814", marginBottom:20 }}>All Entries</h2>
 
           {/* Search + filter */}
@@ -8427,7 +8495,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                 onBlur={e=>e.target.style.borderColor=J_LIGHT}
                 onKeyDown={e => { if (e.key===" ") e.stopPropagation(); }} />
             </div>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            <div className="j-cats-grid" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {J_CATEGORIES.map(c => (
                 <button key={c.id} onClick={() => setFilterCat(c.id)}
                   style={{ padding:"8px 14px", borderRadius:20, border:`1.5px solid ${filterCat===c.id ? J_COLOR : J_LIGHT}`, background: filterCat===c.id ? J_COLOR : "#fff", color: filterCat===c.id ? "#fff" : "#8C6A9A", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
@@ -8546,6 +8614,34 @@ function LandingPage({ onEnter, openAuth }) {
         .lp-app-card { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
         .lp-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(245,200,66,0.5) !important; }
         .lp-cta-btn { transition: all 0.2s ease; }
+        /* ── MOBILE ── */
+        @media (max-width: 768px) {
+          .lp-nav-links { display: none !important; }
+          .lp-nav { padding: 0 20px !important; }
+          .lp-hero { padding: 100px 20px 60px !important; }
+          .lp-hero h1 { font-size: 38px !important; letter-spacing: -1px !important; }
+          .lp-hero p { font-size: 15px !important; }
+          .lp-cta-row { flex-direction: column !important; align-items: stretch !important; }
+          .lp-cta-row button { width: 100% !important; }
+          .lp-stats { flex-wrap: wrap !important; }
+          .lp-stats > div { min-width: 40% !important; flex: 1 !important; padding: 16px 12px !important; }
+          .lp-section { padding: 60px 20px !important; }
+          .lp-quiz-grid { grid-template-columns: 1fr !important; }
+          .lp-compare { overflow-x: auto !important; }
+          .lp-compare table { min-width: 560px !important; }
+          .lp-footer { flex-direction: column !important; text-align: center !important; gap: 16px !important; padding: 24px 20px !important; }
+          .lp-sticky { padding: 12px 20px !important; }
+          .lp-sticky-actions { flex-direction: column !important; gap: 8px !important; }
+          .lp-how-grid { grid-template-columns: 1fr !important; }
+          .lp-feat-grid { grid-template-columns: 1fr 1fr !important; }
+          .lp-apps-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .lp-stats > div { min-width: 45% !important; }
+          .lp-feat-grid { grid-template-columns: 1fr !important; }
+          .lp-hero h1 { font-size: 32px !important; }
+          .lp-nav-auth .lp-login-btn { display: none !important; }
+        }
         .lp-nav-link { opacity: 0.55; transition: opacity 0.18s; cursor: pointer; }
         .lp-nav-link:hover { opacity: 1; }
         .lp-step-card:hover { transform: translateY(-4px) !important; }
@@ -8553,12 +8649,12 @@ function LandingPage({ onEnter, openAuth }) {
       `}</style>
 
       {/* ── STICKY NAV ── */}
-      <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
+      <nav className="lp-nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
           <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Teacher's Pet</span>
         </div>
-        <div style={{ display:"flex", gap:32, alignItems:"center" }}>
+        <div className="lp-nav-links" style={{ display:"flex", gap:32, alignItems:"center" }}>
           {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
             <span key={l} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2" }}
               onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>
@@ -8566,8 +8662,8 @@ function LandingPage({ onEnter, openAuth }) {
             </span>
           ))}
         </div>
-        <div style={{ display:"flex", gap:10 }}>
-          <button onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.18s" }}
+        <div className="lp-nav-auth" style={{ display:"flex", gap:10 }}>
+          <button className="lp-login-btn" onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.18s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>Log In</button>
           <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>
@@ -8577,7 +8673,7 @@ function LandingPage({ onEnter, openAuth }) {
       </nav>
 
       {/* ── HERO ── */}
-      <section ref={heroRef} style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
+      <section ref={heroRef} className="lp-hero" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", width:800, height:800, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.07) 0%, transparent 70%)", top:"-15%", left:"-10%", pointerEvents:"none" }} />
         <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"0%", right:"-5%", pointerEvents:"none" }} />
 
@@ -8614,7 +8710,7 @@ function LandingPage({ onEnter, openAuth }) {
 
         {/* CTAs */}
         <div className="lp-fade" style={{ animationDelay:"0.28s", display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginBottom:52 }}>
-          <div style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
+          <div className="lp-cta-row" style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
             <div style={{ position:"relative" }}>
               <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.35, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
               <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"17px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
@@ -8639,7 +8735,7 @@ function LandingPage({ onEnter, openAuth }) {
         </div>
 
         {/* Stats */}
-        <div className="lp-fade" style={{ animationDelay:"0.35s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
+        <div className="lp-fade lp-stats" style={{ animationDelay:"0.35s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
           {[["15+","Learning Apps"],["AI","Powered"],["Free","To Start"],["∞","Curiosity"]].map(([value, label], i, arr) => (
             <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", marginBottom:4 }}>{value}</div>
@@ -8650,16 +8746,16 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="howitworks" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+      <section id="howitworks" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth:1000, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:64 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>How It Works</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Study smarter in 3 steps.</h2>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Study smarter in 3 steps.</h2>
             <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, maxWidth:480, margin:"0 auto" }}>No learning curve. Just better results from day one.</p>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
+          <div className="lp-how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
             {[
               { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Teacher's Pet reads it all." },
               { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
@@ -8679,15 +8775,15 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" style={{ padding:"80px 48px", background:"rgba(255,255,255,0.01)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+      <section id="features" className="lp-section" style={{ padding:"80px 48px", background:"rgba(255,255,255,0.01)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth:1000, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:56 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Features</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Everything a serious student needs.</h2>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Everything a serious student needs.</h2>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14 }}>
+          <div className="lp-feat-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14 }}>
             {[
               { icon:"🎙", title:"Record & Transcribe", desc:"Record any lecture. AI transcribes every word and turns it into structured notes instantly." },
               { icon:"📇", title:"AI Flashcards", desc:"Paste any content and AI generates a full flashcard deck. Study with 9 modes including spaced repetition." },
@@ -8709,7 +8805,7 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── ALL APPS ── */}
-      <section id="apps" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+      <section id="apps" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:64 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
@@ -8750,7 +8846,7 @@ function LandingPage({ onEnter, openAuth }) {
           )}
 
           {quizStep === 1 && (
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, textAlign:"left" }}>
+            <div className="lp-quiz-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, textAlign:"left" }}>
               {QUIZ_OPTIONS.map(opt => (
                 <div key={opt.id} onClick={() => { setQuizAnswer(opt.id); setQuizStep(2); }}
                   style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"22px 22px", cursor:"pointer", transition:"all 0.2s" }}
@@ -8798,7 +8894,7 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── COMPARISON TABLE ── */}
-      <section id="compare" style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
+      <section id="compare" className="lp-section" style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:56 }}>
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
@@ -8806,7 +8902,7 @@ function LandingPage({ onEnter, openAuth }) {
           <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
           <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
         </div>
-        <div style={{ overflowX:"auto" }}>
+        <div className="lp-compare" style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"separate", borderSpacing:0, fontSize:14 }}>
             <thead>
               <tr>
@@ -8887,7 +8983,7 @@ function LandingPage({ onEnter, openAuth }) {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+      <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
           <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Teacher's Pet</span>
@@ -8904,7 +9000,7 @@ function LandingPage({ onEnter, openAuth }) {
 
       {/* ── STICKY CTA BAR ── */}
       {showSticky && (
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
+        <div className="lp-sticky" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <span style={{ fontSize:20 }}>🍎</span>
             <div>
@@ -9314,6 +9410,22 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         .gx-card:hover { transform: translateY(-5px) !important; }
         .gx-stat:hover { border-color: rgba(245,200,66,0.3) !important; background: rgba(245,200,66,0.04) !important; }
         .gx-stat { transition: all 0.2s; }
+        @media (max-width: 768px) {
+          .gx-nav-search { display: none !important; }
+          .gx-nav { padding: 0 16px !important; }
+          .gx-main { padding: 28px 16px 80px !important; }
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .gx-cats-grid { grid-template-columns: 1fr !important; }
+          .gx-recent { flex-wrap: wrap !important; }
+          .gx-welcome h1 { font-size: 26px !important; }
+          .gx-cta { padding: 32px 24px !important; }
+          .gx-cta-btns { flex-direction: column !important; }
+          .gx-cta-btns button { width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; }
+          .gx-nav-brand span { display: none !important; }
+        }
       `}</style>
 
       {/* Background atmosphere */}
@@ -9321,7 +9433,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 60% 50% at 85% 80%, rgba(245,200,66,0.05) 0%, transparent 70%)" }} />
 
       {/* ── NAV ── */}
-      <nav style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(6,4,14,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
+      <nav className="gx-nav" style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(6,4,14,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, transition:"all 0.18s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(245,200,66,0.4)";e.currentTarget.style.background="rgba(245,200,66,0.06)";}}
@@ -9338,7 +9450,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         </div>
 
         {/* Search */}
-        <div style={{ position:"relative", width:260 }}>
+        <div className="gx-nav-search" style={{ position:"relative", width:260 }}>
           <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"rgba(255,255,255,0.25)",pointerEvents:"none" }}>🔍</span>
           <input placeholder="Search apps…"
             onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
@@ -9369,10 +9481,10 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
       </nav>
 
       {/* ── MAIN ── */}
-      <div style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
+      <div className="gx-main" style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
 
         {/* Welcome */}
-        <div style={{ marginBottom:44, animation:"fadeUp 0.5s ease both" }}>
+        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both" }}>
           <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(245,200,66,0.08)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:20,padding:"5px 14px",marginBottom:16 }}>
             <span style={{ width:6,height:6,borderRadius:"50%",background:"#F5C842",animation:"gx-glow 2s infinite",display:"inline-block" }} />
             <span style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#F5C842" }}>{user ? "Your Dashboard" : "Welcome"}</span>
@@ -9387,7 +9499,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
 
         {/* Stats row */}
         {user && (
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:44,animation:"fadeUp 0.5s 0.06s ease both" }}>
+          <div className="gx-stats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:44,animation:"fadeUp 0.5s 0.06s ease both" }}>
             {[
               { icon:"📇", label:"Decks",   value:(() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })(), color:"#C8B8FF" },
               { icon:"🧠", label:"Maps",    value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })(), color:"#F0A8C0" },
@@ -9408,7 +9520,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         {recentApps.length > 0 && (
           <div style={{ marginBottom:44,animation:"fadeUp 0.5s 0.1s ease both" }}>
             <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:"rgba(255,255,255,0.3)",marginBottom:14 }}>Continue where you left off</div>
-            <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+            <div className="gx-recent" style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
               {recentApps.map(appId => {
                 const p = PLANETS.find(x=>x.appId===appId);
                 if (!p) return null;
@@ -9446,7 +9558,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
               </div>
 
               {/* Cards */}
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14 }}>
+              <div className="gx-cats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14 }}>
                 {catPlanets.map(p => (
                   <div key={p.id} className="gx-card" onClick={()=>launchApp(p.appId)}
                     style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${p.color}22`, borderRadius:18, padding:"24px 22px 20px", position:"relative", overflow:"hidden", boxShadow:`0 4px 24px rgba(0,0,0,0.2)` }}>
@@ -9496,7 +9608,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
             <div style={{ fontSize:52,marginBottom:16,position:"relative" }}>🍎</div>
             <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,34px)",fontWeight:900,color:"#F7F6F2",marginBottom:10,position:"relative" }}>Sign up free — 30 seconds.</h2>
             <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,marginBottom:32,maxWidth:420,margin:"0 auto 32px",position:"relative" }}>Save your notes, decks, and progress. Access from any device. Free while we launch.</p>
-            <div style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative" }}>
+            <div className="gx-cta-btns" style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative" }}>
               <div style={{ position:"relative" }}>
                 <div style={{ position:"absolute",inset:-3,borderRadius:12,background:"linear-gradient(135deg,#F5C842,#E8A82A)",opacity:0.3,filter:"blur(8px)" }} />
                 <button onClick={()=>openAuth("signup")} style={{ position:"relative",background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:10,padding:"14px 32px",fontSize:15,fontWeight:800,cursor:"pointer",color:"#1A1814",fontFamily:"'Montserrat',sans-serif",boxShadow:"0 6px 28px rgba(245,200,66,0.4)" }}>
