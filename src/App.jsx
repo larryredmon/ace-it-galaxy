@@ -1831,10 +1831,14 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [qbText, setQbText]         = useState("");
   const [qbGenerating, setQbGenerating] = useState(false);
   const [qbGenerated, setQbGenerated]   = useState(false);
-  const [qbSubMode, setQbSubMode]       = useState("ai");      // "ai" | "manual"
-  const [qbDocOpen, setQbDocOpen]       = useState(false);     // word-doc editor visible
-  const [qbAiCards, setQbAiCards]       = useState([]);        // AI-generated cards for review
-  const [qbAiStep, setQbAiStep]         = useState("input");   // "input" | "generating" | "review"
+  const [qbSubMode, setQbSubMode]       = useState("ai");
+  const [qbDocOpen, setQbDocOpen]       = useState(false);
+  const [qbAiCards, setQbAiCards]       = useState([]);
+  const [qbAiStep, setQbAiStep]         = useState("input"); // input | generating | review | organize
+  const [qbChunkProgress, setQbChunkProgress] = useState({ current: 0, total: 0, step: "" });
+  const [qbDuplicates, setQbDuplicates] = useState(new Set()); // set of card ids that are duplicates
+  const [qbOrgChoice, setQbOrgChoice]   = useState(null); // null | "one" | "organized"
+  const [qbTopics, setQbTopics]         = useState([]); // [{topic, folderName, cards:[]}]
   // Manual / post-AI highlight editor
   const [pendingTerm, setPendingTerm]   = useState("");
   const [pendingDef, setPendingDef]     = useState("");
@@ -1910,57 +1914,158 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const handleQuickBuild = async () => {
     if (!qbText.trim()) return;
     setQbAiStep("generating");
+    setQbChunkProgress({ current: 0, total: 0, step: "Analyzing content…" });
+
     try {
-      const res = await fetch("/api/claude", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1500,
-          messages: [{
-            role: "user",
-            content: `You are an expert flashcard creator. Read the study material below and create high-quality flashcards. Each card should have a clear, concise TERM (the concept, word, or question) and an accurate, complete DEFINITION (the explanation or answer).
+      // ── CHUNK the text into ~2500 word pieces ──────────────────────────────
+      const words = qbText.trim().split(/\s+/);
+      const CHUNK_SIZE = 2500;
+      const chunks = [];
+      for (let i = 0; i < words.length; i += CHUNK_SIZE) {
+        chunks.push(words.slice(i, i + CHUNK_SIZE).join(" "));
+      }
+      const totalChunks = chunks.length;
+      setQbChunkProgress({ current: 0, total: totalChunks, step: `Processing ${totalChunks} section${totalChunks > 1 ? "s" : ""}…` });
 
-Rules:
-- Extract the most important concepts, definitions, and key facts
-- Terms should be specific and testable (a word, phrase, or question)
-- Definitions should be clear and complete but concise
-- Do not create duplicate cards
-- Create between 5 and 15 cards depending on the content density
-- Respond ONLY with valid JSON, no explanation, no markdown, no code fences
+      // ── FIRST PASS: get topic categories from full content summary ─────────
+      let topicCategories = ["General"];
+      if (totalChunks > 1) {
+        setQbChunkProgress(p => ({ ...p, step: "Identifying topics and categories…" }));
+        const summaryChunk = words.slice(0, 1500).join(" ");
+        const catRes = await fetch("/api/claude", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 400,
+            messages: [{ role: "user", content: `Read this study material excerpt and identify 3-8 main topic categories/chapters for organizing flashcards. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2","Topic 3"]}\n\nMaterial:\n${summaryChunk}` }],
+          }),
+        });
+        const catData = await catRes.json();
+        const catText = catData.content?.find(b => b.type === "text")?.text || "";
+        const catClean = catText.replace(/```json|```/g, "").trim();
+        try { topicCategories = JSON.parse(catClean).topics || ["General"]; } catch {}
+      }
 
-Format: {"cards":[{"term":"...","definition":"..."},...]}
+      // ── PROCESS each chunk ─────────────────────────────────────────────────
+      const allCards = [];
+      const allTopicData = {};
+      topicCategories.forEach(t => { allTopicData[t] = []; });
+      allTopicData["General"] = allTopicData["General"] || [];
 
-Study Material:
-${qbText}`,
-          }],
-        }),
-      });
-      const data = await res.json();
-      const raw  = data.content?.find(b => b.type === "text")?.text || "";
-      const clean = raw.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      const generated = (parsed.cards || []).map((c, i) => ({ id: Date.now() + i, term: c.term || "", definition: c.definition || "" }));
-      setQbAiCards(generated);
+      for (let ci = 0; ci < chunks.length; ci++) {
+        setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
+        const chunk = chunks[ci];
+        const res = await fetch("/api/claude", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 4000,
+            messages: [{ role: "user", content: `You are an expert flashcard creator for a study guide. Extract EVERY testable piece of information from this text as flashcards.
+
+RULES:
+- Create a card for EVERY definition, term, concept, fact, process, date, name, formula, rule, or principle
+- Do NOT skip anything that could appear on a test or exam
+- Do NOT create cards for structural text ("This chapter covers...", "See figure...", "As mentioned...")
+- Terms should be specific and clear
+- Definitions should be accurate and complete
+- Assign each card to one of these topic categories: ${topicCategories.join(", ")}
+- There is NO maximum card limit — create as many cards as the content requires
+- Respond ONLY with valid JSON, no markdown, no explanation
+
+Format: {"cards":[{"term":"...","definition":"...","topic":"category name"},...]}
+
+Study Material (Section ${ci + 1}/${totalChunks}):
+${chunk}` }],
+          }),
+        });
+        const data = await res.json();
+        const raw = data.content?.find(b => b.type === "text")?.text || "";
+        const clean = raw.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+        const chunkCards = (parsed.cards || []).map((c, i) => ({
+          id: Date.now() + ci * 10000 + i,
+          term: c.term || "",
+          definition: c.definition || "",
+          topic: c.topic || topicCategories[0] || "General",
+          chunkIndex: ci,
+          isDuplicate: false,
+        }));
+        allCards.push(...chunkCards);
+      }
+
+      // ── DUPLICATE DETECTION ───────────────────────────────────────────────
+      setQbChunkProgress(p => ({ ...p, step: "Detecting duplicate concepts…" }));
+      const duplicateIds = new Set();
+      const termsSeen = new Map(); // normalized term → first card id
+      for (const card of allCards) {
+        const normalized = card.term.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+        if (termsSeen.has(normalized)) {
+          // Mark both the original and the duplicate
+          duplicateIds.add(card.id);
+          duplicateIds.add(termsSeen.get(normalized));
+        } else {
+          termsSeen.set(normalized, card.id);
+        }
+        // Also check if first 5 words match any existing
+        const shortKey = normalized.split(" ").slice(0, 5).join(" ");
+        if (shortKey.length > 10) {
+          if (termsSeen.has(shortKey)) {
+            duplicateIds.add(card.id);
+          } else {
+            termsSeen.set(shortKey, card.id);
+          }
+        }
+      }
+
+      // ── ORGANIZE by topic ─────────────────────────────────────────────────
+      const topicData = {};
+      for (const card of allCards) {
+        const t = card.topic || "General";
+        if (!topicData[t]) topicData[t] = [];
+        topicData[t].push(card);
+      }
+      const topicsList = Object.entries(topicData).map(([topic, cards]) => ({ topic, folderName: topic, cards }));
+
+      setQbAiCards(allCards);
+      setQbDuplicates(duplicateIds);
+      setQbTopics(topicsList);
       setQbAiStep("review");
-      if (!title.trim()) setTitle("Quick Build Deck");
-    } catch {
-      // Fallback: simple extraction
-      const sentences = qbText.split(/[.!\n]+/).map(s => s.trim()).filter(s => s.length > 20).slice(0, 10);
-      const generated = sentences.map((s, i) => ({ id: Date.now() + i, term: s.split(" ").slice(0, 5).join(" "), definition: s }));
+      if (!title.trim()) {
+        const firstLine = qbText.split("\n").find(l => l.trim().length > 5)?.trim().slice(0, 50) || "Quick Build Deck";
+        setTitle(firstLine);
+      }
+    } catch (err) {
+      console.error(err);
+      // Fallback
+      const sentences = qbText.split(/[.!\n]+/).map(s => s.trim()).filter(s => s.length > 20).slice(0, 20);
+      const generated = sentences.map((s, i) => ({ id: Date.now() + i, term: s.split(" ").slice(0, 6).join(" "), definition: s, topic: "General", isDuplicate: false }));
       setQbAiCards(generated);
+      setQbDuplicates(new Set());
       setQbAiStep("review");
       if (!title.trim()) setTitle("Quick Build Deck");
     }
   };
 
-  const confirmAiCards = (keepCards) => {
+  const confirmAiCards = (keepCards, orgChoice) => {
     if (keepCards) {
-      setCards(qbAiCards.map((c, i) => ({ ...c, id: Date.now() + i })));
-      setActiveCard(qbAiCards[0]?.id || Date.now());
+      const finalCards = qbAiCards.map((c, i) => ({ ...c, id: Date.now() + i }));
+      setCards(finalCards);
+      setActiveCard(finalCards[0]?.id || Date.now());
+
+      // If organized, create subfolders per topic
+      if (orgChoice === "organized" && qbTopics.length > 0 && setUserFolders) {
+        const deckFolderName = title.trim() || "Quick Build Deck";
+        const deckFolder = { id: `qb-${Date.now()}`, name: deckFolderName, parentId: null };
+        const subFolders = qbTopics.map((t, i) => ({
+          id: `qb-sub-${Date.now()}-${i}`,
+          name: t.folderName,
+          parentId: deckFolder.id,
+        }));
+        setUserFolders(prev => [...prev, deckFolder, ...subFolders]);
+      }
     }
-    setQbAiStep("input");
-    setQbAiCards([]);
+    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]);
+    setQbChunkProgress({ current: 0, total: 0, step: "" }); setQbOrgChoice(null);
     setQbGenerated(true);
     setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
   };
@@ -2253,10 +2358,22 @@ Rules:
                 {qbAiStep === "generating" && (
                   <div className="qb-fade" style={{ background:"#fff", border:"1.5px solid #F5C84244", borderRadius:16, padding:"40px 28px", textAlign:"center" }}>
                     <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid #F0EDE8", borderTopColor:"#F5C842", animation:"qbSpin 0.8s linear infinite", margin:"0 auto 18px" }} />
-                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814", marginBottom:8 }}>Reading your material…</div>
-                    <div style={{ fontSize:13, color:"#8C8880", marginBottom:20 }}>AI is understanding your content and building accurate flashcards</div>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814", marginBottom:8 }}>
+                      {qbChunkProgress.step || "Reading your material…"}
+                    </div>
+                    {qbChunkProgress.total > 1 && (
+                      <div style={{ marginBottom:16 }}>
+                        <div style={{ fontSize:13, color:"#8C8880", marginBottom:10 }}>
+                          Section {qbChunkProgress.current} of {qbChunkProgress.total}
+                        </div>
+                        <div style={{ height:6, background:"#F0EDE8", borderRadius:3, overflow:"hidden", maxWidth:280, margin:"0 auto" }}>
+                          <div style={{ height:"100%", width:`${qbChunkProgress.total > 0 ? (qbChunkProgress.current/qbChunkProgress.total)*100 : 0}%`, background:"#F5C842", borderRadius:3, transition:"width 0.4s ease" }} />
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ fontSize:13, color:"#8C8880", marginBottom:16 }}>AI is reading every section and extracting all testable content</div>
                     <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
-                      {["Understanding context","Identifying key concepts","Building Q&A pairs","Checking accuracy"].map((s,i) => (
+                      {["Reading all content","Extracting every concept","Building complete deck","Detecting duplicates"].map((s,i) => (
                         <div key={i} style={{ fontSize:11, color:"#F5C842", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
                           <span style={{ width:6, height:6, borderRadius:"50%", background:"#F5C842", display:"inline-block" }} />{s}
                         </div>
@@ -2267,46 +2384,130 @@ Rules:
 
                 {qbAiStep === "review" && qbAiCards.length > 0 && (
                   <div className="qb-fade">
-                    <div style={{ background:"#F0FDF4", border:"1.5px solid #2BAE7E44", borderRadius:14, padding:"16px 20px", marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
+                    {/* Summary banner */}
+                    <div style={{ background:"#F0FDF4", border:"1.5px solid #2BAE7E44", borderRadius:14, padding:"16px 20px", marginBottom:16, display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
                       <div style={{ fontSize:28 }}>✅</div>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#1A1814" }}>{qbAiCards.length} cards generated</div>
-                        <div style={{ fontSize:12, color:"#6B6860", marginTop:2 }}>Review below. Delete any you don't want, then add to your deck.</div>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
+                          {qbAiCards.length} cards generated
+                        </div>
+                        <div style={{ fontSize:12, color:"#6B6860", marginTop:3 }}>
+                          {qbTopics.length > 1 ? `Across ${qbTopics.length} topics` : ""}
+                          {qbDuplicates.size > 0 ? ` · ${Math.floor(qbDuplicates.size/2)} possible duplicate concept${Math.floor(qbDuplicates.size/2)>1?"s":""} flagged` : ""}
+                        </div>
                       </div>
+                      {qbDuplicates.size > 0 && (
+                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"#FFF8E8", border:"1px solid #F5C84244", borderRadius:8, padding:"6px 12px" }}>
+                          <span style={{ fontSize:14 }}>⚠️</span>
+                          <span style={{ fontSize:11, fontWeight:700, color:"#D4A830" }}>Duplicates highlighted</span>
+                        </div>
+                      )}
                     </div>
 
-                    <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18, maxHeight:400, overflowY:"auto" }}>
-                      {qbAiCards.map((c, i) => (
-                        <div key={c.id} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"14px 16px", display:"flex", gap:12, alignItems:"flex-start" }}>
-                          <div style={{ width:24, height:24, borderRadius:6, background:"#1A1814", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
-                            <span style={{ fontSize:10, fontWeight:800, color:"#F7F6F2" }}>{i+1}</span>
+                    {/* Organization choice — only show if multiple topics */}
+                    {qbTopics.length > 1 && !qbOrgChoice && (
+                      <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"18px 20px", marginBottom:16 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814", marginBottom:6 }}>How would you like to organize this deck?</div>
+                        <div style={{ fontSize:12, color:"#8C8880", marginBottom:14 }}>AI found {qbTopics.length} topics in your material and can organize them into subfolders automatically.</div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                          <div onClick={()=>setQbOrgChoice("one")}
+                            style={{ padding:"14px 16px", borderRadius:12, border:"2px solid #ECEAE4", cursor:"pointer", transition:"all 0.18s", background:"#fff" }}
+                            onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";}}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";}}>
+                            <div style={{ fontSize:22, marginBottom:8 }}>📦</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>One big deck</div>
+                            <div style={{ fontSize:11, color:"#8C8880" }}>All {qbAiCards.length} cards in a single deck</div>
                           </div>
-                          <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:4 }}>{c.term}</div>
-                            <div style={{ fontSize:12, color:"#6B6860", lineHeight:1.55 }}>{c.definition}</div>
+                          <div onClick={()=>setQbOrgChoice("organized")}
+                            style={{ padding:"14px 16px", borderRadius:12, border:"2px solid #ECEAE4", cursor:"pointer", transition:"all 0.18s", background:"#fff" }}
+                            onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";}}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";}}>
+                            <div style={{ fontSize:22, marginBottom:8 }}>📂</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>Organized by topic</div>
+                            <div style={{ fontSize:11, color:"#8C8880" }}>{qbTopics.length} subfolders created automatically</div>
                           </div>
-                          <button onClick={() => setQbAiCards(cs => cs.filter(x => x.id !== c.id))}
-                            style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:6, width:26, height:26, cursor:"pointer", fontSize:11, color:"#A8A59E", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
-                            onMouseEnter={e=>{e.currentTarget.style.borderColor="#E85D3F";e.currentTarget.style.color="#E85D3F";}}
-                            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#A8A59E";}}>✕</button>
                         </div>
-                      ))}
+                        {qbOrgChoice === "organized" && (
+                          <div style={{ marginTop:12, padding:"10px 14px", background:"#F7F6F2", borderRadius:8 }}>
+                            <div style={{ fontSize:11, fontWeight:700, color:"#5A5752", marginBottom:6 }}>Folders that will be created:</div>
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                              {qbTopics.map(t => (
+                                <span key={t.topic} style={{ fontSize:11, color:"#1A1814", background:"#fff", border:"1px solid #ECEAE4", borderRadius:20, padding:"3px 10px", fontWeight:600 }}>
+                                  📁 {t.folderName} ({t.cards.length})
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Topic breakdown if organized */}
+                    {qbOrgChoice === "organized" && qbTopics.length > 1 && (
+                      <div style={{ marginBottom:14 }}>
+                        <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E", marginBottom:10 }}>Topic Folders</div>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                          {qbTopics.map(t => (
+                            <div key={t.topic} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", background:"#F7F6F2", border:"1px solid #ECEAE4", borderRadius:20 }}>
+                              <span style={{ fontSize:12 }}>📁</span>
+                              <span style={{ fontSize:12, fontWeight:700, color:"#1A1814" }}>{t.folderName}</span>
+                              <span style={{ fontSize:11, color:"#8C8880" }}>({t.cards.length})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cards list */}
+                    <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E", marginBottom:10 }}>
+                      Review Cards {qbDuplicates.size > 0 && <span style={{ color:"#D4A830", marginLeft:8 }}>⚠️ Yellow = possible duplicate</span>}
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:18, maxHeight:480, overflowY:"auto" }}>
+                      {qbAiCards.map((c, i) => {
+                        const isDup = qbDuplicates.has(c.id);
+                        return (
+                          <div key={c.id} style={{ background: isDup ? "#FFFBEB" : "#fff", border:`1.5px solid ${isDup ? "#F5C84288" : "#ECEAE4"}`, borderRadius:12, padding:"12px 14px", display:"flex", gap:10, alignItems:"flex-start", position:"relative" }}>
+                            {/* Duplicate badge */}
+                            {isDup && (
+                              <div style={{ position:"absolute", top:-8, right:32, display:"flex", gap:-4 }}>
+                                <div style={{ width:14, height:18, borderRadius:3, background:"#F5C842", border:"2px solid #fff", transform:"translateX(3px)" }} />
+                                <div style={{ width:14, height:18, borderRadius:3, background:"#E8A82A", border:"2px solid #fff" }} />
+                              </div>
+                            )}
+                            <div style={{ width:22, height:22, borderRadius:5, background: isDup ? "#F5C842" : "#1A1814", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
+                              <span style={{ fontSize:9, fontWeight:800, color: isDup ? "#1A1814" : "#F7F6F2" }}>{i+1}</span>
+                            </div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              {c.topic && c.topic !== "General" && (
+                                <div style={{ fontSize:10, fontWeight:700, color:"#8C8880", letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>{c.topic}</div>
+                              )}
+                              <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>{c.term}</div>
+                              <div style={{ fontSize:12, color:"#6B6860", lineHeight:1.55 }}>{c.definition}</div>
+                              {isDup && <div style={{ fontSize:10, color:"#D4A830", fontWeight:600, marginTop:4 }}>⚠️ Similar concept may already exist in deck</div>}
+                            </div>
+                            <button onClick={() => { setQbAiCards(cs => cs.filter(x => x.id !== c.id)); setQbDuplicates(ds => { const n = new Set(ds); n.delete(c.id); return n; }); }}
+                              style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:10, color:"#A8A59E", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
+                              onMouseEnter={e=>{e.currentTarget.style.borderColor="#E85D3F";e.currentTarget.style.color="#E85D3F";}}
+                              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#A8A59E";}}>✕</button>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-                      <button onClick={() => confirmAiCards(true)}
+                      <button onClick={() => confirmAiCards(true, qbOrgChoice || "one")}
                         style={{ padding:"13px", borderRadius:10, border:"none", background:"#1A1814", color:"#F7F6F2", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}
                         onMouseEnter={e=>e.currentTarget.style.opacity="0.85"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-                        ✓ Use These Cards →
+                        ✓ Use All {qbAiCards.length} Cards →
                       </button>
                       <button onClick={confirmAiAndOpenDoc}
                         style={{ padding:"13px", borderRadius:10, border:"2px solid #1A1814", background:"transparent", color:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"all 0.2s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background="#1A1814";e.currentTarget.style.color="#F7F6F2";}}
                         onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#1A1814";}}>
-                        ✏️ Keep + Add More Manually
+                        ✏️ Keep + Add More
                       </button>
                     </div>
-                    <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); }}
+                    <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbOrgChoice(null); }}
                       style={{ width:"100%", padding:"10px", borderRadius:10, border:"1px solid #ECEAE4", background:"transparent", color:"#8C8880", fontSize:12, cursor:"pointer" }}>
                       ← Start Over
                     </button>
@@ -6952,7 +7153,7 @@ function NotesApp({ onBack, user, openAuth }) {
   const NL = "#F0D080";
   const ND = "#8B6914";
 
-  const [view, setView]           = useState("home"); // home | editor | folders | upload
+  const [view, setView]           = useState("home"); // home | editor | upload | folders
   const [notes, setNotes]         = useState(() => {
     try { return JSON.parse(localStorage.getItem("tp_notes")||"[]"); } catch { return []; }
   });
@@ -6961,55 +7162,51 @@ function NotesApp({ onBack, user, openAuth }) {
   });
   const [activeNote, setActiveNote] = useState(null);
   const [filterFolder, setFilterFolder] = useState("all");
-  const [searchQ, setSearchQ]       = useState("");
+  const [searchQ, setSearchQ]     = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Editor state
-  const [title, setTitle]           = useState("");
-  const [content, setContent]       = useState("");
-  const [folder, setFolder]         = useState("");
+  const [title, setTitle]         = useState("");
+  const [content, setContent]     = useState("");
+  const [folder, setFolder]       = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [aiLoading, setAiLoading]   = useState(false);
-  const [aiResult, setAiResult]     = useState("");
-  const [aiMode, setAiMode]         = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult]   = useState("");
+  const [aiMode, setAiMode]       = useState("");
   const [showAiPanel, setShowAiPanel] = useState(false);
-  const [saveAnim, setSaveAnim]     = useState(false);
-  const [newFolder, setNewFolder]   = useState("");
+  const [saveAnim, setSaveAnim]   = useState(false);
+  const [newFolder, setNewFolder] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
-  const [showCourseToast, setShowCourseToast] = useState(false);
 
   // Upload state
-  const [uploadText, setUploadText] = useState("");
+  const [uploadText, setUploadText]   = useState("");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadObjectives, setUploadObjectives] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-  const [uploadTab, setUploadTab]   = useState("file");
-  const [uploadUrl, setUploadUrl]   = useState("");
-  const [isDragging, setIsDragging] = useState(false);
+  const [uploadTab, setUploadTab]     = useState("file");
+  const [uploadUrl, setUploadUrl]     = useState("");
+  const [isDragging, setIsDragging]   = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput]   = useState("");
+  const [chatInput, setChatInput]     = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const [showChat, setShowChat]     = useState(false);
-  const fileInputRef                = useRef(null);
-  const recognitionRef              = useRef(null);
-  const editorRef                   = useRef(null);
+  const [showChat, setShowChat]       = useState(false);
 
-  useEffect(() => {
-    try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {}
-  }, [notes]);
-  useEffect(() => {
-    try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {}
-  }, [folders]);
+  const fileInputRef  = useRef(null);
+  const recognitionRef = useRef(null);
+  const editorRef     = useRef(null);
 
-  const newNote = (preTitle = "", preContent = "") => {
+  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} }, [notes]);
+  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {} }, [folders]);
+
+  const newNote = (preTitle="", preContent="") => {
     setTitle(preTitle); setContent(preContent); setFolder("");
     setAiResult(""); setShowAiPanel(false); setShowChat(false);
     setChatMessages([]); setActiveNote(null); setView("editor");
   };
 
   const openNote = (note) => {
-    setTitle(note.title); setContent(note.content); setFolder(note.folder||"");
+    setTitle(note.title); setContent(note.content||""); setFolder(note.folder||"");
     setAiResult(""); setShowAiPanel(false); setShowChat(false);
     setChatMessages([]); setActiveNote(note); setView("editor");
   };
@@ -7025,19 +7222,17 @@ function NotesApp({ onBack, user, openAuth }) {
       createdAt: activeNote?.createdAt || new Date().toISOString(),
       aiGenerated: activeNote?.aiGenerated || false,
     };
-    setNotes(prev => activeNote
-      ? prev.map(n => n.id === activeNote.id ? noteData : n)
-      : [noteData, ...prev]);
+    setNotes(prev => activeNote ? prev.map(n => n.id===activeNote.id ? noteData : n) : [noteData, ...prev]);
     setSaveAnim(true);
     setTimeout(() => { setSaveAnim(false); setView("home"); }, 800);
   };
 
-  const deleteNote = (id) => { setNotes(prev => prev.filter(n => n.id !== id)); setView("home"); };
+  const deleteNote = (id) => { setNotes(prev => prev.filter(n => n.id!==id)); setView("home"); };
 
   // Recording
   const toggleRecording = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Your browser doesn't support speech recognition. Try Chrome."); return; }
+    if (!SR) { alert("Your browser doesn't support recording. Try Chrome."); return; }
     if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); return; }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
@@ -7057,27 +7252,24 @@ function NotesApp({ onBack, user, openAuth }) {
     rec.start(); recognitionRef.current = rec; setIsRecording(true);
   };
 
-  // Format
-  const EN_FORMATS = [
-    { id:"h1", label:"H1", icon:"H₁" }, { id:"h2", label:"H2", icon:"H₂" },
-    { id:"bold", label:"Bold", icon:"B" }, { id:"italic", label:"Italic", icon:"I" },
-    { id:"ul", label:"List", icon:"≡" }, { id:"ol", label:"Ordered", icon:"1." },
-  ];
+  // Format toolbar
   const applyFormat = (type) => {
-    const textarea = editorRef.current; if (!textarea) return;
-    const start = textarea.selectionStart, end = textarea.selectionEnd;
-    const selected = content.slice(start, end);
+    const ta = editorRef.current;
+    if (!ta) return;
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = content.slice(s, e);
     let nc = content;
-    if (type==="bold")   nc = content.slice(0,start)+`**${selected||"bold text"}**`+content.slice(end);
-    if (type==="italic") nc = content.slice(0,start)+`_${selected||"italic text"}_`+content.slice(end);
-    if (type==="h1")     nc = content.slice(0,start)+`\n# ${selected||"Heading 1"}\n`+content.slice(end);
-    if (type==="h2")     nc = content.slice(0,start)+`\n## ${selected||"Heading 2"}\n`+content.slice(end);
-    if (type==="ul")     nc = content.slice(0,start)+`\n- ${selected||"list item"}\n`+content.slice(end);
-    if (type==="ol")     nc = content.slice(0,start)+`\n1. ${selected||"list item"}\n`+content.slice(end);
-    setContent(nc); setTimeout(() => textarea.focus(), 30);
+    if (type==="bold")   nc = content.slice(0,s) + `**${sel||"bold text"}**` + content.slice(e);
+    if (type==="italic") nc = content.slice(0,s) + `_${sel||"italic text"}_` + content.slice(e);
+    if (type==="h1")     nc = content.slice(0,s) + `\n# ${sel||"Heading"}\n` + content.slice(e);
+    if (type==="h2")     nc = content.slice(0,s) + `\n## ${sel||"Heading"}\n` + content.slice(e);
+    if (type==="ul")     nc = content.slice(0,s) + `\n- ${sel||"item"}\n` + content.slice(e);
+    if (type==="ol")     nc = content.slice(0,s) + `\n1. ${sel||"item"}\n` + content.slice(e);
+    setContent(nc);
+    setTimeout(() => ta.focus(), 30);
   };
 
-  // Render markdown
+  // Markdown preview
   const renderContent = (text) => {
     if (!text) return null;
     return text.split("\n").map((line, i) => {
@@ -7100,18 +7292,18 @@ function NotesApp({ onBack, user, openAuth }) {
     if (!content.trim() || aiLoading) return;
     setAiMode(mode); setAiLoading(true); setShowAiPanel(true); setAiResult("");
     const prompts = {
-      summarize:  `Summarize these notes into a clear, scannable study guide with a 3-5 sentence overview and key takeaways as bullet points:\n\n${content}`,
-      improve:    `Rewrite and improve these notes — fix grammar, add structure with proper headings, make them excellent study notes:\n\n${content}`,
-      flashcards: `Create 10-15 high-quality flashcard Q&A pairs from these notes. Format as:\nQ: [question]\nA: [answer]\n\nNotes:\n${content}`,
-      quiz:       `Create a 10-question multiple choice quiz from these notes with answer explanations. Format as:\n1. [Question]\na) b) c) d)\nAnswer: [letter] - [explanation]\n\nNotes:\n${content}`,
-      objectives: `Based on these notes, identify: Learning Objectives, Key Skills, Common Exam Topics, and Areas Needing Extra Attention:\n\n${content}`,
-      explain:    `Explain the main concepts in these notes simply, using real-world examples and analogies. Make it click:\n\n${content}`,
+      summarize:  `Summarize these notes into a clear, scannable study guide with key takeaways:\n\n${content}`,
+      improve:    `Rewrite and improve these notes — better structure, clearer language, proper headings, more comprehensive:\n\n${content}`,
+      flashcards: `Create 10-15 high-quality flashcard Q&A pairs from these notes. Format:\nQ: [question]\nA: [answer]\n\n${content}`,
+      quiz:       `Create a 10-question multiple choice quiz from these notes. Format:\n1. [Question]\na) b) c) d)\nAnswer: [letter] - [explanation]\n\n${content}`,
+      objectives: `Based on these notes, identify:\n1. Learning Objectives\n2. Key Skills\n3. Likely Exam Topics\n4. Areas needing extra attention\n\n${content}`,
+      explain:    `Explain the main concepts in these notes in plain, simple language with real-world examples. Make it click.\n\n${content}`,
     };
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:2000,
-          system:"You are an expert study coach helping students master their notes.",
+          system:"You are an expert study coach helping students master their course material.",
           messages:[{role:"user", content:prompts[mode]}] }),
       });
       const data = await res.json();
@@ -7120,39 +7312,47 @@ function NotesApp({ onBack, user, openAuth }) {
     setAiLoading(false);
   };
 
-  // Chat with notes
-  const sendChatMessage = async (msg) => {
-    const text = msg || chatInput;
-    if (!text.trim() || chatLoading || !content.trim()) return;
-    const userMsg = { role:"user", content:text };
-    setChatMessages(prev => [...prev, userMsg]);
-    setChatInput("");
-    setChatLoading(true);
+  // AI note generation from upload
+  const generateSmartNotes = async (text, imageData, titleHint, objectives) => {
+    if ((!text?.trim() && !imageData) || uploadLoading) return;
+    setUploadLoading(true);
+    setUploadProgress("Reading your content…");
+    const steps = ["Analyzing content structure…","Identifying key concepts…","Building your study notes…"];
+    let si = 0;
+    const interval = setInterval(() => { si++; if (si < steps.length) setUploadProgress(steps[si]); }, 2000);
     try {
+      const userContent = imageData
+        ? [{ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } },
+           { type:"text", text:`Create comprehensive study notes from this image${titleHint?` (Topic: ${titleHint})`:""}.${objectives?`\nObjectives: ${objectives}`:""}`}]
+        : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:800,
-          system:`You are a helpful study tutor. Answer questions based on these notes plus your broader knowledge.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
-          messages:[...chatMessages, userMsg].map(m=>({role:m.role,content:m.content})) }),
+        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:4000,
+          system:`You are an expert academic note-taker. Create comprehensive study notes always including:\n# Chapter/Topic Overview\n## Learning Objectives\n## Key Concepts\n## Key Terms & Definitions\n## Detailed Notes\n## Summary\n## Study Tips\nUse clear headings, bullet points, bold key terms. Make it excellent.`,
+          messages:[{ role:"user", content:userContent }] }),
       });
       const data = await res.json();
-      const reply = data.content?.find(b=>b.type==="text")?.text || "Try rephrasing.";
-      setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
-    } catch { setChatMessages(prev => [...prev, { role:"assistant", content:"Something went wrong." }]); }
-    setChatLoading(false);
+      const generated = data.content?.find(b=>b.type==="text")?.text || "Could not generate notes.";
+      const noteTitle = titleHint || generated.match(/^#\s+(.+)/m)?.[1] || "AI Notes";
+      const noteData = { id:Date.now(), title:noteTitle, content:generated, folder:"", wordCount:generated.trim().split(/\s+/).length, updatedAt:new Date().toISOString(), createdAt:new Date().toISOString(), aiGenerated:true };
+      setNotes(prev => [noteData, ...prev]);
+      setTitle(noteTitle); setContent(generated); setActiveNote(noteData);
+      setUploadText(""); setUploadObjectives(""); setUploadTitle(""); setUploadUrl("");
+      setView("editor");
+    } catch { setUploadProgress("Something went wrong. Please try again."); }
+    finally { clearInterval(interval); setUploadLoading(false); setUploadProgress(""); }
   };
 
-  // Upload / AI generate notes
+  // File reading
   const readFile = (file) => new Promise((resolve) => {
     if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve({ text:null, imageData:e.target.result.split(",")[1], name:file.name, isImage:true });
-      reader.readAsDataURL(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve({ text:e.target.result, name:file.name });
-      reader.readAsText(file);
+      const r = new FileReader();
+      r.onload = (e) => resolve({ text:null, imageData:e.target.result.split(",")[1], name:file.name, isImage:true });
+      r.readAsDataURL(file); return;
     }
+    const r = new FileReader();
+    r.onload = (e) => resolve({ text:e.target.result, name:file.name });
+    r.readAsText(file);
   });
 
   const handleFileDrop = async (e) => {
@@ -7163,77 +7363,55 @@ function NotesApp({ onBack, user, openAuth }) {
     const cleanName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
     setUploadTitle(cleanName);
     if (result.isImage) { setUploadText(`[Image: ${file.name}]`); generateSmartNotes(null, result.imageData, cleanName, uploadObjectives); }
-    else setUploadText(result.text || "");
+    else setUploadText(result.text||"");
   };
 
   const fetchWebContent = async (url) => {
-    setUploadLoading(true); setUploadProgress("Fetching page content…");
+    setUploadLoading(true); setUploadProgress("Fetching page…");
     try {
       const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
       const data = await res.json();
       const text = data.contents?.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,12000)||"";
       setUploadText(text); if (!uploadTitle) setUploadTitle(new URL(url).hostname);
-    } catch { setUploadText(`Source: ${url}\n\nCould not auto-fetch. Please paste content manually.`); }
+    } catch { setUploadText(`Source: ${url}\n\nCould not fetch automatically. Please paste content manually.`); }
     setUploadLoading(false); setUploadProgress("");
   };
 
-  const fetchYouTube = async (url) => {
+  const fetchYouTube = (url) => {
     const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
     if (!videoId) { alert("Invalid YouTube URL"); return; }
-    setUploadText(`YouTube: ${url}\nVideo ID: ${videoId}\n\nGenerate comprehensive notes from this educational video.`);
+    setUploadText(`YouTube Video: ${url}\nVideo ID: ${videoId}\n\nGenerate comprehensive study notes based on this educational video.`);
     if (!uploadTitle) setUploadTitle("YouTube Notes");
   };
 
-  const generateSmartNotes = async (text, imageData, titleHint, objectives) => {
-    if ((!text?.trim() && !imageData) || uploadLoading) return;
-    setUploadLoading(true);
-    setUploadProgress("Reading your content…");
-    const progressSteps = ["Analyzing content structure…","Identifying key concepts…","Building your study notes…"];
-    let si = 0;
-    const interval = setInterval(() => { si++; if (si < progressSteps.length) setUploadProgress(progressSteps[si]); }, 1500);
-
-    const systemPrompt = `You are an expert academic note-taker. Create comprehensive, well-structured study notes including:
-1. Chapter/Topic Overview (2-3 sentences)
-2. Learning Objectives (what to know after studying)
-3. Key Concepts (most important ideas clearly explained)
-4. Key Terms & Definitions
-5. Detailed Structured Notes (full coverage)
-6. Summary (critical points)
-7. Study Tips (2-3 specific tips)
-Format with clear # and ## headings, bullet points, bold key terms.`;
-
-    const userContent = imageData
-      ? [{ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } }, { type:"text", text:`Create comprehensive study notes from this image${titleHint?` (Topic: ${titleHint})`:""}.${objectives?`\nObjectives: ${objectives}`:""}`}]
-      : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
-
+  // Chat with notes
+  const sendChatMessage = async (msg) => {
+    const text = msg || chatInput;
+    if (!text.trim() || chatLoading || !content.trim()) return;
+    const userMsg = { role:"user", content:text };
+    setChatMessages(prev => [...prev, userMsg]); setChatInput(""); setChatLoading(true);
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:4000, system:systemPrompt, messages:[{role:"user",content:userContent}] }),
+        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:800,
+          system:`You are a helpful study tutor. Answer questions based on these notes plus your knowledge. Be concise.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
+          messages:[...chatMessages, userMsg].map(m=>({role:m.role,content:m.content})) }),
       });
       const data = await res.json();
-      const generated = data.content?.find(b=>b.type==="text")?.text || "Could not generate notes.";
-      const firstHeading = generated.match(/^#\s+(.+)/m)?.[1];
-      const noteTitle = titleHint || firstHeading || "AI Notes";
-      const noteData = {
-        id: Date.now(), title: noteTitle, content: generated, folder: "",
-        wordCount: generated.trim().split(/\s+/).length,
-        updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), aiGenerated: true,
-      };
-      setNotes(prev => [noteData, ...prev]);
-      setTitle(noteTitle); setContent(generated); setActiveNote(noteData);
-      setUploadText(""); setUploadObjectives(""); setUploadTitle("");
-      setView("editor");
-    } catch { setUploadProgress("Something went wrong. Please try again."); }
-    finally { clearInterval(interval); setUploadLoading(false); setUploadProgress(""); }
+      setChatMessages(prev => [...prev, { role:"assistant", content:data.content?.find(b=>b.type==="text")?.text||"Try rephrasing." }]);
+    } catch { setChatMessages(prev => [...prev, { role:"assistant", content:"Something went wrong." }]); }
+    setChatLoading(false);
   };
 
   const filteredNotes = notes.filter(n => {
-    const matchFolder = filterFolder==="all" || n.folder===filterFolder;
-    const matchSearch = !searchQ.trim() || n.title.toLowerCase().includes(searchQ.toLowerCase()) || n.content.toLowerCase().includes(searchQ.toLowerCase());
-    return matchFolder && matchSearch;
+    const mf = filterFolder==="all" || n.folder===filterFolder;
+    const ms = !searchQ.trim() || n.title?.toLowerCase().includes(searchQ.toLowerCase()) || n.content?.toLowerCase().includes(searchQ.toLowerCase());
+    return mf && ms;
   });
-  const totalWords = notes.reduce((a,n) => a+(n.wordCount||0), 0);
+
+  const EN_FORMATS = [
+    {id:"h1",icon:"H₁"},{id:"h2",icon:"H₂"},{id:"bold",icon:"B"},{id:"italic",icon:"I"},{id:"ul",icon:"≡"},{id:"ol",icon:"1."},
+  ];
 
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#FDFCF7", minHeight:"100vh", color:"#1A1814" }}>
@@ -7244,30 +7422,32 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
         ::-webkit-scrollbar-thumb { background:${NL}; border-radius:3px; }
         @keyframes notes-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes notes-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        .notes-card { transition:transform 0.2s,box-shadow 0.2s !important; cursor:pointer; }
+        .notes-card { transition:transform 0.2s,box-shadow 0.2s !important; }
         .notes-card:hover { transform:translateY(-3px) !important; box-shadow:0 10px 28px rgba(212,168,48,0.12) !important; }
         .notes-fmt-btn:hover { background:${NL}44 !important; }
         @media (max-width:768px) {
           .notes-nav-tabs { display:none !important; }
           .notes-main { padding:20px 14px !important; }
+          .notes-quick-grid { grid-template-columns:1fr 1fr !important; }
           .notes-editor-split { grid-template-columns:1fr !important; }
           .notes-upload-grid { grid-template-columns:1fr !important; }
-          .notes-quick-grid { grid-template-columns:1fr 1fr !important; }
+          .notes-folders-grid { grid-template-columns:1fr 1fr !important; }
         }
         @media (max-width:480px) {
           .notes-quick-grid { grid-template-columns:1fr !important; }
+          .notes-folders-grid { grid-template-columns:1fr !important; }
         }
       `}</style>
 
-      {/* Sidebar */}
+      {/* ── SIDEBAR ── */}
       {sidebarOpen && <div onClick={()=>setSidebarOpen(false)} style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(26,18,0,0.35)",backdropFilter:"blur(4px)" }} />}
       <div style={{ position:"fixed",left:0,top:0,bottom:0,width:268,background:"#fff",borderRight:`1px solid ${NL}`,display:"flex",flexDirection:"column",zIndex:201,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.38s cubic-bezier(0.16,1,0.3,1)" }}>
         <div style={{ padding:"18px 18px",borderBottom:`1px solid ${NL}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
             <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>📝</div>
-            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Notes</span>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Teacher's Pet Notes</span>
           </div>
-          <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A" }}>✕</button>
+          <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
         </div>
         <div style={{ flex:1,overflowY:"auto",padding:"14px 12px" }}>
           {user ? (
@@ -7285,20 +7465,21 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
             </div>
           )}
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Navigation</div>
-          {[["📝","Notes","home"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
+          {[["📝","All Notes","home"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
             <button key={v} onClick={()=>{setView(v);setSidebarOpen(false);}}
-              style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${NC}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif" }}>
+              style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${NC}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}>
               <span style={{ fontSize:14 }}>{icon}</span>
               <span style={{ fontSize:13,fontWeight:view===v?700:500,color:view===v?NC:"#3A3020" }}>{label}</span>
+              {view===v && <div style={{ marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:NC }} />}
             </button>
           ))}
-          {folders.length > 0 && (
+          {folders.length>0 && (
             <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Folders</div>
               {[{id:"all",name:"All Notes",count:notes.length},...folders.map(f=>({...f,count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
                 <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");setSidebarOpen(false);}}
                   style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${NC}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif" }}>
-                  <span style={{ fontSize:13 }}>{f.id==="all"?"📖":"📁"}</span>
+                  <span style={{ fontSize:13 }}>📁</span>
                   <span style={{ fontSize:12,fontWeight:500,color:"#3A3020",flex:1,textAlign:"left" }}>{f.name}</span>
                   <span style={{ fontSize:11,color:"#B8A06A",background:`${NC}10`,borderRadius:10,padding:"1px 7px",fontWeight:600 }}>{f.count}</span>
                 </button>
@@ -7307,7 +7488,7 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
           )}
           <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
             <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Stats</div>
-            {[["📝",notes.length,"Notes"],["📁",folders.length,"Folders"],["✍",totalWords.toLocaleString(),"Words"]].map(([icon,val,label])=>(
+            {[["📝",notes.length,"Notes"],["📁",folders.length,"Folders"],["✍",notes.reduce((a,n)=>a+(n.wordCount||0),0).toLocaleString(),"Words"]].map(([icon,val,label])=>(
               <div key={label} style={{ display:"flex",alignItems:"center",gap:10,padding:"6px 10px" }}>
                 <span style={{ fontSize:13 }}>{icon}</span>
                 <span style={{ fontSize:13,fontWeight:700,color:NC }}>{val}</span>
@@ -7318,19 +7499,20 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
         </div>
         <div style={{ padding:"12px",borderTop:`1px solid ${NL}` }}>
           <button onClick={onBack} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}
-            onMouseEnter={e=>e.currentTarget.style.background=`${NC}08`} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            onMouseEnter={e=>e.currentTarget.style.background=`${NC}08`}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
             <span style={{ fontSize:13,color:"#B8A06A" }}>←</span>
             <span style={{ fontSize:13,fontWeight:500,color:"#8C7A4A" }}>Back to Galaxy</span>
           </button>
         </div>
       </div>
 
-      {/* Nav */}
+      {/* ── NAV ── */}
       <nav style={{ background:"#fff",borderBottom:`1px solid ${NL}66`,position:"sticky",top:0,zIndex:100,height:62,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px" }}>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-          <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4 }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.background=`${NC}08`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.background="none";}}>
+          <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;}}>
             <div style={{ width:14,height:1.5,background:NC,borderRadius:1 }} />
             <div style={{ width:10,height:1.5,background:"#B8A06A",borderRadius:1 }} />
             <div style={{ width:14,height:1.5,background:NC,borderRadius:1 }} />
@@ -7356,41 +7538,26 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
             + New Note
           </button>
           {user ? (
-            <div style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer" }} onClick={()=>setSidebarOpen(true)}>
-              <div style={{ width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
-            </div>
+            <div onClick={()=>setSidebarOpen(true)} style={{ width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",cursor:"pointer" }}>{user.name?.[0]||"U"}</div>
           ) : (
             <button onClick={()=>openAuth("signup")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A" }}>Sign In</button>
           )}
         </div>
       </nav>
 
-      {/* "Turn into Course" coming soon toast */}
-      {showCourseToast && (
-        <div style={{ position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:500,background:"#1A1814",color:"#F7F6F2",borderRadius:12,padding:"14px 24px",fontSize:13,fontWeight:600,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",display:"flex",alignItems:"center",gap:10,animation:"notes-fade 0.3s ease both" }}>
-          <span style={{ fontSize:16 }}>🎓</span>
-          Turning notes into courses is coming soon to Academy!
-          <button onClick={()=>setShowCourseToast(false)} style={{ background:"none",border:"none",color:"rgba(247,246,242,0.5)",cursor:"pointer",fontSize:13,marginLeft:4 }}>✕</button>
-        </div>
-      )}
-
-      {/* ── HOME VIEW ── */}
+      {/* ── HOME ── */}
       {view==="home" && (
         <div className="notes-main" style={{ maxWidth:980,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ marginBottom:32 }}>
-            <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:900,color:"#1A1814",lineHeight:1.15,marginBottom:8 }}>
-              Your Notes <span style={{ color:NC }}>✦</span>
-            </h1>
-            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. Upload any material and AI builds smart study notes instantly.</p>
+            <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:900,color:"#1A1814",lineHeight:1.15,marginBottom:8 }}>Your Notes <span style={{ color:NC }}>✦</span></h1>
+            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. Upload any material and AI turns it into structured study notes.</p>
           </div>
-
-          {/* Quick actions */}
           <div className="notes-quick-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
             {[
-              { icon:"🤖", label:"AI from Upload",  sub:"File, YouTube, or website → smart notes", action:()=>setView("upload"), color:"#4F6EF7", highlight:true },
-              { icon:"✍",  label:"New Note",        sub:"Write or type notes yourself", action:()=>newNote(), color:NC },
-              { icon:"🎙",  label:"Record Audio",   sub:"Transcribe speech to text", action:()=>{newNote();setTimeout(()=>toggleRecording(),300);}, color:"#E85D3F" },
-              { icon:"📁",  label:"New Folder",     sub:"Organize your notes", action:()=>setView("folders"), color:"#2BAE7E" },
+              { icon:"🤖",label:"AI from Upload",sub:"Upload content → AI builds notes",action:()=>setView("upload"),color:"#4F6EF7",highlight:true },
+              { icon:"✍",label:"New Note",sub:"Write or type freely",action:()=>newNote(),color:NC },
+              { icon:"🎙",label:"Record Audio",sub:"Transcribe speech to text",action:()=>{newNote();setTimeout(()=>toggleRecording(),300);},color:"#E85D3F" },
+              { icon:"📁",label:"New Folder",sub:"Organize your notes",action:()=>setView("folders"),color:"#2BAE7E" },
             ].map(q=>(
               <div key={q.label} onClick={q.action}
                 style={{ background:q.highlight?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#fff",border:q.highlight?"none":`1.5px solid ${NL}88`,borderRadius:14,padding:"20px 18px",cursor:"pointer",transition:"all 0.2s",boxShadow:q.highlight?"0 8px 28px #4F6EF744":"none" }}
@@ -7402,8 +7569,6 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               </div>
             ))}
           </div>
-
-          {/* Search */}
           <div style={{ position:"relative",marginBottom:20 }}>
             <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}>🔍</span>
             <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search notes…"
@@ -7411,13 +7576,11 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               style={{ width:"100%",padding:"10px 14px 10px 36px",borderRadius:10,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s",boxSizing:"border-box" }}
               onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
           </div>
-
-          {/* Notes grid */}
           {filteredNotes.length===0 ? (
             <div style={{ textAlign:"center",padding:"60px 0",color:"#B8A06A" }}>
               <div style={{ fontSize:48,marginBottom:14 }}>📝</div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No notes yet</div>
-              <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note — write freely, record your voice, or let AI build notes from any material you upload.</p>
+              <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note or upload any material and let AI turn it into structured study notes.</p>
               <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:10,padding:"12px 28px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 6px 20px ${NC}44` }}>Create First Note →</button>
             </div>
           ) : (
@@ -7426,22 +7589,22 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
                 const fld = folders.find(f=>f.id===n.folder);
                 return (
                   <div key={n.id} className="notes-card" onClick={()=>openNote(n)}
-                    style={{ background:"#fff",border:`1px solid ${NL}88`,borderLeft:`4px solid ${NC}`,borderRadius:12,padding:"18px 18px",position:"relative" }}>
-                    {n.aiGenerated && <span style={{ position:"absolute",top:12,right:12,fontSize:9,fontWeight:700,color:"#4F6EF7",background:"#EEF2FF",borderRadius:8,padding:"2px 7px",letterSpacing:1 }}>AI</span>}
+                    style={{ background:"#fff",border:`1px solid ${NL}88`,borderLeft:`4px solid ${NC}`,borderRadius:12,padding:"18px 18px",cursor:"pointer" }}>
                     <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
-                      <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:n.aiGenerated?24:8 }}>{n.title}</div>
+                      <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:8 }}>{n.title}</div>
                       <div style={{ fontSize:10,color:"#B8A06A",flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
                     </div>
                     {fld && <div style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}>📁 {fld.name}</div>}
+                    {n.aiGenerated && <div style={{ fontSize:10,fontWeight:700,color:"#4F6EF7",background:"#4F6EF715",borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8,marginLeft:4 }}>🤖 AI Generated</div>}
                     <div style={{ fontSize:12,color:"#8C7A4A",lineHeight:1.55,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical" }}>
-                      {n.content.replace(/[#*_]/g,"").slice(0,160)}{n.content.length>160?"…":""}
+                      {n.content?.replace(/[#*_]/g,"").slice(0,160)}{(n.content?.length||0)>160?"…":""}
                     </div>
                     <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10 }}>
                       <span style={{ fontSize:10,color:"#C8B88A" }}>{n.wordCount} words</span>
-                      <button onClick={e=>{e.stopPropagation();setShowCourseToast(true);setTimeout(()=>setShowCourseToast(false),4000);}}
-                        style={{ fontSize:10,fontWeight:700,color:"#8C7A4A",background:"transparent",border:`1px solid ${NL}`,borderRadius:8,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
-                        onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
-                        onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
+                      <button onClick={e=>{e.stopPropagation();alert("Turn into Course — coming soon to Academy! 🎓");}}
+                        style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}10`,border:`1px solid ${NC}30`,borderRadius:10,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
                         🎓 Turn into Course
                       </button>
                     </div>
@@ -7456,12 +7619,11 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
       {/* ── UPLOAD VIEW ── */}
       {view==="upload" && (
         <div className="notes-main" style={{ maxWidth:760,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
-          <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24 }}
+          <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24,transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Back</button>
           <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}>🤖 AI Note Builder</h2>
           <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,marginBottom:24,maxWidth:520 }}>Give AI your content in any format — file, text, YouTube, or website. It reads everything and builds comprehensive study notes instantly.</p>
-
           <div style={{ display:"flex",gap:4,marginBottom:20,background:"#F5F3EC",borderRadius:10,padding:4 }}>
             {[["file","📄 File"],["paste","📋 Paste"],["youtube","▶ YouTube"],["website","🌐 Website"]].map(([t,label])=>(
               <button key={t} onClick={()=>setUploadTab(t)}
@@ -7470,7 +7632,6 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               </button>
             ))}
           </div>
-
           {uploadTab==="file" && (
             <div onDragOver={e=>{e.preventDefault();setIsDragging(true);}} onDragLeave={()=>setIsDragging(false)} onDrop={handleFileDrop}
               onClick={()=>fileInputRef.current?.click()}
@@ -7480,104 +7641,85 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.jpg,.jpeg,.png,.webp" style={{ display:"none" }} onChange={handleFileDrop} />
               <div style={{ fontSize:52,marginBottom:14 }}>📄</div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814",marginBottom:8 }}>Drop your file here</div>
-              <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images (JPG, PNG) · Text files · Markdown</p>
+              <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images · Text · Markdown</p>
               <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:NC,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}>📎 Choose File</div>
             </div>
           )}
-
           {uploadTab==="paste" && (
-            <textarea value={uploadText} onChange={e=>setUploadText(e.target.value)}
-              placeholder="Paste your lecture notes, textbook content, syllabus, or any material here…"
+            <textarea value={uploadText} onChange={e=>setUploadText(e.target.value)} placeholder="Paste lecture notes, textbook content, syllabus, or any course material…"
               onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
               style={{ width:"100%",minHeight:220,padding:"14px",borderRadius:12,border:`1.5px solid ${NL}`,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"vertical",lineHeight:1.7,transition:"border-color 0.18s",boxSizing:"border-box",marginBottom:16 }}
               onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
           )}
-
           {uploadTab==="youtube" && (
             <div style={{ marginBottom:16 }}>
               <div style={{ background:"#fff",border:`1.5px solid ${NL}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
                 <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>▶ Paste a YouTube lecture or tutorial URL</div>
                 <div style={{ display:"flex",gap:10 }}>
-                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
-                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}}
-                    placeholder="https://youtube.com/watch?v=..."
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)} onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}} placeholder="https://youtube.com/watch?v=..."
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
                     onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-                  <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()}
-                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
-                    Load →
-                  </button>
+                  <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()} style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>Load →</button>
                 </div>
               </div>
               {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Video loaded — ready to generate notes</div>}
             </div>
           )}
-
           {uploadTab==="website" && (
             <div style={{ marginBottom:16 }}>
               <div style={{ background:"#fff",border:`1.5px solid ${NL}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
                 <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
                 <div style={{ display:"flex",gap:10 }}>
-                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)}
-                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}}
-                    placeholder="https://example.com/article"
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+                  <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)} onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}} placeholder="https://example.com/article"
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
                     onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-                  <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading}
-                    style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>
-                    {uploadLoading?"Fetching…":"Load →"}
-                  </button>
+                  <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading} style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>{uploadLoading?"Fetching…":"Load →"}</button>
                 </div>
               </div>
               {uploadText && <div style={{ padding:"10px 14px",borderRadius:8,background:"#F0FFF4",border:"1px solid #86EFAC",fontSize:12,color:"#166534",fontWeight:600 }}>✓ Page loaded — ready to generate notes</div>}
             </div>
           )}
-
           <div className="notes-upload-grid" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16 }}>
             <div>
               <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Topic / Title <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
               <input value={uploadTitle} onChange={e=>setUploadTitle(e.target.value)} placeholder="e.g. Chapter 5 — Cell Biology"
                 onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }}
                 onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
             </div>
             <div>
               <label style={{ fontSize:12,fontWeight:700,color:"#8C7A4A",display:"block",marginBottom:6 }}>Learning Objectives <span style={{ fontWeight:400,color:"#B8A06A" }}>(optional)</span></label>
-              <input value={uploadObjectives} onChange={e=>setUploadObjectives(e.target.value)} placeholder="e.g. Understand mitosis, define organelles…"
+              <input value={uploadObjectives} onChange={e=>setUploadObjectives(e.target.value)} placeholder="e.g. Understand mitosis…"
                 onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s",boxSizing:"border-box" }}
+                style={{ width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }}
                 onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
             </div>
           </div>
-
           <div style={{ background:`${NC}08`,border:`1px solid ${NL}`,borderRadius:12,padding:"14px 18px",marginBottom:20 }}>
-            <div style={{ fontSize:12,fontWeight:700,color:ND,marginBottom:10 }}>✦ AI generates automatically:</div>
+            <div style={{ fontSize:12,fontWeight:700,color:ND,marginBottom:8 }}>✦ AI generates automatically:</div>
             <div style={{ display:"flex",flexWrap:"wrap",gap:7 }}>
               {["📋 Overview","🎯 Objectives","💡 Key Concepts","📖 Key Terms","📝 Full Notes","📌 Summary","🧠 Study Tips"].map(item=>(
                 <span key={item} style={{ fontSize:11,fontWeight:600,color:ND,background:"#fff",border:`1px solid ${NL}`,borderRadius:20,padding:"3px 10px" }}>{item}</span>
               ))}
             </div>
           </div>
-
           {uploadLoading && uploadProgress && (
-            <div style={{ background:"#fff",border:`1.5px solid ${NC}`,borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16,animation:"notes-fade 0.3s ease both" }}>
+            <div style={{ background:"#fff",border:`1.5px solid ${NC}`,borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16 }}>
               <div style={{ display:"flex",justifyContent:"center",gap:8,marginBottom:14 }}>
                 {[0,1,2].map(i=><div key={i} style={{ width:10,height:10,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}
               </div>
               <div style={{ fontSize:14,fontWeight:700,color:NC,marginBottom:4 }}>{uploadProgress}</div>
-              <div style={{ fontSize:12,color:"#B8A06A" }}>This takes 10–20 seconds</div>
+              <div style={{ fontSize:12,color:"#B8A06A" }}>Takes 10–20 seconds for longer content</div>
             </div>
           )}
-
-          <button onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)}
-            disabled={!uploadText.trim()||uploadLoading}
+          <button onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)} disabled={!uploadText.trim()||uploadLoading}
             style={{ width:"100%",padding:"15px 0",borderRadius:11,border:"none",background:uploadText.trim()&&!uploadLoading?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#E8E5E0",color:uploadText.trim()&&!uploadLoading?"#fff":"#A8A59E",fontSize:15,fontWeight:800,cursor:uploadText.trim()&&!uploadLoading?"pointer":"default",transition:"all 0.2s",boxShadow:uploadText.trim()&&!uploadLoading?"0 8px 28px #4F6EF744":"none",fontFamily:"'DM Sans',sans-serif" }}>
             {uploadLoading?"Building your notes…":"🤖 Build My Notes with AI →"}
           </button>
         </div>
       )}
 
-      {/* ── EDITOR VIEW ── */}
+      {/* ── EDITOR ── */}
       {view==="editor" && (
         <div className="notes-main" style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
@@ -7596,25 +7738,20 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               </button>
             </div>
           </div>
-
-          {/* Format toolbar */}
           <div style={{ display:"flex",gap:4,marginBottom:14,padding:"8px 10px",background:"#fff",border:`1px solid ${NL}`,borderRadius:10,flexWrap:"wrap" }}>
-            {EN_FORMATS.map(f=>(
+            {[{id:"h1",icon:"H₁"},{id:"h2",icon:"H₂"},{id:"bold",icon:"B"},{id:"italic",icon:"I"},{id:"ul",icon:"≡"},{id:"ol",icon:"1."}].map(f=>(
               <button key={f.id} onClick={()=>applyFormat(f.id)} className="notes-fmt-btn"
                 style={{ padding:"5px 10px",borderRadius:6,border:"none",background:"transparent",fontSize:13,fontWeight:700,cursor:"pointer",color:"#5A4A2A",minWidth:34,transition:"all 0.15s" }}>{f.icon}</button>
             ))}
           </div>
-
           <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Note title…"
             onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
             style={{ width:"100%",padding:"12px 0",border:"none",borderBottom:`2px solid ${NL}`,background:"transparent",fontSize:24,fontFamily:"'Playfair Display',serif",fontWeight:900,color:"#1A1814",outline:"none",marginBottom:18,transition:"border-color 0.18s",boxSizing:"border-box" }}
             onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-
           <div className="notes-editor-split" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
             <div>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Write</div>
-              <textarea ref={editorRef} value={content} onChange={e=>setContent(e.target.value)}
-                placeholder="Start writing…"
+              <textarea ref={editorRef} value={content} onChange={e=>setContent(e.target.value)} placeholder="Start writing…"
                 onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
                 style={{ width:"100%",height:"100%",minHeight:360,padding:"14px",border:`1.5px solid ${NL}`,borderRadius:10,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.8,transition:"border-color 0.18s",boxSizing:"border-box" }}
                 onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
@@ -7626,8 +7763,6 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               </div>
             </div>
           </div>
-
-          {/* AI Tools */}
           <div style={{ marginTop:20,padding:"14px 16px",background:"#fff",border:`1px solid ${NL}`,borderRadius:12 }}>
             <div style={{ fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#B8A06A",marginBottom:10 }}>AI Tools</div>
             <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
@@ -7641,13 +7776,11 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               ))}
             </div>
           </div>
-
-          {/* AI Result */}
           {showAiPanel && (
             <div style={{ marginTop:14,background:`${NC}06`,border:`1.5px solid ${NC}30`,borderRadius:12,padding:"20px",animation:"notes-fade 0.3s ease both" }}>
               <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
                 <div style={{ fontSize:12,fontWeight:700,letterSpacing:1,color:NC,textTransform:"uppercase" }}>
-                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved Notes":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
+                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
                 </div>
                 <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:13 }}>✕</button>
               </div>
@@ -7659,16 +7792,17 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               ) : (
                 <div>
                   <pre style={{ fontSize:13,color:"#3A2A10",lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif",margin:0 }}>{aiResult}</pre>
-                  {aiMode==="improve" && <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:NC,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>Use Improved Version</button>}
+                  {aiMode==="improve" && (
+                    <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:NC,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                      Use Improved Version
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           )}
-
-          {/* Chat with Notes */}
           <div style={{ marginTop:14,background:"#fff",border:`1px solid ${NL}`,borderRadius:12,overflow:"hidden" }}>
-            <button onClick={()=>setShowChat(c=>!c)}
-              style={{ width:"100%",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif" }}>
+            <button onClick={()=>setShowChat(c=>!c)} style={{ width:"100%",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif" }}>
               <span style={{ fontSize:13,fontWeight:700,color:ND }}>💬 Chat with your notes</span>
               <span style={{ fontSize:11,color:"#B8A06A",fontWeight:600 }}>{showChat?"▲ Close":"▼ Open"}</span>
             </button>
@@ -7676,7 +7810,7 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               <div style={{ borderTop:`1px solid ${NL}` }}>
                 {chatMessages.length===0 && (
                   <div style={{ padding:"12px 14px",display:"flex",gap:8,flexWrap:"wrap",borderBottom:`1px solid ${NL}66` }}>
-                    {["Summarize in one paragraph","What are the most important terms?","What am I most likely to be tested on?","Explain the hardest concept simply"].map(q=>(
+                    {["Summarize in one paragraph","What are the key terms?","What will I likely be tested on?","Explain the hardest concept simply"].map(q=>(
                       <button key={q} onClick={()=>sendChatMessage(q)}
                         style={{ padding:"5px 12px",borderRadius:20,border:`1px solid ${NL}`,background:`${NC}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:ND,transition:"all 0.15s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}
@@ -7711,8 +7845,6 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
               </div>
             )}
           </div>
-
-          {/* Save / Delete */}
           <div style={{ display:"flex",gap:10,marginTop:24,paddingTop:18,borderTop:`1px solid ${NL}66` }}>
             <button onClick={saveNote} disabled={!content.trim()&&!title.trim()}
               style={{ flex:1,padding:"13px 0",borderRadius:10,border:"none",background:saveAnim?"#2BAE7E":content.trim()||title.trim()?NC:"#E8D8A0",color:content.trim()||title.trim()?"#fff":"#B8A06A",fontSize:14,fontWeight:800,cursor:content.trim()||title.trim()?"pointer":"default",transition:"all 0.3s",fontFamily:"'DM Sans',sans-serif" }}>
@@ -7728,7 +7860,7 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
         </div>
       )}
 
-      {/* ── FOLDERS VIEW ── */}
+      {/* ── FOLDERS ── */}
       {view==="folders" && (
         <div className="notes-main" style={{ maxWidth:800,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
@@ -7747,10 +7879,10 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
             <div style={{ textAlign:"center",padding:"50px 0",color:"#B8A06A" }}>
               <div style={{ fontSize:40,marginBottom:12 }}>📁</div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No folders yet</div>
-              <p style={{ fontSize:14,lineHeight:1.7 }}>Create folders to organize your notes by subject, class, or project.</p>
+              <p style={{ fontSize:14,lineHeight:1.7 }}>Create folders to organize notes by subject, class, or project.</p>
             </div>
           ) : (
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12 }}>
+            <div className="notes-folders-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12 }}>
               {folders.map(f => {
                 const count = notes.filter(n=>n.folder===f.id).length;
                 return (
@@ -7775,6 +7907,7 @@ Format with clear # and ## headings, bullet points, bold key terms.`;
     </div>
   );
 }
+
 
 // ─── Tracker App ─────────────────────────────────────────────────────────────
 
