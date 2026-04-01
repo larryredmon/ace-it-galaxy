@@ -7153,7 +7153,7 @@ function NotesApp({ onBack, user, openAuth }) {
   const NL = "#F0D080";
   const ND = "#8B6914";
 
-  const [view, setView]           = useState("home"); // home | note | editor | upload | folders
+  const [view, setView]           = useState("home"); // home | library | note | editor | upload | folders
   const [notes, setNotes]         = useState(() => {
     try { return JSON.parse(localStorage.getItem("tp_notes")||"[]"); } catch { return []; }
   });
@@ -7408,7 +7408,7 @@ function NotesApp({ onBack, user, openAuth }) {
   };
 
   const filteredNotes = notes.filter(n => {
-    const mf = filterFolder==="all" || n.folder===filterFolder;
+    const mf = filterFolder==="all" || (filterFolder==="__ai__" ? n.aiGenerated : n.folder===filterFolder);
     const ms = !searchQ.trim() || n.title?.toLowerCase().includes(searchQ.toLowerCase()) || n.content?.toLowerCase().includes(searchQ.toLowerCase());
     return mf && ms;
   });
@@ -7469,7 +7469,7 @@ function NotesApp({ onBack, user, openAuth }) {
             </div>
           )}
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Navigation</div>
-          {[["📝","All Notes","home"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
+          {[["📝","All Notes","library"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
             <button key={v} onClick={()=>{setView(v);setSidebarOpen(false);}}
               style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${NC}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}>
               <span style={{ fontSize:14 }}>{icon}</span>
@@ -7481,7 +7481,7 @@ function NotesApp({ onBack, user, openAuth }) {
             <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
               <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Folders</div>
               {[{id:"all",name:"All Notes",count:notes.length},...folders.map(f=>({...f,count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
-                <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("home");setSidebarOpen(false);}}
+                <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("library");setSidebarOpen(false);}}
                   style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${NC}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif" }}>
                   <span style={{ fontSize:13 }}>📁</span>
                   <span style={{ fontSize:12,fontWeight:500,color:"#3A3020",flex:1,textAlign:"left" }}>{f.name}</span>
@@ -7617,6 +7617,168 @@ function NotesApp({ onBack, user, openAuth }) {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── LIBRARY VIEW ── */}
+      {view==="library" && (
+        <div style={{ display:"flex", height:"calc(100vh - 62px)", overflow:"hidden", animation:"notes-fade 0.4s ease both" }}>
+
+          {/* ── LEFT SIDEBAR — folders tree ── */}
+          <div style={{ width:240, flexShrink:0, borderRight:`1px solid ${NL}`, background:"#fff", display:"flex", flexDirection:"column", overflowY:"auto" }}>
+            <div style={{ padding:"20px 16px 12px" }}>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"#B8A06A", textTransform:"uppercase", marginBottom:14 }}>My Library</div>
+
+              {/* All Notes */}
+              <button onClick={()=>setFilterFolder("all")}
+                style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", borderRadius:9, border:"none", background:filterFolder==="all"?`${NC}15`:"transparent", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", marginBottom:2, transition:"all 0.15s" }}
+                onMouseEnter={e=>{if(filterFolder!=="all")e.currentTarget.style.background=`${NC}08`;}}
+                onMouseLeave={e=>{if(filterFolder!=="all")e.currentTarget.style.background="transparent";}}>
+                <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                  <span style={{ fontSize:15 }}>📝</span>
+                  <span style={{ fontSize:13, fontWeight:filterFolder==="all"?700:500, color:filterFolder==="all"?NC:"#3A3020" }}>All Notes</span>
+                </div>
+                <span style={{ fontSize:11, color:"#B8A06A", background:`${NC}10`, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{notes.length}</span>
+              </button>
+
+              {/* AI Generated */}
+              <button onClick={()=>setFilterFolder("__ai__")}
+                style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", borderRadius:9, border:"none", background:filterFolder==="__ai__"?`${NC}15`:"transparent", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", marginBottom:2, transition:"all 0.15s" }}
+                onMouseEnter={e=>{if(filterFolder!=="__ai__")e.currentTarget.style.background=`${NC}08`;}}
+                onMouseLeave={e=>{if(filterFolder!=="__ai__")e.currentTarget.style.background="transparent";}}>
+                <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                  <span style={{ fontSize:15 }}>🤖</span>
+                  <span style={{ fontSize:13, fontWeight:filterFolder==="__ai__"?700:500, color:filterFolder==="__ai__"?NC:"#3A3020" }}>AI Generated</span>
+                </div>
+                <span style={{ fontSize:11, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{notes.filter(n=>n.aiGenerated).length}</span>
+              </button>
+
+              {folders.length > 0 && (
+                <div style={{ marginTop:16 }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"#C8B88A", textTransform:"uppercase", padding:"4px 12px 8px" }}>Folders</div>
+                  {folders.map(f => {
+                    const count = notes.filter(n=>n.folder===f.id).length;
+                    const isActive = filterFolder === f.id;
+                    return (
+                      <button key={f.id} onClick={()=>setFilterFolder(f.id)}
+                        style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", borderRadius:9, border:"none", background:isActive?`${NC}15`:"transparent", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", marginBottom:2, transition:"all 0.15s" }}
+                        onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=`${NC}08`;}}
+                        onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}}>
+                        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                          <span style={{ fontSize:15 }}>📁</span>
+                          <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?NC:"#3A3020", textAlign:"left", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:120 }}>{f.name}</span>
+                        </div>
+                        <span style={{ fontSize:11, color:"#B8A06A", background:`${NC}10`, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* New folder */}
+              <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${NL}66` }}>
+                {addingFolder ? (
+                  <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
+                    style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:`1.5px solid ${NC}`, background:"#FDFCF7", fontSize:12, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
+                ) : (
+                  <button onClick={()=>setAddingFolder(true)}
+                    style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:`1.5px dashed ${NL}`, background:"transparent", fontSize:12, fontWeight:600, cursor:"pointer", color:"#B8A06A", display:"flex", alignItems:"center", gap:8, transition:"all 0.15s", fontFamily:"'DM Sans',sans-serif" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#B8A06A";}}>
+                    + New Folder
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── RIGHT PANEL — notes grid ── */}
+          <div style={{ flex:1, overflowY:"auto", padding:"28px 28px" }}>
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+              <div>
+                <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", marginBottom:4 }}>
+                  {filterFolder==="all" ? "All Notes" : filterFolder==="__ai__" ? "AI Generated Notes" : folders.find(f=>f.id===filterFolder)?.name || "Notes"}
+                </h2>
+                <div style={{ fontSize:12, color:"#B8A06A" }}>
+                  {filteredNotes.length} {filteredNotes.length===1?"note":"notes"}
+                  {filterFolder!=="all" && filterFolder!=="__ai__" && (
+                    <button onClick={()=>setFilterFolder("all")} style={{ marginLeft:12, background:"none", border:"none", cursor:"pointer", fontSize:12, color:NC, fontWeight:600, fontFamily:"'DM Sans',sans-serif" }}>
+                      ← All Notes
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                {/* Search */}
+                <div style={{ position:"relative" }}>
+                  <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#B8A06A", pointerEvents:"none" }}>🔍</span>
+                  <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search…"
+                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                    style={{ padding:"8px 12px 8px 32px", borderRadius:9, border:`1.5px solid ${NL}`, background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", width:180, transition:"border-color 0.15s" }}
+                    onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+                </div>
+                <button onClick={()=>newNote()} style={{ padding:"8px 18px", borderRadius:9, border:"none", background:NC, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 12px ${NC}44` }}>
+                  + New Note
+                </button>
+              </div>
+            </div>
+
+            {/* Notes grid */}
+            {filteredNotes.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"60px 0", color:"#B8A06A" }}>
+                <div style={{ fontSize:48, marginBottom:14 }}>
+                  {filterFolder==="__ai__" ? "🤖" : "📝"}
+                </div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#5A4A2A", marginBottom:8 }}>
+                  {filterFolder==="__ai__" ? "No AI notes yet" : "No notes here"}
+                </div>
+                <p style={{ fontSize:14, lineHeight:1.7, maxWidth:300, margin:"0 auto 20px" }}>
+                  {filterFolder==="__ai__" ? "Use AI Upload to generate structured notes from any content." : "Create a note or upload material to get started."}
+                </p>
+                <button onClick={filterFolder==="__ai__" ? ()=>setView("upload") : ()=>newNote()}
+                  style={{ background:NC, border:"none", borderRadius:10, padding:"11px 24px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>
+                  {filterFolder==="__ai__" ? "🤖 AI Upload" : "+ New Note"}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+                {filteredNotes.map(n => {
+                  const fld = folders.find(f=>f.id===n.folder);
+                  return (
+                    <div key={n.id} className="notes-card" onClick={()=>openNote(n)}
+                      style={{ background:"#fff", border:`1px solid ${NL}88`, borderLeft:`4px solid ${NC}`, borderRadius:12, padding:"18px 18px", cursor:"pointer", position:"relative" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814", lineHeight:1.3, flex:1, marginRight:8 }}>{n.title}</div>
+                        <div style={{ fontSize:10, color:"#B8A06A", flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
+                      </div>
+                      <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:8 }}>
+                        {fld && <span style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}12`, borderRadius:10, padding:"2px 8px" }}>📁 {fld.name}</span>}
+                        {n.aiGenerated && <span style={{ fontSize:10, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 8px" }}>🤖 AI</span>}
+                      </div>
+                      <div style={{ fontSize:12, color:"#8C7A4A", lineHeight:1.55, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical" }}>
+                        {n.content?.replace(/[#*_\-]/g,"").slice(0,160)}{(n.content?.length||0)>160?"…":""}
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:10 }}>
+                        <span style={{ fontSize:10, color:"#C8B88A" }}>{n.wordCount} words</span>
+                        <div style={{ display:"flex", gap:6 }}>
+                          <button onClick={e=>{e.stopPropagation();openEditor(n);}}
+                            style={{ fontSize:10, fontWeight:700, color:"#8C7A4A", background:`${NL}22`, border:"none", borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
+                            ✏️ Edit
+                          </button>
+                          <button onClick={e=>{e.stopPropagation();alert("Coming soon to Academy! 🎓");}}
+                            style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}10`, border:`1px solid ${NC}30`, borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
+                            🎓 Course
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
