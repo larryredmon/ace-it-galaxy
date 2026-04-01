@@ -3321,14 +3321,6 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
             📁 New Folder
           </button>
-          {isUserFolder && activeFolderId && (
-            <button onClick={() => { setAddingSubFolder(activeFolderId); setAddingFolder(false); setNewFolderName(""); }}
-              style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"8px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor="#4F6EF7"; e.currentTarget.style.color="#4F6EF7"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
-              📂 New Subfolder
-            </button>
-          )}
           <button onClick={onNewDeck}
             style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"9px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="#1A1814"; e.currentTarget.style.color="#1A1814"; }}
@@ -3405,8 +3397,56 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                   <div style={{ fontSize:12, color:"#8C8880" }}>{allDecks.length} total deck{allDecks.length!==1?"s":""}</div></>
                 )}
               </div>
-              <button onClick={onNewDeck} className="fc-btn" style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2", transition:"all 0.2s" }}>+ New Deck</button>
+              <div style={{ display:"flex", gap:8 }}>
+                {isUserFolder && activeFolderId && (
+                  <button onClick={() => { setAddingSubFolder(activeFolderId); setAddingFolder(false); setNewFolderName(""); }}
+                    style={{ background:"none", border:"1.5px solid #D8D5CE", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#8C8880";}}>
+                    📂 New Subfolder
+                  </button>
+                )}
+                <button onClick={onNewDeck} className="fc-btn" style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2", transition:"all 0.2s" }}>+ New Deck</button>
+              </div>
             </div>
+
+            {/* ── Subfolders inside a user folder — show in main panel ── */}
+            {isUserFolder && activeFolderId && (() => {
+              const subFolders = userFolders.filter(f => f.parentId === activeFolderId);
+              if (subFolders.length === 0) return null;
+              return (
+                <div style={{ marginBottom:32 }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A8A59E", marginBottom:12 }}>Subfolders</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:12 }}>
+                    {subFolders.map((sub, i) => {
+                      const subCount = allDecks.filter(d => d.folderKey === sub.id || d.folderKey === sub.name).length;
+                      const subSubs = userFolders.filter(f => f.parentId === sub.id).length;
+                      return (
+                        <div key={sub.id} className="fc-fade-up"
+                          style={{ animationDelay:`${i*0.05}s`, background:"#fff", border:"1px solid #ECEAE4", borderLeft:"3px solid #4F6EF7", borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s", position:"relative" }}
+                          onClick={() => setFolderPath(["__uf__", sub.id])}
+                          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)";}}
+                          onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                            <span style={{ fontSize:18 }}>📂</span>
+                            <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 8px", borderRadius:20 }}>Subfolder</span>
+                          </div>
+                          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>{sub.name}</div>
+                          <div style={{ fontSize:11, color:"#A8A59E" }}>
+                            {subCount} deck{subCount!==1?"s":""}
+                            {subSubs > 0 && ` · ${subSubs} subfolder${subSubs!==1?"s":""}`}
+                          </div>
+                          <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete "${sub.name}"?`)){setUserFolders&&setUserFolders(fs=>fs.filter(x=>x.id!==sub.id&&x.parentId!==sub.id));}}}
+                            style={{ position:"absolute", top:10, right:10, background:"none", border:"none", fontSize:11, color:"#D8D5CE", cursor:"pointer" }}
+                            onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"}
+                            onMouseLeave={e=>e.currentTarget.style.color="#D8D5CE"}>✕</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Stats bar */}
             {allHere.length > 0 && (
@@ -3453,7 +3493,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                     const count = allDecks.filter(d => d.folderKey === f.name).length;
                     return (
                       <div key={f.id} className="fc-fade-up" style={{ animationDelay:`${(currentChildren.length+i)*0.05}s`, background:"#fff", border:"1px solid #ECEAE4", borderLeft:"3px solid #4F6EF7", borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s", position:"relative" }}
-                        onClick={() => setFolderPath(["__uf__", f.name])}
+                        onClick={() => setFolderPath(["__uf__", f.id])}
                         onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)"; }}
                         onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
                         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
