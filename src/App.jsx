@@ -7153,7 +7153,7 @@ function NotesApp({ onBack, user, openAuth }) {
   const NL = "#F0D080";
   const ND = "#8B6914";
 
-  const [view, setView]           = useState("home"); // home | editor | upload | folders
+  const [view, setView]           = useState("home"); // home | note | editor | upload | folders
   const [notes, setNotes]         = useState(() => {
     try { return JSON.parse(localStorage.getItem("tp_notes")||"[]"); } catch { return []; }
   });
@@ -7206,6 +7206,10 @@ function NotesApp({ onBack, user, openAuth }) {
   };
 
   const openNote = (note) => {
+    setActiveNote(note); setView("note");
+  };
+
+  const openEditor = (note) => {
     setTitle(note.title); setContent(note.content||""); setFolder(note.folder||"");
     setAiResult(""); setShowAiPanel(false); setShowChat(false);
     setChatMessages([]); setActiveNote(note); setView("editor");
@@ -7224,7 +7228,7 @@ function NotesApp({ onBack, user, openAuth }) {
     };
     setNotes(prev => activeNote ? prev.map(n => n.id===activeNote.id ? noteData : n) : [noteData, ...prev]);
     setSaveAnim(true);
-    setTimeout(() => { setSaveAnim(false); setView("home"); }, 800);
+    setTimeout(() => { setSaveAnim(false); setActiveNote(noteData); setView("note"); }, 800);
   };
 
   const deleteNote = (id) => { setNotes(prev => prev.filter(n => n.id!==id)); setView("home"); };
@@ -7719,13 +7723,103 @@ function NotesApp({ onBack, user, openAuth }) {
         </div>
       )}
 
+      {/* ── NOTE VIEW — clean reading page ── */}
+      {view==="note" && activeNote && (
+        <div className="notes-main" style={{ maxWidth:760, margin:"0 auto", padding:"48px 32px", animation:"notes-fade 0.4s ease both" }}>
+          {/* Top bar */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:40, flexWrap:"wrap", gap:12 }}>
+            <button onClick={()=>setView("home")} style={{ background:"none", border:`1px solid ${NL}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C7A4A", transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Notes</button>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>openEditor(activeNote)}
+                style={{ padding:"8px 18px", borderRadius:8, border:`1.5px solid ${NL}`, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#8C7A4A", transition:"all 0.15s" }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
+                ✏️ Edit
+              </button>
+              <button onClick={()=>{ if(window.confirm("Delete this note?")) deleteNote(activeNote.id); }}
+                style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                🗑
+              </button>
+            </div>
+          </div>
+
+          {/* Note title */}
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,42px)", fontWeight:900, color:"#1A1814", lineHeight:1.15, marginBottom:16, letterSpacing:-0.5 }}>
+            {activeNote.title}
+          </h1>
+
+          {/* Meta */}
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:40, flexWrap:"wrap" }}>
+            <span style={{ fontSize:12, color:"#B8A06A" }}>
+              {new Date(activeNote.updatedAt).toLocaleDateString([],{weekday:"long",year:"numeric",month:"long",day:"numeric"})}
+            </span>
+            <span style={{ width:4, height:4, borderRadius:"50%", background:NL, display:"inline-block" }} />
+            <span style={{ fontSize:12, color:"#B8A06A" }}>{activeNote.wordCount} words</span>
+            {activeNote.aiGenerated && (
+              <>
+                <span style={{ width:4, height:4, borderRadius:"50%", background:NL, display:"inline-block" }} />
+                <span style={{ fontSize:11, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 10px" }}>🤖 AI Generated</span>
+              </>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height:1, background:`linear-gradient(90deg, ${NC}40, transparent)`, marginBottom:40 }} />
+
+          {/* Note content — clean rendered */}
+          <div style={{ fontSize:16, lineHeight:2, color:"#1A1814", fontFamily:"'DM Sans',sans-serif" }}>
+            {activeNote.content?.split("\n").map((line, i) => {
+              if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(22px,3vw,32px)", fontWeight:900, color:"#1A1814", margin:"32px 0 12px", lineHeight:1.2, letterSpacing:-0.5 }}>{line.slice(2)}</h1>;
+              if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(18px,2.5vw,24px)", fontWeight:800, color:"#1A1814", margin:"26px 0 10px", lineHeight:1.25 }}>{line.slice(3)}</h2>;
+              if (line.startsWith("### ")) return <h3 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(15px,2vw,19px)", fontWeight:700, color:"#1A1814", margin:"20px 0 8px" }}>{line.slice(4)}</h3>;
+              if (line.startsWith("- "))  return <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"6px 0" }}><span style={{ color:NC, fontSize:16, flexShrink:0, marginTop:3 }}>•</span><span style={{ flex:1 }}>{line.slice(2)}</span></div>;
+              if (/^\d+\.\s/.test(line)) {
+                const num = line.match(/^(\d+)\./)[1];
+                return <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"6px 0" }}><span style={{ color:NC, fontSize:14, fontWeight:700, flexShrink:0, minWidth:20 }}>{num}.</span><span style={{ flex:1 }}>{line.replace(/^\d+\.\s/,"")}</span></div>;
+              }
+              if (line.startsWith("**") && line.endsWith("**")) return <p key={i} style={{ fontWeight:800, color:"#1A1814", margin:"4px 0" }}>{line.slice(2,-2)}</p>;
+              // Inline bold/italic
+              const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
+              const rendered = parts.map((p,j) => {
+                if (p.startsWith("**")&&p.endsWith("**")) return <strong key={j} style={{ fontWeight:800 }}>{p.slice(2,-2)}</strong>;
+                if (p.startsWith("_")&&p.endsWith("_"))   return <em key={j}>{p.slice(1,-1)}</em>;
+                return p;
+              });
+              return line.trim()
+                ? <p key={i} style={{ margin:"6px 0", lineHeight:1.9 }}>{rendered}</p>
+                : <div key={i} style={{ height:12 }} />;
+            })}
+          </div>
+
+          {/* Bottom actions */}
+          <div style={{ marginTop:60, paddingTop:28, borderTop:`1px solid ${NL}66`, display:"flex", gap:12, flexWrap:"wrap" }}>
+            <button onClick={()=>openEditor(activeNote)}
+              style={{ padding:"12px 28px", borderRadius:10, border:"none", background:NC, color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 16px ${NC}44`, transition:"all 0.18s" }}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.88"}
+              onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+              ✏️ Edit This Note
+            </button>
+            <button onClick={()=>{alert("Turn into Course — coming soon to Academy! 🎓");}}
+              style={{ padding:"12px 24px", borderRadius:10, border:`1.5px solid ${NC}30`, background:`${NC}10`, color:NC, fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
+              onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
+              🎓 Turn into Course
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── EDITOR ── */}
       {view==="editor" && (
         <div className="notes-main" style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
-            <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
+            <button onClick={()=>activeNote ? setView("note") : setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Notes</button>
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
+              {activeNote ? "← Back to Note" : "← Notes"}
+            </button>
             <div style={{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" }}>
               <select value={folder} onChange={e=>setFolder(e.target.value)}
                 style={{ padding:"6px 10px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#fff",fontSize:12,fontWeight:600,color:"#5A4A2A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
