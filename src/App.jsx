@@ -7263,12 +7263,15 @@ function NotesApp({ onBack, user, openAuth }) {
     const s = ta.selectionStart, e = ta.selectionEnd;
     const sel = content.slice(s, e);
     let nc = content;
-    if (type==="bold")   nc = content.slice(0,s) + `**${sel||"bold text"}**` + content.slice(e);
-    if (type==="italic") nc = content.slice(0,s) + `_${sel||"italic text"}_` + content.slice(e);
-    if (type==="h1")     nc = content.slice(0,s) + `\n# ${sel||"Heading"}\n` + content.slice(e);
-    if (type==="h2")     nc = content.slice(0,s) + `\n## ${sel||"Heading"}\n` + content.slice(e);
-    if (type==="ul")     nc = content.slice(0,s) + `\n- ${sel||"item"}\n` + content.slice(e);
-    if (type==="ol")     nc = content.slice(0,s) + `\n1. ${sel||"item"}\n` + content.slice(e);
+    if (type==="bold")      nc = content.slice(0,s) + `**${sel||"bold text"}**` + content.slice(e);
+    if (type==="italic")    nc = content.slice(0,s) + `_${sel||"italic text"}_` + content.slice(e);
+    if (type==="underline") nc = content.slice(0,s) + `__${sel||"underlined"}__` + content.slice(e);
+    if (type==="h1")        nc = content.slice(0,s) + `\n# ${sel||"Heading 1"}\n` + content.slice(e);
+    if (type==="h2")        nc = content.slice(0,s) + `\n## ${sel||"Heading 2"}\n` + content.slice(e);
+    if (type==="h3")        nc = content.slice(0,s) + `\n### ${sel||"Heading 3"}\n` + content.slice(e);
+    if (type==="ul")        nc = content.slice(0,s) + `\n- ${sel||"item"}\n` + content.slice(e);
+    if (type==="ol")        nc = content.slice(0,s) + `\n1. ${sel||"item"}\n` + content.slice(e);
+    if (type==="hr")        nc = content.slice(0,s) + `\n\n---\n\n` + content.slice(e);
     setContent(nc);
     setTimeout(() => ta.focus(), 30);
   };
@@ -8072,146 +8075,236 @@ function NotesApp({ onBack, user, openAuth }) {
         </div>
       )}
 
-      {/* ── EDITOR ── */}
+      {/* ── EDITOR — Word doc style ── */}
       {view==="editor" && (
-        <div className="notes-main" style={{ maxWidth:860,margin:"0 auto",padding:"32px 24px",animation:"notes-fade 0.4s ease both" }}>
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
-            <button onClick={()=>activeNote ? setView("note") : setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.15s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
-              {activeNote ? "← Back to Note" : "← Notes"}
+        <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 62px)", background:"#E8E6E0", animation:"notes-fade 0.3s ease both" }}>
+          <style>{`
+            .doc-toolbar-btn:hover { background: #D4C8A8 !important; }
+            .doc-toolbar-btn.active { background: ${NC}33 !important; color: ${ND} !important; }
+            .doc-page { box-shadow: 0 4px 24px rgba(0,0,0,0.13); }
+            .doc-title:focus { outline: none; }
+            .doc-body:focus { outline: none; }
+            @media (max-width: 768px) {
+              .doc-page-wrap { padding: 16px 8px !important; }
+              .doc-page { padding: 32px 24px !important; }
+              .doc-toolbar { padding: 0 10px !important; gap: 2px !important; }
+              .doc-toolbar-group { gap: 1px !important; }
+            }
+          `}</style>
+
+          {/* ── TOOLBAR ── */}
+          <div className="doc-toolbar" style={{ background:"#F5F2EA", borderBottom:"1px solid #D8D0B8", padding:"0 20px", height:46, display:"flex", alignItems:"center", gap:6, flexShrink:0, overflowX:"auto" }}>
+
+            {/* Back + Save */}
+            <button onClick={()=>activeNote ? setView("note") : setView("home")}
+              style={{ padding:"5px 12px", borderRadius:6, border:`1px solid #C8C0A0`, background:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A4A2A", whiteSpace:"nowrap", marginRight:4 }}>
+              {activeNote ? "← Back" : "← Notes"}
             </button>
-            <div style={{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" }}>
-              <select value={folder} onChange={e=>setFolder(e.target.value)}
-                style={{ padding:"6px 10px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#fff",fontSize:12,fontWeight:600,color:"#5A4A2A",cursor:"pointer",outline:"none",fontFamily:"'DM Sans',sans-serif" }}>
-                <option value="">📁 No Folder</option>
-                {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
-              <button onClick={toggleRecording}
-                style={{ padding:"7px 14px",borderRadius:8,border:`1.5px solid ${isRecording?"#E85D3F":NL}`,background:isRecording?"#FEF2F2":"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:isRecording?"#E85D3F":"#8C7A4A",display:"flex",alignItems:"center",gap:6,transition:"all 0.18s" }}>
-                {isRecording?<><span style={{ width:8,height:8,borderRadius:"50%",background:"#E85D3F",animation:"notes-pulse 1s infinite" }} />Recording…</>:"🎙 Record"}
-              </button>
-            </div>
-          </div>
-          <div style={{ display:"flex",gap:4,marginBottom:14,padding:"8px 10px",background:"#fff",border:`1px solid ${NL}`,borderRadius:10,flexWrap:"wrap" }}>
-            {[{id:"h1",icon:"H₁"},{id:"h2",icon:"H₂"},{id:"bold",icon:"B"},{id:"italic",icon:"I"},{id:"ul",icon:"≡"},{id:"ol",icon:"1."}].map(f=>(
-              <button key={f.id} onClick={()=>applyFormat(f.id)} className="notes-fmt-btn"
-                style={{ padding:"5px 10px",borderRadius:6,border:"none",background:"transparent",fontSize:13,fontWeight:700,cursor:"pointer",color:"#5A4A2A",minWidth:34,transition:"all 0.15s" }}>{f.icon}</button>
-            ))}
-          </div>
-          <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Note title…"
-            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-            style={{ width:"100%",padding:"12px 0",border:"none",borderBottom:`2px solid ${NL}`,background:"transparent",fontSize:24,fontFamily:"'Playfair Display',serif",fontWeight:900,color:"#1A1814",outline:"none",marginBottom:18,transition:"border-color 0.18s",boxSizing:"border-box" }}
-            onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-          <div className="notes-editor-split" style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,minHeight:380 }}>
-            <div>
-              <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Write</div>
-              <textarea ref={editorRef} value={content} onChange={e=>setContent(e.target.value)} placeholder="Start writing…"
-                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
-                style={{ width:"100%",height:"100%",minHeight:360,padding:"14px",border:`1.5px solid ${NL}`,borderRadius:10,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.8,transition:"border-color 0.18s",boxSizing:"border-box" }}
-                onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-            </div>
-            <div>
-              <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",marginBottom:8 }}>Preview</div>
-              <div style={{ minHeight:360,padding:"14px 16px",border:`1.5px solid ${NL}88`,borderRadius:10,background:`${NC}04`,fontSize:14,lineHeight:1.8,overflowY:"auto" }}>
-                {content.trim() ? renderContent(content) : <span style={{ color:"#C8B88A",fontSize:13 }}>Preview appears here…</span>}
-              </div>
-            </div>
-          </div>
-          <div style={{ marginTop:20,padding:"14px 16px",background:"#fff",border:`1px solid ${NL}`,borderRadius:12 }}>
-            <div style={{ fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#B8A06A",marginBottom:10 }}>AI Tools</div>
-            <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-              {[["summarize","✦ Summarize"],["improve","✨ Improve"],["flashcards","📇 Flashcards"],["quiz","❓ Quiz"],["objectives","🎯 Objectives"],["explain","💬 Explain It"]].map(([mode,label])=>(
-                <button key={mode} onClick={()=>runAI(mode)} disabled={!content.trim()||aiLoading}
-                  style={{ padding:"8px 14px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#fff",fontSize:12,fontWeight:700,cursor:content.trim()&&!aiLoading?"pointer":"default",color:content.trim()?NC:"#C8B88A",transition:"all 0.15s" }}
-                  onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=content.trim()?NC:"#C8B88A";e.currentTarget.style.borderColor=NL;}}>
-                  {label}
+            <button onClick={saveNote} disabled={!content.trim()&&!title.trim()}
+              style={{ padding:"5px 14px", borderRadius:6, border:"none", background:saveAnim?"#2BAE7E":content.trim()||title.trim()?NC:"#D8D0B8", color:content.trim()||title.trim()?"#fff":"#A8A090", fontSize:12, fontWeight:700, cursor:content.trim()||title.trim()?"pointer":"default", whiteSpace:"nowrap", marginRight:8, transition:"all 0.25s" }}>
+              {saveAnim ? "✓ Saved!" : "Save"}
+            </button>
+
+            {/* Divider */}
+            <div style={{ width:1, height:22, background:"#C8C0A0", flexShrink:0 }} />
+
+            {/* Formatting group */}
+            <div className="doc-toolbar-group" style={{ display:"flex", alignItems:"center", gap:2 }}>
+              {[
+                { id:"h1",    label:"H1",  title:"Heading 1" },
+                { id:"h2",    label:"H2",  title:"Heading 2" },
+                { id:"h3",    label:"H3",  title:"Heading 3" },
+              ].map(f => (
+                <button key={f.id} onClick={()=>applyFormat(f.id)} title={f.title} className="doc-toolbar-btn"
+                  style={{ padding:"4px 8px", borderRadius:5, border:"none", background:"transparent", fontSize:12, fontWeight:800, cursor:"pointer", color:"#3A3020", minWidth:30, transition:"all 0.12s", fontFamily:"'DM Sans',sans-serif" }}>
+                  {f.label}
                 </button>
               ))}
             </div>
-          </div>
-          {showAiPanel && (
-            <div style={{ marginTop:14,background:`${NC}06`,border:`1.5px solid ${NC}30`,borderRadius:12,padding:"20px",animation:"notes-fade 0.3s ease both" }}>
-              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
-                <div style={{ fontSize:12,fontWeight:700,letterSpacing:1,color:NC,textTransform:"uppercase" }}>
-                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
-                </div>
-                <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:13 }}>✕</button>
-              </div>
-              {aiLoading ? (
-                <div style={{ display:"flex",gap:6,alignItems:"center",color:"#B8A06A" }}>
-                  {[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}
-                  <span style={{ fontSize:13,marginLeft:4 }}>Working on it…</span>
-                </div>
-              ) : (
-                <div>
-                  <pre style={{ fontSize:13,color:"#3A2A10",lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif",margin:0 }}>{aiResult}</pre>
-                  {aiMode==="improve" && (
-                    <button onClick={()=>setContent(aiResult)} style={{ marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:NC,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
-                      Use Improved Version
-                    </button>
-                  )}
-                </div>
-              )}
+
+            <div style={{ width:1, height:22, background:"#C8C0A0", flexShrink:0 }} />
+
+            <div className="doc-toolbar-group" style={{ display:"flex", alignItems:"center", gap:2 }}>
+              {[
+                { id:"bold",      label:"B",    title:"Bold",          style:{ fontWeight:900 } },
+                { id:"italic",    label:"I",    title:"Italic",        style:{ fontStyle:"italic" } },
+                { id:"underline", label:"U",    title:"Underline",     style:{ textDecoration:"underline" } },
+              ].map(f => (
+                <button key={f.id} onClick={()=>applyFormat(f.id)} title={f.title} className="doc-toolbar-btn"
+                  style={{ padding:"4px 9px", borderRadius:5, border:"none", background:"transparent", fontSize:13, cursor:"pointer", color:"#3A3020", minWidth:30, transition:"all 0.12s", fontFamily:"'DM Sans',sans-serif", ...f.style }}>
+                  {f.label}
+                </button>
+              ))}
             </div>
-          )}
-          <div style={{ marginTop:14,background:"#fff",border:`1px solid ${NL}`,borderRadius:12,overflow:"hidden" }}>
-            <button onClick={()=>setShowChat(c=>!c)} style={{ width:"100%",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif" }}>
-              <span style={{ fontSize:13,fontWeight:700,color:ND }}>💬 Chat with your notes</span>
-              <span style={{ fontSize:11,color:"#B8A06A",fontWeight:600 }}>{showChat?"▲ Close":"▼ Open"}</span>
+
+            <div style={{ width:1, height:22, background:"#C8C0A0", flexShrink:0 }} />
+
+            <div className="doc-toolbar-group" style={{ display:"flex", alignItems:"center", gap:2 }}>
+              {[
+                { id:"ul",   label:"• List",    title:"Bullet List" },
+                { id:"ol",   label:"1. List",   title:"Numbered List" },
+                { id:"hr",   label:"― Line",    title:"Divider" },
+              ].map(f => (
+                <button key={f.id} onClick={()=>applyFormat(f.id)} title={f.title} className="doc-toolbar-btn"
+                  style={{ padding:"4px 9px", borderRadius:5, border:"none", background:"transparent", fontSize:11, fontWeight:700, cursor:"pointer", color:"#3A3020", transition:"all 0.12s", whiteSpace:"nowrap" }}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ width:1, height:22, background:"#C8C0A0", flexShrink:0 }} />
+
+            {/* Folder selector */}
+            <select value={folder} onChange={e=>setFolder(e.target.value)}
+              style={{ padding:"4px 8px", borderRadius:6, border:"1px solid #C8C0A0", background:"#fff", fontSize:11, fontWeight:600, color:"#5A4A2A", cursor:"pointer", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
+              <option value="">📁 No Folder</option>
+              {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+
+            {/* Record */}
+            <button onClick={toggleRecording} className="doc-toolbar-btn"
+              style={{ padding:"4px 10px", borderRadius:5, border:`1px solid ${isRecording?"#E85D3F":"#C8C0A0"}`, background:isRecording?"#FEF2F2":"transparent", fontSize:11, fontWeight:700, cursor:"pointer", color:isRecording?"#E85D3F":"#5A4A2A", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", transition:"all 0.18s" }}>
+              {isRecording ? <><span style={{ width:7,height:7,borderRadius:"50%",background:"#E85D3F",animation:"notes-pulse 1s infinite",display:"inline-block" }} />Recording…</> : "🎙 Record"}
             </button>
-            {showChat && (
-              <div style={{ borderTop:`1px solid ${NL}` }}>
-                {chatMessages.length===0 && (
-                  <div style={{ padding:"12px 14px",display:"flex",gap:8,flexWrap:"wrap",borderBottom:`1px solid ${NL}66` }}>
-                    {["Summarize in one paragraph","What are the key terms?","What will I likely be tested on?","Explain the hardest concept simply"].map(q=>(
-                      <button key={q} onClick={()=>sendChatMessage(q)}
-                        style={{ padding:"5px 12px",borderRadius:20,border:`1px solid ${NL}`,background:`${NC}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:ND,transition:"all 0.15s" }}
-                        onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}
-                        onMouseLeave={e=>{e.currentTarget.style.background=`${NC}08`;e.currentTarget.style.color=ND;e.currentTarget.style.borderColor=NL;}}>
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {chatMessages.length>0 && (
-                  <div style={{ maxHeight:280,overflowY:"auto",padding:"14px" }}>
-                    {chatMessages.map((m,i)=>(
-                      <div key={i} style={{ marginBottom:12,display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start" }}>
-                        <div style={{ maxWidth:"85%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",background:m.role==="user"?NC:"#F5F3EC",color:m.role==="user"?"#fff":"#1A1814",fontSize:13,lineHeight:1.65 }}>
-                          {m.content}
-                        </div>
-                      </div>
-                    ))}
-                    {chatLoading && <div style={{ display:"flex",gap:5,padding:"8px 0" }}>{[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}</div>}
-                  </div>
-                )}
-                <div style={{ padding:"10px 12px",borderTop:`1px solid ${NL}66`,display:"flex",gap:8 }}>
-                  <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
-                    onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")sendChatMessage();}}
-                    placeholder={content.trim()?"Ask anything about these notes…":"Write some notes first"}
-                    disabled={!content.trim()}
-                    style={{ flex:1,padding:"9px 12px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
-                    onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
-                  <button onClick={()=>sendChatMessage()} disabled={!chatInput.trim()||chatLoading||!content.trim()}
-                    style={{ padding:"9px 16px",borderRadius:9,border:"none",background:chatInput.trim()&&content.trim()?NC:"#E8D8A0",color:chatInput.trim()&&content.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()&&content.trim()?"pointer":"default" }}>↑</button>
-                </div>
-              </div>
-            )}
+
+            {/* Word count */}
+            <div style={{ marginLeft:"auto", fontSize:11, color:"#8C7A4A", whiteSpace:"nowrap", flexShrink:0 }}>
+              {content.trim().split(/\s+/).filter(Boolean).length} words
+            </div>
           </div>
-          <div style={{ display:"flex",gap:10,marginTop:24,paddingTop:18,borderTop:`1px solid ${NL}66` }}>
-            <button onClick={saveNote} disabled={!content.trim()&&!title.trim()}
-              style={{ flex:1,padding:"13px 0",borderRadius:10,border:"none",background:saveAnim?"#2BAE7E":content.trim()||title.trim()?NC:"#E8D8A0",color:content.trim()||title.trim()?"#fff":"#B8A06A",fontSize:14,fontWeight:800,cursor:content.trim()||title.trim()?"pointer":"default",transition:"all 0.3s",fontFamily:"'DM Sans',sans-serif" }}>
-              {saveAnim?"✓ Saved!":activeNote?"Save Changes":"Save Note"}
+
+          {/* ── PAGE ── */}
+          <div className="doc-page-wrap" style={{ flex:1, overflowY:"auto", padding:"32px 48px", display:"flex", justifyContent:"center" }}>
+            <div className="doc-page" style={{ width:"100%", maxWidth:760, background:"#fff", borderRadius:4, padding:"64px 72px", minHeight:900, position:"relative" }}>
+
+              {/* Title field */}
+              <input
+                value={title}
+                onChange={e=>setTitle(e.target.value)}
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"){e.preventDefault();editorRef.current?.focus();}}}
+                placeholder="Untitled Document"
+                className="doc-title"
+                style={{ width:"100%", border:"none", fontSize:32, fontFamily:"'Playfair Display',serif", fontWeight:900, color:"#1A1814", lineHeight:1.2, marginBottom:8, background:"transparent", boxSizing:"border-box", letterSpacing:-0.5 }}
+              />
+
+              {/* Meta row */}
+              <div style={{ fontSize:11, color:"#B8A06A", marginBottom:32, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                <span>{new Date().toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</span>
+                {folder && <><span style={{ opacity:0.5 }}>·</span><span>📁 {folders.find(f=>f.id===folder)?.name}</span></>}
+              </div>
+
+              {/* Divider under title */}
+              <div style={{ height:1, background:`linear-gradient(90deg,${NC}40,transparent)`, marginBottom:36 }} />
+
+              {/* Body textarea */}
+              <textarea
+                ref={editorRef}
+                value={content}
+                onChange={e=>setContent(e.target.value)}
+                onKeyDown={e=>{
+                  if(e.key===" ") e.stopPropagation();
+                  // Tab → indent
+                  if(e.key==="Tab"){e.preventDefault();const s=e.target.selectionStart;const v=content.slice(0,s)+"    "+content.slice(e.target.selectionEnd);setContent(v);setTimeout(()=>{editorRef.current.selectionStart=editorRef.current.selectionEnd=s+4;},0);}
+                }}
+                placeholder="Start writing…"
+                className="doc-body"
+                style={{ width:"100%", minHeight:600, border:"none", background:"transparent", fontSize:15, fontFamily:"'DM Sans',sans-serif", color:"#1A1814", lineHeight:1.95, resize:"none", boxSizing:"border-box", letterSpacing:0.1 }}
+              />
+            </div>
+          </div>
+
+          {/* ── BOTTOM AI STRIP ── */}
+          <div style={{ background:"#F5F2EA", borderTop:"1px solid #D8D0B8", padding:"8px 20px", display:"flex", alignItems:"center", gap:6, flexShrink:0, overflowX:"auto" }}>
+            <span style={{ fontSize:11, fontWeight:700, color:"#8C7A4A", marginRight:4, whiteSpace:"nowrap" }}>AI:</span>
+            {[["summarize","✦ Summarize"],["improve","✨ Improve"],["flashcards","📇 Flashcards"],["quiz","❓ Quiz"],["objectives","🎯 Objectives"],["explain","💬 Explain"]].map(([mode,label])=>(
+              <button key={mode} onClick={()=>runAI(mode)} disabled={!content.trim()||aiLoading}
+                style={{ padding:"5px 12px", borderRadius:6, border:`1px solid #C8C0A0`, background:"#fff", fontSize:11, fontWeight:700, cursor:content.trim()&&!aiLoading?"pointer":"default", color:content.trim()?ND:"#C8B890", whiteSpace:"nowrap", transition:"all 0.15s" }}
+                onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}}
+                onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.color=content.trim()?ND:"#C8B890";e.currentTarget.style.borderColor="#C8C0A0";}}>
+                {label}
+              </button>
+            ))}
+            <button onClick={()=>setShowChat(c=>!c)}
+              style={{ padding:"5px 12px", borderRadius:6, border:`1px solid ${showChat?NC:"#C8C0A0"}`, background:showChat?`${NC}15`:"#fff", fontSize:11, fontWeight:700, cursor:"pointer", color:showChat?NC:ND, whiteSpace:"nowrap", marginLeft:4, transition:"all 0.15s" }}>
+              💬 Chat
             </button>
             {activeNote && (
               <button onClick={()=>{if(window.confirm("Delete this note?"))deleteNote(activeNote.id);}}
-                style={{ padding:"13px 18px",borderRadius:10,border:"1px solid #FECACA",background:"transparent",color:"#E85D3F",fontSize:13,fontWeight:600,cursor:"pointer" }}>
+                style={{ marginLeft:"auto", padding:"5px 12px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", fontSize:11, fontWeight:600, cursor:"pointer", color:"#E85D3F", whiteSpace:"nowrap" }}>
                 🗑 Delete
               </button>
             )}
           </div>
+
+          {/* ── AI RESULT PANEL ── */}
+          {showAiPanel && (
+            <div style={{ position:"fixed", bottom:52, right:20, width:380, maxHeight:"60vh", background:"#fff", border:`1.5px solid ${NC}`, borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.15)", zIndex:200, display:"flex", flexDirection:"column", animation:"notes-fade 0.25s ease both" }}>
+              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${NL}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:NC, textTransform:"uppercase", letterSpacing:1 }}>
+                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
+                </div>
+                <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:14,lineHeight:1 }}>✕</button>
+              </div>
+              <div style={{ flex:1, overflowY:"auto", padding:"14px 16px" }}>
+                {aiLoading ? (
+                  <div style={{ display:"flex",gap:6,alignItems:"center",color:"#B8A06A",padding:"8px 0" }}>
+                    {[0,1,2].map(i=><div key={i} style={{ width:8,height:8,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}
+                    <span style={{ fontSize:13,marginLeft:4 }}>Working on it…</span>
+                  </div>
+                ) : (
+                  <pre style={{ fontSize:13,color:"#3A2A10",lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif",margin:0 }}>{aiResult}</pre>
+                )}
+              </div>
+              {!aiLoading && aiMode==="improve" && (
+                <div style={{ padding:"10px 14px", borderTop:`1px solid ${NL}`, flexShrink:0 }}>
+                  <button onClick={()=>{setContent(aiResult);setShowAiPanel(false);}} style={{ width:"100%",padding:"9px",borderRadius:8,border:"none",background:NC,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer" }}>
+                    Use Improved Version
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── CHAT PANEL ── */}
+          {showChat && (
+            <div style={{ position:"fixed", bottom:52, right:20, width:360, maxHeight:"55vh", background:"#fff", border:`1.5px solid ${NC}`, borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.15)", zIndex:200, display:"flex", flexDirection:"column", animation:"notes-fade 0.25s ease both" }}>
+              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${NL}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+                <span style={{ fontSize:13, fontWeight:700, color:ND }}>💬 Chat with Notes</span>
+                <button onClick={()=>setShowChat(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:14 }}>✕</button>
+              </div>
+              {chatMessages.length===0 && (
+                <div style={{ padding:"10px 12px", display:"flex", gap:6, flexWrap:"wrap", borderBottom:`1px solid ${NL}66` }}>
+                  {["Key terms?","What's testable?","Summarize simply","Hardest concept?"].map(q=>(
+                    <button key={q} onClick={()=>sendChatMessage(q)}
+                      style={{ padding:"4px 10px",borderRadius:14,border:`1px solid ${NL}`,background:`${NC}08`,fontSize:11,fontWeight:600,cursor:"pointer",color:ND,transition:"all 0.15s" }}
+                      onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=`${NC}08`;e.currentTarget.style.color=ND;}}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ flex:1, overflowY:"auto", padding:"12px 14px" }}>
+                {chatMessages.map((m,i)=>(
+                  <div key={i} style={{ marginBottom:10,display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start" }}>
+                    <div style={{ maxWidth:"88%",padding:"9px 13px",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",background:m.role==="user"?NC:"#F5F3EC",color:m.role==="user"?"#fff":"#1A1814",fontSize:13,lineHeight:1.6 }}>
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && <div style={{ display:"flex",gap:5 }}>{[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:NC,animation:`notes-pulse 1s ${i*0.2}s infinite` }} />)}</div>}
+              </div>
+              <div style={{ padding:"8px 10px",borderTop:`1px solid ${NL}66`,display:"flex",gap:6,flexShrink:0 }}>
+                <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
+                  onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")sendChatMessage();}}
+                  placeholder="Ask about your notes…"
+                  style={{ flex:1,padding:"8px 11px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:12,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
+                  onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
+                <button onClick={()=>sendChatMessage()} disabled={!chatInput.trim()||chatLoading}
+                  style={{ padding:"8px 14px",borderRadius:8,border:"none",background:chatInput.trim()?NC:"#E8D8A0",color:chatInput.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()?"pointer":"default" }}>↑</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
