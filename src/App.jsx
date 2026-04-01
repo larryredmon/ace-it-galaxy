@@ -7745,13 +7745,13 @@ function NotesApp({ onBack, user, openAuth }) {
             </div>
           </div>
 
-          {/* Note title */}
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,42px)", fontWeight:900, color:"#1A1814", lineHeight:1.15, marginBottom:16, letterSpacing:-0.5 }}>
+          {/* Note title — centered */}
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(24px,4vw,40px)", fontWeight:900, color:"#1A1814", lineHeight:1.15, marginBottom:12, letterSpacing:-0.5, textAlign:"center" }}>
             {activeNote.title}
           </h1>
 
-          {/* Meta */}
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:40, flexWrap:"wrap" }}>
+          {/* Meta — centered */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:36, flexWrap:"wrap" }}>
             <span style={{ fontSize:12, color:"#B8A06A" }}>
               {new Date(activeNote.updatedAt).toLocaleDateString([],{weekday:"long",year:"numeric",month:"long",day:"numeric"})}
             </span>
@@ -7766,31 +7766,130 @@ function NotesApp({ onBack, user, openAuth }) {
           </div>
 
           {/* Divider */}
-          <div style={{ height:1, background:`linear-gradient(90deg, ${NC}40, transparent)`, marginBottom:40 }} />
+          <div style={{ height:1, background:`linear-gradient(90deg, transparent, ${NC}50, transparent)`, marginBottom:36 }} />
 
-          {/* Note content — clean rendered */}
-          <div style={{ fontSize:16, lineHeight:2, color:"#1A1814", fontFamily:"'DM Sans',sans-serif" }}>
-            {activeNote.content?.split("\n").map((line, i) => {
-              if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(22px,3vw,32px)", fontWeight:900, color:"#1A1814", margin:"32px 0 12px", lineHeight:1.2, letterSpacing:-0.5 }}>{line.slice(2)}</h1>;
-              if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(18px,2.5vw,24px)", fontWeight:800, color:"#1A1814", margin:"26px 0 10px", lineHeight:1.25 }}>{line.slice(3)}</h2>;
-              if (line.startsWith("### ")) return <h3 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(15px,2vw,19px)", fontWeight:700, color:"#1A1814", margin:"20px 0 8px" }}>{line.slice(4)}</h3>;
-              if (line.startsWith("- "))  return <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"6px 0" }}><span style={{ color:NC, fontSize:16, flexShrink:0, marginTop:3 }}>•</span><span style={{ flex:1 }}>{line.slice(2)}</span></div>;
-              if (/^\d+\.\s/.test(line)) {
-                const num = line.match(/^(\d+)\./)[1];
-                return <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"6px 0" }}><span style={{ color:NC, fontSize:14, fontWeight:700, flexShrink:0, minWidth:20 }}>{num}.</span><span style={{ flex:1 }}>{line.replace(/^\d+\.\s/,"")}</span></div>;
+          {/* Note content — left-aligned, clean rendering */}
+          <div style={{ textAlign:"left" }}>
+            {(() => {
+              // Helper: parse inline bold/italic and strip leftover * _ symbols
+              const parseInline = (text) => {
+                // Replace **word** with bold, *word* with italic, _word_ with italic
+                // Also handle partial bold like **O**bedience → Obedience (bold O)
+                const parts = [];
+                let remaining = text;
+                let key = 0;
+
+                // Process the text character by character using regex
+                const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_)/g;
+                let lastIndex = 0;
+                let match;
+
+                while ((match = regex.exec(remaining)) !== null) {
+                  // Add plain text before match
+                  if (match.index > lastIndex) {
+                    parts.push(remaining.slice(lastIndex, match.index));
+                  }
+                  if (match[0].startsWith("**")) {
+                    parts.push(<strong key={key++} style={{ fontWeight:700 }}>{match[2]}</strong>);
+                  } else {
+                    parts.push(<em key={key++}>{match[3] || match[4]}</em>);
+                  }
+                  lastIndex = regex.lastIndex;
+                }
+                // Remaining plain text
+                if (lastIndex < remaining.length) {
+                  parts.push(remaining.slice(lastIndex));
+                }
+                return parts.length > 0 ? parts : [text];
+              };
+
+              // Strip any remaining raw markdown symbols from plain lines
+              const cleanLine = (line) => line.replace(/^#{1,6}\s*/, "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/_(.+?)_/g, "$1").replace(/^[-*]\s/, "").replace(/^\d+\.\s/, "").replace(/^---+$/, "").trim();
+
+              const lines = (activeNote.content || "").split("\n");
+              const elements = [];
+              let i = 0;
+
+              while (i < lines.length) {
+                const line = lines[i];
+                const trimmed = line.trim();
+
+                // Skip empty lines — add spacing
+                if (!trimmed) { elements.push(<div key={i} style={{ height:10 }} />); i++; continue; }
+
+                // Horizontal rule
+                if (/^---+$/.test(trimmed) || /^\*\*\*+$/.test(trimmed)) {
+                  elements.push(<hr key={i} style={{ border:"none", borderTop:`1px solid ${NL}`, margin:"20px 0" }} />);
+                  i++; continue;
+                }
+
+                // H1 — # or ====
+                if (/^#{1}\s/.test(line) && !/^#{2}/.test(line)) {
+                  const text = line.replace(/^#+\s*/, "").trim();
+                  elements.push(<h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(20px,2.8vw,30px)", fontWeight:900, color:"#1A1814", margin:"32px 0 10px", lineHeight:1.2, borderBottom:`2px solid ${NL}`, paddingBottom:8 }}>{text}</h1>);
+                  i++; continue;
+                }
+
+                // H2
+                if (/^#{2}\s/.test(line) && !/^#{3}/.test(line)) {
+                  const text = line.replace(/^#+\s*/, "").trim();
+                  elements.push(<h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(17px,2.3vw,24px)", fontWeight:800, color:"#1A1814", margin:"26px 0 8px", lineHeight:1.25 }}>{text}</h2>);
+                  i++; continue;
+                }
+
+                // H3
+                if (/^#{3}\s/.test(line) && !/^#{4}/.test(line)) {
+                  const text = line.replace(/^#+\s*/, "").trim();
+                  elements.push(<h3 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(15px,2vw,19px)", fontWeight:800, color:"#5A4A2A", margin:"20px 0 6px" }}>{text}</h3>);
+                  i++; continue;
+                }
+
+                // H4+ — render as bold label, not heading symbol
+                if (/^#{4,}\s/.test(line)) {
+                  const text = line.replace(/^#+\s*/, "").trim();
+                  elements.push(<p key={i} style={{ fontSize:15, fontWeight:700, color:"#1A1814", margin:"16px 0 6px" }}>{text}</p>);
+                  i++; continue;
+                }
+
+                // Bullet list item
+                if (/^[-*+]\s/.test(trimmed)) {
+                  const text = trimmed.replace(/^[-*+]\s/, "");
+                  elements.push(
+                    <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"5px 0", paddingLeft:8 }}>
+                      <span style={{ color:NC, fontSize:14, flexShrink:0, marginTop:5, lineHeight:1 }}>•</span>
+                      <span style={{ flex:1, fontSize:15, lineHeight:1.85, color:"#1A1814" }}>{parseInline(text)}</span>
+                    </div>
+                  );
+                  i++; continue;
+                }
+
+                // Numbered list
+                if (/^\d+\.\s/.test(trimmed)) {
+                  const num = trimmed.match(/^(\d+)\./)?.[1];
+                  const text = trimmed.replace(/^\d+\.\s/, "");
+                  elements.push(
+                    <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, margin:"5px 0", paddingLeft:8 }}>
+                      <span style={{ color:NC, fontSize:13, fontWeight:700, flexShrink:0, minWidth:22, marginTop:4 }}>{num}.</span>
+                      <span style={{ flex:1, fontSize:15, lineHeight:1.85, color:"#1A1814" }}>{parseInline(text)}</span>
+                    </div>
+                  );
+                  i++; continue;
+                }
+
+                // Plain paragraph — parse inline styles, strip leftover symbols
+                const stripped = trimmed
+                  .replace(/^[-*+]\s/, "") // stray bullet
+                  .replace(/^#+\s*/, "");  // stray heading symbols
+                elements.push(
+                  <p key={i} style={{ fontSize:15, lineHeight:1.9, color:"#1A1814", margin:"5px 0" }}>
+                    {parseInline(stripped)}
+                  </p>
+                );
+                i++;
               }
-              if (line.startsWith("**") && line.endsWith("**")) return <p key={i} style={{ fontWeight:800, color:"#1A1814", margin:"4px 0" }}>{line.slice(2,-2)}</p>;
-              // Inline bold/italic
-              const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
-              const rendered = parts.map((p,j) => {
-                if (p.startsWith("**")&&p.endsWith("**")) return <strong key={j} style={{ fontWeight:800 }}>{p.slice(2,-2)}</strong>;
-                if (p.startsWith("_")&&p.endsWith("_"))   return <em key={j}>{p.slice(1,-1)}</em>;
-                return p;
-              });
-              return line.trim()
-                ? <p key={i} style={{ margin:"6px 0", lineHeight:1.9 }}>{rendered}</p>
-                : <div key={i} style={{ height:12 }} />;
-            })}
+
+              return elements;
+            })()}
           </div>
 
           {/* Bottom actions */}
