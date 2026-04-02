@@ -28,6 +28,93 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+// ─── Firestore Sync Layer ──────────────────────────────────────────────────────
+// localStorage = instant cache, Firestore = persistent source of truth
+// All writes: localStorage first (instant) → Firestore background (no blocking)
+
+const TP_SYNC_KEYS = {
+  "tp_fc_decks":      { fsKey: "flashcards", field: "decks" },
+  "tp_fc_folders":    { fsKey: "flashcards", field: "folders" },
+  "tp_notes":         { fsKey: "notes",      field: "notes" },
+  "tp_note_folders":  { fsKey: "notes",      field: "folders" },
+  "tp_bm_maps":       { fsKey: "brainmaps",  field: "maps" },
+  "tp_tracker_tasks": { fsKey: "tracker",    field: "tasks" },
+  "tp_journal":       { fsKey: "journal",    field: "entries" },
+  "tp_courses":       { fsKey: "courses",    field: "courses" },
+};
+
+// Strip base64 images before Firestore (documents have 1MB limit)
+function stripImages(data) {
+  if (!Array.isArray(data)) return data;
+  return data.map(item => {
+    if (!item || typeof item !== "object") return item;
+    const stripped = { ...item };
+    // Strip base64 card images from flash card decks
+    if (stripped.cards) {
+      stripped.cards = stripped.cards.map(c => {
+        if (c.image && c.image.startsWith("data:")) {
+          return { ...c, image: null };
+        }
+        return c;
+      });
+    }
+    // Strip note content that might have embedded images
+    return stripped;
+  });
+}
+
+// Write one field to Firestore (background, never blocks UI)
+async function fsWrite(uid, fsKey, field, data) {
+  if (!uid || !db) return;
+  try {
+    const ref = doc(db, "users", uid, "appdata", fsKey);
+    await setDoc(ref, { [field]: stripImages(data), updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) {
+    console.warn(`[tpSync] Firestore write failed (${fsKey}.${field}):`, e?.message);
+  }
+}
+
+// Load all app data from Firestore → populate localStorage
+async function fsLoadAll(uid) {
+  if (!uid || !db) return;
+  const fsKeys = ["flashcards", "notes", "brainmaps", "tracker", "journal", "courses"];
+  const results = {};
+  await Promise.all(fsKeys.map(async (fsKey) => {
+    try {
+      const snap = await getDoc(doc(db, "users", uid, "appdata", fsKey));
+      if (snap.exists()) results[fsKey] = snap.data();
+    } catch {}
+  }));
+
+  // Populate localStorage from Firestore data
+  const mapping = [
+    ["tp_fc_decks",      results.flashcards?.decks],
+    ["tp_fc_folders",    results.flashcards?.folders],
+    ["tp_notes",         results.notes?.notes],
+    ["tp_note_folders",  results.notes?.folders],
+    ["tp_bm_maps",       results.brainmaps?.maps],
+    ["tp_tracker_tasks", results.tracker?.tasks],
+    ["tp_journal",       results.journal?.entries],
+    ["tp_courses",       results.courses?.courses],
+  ];
+
+  for (const [lsKey, value] of mapping) {
+    if (value !== undefined && value !== null) {
+      try {
+        // Only overwrite if Firestore has data AND it's newer than local
+        // (simple strategy: Firestore wins on login)
+        localStorage.setItem(lsKey, JSON.stringify(value));
+      } catch {}
+    }
+  }
+  return results;
+}
+
+// Dispatch sync event — called by each app after localStorage write
+function tpSync(lsKey, data) {
+  window.dispatchEvent(new CustomEvent("tpSync", { detail: { lsKey, data } }));
+}
+
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
   { id: 1,  appId: "flashcards",   name: "Flash Cards",             symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
@@ -1422,10 +1509,12 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
 
   useEffect(() => {
     try { localStorage.setItem("tp_fc_decks", JSON.stringify(decks)); } catch {}
+    tpSync("tp_fc_decks", decks);
   }, [decks]);
 
   useEffect(() => {
     try { localStorage.setItem("tp_fc_folders", JSON.stringify(userFolders)); } catch {}
+    tpSync("tp_fc_folders", userFolders);
   }, [userFolders]);
 
   const saveDeck = (deckData) => {
@@ -5150,6 +5239,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
 
   useEffect(() => {
     try { localStorage.setItem("tp_bm_maps", JSON.stringify(maps)); } catch {}
+    tpSync("tp_bm_maps", maps);
   }, [maps]);
 
   const openMap  = (map) => { setActiveMap(map); setView("canvas"); };
@@ -7765,8 +7855,8 @@ function NotesApp({ onBack, user, openAuth }) {
   const recognitionRef = useRef(null);
   const editorRef     = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} }, [notes]);
-  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {} }, [folders]);
+  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {}; tpSync("tp_notes", notes); }, [notes]);
+  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {}; tpSync("tp_note_folders", folders); }, [folders]);
 
   const newNote = (preTitle="", preContent="") => {
     setTitle(preTitle); setContent(preContent); setFolder("");
@@ -8952,6 +9042,7 @@ function TrackerApp({ onBack, user, openAuth }) {
 
   useEffect(() => {
     try { localStorage.setItem("tp_tracker_tasks", JSON.stringify(tasks)); } catch {}
+    tpSync("tp_tracker_tasks", tasks);
   }, [tasks]);
 
   const addTask = () => {
@@ -9398,6 +9489,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
 
   useEffect(() => {
     try { localStorage.setItem("tp_journal", JSON.stringify(entries)); } catch {}
+    tpSync("tp_journal", entries);
   }, [entries]);
 
   useEffect(() => {
@@ -10452,6 +10544,7 @@ export default function AceItGalaxy() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
+  const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
   const [user, setUser]             = useState(() => {
     try { const s = localStorage.getItem("tp_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -10721,10 +10814,18 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
     window.history.pushState({ screen: "galaxy" }, "", "/");
+    // Load Firestore data on auth (non-blocking)
+    if (userData.uid) {
+      fsLoadAll(userData.uid).catch(() => {});
+    }
   };
   const handleLogout = async () => {
     try { await signOut(auth); } catch {}
     try { localStorage.removeItem("tp_user"); } catch {}
+    // Clear app data from localStorage on logout
+    ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses"].forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
     setUser(null); setShowHome(true); setCurrentApp(null);
     window.history.pushState({ app: null }, "", "/");
   };
@@ -10760,6 +10861,11 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
+        // Load all Firestore data on login
+        fsLoadAll(firebaseUser.uid).then(() => {
+          // Force re-render so apps pick up new localStorage values
+          setUser(u => u ? { ...u } : u);
+        }).catch(() => {});
         // Enrich with Firestore name in background
         getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
           if (snap.exists() && snap.data().name) {
@@ -10771,13 +10877,34 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         }).catch(() => {});
       } else {
         // Only clear if we don't have a localStorage backup
-        // Safari blocks Firebase sessions so we keep localStorage as fallback
         const cached = localStorage.getItem("tp_user");
         if (!cached) setUser(null);
       }
       setAuthLoading(false);
     });
-    return () => unsub();
+
+    // Listen for tpSync events from any app and write to Firestore
+    const syncTimerRef = { current: null };
+    const handleSyncEvent = (e) => {
+      const { lsKey, data } = e.detail || {};
+      if (!lsKey || !data) return;
+      const mapping = TP_SYNC_KEYS[lsKey];
+      if (!mapping) return;
+      const uid = (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
+      if (!uid) return;
+      setSyncStatus("saving");
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      fsWrite(uid, mapping.fsKey, mapping.field, data).then(() => {
+        setSyncStatus("saved");
+        syncTimerRef.current = setTimeout(() => setSyncStatus("idle"), 2500);
+      }).catch(() => {
+        setSyncStatus("error");
+        syncTimerRef.current = setTimeout(() => setSyncStatus("idle"), 3000);
+      });
+    };
+    window.addEventListener("tpSync", handleSyncEvent);
+
+    return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); };
   }, []); // eslint-disable-line
 
   // Show splash while Firebase resolves auth state
@@ -10923,6 +11050,16 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         {/* Auth */}
         {user ? (
           <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            {/* Sync status indicator */}
+            {syncStatus !== "idle" && (
+              <div style={{ display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,transition:"all 0.3s",
+                color:syncStatus==="saved"?"#2BAE7E":syncStatus==="error"?"#E85D3F":"rgba(245,200,66,0.8)" }}>
+                {syncStatus==="saving" && <span style={{ width:8,height:8,borderRadius:"50%",border:"2px solid rgba(245,200,66,0.8)",borderTopColor:"transparent",animation:"qbSpin 0.7s linear infinite",display:"inline-block" }} />}
+                {syncStatus==="saved"  && <span>☁ Saved</span>}
+                {syncStatus==="error"  && <span>⚠ Sync failed</span>}
+                {syncStatus==="saving" && <span>Saving…</span>}
+              </div>
+            )}
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{user.name}</div>
               <div style={{ fontSize:10,color:"rgba(245,200,66,0.6)",letterSpacing:0.5,fontWeight:600 }}>Free Plan</div>
