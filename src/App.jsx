@@ -1510,7 +1510,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
       <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          {/* Hamburger + Logo */}
+          {/* Hamburger + Back + Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.18s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.background = "#F7F6F2"; }}
@@ -1519,6 +1519,10 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
               <div style={{ width: 10, height: 1.5, background: "#8C8880", borderRadius: 1 }} />
               <div style={{ width: 14, height: 1.5, background: "#1A1814", borderRadius: 1 }} />
             </button>
+            <button onClick={onBack} style={{ background:"none", border:"1px solid #D8D5CE", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C8880", transition:"all 0.18s", whiteSpace:"nowrap", flexShrink:0 }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#8C8880";}}>← Galaxy</button>
+            <div style={{ width:1, height:20, background:"#ECEAE4", flexShrink:0 }} />
             <div onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
               <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
@@ -1534,9 +1538,8 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
             ))}
           </div>
 
-          {/* Right */}
+          {/* Right — user only */}
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={onBack} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", transition: "all 0.18s" }}>← Galaxy</button>
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ textAlign: "right" }}>
@@ -1867,6 +1870,9 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [qbOrgChoice, setQbOrgChoice]   = useState(null); // null | "one" | "organized"
   const [qbTopics, setQbTopics]         = useState([]); // [{topic, folderName, cards:[]}]
   const [qbSource, setQbSource]         = useState(""); // "Lecture Notes" | "Textbook" | etc.
+  const [qbImages, setQbImages]         = useState([]); // [{base64, name, preview}]
+  const qbFileInputRef = useRef(null);
+  const qbImageInputRef = useRef(null);
   // Manual / post-AI highlight editor
   const [pendingTerm, setPendingTerm]   = useState("");
   const [pendingDef, setPendingDef]     = useState("");
@@ -1940,13 +1946,39 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const SUBJECTS = ["Science","History","Math","Biology","Chemistry","English","Technology","Art","Music","Other"];
 
   const handleQuickBuild = async () => {
-    if (!qbText.trim()) return;
+    if (!qbText.trim() && qbImages.length === 0) return;
     setQbAiStep("generating");
     setQbChunkProgress({ current: 0, total: 0, step: "Analyzing content…" });
 
     try {
-      // ── CHUNK the text into ~2500 word pieces ──────────────────────────────
-      const words = qbText.trim().split(/\s+/);
+      // ── Extract text from images via vision ────────────────────────
+      let extractedFromImages = "";
+      if (qbImages.length > 0) {
+        setQbChunkProgress({ current: 0, total: qbImages.length, step: `Reading ${qbImages.length} image${qbImages.length>1?"s":""}…` });
+        for (let i = 0; i < qbImages.length; i++) {
+          setQbChunkProgress({ current: i+1, total: qbImages.length, step: `Reading image ${i+1} of ${qbImages.length}…` });
+          const img = qbImages[i];
+          const res = await fetch("/api/claude", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-5-20250929", max_tokens: 3000,
+              messages: [{ role: "user", content: [
+                { type: "image", source: { type: "base64", media_type: img.mediaType, data: img.base64 } },
+                { type: "text", text: "Extract ALL text from this image exactly as written. Include every word, number, formula, heading, bullet point, and definition. Output only the extracted text, no commentary." }
+              ]}],
+            }),
+          });
+          const data = await res.json();
+          const text = data.content?.find(b => b.type === "text")?.text || "";
+          extractedFromImages += `\n\n[Image ${i+1}: ${img.name}]\n${text}`;
+        }
+      }
+
+      const fullText = [qbText.trim(), extractedFromImages.trim()].filter(Boolean).join("\n\n");
+      if (!fullText.trim()) { setQbAiStep("input"); return; }
+
+      // ── CHUNK ──────────────────────────────────────────────────────
+      const words = fullText.trim().split(/\s+/);
       const CHUNK_SIZE = 2500;
       const chunks = [];
       for (let i = 0; i < words.length; i += CHUNK_SIZE) {
@@ -1955,97 +1987,74 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
       const totalChunks = chunks.length;
       setQbChunkProgress({ current: 0, total: totalChunks, step: `Processing ${totalChunks} section${totalChunks > 1 ? "s" : ""}…` });
 
-      // ── FIRST PASS: get topic categories from full content summary ─────────
+      // ── Topic categories ───────────────────────────────────────────
       let topicCategories = ["General"];
       if (totalChunks > 1) {
         setQbChunkProgress(p => ({ ...p, step: "Identifying topics and categories…" }));
         const summaryChunk = words.slice(0, 1500).join(" ");
         const catRes = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-5-20250929",
-            max_tokens: 400,
-            messages: [{ role: "user", content: `Read this study material excerpt and identify 3-8 main topic categories/chapters for organizing flashcards. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2","Topic 3"]}\n\nMaterial:\n${summaryChunk}` }],
-          }),
+          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 400,
+            messages: [{ role: "user", content: `Identify 3-8 main topic categories for organizing flashcards from this material. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2"]}\n\nMaterial:\n${summaryChunk}` }] }),
         });
         const catData = await catRes.json();
         const catText = catData.content?.find(b => b.type === "text")?.text || "";
-        const catClean = catText.replace(/```json|```/g, "").trim();
-        try { topicCategories = JSON.parse(catClean).topics || ["General"]; } catch {}
+        try { topicCategories = JSON.parse(catText.replace(/```json|```/g,"").trim()).topics || ["General"]; } catch {}
       }
 
-      // ── PROCESS each chunk ─────────────────────────────────────────────────
+      // ── Process each chunk ─────────────────────────────────────────
       const allCards = [];
-      const allTopicData = {};
-      topicCategories.forEach(t => { allTopicData[t] = []; });
-      allTopicData["General"] = allTopicData["General"] || [];
-
       for (let ci = 0; ci < chunks.length; ci++) {
         setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
-        const chunk = chunks[ci];
         const res = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-5-20250929",
-            max_tokens: 4000,
-            messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information from this text as flashcards.
+          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 4000,
+            messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information as flashcards.
 
 RULES:
 - Create a card for EVERY definition, term, concept, fact, process, date, name, formula, rule, or principle
-- Do NOT skip anything that could appear on a test or exam
-- Do NOT create cards for structural text ("This chapter covers...", "See figure...", "As mentioned...")
-- Terms should be specific and clear
-- Definitions should be accurate and complete
-- Assign each card to one of these topic categories: ${topicCategories.join(", ")}
-- There is NO maximum card limit — create as many cards as the content requires
-- Respond ONLY with valid JSON, no markdown, no explanation
+- Do NOT skip anything testable
+- Do NOT create cards for structural text ("This chapter covers...", "See figure...")
+- Assign each card to one of these topics: ${topicCategories.join(", ")}
+- NO maximum card limit — create as many as the content requires
+- Respond ONLY with valid JSON, no markdown
 
 Format: {"cards":[{"term":"...","definition":"...","topic":"category name"},...]}
 
-Study Material (Section ${ci + 1}/${totalChunks}):
-${chunk}` }],
-          }),
+Material (Section ${ci + 1}/${totalChunks}):
+${chunks[ci]}` }] }),
         });
         const data = await res.json();
         const raw = data.content?.find(b => b.type === "text")?.text || "";
         const clean = raw.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(clean);
-        const chunkCards = (parsed.cards || []).map((c, i) => ({
-          id: Date.now() + ci * 10000 + i,
-          term: c.term || "",
-          definition: c.definition || "",
-          topic: c.topic || topicCategories[0] || "General",
-          chunkIndex: ci,
-          isDuplicate: false,
-        }));
-        allCards.push(...chunkCards);
+        try {
+          const parsed = JSON.parse(clean);
+          const chunkCards = (parsed.cards || []).map((c, i) => ({
+            id: Date.now() + ci * 10000 + i,
+            term: c.term || "", definition: c.definition || "",
+            topic: c.topic || topicCategories[0] || "General",
+            isDuplicate: false,
+          }));
+          allCards.push(...chunkCards);
+        } catch {}
       }
 
-      // ── DUPLICATE DETECTION ───────────────────────────────────────────────
+      // ── Duplicate detection ────────────────────────────────────────
       setQbChunkProgress(p => ({ ...p, step: "Detecting duplicate concepts…" }));
       const duplicateIds = new Set();
-      const termsSeen = new Map(); // normalized term → first card id
+      const termsSeen = new Map();
       for (const card of allCards) {
         const normalized = card.term.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-        if (termsSeen.has(normalized)) {
-          // Mark both the original and the duplicate
-          duplicateIds.add(card.id);
-          duplicateIds.add(termsSeen.get(normalized));
-        } else {
-          termsSeen.set(normalized, card.id);
-        }
-        // Also check if first 5 words match any existing
+        if (termsSeen.has(normalized)) { duplicateIds.add(card.id); duplicateIds.add(termsSeen.get(normalized)); }
+        else termsSeen.set(normalized, card.id);
         const shortKey = normalized.split(" ").slice(0, 5).join(" ");
         if (shortKey.length > 10) {
-          if (termsSeen.has(shortKey)) {
-            duplicateIds.add(card.id);
-          } else {
-            termsSeen.set(shortKey, card.id);
-          }
+          if (termsSeen.has(shortKey)) duplicateIds.add(card.id);
+          else termsSeen.set(shortKey, card.id);
         }
       }
 
-      // ── ORGANIZE by topic ─────────────────────────────────────────────────
+      // ── Organize by topic ──────────────────────────────────────────
       const topicData = {};
       for (const card of allCards) {
         const t = card.topic || "General";
@@ -2059,12 +2068,11 @@ ${chunk}` }],
       setQbTopics(topicsList);
       setQbAiStep("review");
       if (!title.trim()) {
-        const firstLine = qbText.split("\n").find(l => l.trim().length > 5)?.trim().slice(0, 50) || "Quick Build Deck";
+        const firstLine = fullText.split("\n").find(l => l.trim().length > 5)?.trim().slice(0, 50) || "Quick Build Deck";
         setTitle(qbSource ? `${firstLine} — ${qbSource}` : firstLine);
       }
     } catch (err) {
       console.error(err);
-      // Fallback
       const sentences = qbText.split(/[.!\n]+/).map(s => s.trim()).filter(s => s.length > 20).slice(0, 20);
       const generated = sentences.map((s, i) => ({ id: Date.now() + i, term: s.split(" ").slice(0, 6).join(" "), definition: s, topic: "General", isDuplicate: false }));
       setQbAiCards(generated);
@@ -2092,7 +2100,7 @@ ${chunk}` }],
         setUserFolders(prev => [...prev, deckFolder, ...subFolders]);
       }
     }
-    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbSource("");
+    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbSource(""); setQbImages([]);
     setQbChunkProgress({ current: 0, total: 0, step: "" }); setQbOrgChoice(null);
     setQbGenerated(true);
     setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
@@ -2359,14 +2367,63 @@ Rules:
               <div className="qb-fade">
                 {qbAiStep === "input" && (
                   <>
-                    <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, overflow:"hidden", marginBottom:16 }}>
+                    <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, overflow:"hidden", marginBottom:12 }}>
                       <div style={{ padding:"12px 16px", borderBottom:"1px solid #F0EDE8", display:"flex", alignItems:"center", gap:8 }}>
                         <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase" }}>Your Study Material</span>
                         {qbText.length > 0 && <span style={{ marginLeft:"auto", fontSize:11, color:"#8C8880" }}>{qbText.split(/\s+/).filter(Boolean).length} words</span>}
                       </div>
                       <textarea value={qbText} onChange={e => setQbText(e.target.value)}
                         placeholder={"Paste your lecture notes, textbook chapter, study guide, or any text here…\n\nAI will read and understand the full context — just like asking Claude to make flashcards for you."}
-                        style={{ width:"100%", minHeight:220, padding:"16px", fontSize:14, color:"#3A3830", fontFamily:"'DM Sans',sans-serif", border:"none", outline:"none", resize:"vertical", lineHeight:1.7, background:"transparent", boxSizing:"border-box" }} />
+                        style={{ width:"100%", minHeight:180, padding:"16px", fontSize:14, color:"#3A3830", fontFamily:"'DM Sans',sans-serif", border:"none", outline:"none", resize:"vertical", lineHeight:1.7, background:"transparent", boxSizing:"border-box" }} />
+                    </div>
+
+                    {/* Image upload area */}
+                    <input ref={qbImageInputRef} type="file" accept="image/*" multiple style={{ display:"none" }}
+                      onChange={e => {
+                        const files = Array.from(e.target.files || []);
+                        files.forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const dataUrl = ev.target.result;
+                            const base64 = dataUrl.split(",")[1];
+                            const mediaType = file.type || "image/jpeg";
+                            const preview = dataUrl;
+                            setQbImages(prev => [...prev, { base64, mediaType, preview, name: file.name, id: Date.now() + Math.random() }]);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        e.target.value = "";
+                      }} />
+
+                    {/* Image drop zone / thumbnails */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                        <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase" }}>Photos & Screenshots</span>
+                        <span style={{ fontSize:11, color:"#C8C5BE" }}>(optional)</span>
+                      </div>
+                      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-start" }}>
+                        {/* Thumbnails */}
+                        {qbImages.map(img => (
+                          <div key={img.id} style={{ position:"relative", width:80, height:80, borderRadius:8, overflow:"hidden", border:"1.5px solid #ECEAE4", flexShrink:0 }}>
+                            <img src={img.preview} alt={img.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                            <button onClick={() => setQbImages(prev => prev.filter(x => x.id !== img.id))}
+                              style={{ position:"absolute", top:3, right:3, width:18, height:18, borderRadius:"50%", background:"rgba(0,0,0,0.65)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:"#fff", lineHeight:1 }}>✕</button>
+                          </div>
+                        ))}
+                        {/* Add button */}
+                        <div onClick={() => qbImageInputRef.current?.click()}
+                          style={{ width:80, height:80, borderRadius:8, border:"2px dashed #D8D5CE", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", gap:4, transition:"all 0.15s", flexShrink:0 }}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F5C842";e.currentTarget.style.background="#FFF8E8";}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.background="transparent";}}>
+                          <span style={{ fontSize:22 }}>📷</span>
+                          <span style={{ fontSize:9, fontWeight:700, color:"#A8A59E", textAlign:"center", lineHeight:1.3 }}>Add Photo</span>
+                        </div>
+                      </div>
+                      {qbImages.length > 0 && (
+                        <div style={{ fontSize:11, color:"#8C8880", marginTop:6 }}>
+                          {qbImages.length} image{qbImages.length>1?"s":""} · AI will extract all text automatically
+                        </div>
+                      )}
                     </div>
                     <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
                       <span style={{ fontSize:11, fontWeight:600, color:"#8C8880", alignSelf:"center" }}>Source:</span>
@@ -2379,9 +2436,9 @@ Rules:
                         </button>
                       ))}
                     </div>
-                    <button onClick={handleQuickBuild} disabled={qbText.trim().length < 20}
-                      style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:qbText.trim().length>=20?"#F5C842":"#ECEAE4", color:qbText.trim().length>=20?"#1A1814":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:qbText.trim().length>=20?"pointer":"default", transition:"all 0.2s" }}>
-                      🤖 Generate Flashcards with AI
+                    <button onClick={handleQuickBuild} disabled={qbText.trim().length < 20 && qbImages.length === 0}
+                      style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:(qbText.trim().length>=20||qbImages.length>0)?"#F5C842":"#ECEAE4", color:(qbText.trim().length>=20||qbImages.length>0)?"#1A1814":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:(qbText.trim().length>=20||qbImages.length>0)?"pointer":"default", transition:"all 0.2s" }}>
+                      🤖 Generate Flashcards with AI {qbImages.length > 0 && `(${qbImages.length} image${qbImages.length>1?"s":""})`}
                     </button>
                   </>
                 )}
@@ -7665,7 +7722,7 @@ function NotesApp({ onBack, user, openAuth }) {
 
       {/* ── NAV ── */}
       <nav style={{ background:"#fff",borderBottom:`1px solid ${NL}66`,position:"sticky",top:0,zIndex:100,height:62,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px" }}>
-        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <button onClick={()=>setSidebarOpen(true)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,width:36,height:36,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,transition:"all 0.18s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;}}>
@@ -7673,6 +7730,10 @@ function NotesApp({ onBack, user, openAuth }) {
             <div style={{ width:10,height:1.5,background:"#B8A06A",borderRadius:1 }} />
             <div style={{ width:14,height:1.5,background:NC,borderRadius:1 }} />
           </button>
+          <button onClick={onBack} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",transition:"all 0.18s",whiteSpace:"nowrap",flexShrink:0 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Galaxy</button>
+          <div style={{ width:1,height:20,background:NL,flexShrink:0 }} />
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
             <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>📝</div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
@@ -8622,9 +8683,10 @@ function TrackerApp({ onBack, user, openAuth }) {
       {/* Nav */}
       <nav className="tr-nav" style={{ background:"#fff", borderBottom:`1px solid ${TRL}66`, position:"sticky", top:0, zIndex:100, height:62, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 24px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <button onClick={onBack} style={{ background:"none", border:`1px solid ${TRL}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#3A8A6A", transition:"all 0.15s" }}
+          <button onClick={onBack} style={{ background:"none", border:`1px solid ${TRL}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#3A8A6A", transition:"all 0.15s", whiteSpace:"nowrap", flexShrink:0 }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=TR;e.currentTarget.style.color=TR;}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=TRL;e.currentTarget.style.color="#3A8A6A";}}>← Galaxy</button>
+          <div style={{ width:1, height:20, background:`${TRL}`, flexShrink:0 }} />
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${TR},${TRD})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>◷</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
@@ -9208,7 +9270,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
       {/* ── NAV ── */}
       <nav style={{ background:"#fff", borderBottom:`1px solid ${J_LIGHT}55`, position:"sticky", top:0, zIndex:100, height:60, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           {/* Hamburger */}
           <button onClick={() => setSidebarOpen(true)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, transition:"all 0.18s", flexShrink:0 }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.background=`${J_COLOR}08`;}}
@@ -9217,7 +9279,10 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             <div style={{ width:10, height:1.5, background:"#A88AB8", borderRadius:1 }} />
             <div style={{ width:14, height:1.5, background:J_COLOR, borderRadius:1 }} />
           </button>
-          <div style={{ width:1, height:20, background:J_LIGHT }} />
+          <button onClick={onBack} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C6A9A", transition:"all 0.18s", whiteSpace:"nowrap", flexShrink:0 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#8C6A9A";}}>← Galaxy</button>
+          <div style={{ width:1, height:20, background:J_LIGHT, flexShrink:0 }} />
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#1A1814" }}>
