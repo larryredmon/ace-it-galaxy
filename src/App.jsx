@@ -4093,7 +4093,7 @@ function FCStudySetup({ deck, onBack, onStart }) {
     : mode==="progressive" ? progStart : mode==="spaced" ? dueCount : deck.cards.length;
 
   const MODES = [
-    { id:"spaced",      icon:"✦",  label:"Spaced Repetition", desc:`${dueCount} card${dueCount!==1?"s":""} due — AI schedules reviews based on memory` },
+    { id:"spaced",      icon:"✦",  label:"Spaced Repetition", desc:`${dueCount} card${dueCount!==1?"s":""} due — schedules reviews based on your memory` },
     { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
     { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
     { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
@@ -4141,7 +4141,7 @@ function FCStudySetup({ deck, onBack, onStart }) {
         {mode==="spaced" && (
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:8 }}>Spaced Repetition — SM-2 Algorithm</div>
-            <p style={{ fontSize:12, color:"#6B6860", lineHeight:1.65, marginBottom:14 }}>The same algorithm Anki uses. After each card you rate <strong>Again / Hard / Good / Easy</strong>. Struggling cards come back sooner. Cards you know well get pushed out further.</p>
+            <p style={{ fontSize:12, color:"#6B6860", lineHeight:1.65, marginBottom:14 }}>After each card you rate <strong>Again / Hard / Good / Easy</strong>. Struggling cards come back sooner. Cards you know well get pushed out further.</p>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
               {[["Again","#E85D3F","back immediately"],["Hard","#F5A623","shorter interval"],["Good","#4F6EF7","normal interval"],["Easy","#2BAE7E","longer interval"]].map(([l,c,n])=>(
                 <div key={l} style={{ padding:"7px 12px", borderRadius:8, background:`${c}12`, border:`1px solid ${c}30` }}>
