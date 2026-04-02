@@ -1537,8 +1537,9 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => setView("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} user={user} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); setView("edit"); }} onMoveFolder={(id, folderId, folderName) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} user={user} userFolders={userFolders} />}
       {view === "create"  && <FCCreateDeck onBack={() => setView("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); setView("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
+      {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => setView("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); setView("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => setView("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => setView("deck")} onStart={(cfg) => { setStudyConfig(cfg); setView("study"); }} />}
       {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => setView("setup")} onBackToLibrary={() => setView("library")} />}
@@ -1820,13 +1821,14 @@ function FCOrganizeModal({ onClose, allDecks, tree }) {
 }
 
 // ── Create Deck ───────────────────────────────────────────────────────────────
-function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFolders, initialTab = "cards" }) {
-  const [tab, setTab]           = useState(initialTab);   // cards | quickbuild | details | organize
-  const [title, setTitle]       = useState("");
-  const [description, setDesc]  = useState("");
-  const [subject, setSubject]   = useState("");
-  const [color, setColor]       = useState("#4F6EF7");
-  const [isPublic, setIsPublic] = useState(false);
+function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFolders, initialTab = "cards", initialDeck = null }) {
+  const [tab, setTab]           = useState(initialDeck ? "cards" : initialTab);
+  const [title, setTitle]       = useState(initialDeck?.title || "");
+  const [description, setDesc]  = useState(initialDeck?.description || "");
+  const [subject, setSubject]   = useState(initialDeck?.subject || "");
+  const [color, setColor]       = useState(initialDeck?.color || "#4F6EF7");
+  const [isPublic, setIsPublic] = useState(initialDeck?.isPublic || false);
+  const isEditing = !!initialDeck;
   // Quick Build
   const [qbText, setQbText]         = useState("");
   const [qbGenerating, setQbGenerating] = useState(false);
@@ -1839,6 +1841,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [qbDuplicates, setQbDuplicates] = useState(new Set()); // set of card ids that are duplicates
   const [qbOrgChoice, setQbOrgChoice]   = useState(null); // null | "one" | "organized"
   const [qbTopics, setQbTopics]         = useState([]); // [{topic, folderName, cards:[]}]
+  const [qbSource, setQbSource]         = useState(""); // "Lecture Notes" | "Textbook" | etc.
   // Manual / post-AI highlight editor
   const [pendingTerm, setPendingTerm]   = useState("");
   const [pendingDef, setPendingDef]     = useState("");
@@ -1847,12 +1850,12 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [selMode, setSelMode]           = useState(null);      // "term" | "def" | null
   const [toolbar, setToolbar]           = useState(null);      // {x,y,text} floating toolbar
   const docRef = useRef(null);
-  const [cards, setCards]       = useState([
-    { id: 1, term: "", definition: "" },
-    { id: 2, term: "", definition: "" },
-    { id: 3, term: "", definition: "" },
-  ]);
-  const [activeCard, setActiveCard] = useState(1);
+  const [cards, setCards]       = useState(
+    initialDeck?.cards?.length
+      ? initialDeck.cards.map((c,i) => ({ id: c.id || i+1, term: c.term||"", definition: c.definition||"" }))
+      : [{ id:1, term:"", definition:"" }, { id:2, term:"", definition:"" }, { id:3, term:"", definition:"" }]
+  );
+  const [activeCard, setActiveCard] = useState(initialDeck?.cards?.[0]?.id || 1);
   // Organize — flexible: any level is optional, user can add custom options at any level
   const [orgPath, setOrgPath] = useState({ year: "", semester: "", class: "", chapter: "" });
   const [orgOptions, setOrgOptions] = useState({
@@ -1960,7 +1963,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
           body: JSON.stringify({
             model: "claude-sonnet-4-5-20250929",
             max_tokens: 4000,
-            messages: [{ role: "user", content: `You are an expert flashcard creator for a study guide. Extract EVERY testable piece of information from this text as flashcards.
+            messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information from this text as flashcards.
 
 RULES:
 - Create a card for EVERY definition, term, concept, fact, process, date, name, formula, rule, or principle
@@ -2032,7 +2035,7 @@ ${chunk}` }],
       setQbAiStep("review");
       if (!title.trim()) {
         const firstLine = qbText.split("\n").find(l => l.trim().length > 5)?.trim().slice(0, 50) || "Quick Build Deck";
-        setTitle(firstLine);
+        setTitle(qbSource ? `${firstLine} — ${qbSource}` : firstLine);
       }
     } catch (err) {
       console.error(err);
@@ -2064,7 +2067,7 @@ ${chunk}` }],
         setUserFolders(prev => [...prev, deckFolder, ...subFolders]);
       }
     }
-    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]);
+    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbSource("");
     setQbChunkProgress({ current: 0, total: 0, step: "" }); setQbOrgChoice(null);
     setQbGenerated(true);
     setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
@@ -2273,12 +2276,12 @@ Rules:
             if (!canSave) return;
             const folderKey = selectedCustom
               ? selectedCustom
-              : Object.values(orgPath).filter(Boolean).join(" › ") || null;
-            onSave({ title, subject, description, color, cards, folderKey });
+              : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
+            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic });
           }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-            Save Deck {filledCards > 0 && `(${filledCards} card${filledCards !== 1 ? "s" : ""})`}
+            {isEditing ? `Save Changes (${filledCards} card${filledCards!==1?"s":""})` : `Save Deck ${filledCards > 0 ? `(${filledCards} card${filledCards !== 1 ? "s" : ""})` : ""}`}
           </button>
         </div>
       </div>
@@ -2343,9 +2346,12 @@ Rules:
                     <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
                       <span style={{ fontSize:11, fontWeight:600, color:"#8C8880", alignSelf:"center" }}>Source:</span>
                       {["Lecture Notes","Textbook","Study Guide","My Notes","Article"].map(t => (
-                        <button key={t} style={{ padding:"5px 12px", borderRadius:20, border:"1px solid #ECEAE4", background:"#fff", fontSize:11, color:"#5A5752", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}
-                          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
-                          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>{t}</button>
+                        <button key={t} onClick={()=>setQbSource(s=>s===t?"":t)}
+                          style={{ padding:"5px 12px", borderRadius:20, border:`1px solid ${qbSource===t?"#1A1814":"#ECEAE4"}`, background:qbSource===t?"#1A1814":"#fff", fontSize:11, color:qbSource===t?"#F7F6F2":"#5A5752", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s", fontWeight:qbSource===t?700:400 }}
+                          onMouseEnter={e=>{if(qbSource!==t){e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}}
+                          onMouseLeave={e=>{if(qbSource!==t){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
+                          {qbSource===t?"✓ ":""}{t}
+                        </button>
                       ))}
                     </div>
                     <button onClick={handleQuickBuild} disabled={qbText.trim().length < 20}
@@ -2507,7 +2513,7 @@ Rules:
                         ✏️ Keep + Add More
                       </button>
                     </div>
-                    <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbOrgChoice(null); }}
+                    <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbOrgChoice(null); setQbSource(""); }}
                       style={{ width:"100%", padding:"10px", borderRadius:10, border:"1px solid #ECEAE4", background:"transparent", color:"#8C8880", fontSize:12, cursor:"pointer" }}>
                       ← Start Over
                     </button>
@@ -3144,6 +3150,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
 
   const isUserFolder   = folderPath[0] === "__uf__";
   const isDraftsFolder = folderPath[0] === "__drafts__";
+  const isUncategorized = folderPath[0] === "__uncategorized__";
   const activeFolderId = isUserFolder ? folderPath[1] : null;
   const activeFolder   = userFolders.find(f => f.id === activeFolderId);
   const activeFolderName = activeFolder?.name || null;
@@ -3163,13 +3170,18 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   };
 
   // Which decks to show in the right panel
-  const currentDecks = isUserFolder && activeFolderId
-    ? allDecks.filter(d => d.folderKey === activeFolderId || d.folderKey === activeFolderName)
-    : isDraftsFolder
-      ? []
-      : currentNode
-        ? allDecks.filter(d => fcGetAllDeckIds(currentNode).includes(d.id) || d.folderKey === currentNode.label || d.folderKey?.includes(currentNode.label))
-        : allDecks;
+  const currentDecks = isUncategorized
+    ? (() => {
+        const allFolderKeys = new Set([...userFolders.map(f=>f.id),...userFolders.map(f=>f.name)]);
+        return allDecks.filter(d => !d.folderKey || (!allFolderKeys.has(d.folderKey) && !d.folderKey?.includes("›")));
+      })()
+    : isUserFolder && activeFolderId
+      ? allDecks.filter(d => d.folderKey === activeFolderId || d.folderKey === activeFolderName)
+      : isDraftsFolder
+        ? []
+        : currentNode
+          ? allDecks.filter(d => fcGetAllDeckIds(currentNode).includes(d.id) || d.folderKey === currentNode.label || d.folderKey?.includes(currentNode.label))
+          : allDecks;
 
   const allHere = currentDecks;
 
@@ -3388,6 +3400,10 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                   <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 10px", borderRadius:20, marginBottom:6 }}>Your Folder</div>
                   <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>📁 {activeFolderName}</h1>
                   <div style={{ fontSize:12, color:"#8C8880" }}>{currentDecks.length} deck{currentDecks.length!==1?"s":""}</div></>
+                ) : isUncategorized ? (
+                  <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#8C8880", background:"#F0EDE8", padding:"2px 10px", borderRadius:20, marginBottom:6 }}>Unsorted</div>
+                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>📂 Uncategorized</h1>
+                  <div style={{ fontSize:12, color:"#8C8880" }}>{currentDecks.length} deck{currentDecks.length!==1?"s":""} without a folder</div></>
                 ) : currentNode ? (
                   <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:currentNode.color, background:`${currentNode.color}18`, padding:"2px 10px", borderRadius:20, marginBottom:6 }}>{FC_TYPE_META[currentNode.type]?.label}</div>
                   <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>{currentNode.label}</h1>
@@ -3489,8 +3505,8 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                     );
                   })}
                   {/* User folders — shown inline at root, same grid */}
-                  {folderPath.length === 0 && userFolders.map((f, i) => {
-                    const count = allDecks.filter(d => d.folderKey === f.name).length;
+                  {folderPath.length === 0 && userFolders.filter(f=>!f.parentId).map((f, i) => {
+                    const count = allDecks.filter(d => d.folderKey === f.id || d.folderKey === f.name).length;
                     return (
                       <div key={f.id} className="fc-fade-up" style={{ animationDelay:`${(currentChildren.length+i)*0.05}s`, background:"#fff", border:"1px solid #ECEAE4", borderLeft:"3px solid #4F6EF7", borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s", position:"relative" }}
                         onClick={() => setFolderPath(["__uf__", f.id])}
@@ -3508,6 +3524,28 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                       </div>
                     );
                   })}
+                  {/* Uncategorized auto-folder — only appears when decks exist without a folder */}
+                  {folderPath.length === 0 && (() => {
+                    const allFolderKeys = new Set([
+                      ...userFolders.map(f => f.id),
+                      ...userFolders.map(f => f.name),
+                    ]);
+                    const uncategorized = allDecks.filter(d => !d.folderKey || (!allFolderKeys.has(d.folderKey) && !d.folderKey.includes("›")));
+                    if (uncategorized.length === 0) return null;
+                    return (
+                      <div className="fc-fade-up" style={{ background:"#fff", border:"1px solid #ECEAE4", borderLeft:"3px solid #A8A59E", borderRadius:10, padding:"16px 18px", cursor:"pointer", transition:"all 0.18s" }}
+                        onClick={() => setFolderPath(["__uncategorized__"])}
+                        onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)";}}
+                        onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                          <span style={{ fontSize:18 }}>📂</span>
+                          <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#8C8880", background:"#F0EDE8", padding:"2px 8px", borderRadius:20 }}>Unsorted</span>
+                        </div>
+                        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>Uncategorized</div>
+                        <div style={{ fontSize:11, color:"#A8A59E" }}>{uncategorized.length} deck{uncategorized.length!==1?"s":""} without a folder</div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -3588,11 +3626,12 @@ function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
 }
 
 // ── Deck View (overview + card list) ─────────────────────────────────────────
-function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, user }) {
+function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, user, userFolders = [] }) {
   const [previewCard, setPreviewCard] = useState(null);
   const [flipped, setFlipped]         = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   const avgRating = deck.ratings?.length
     ? (deck.ratings.reduce((a, r) => a + r.stars, 0) / deck.ratings.length).toFixed(1)
@@ -3651,7 +3690,34 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, u
               <button onClick={() => setConfirmDelete(false)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", color:"#8C8880", fontSize:11, cursor:"pointer" }}>Cancel</button>
             </div>
           )}
-          <button style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752" }}>Edit Deck</button>
+          <button onClick={() => onEdit && onEdit(deck)} style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752", transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#5A5752";}}>
+            ✏️ Edit Deck
+          </button>
+          <div style={{ position:"relative" }}>
+            <button onClick={()=>setShowFolderPicker(f=>!f)} style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752", transition:"all 0.15s", display:"flex", alignItems:"center", gap:6 }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#5A5752";}}>
+              📁 {deck.folderKey ? deck.folderKey : "Add to Folder"}
+            </button>
+            {showFolderPicker && (
+              <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"8px", minWidth:200, zIndex:100, boxShadow:"0 8px 24px rgba(0,0,0,0.1)" }}>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase", padding:"4px 8px 8px" }}>Move to Folder</div>
+                <button onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,null);setShowFolderPicker(false);}}
+                  style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:!deck.folderKey?"#F0F0F0":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
+                  <span>📂</span> No Folder
+                </button>
+                {userFolders.filter(f=>!f.parentId).map(f=>(
+                  <button key={f.id} onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,f.id,f.name);setShowFolderPicker(false);}}
+                    style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:deck.folderKey===f.id||deck.folderKey===f.name?"#EEF1FF":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
+                    <span>📁</span> {f.name}
+                  </button>
+                ))}
+                {userFolders.length===0 && <div style={{ padding:"8px 10px",fontSize:12,color:"#A8A59E" }}>No folders yet — create one in My Library</div>}
+              </div>
+            )}
+          </div>
           <button onClick={() => onTogglePublic && onTogglePublic(deck.id)}
             style={{ background: deck.isPublic ? "#2BAE7E" : "#fff", border: `1px solid ${deck.isPublic ? "#2BAE7E" : "#D8D5CE"}`, borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: deck.isPublic ? "#fff" : "#5A5752", transition:"all 0.2s", display:"flex", alignItems:"center", gap:6 }}
             title={deck.isPublic ? "Click to make private" : "Click to make public"}>
