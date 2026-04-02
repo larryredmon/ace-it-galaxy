@@ -3299,6 +3299,24 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
           {/* ── User folders — recursive tree ── */}
           {userFolders.filter(f => !f.parentId).map(f => renderUserFolder(f, 0))}
 
+          {/* Uncategorized — only shows when homeless decks exist */}
+          {(() => {
+            const allFolderKeys = new Set([...userFolders.map(f=>f.id),...userFolders.map(f=>f.name)]);
+            const count = allDecks.filter(d => !d.folderKey || (!allFolderKeys.has(d.folderKey) && !d.folderKey?.includes("›"))).length;
+            if (count === 0) return null;
+            const isActive = isUncategorized;
+            return (
+              <div onClick={() => setFolderPath(["__uncategorized__"])}
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s", marginTop:2 }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
+                <span style={{ fontSize:13 }}>📂</span>
+                <span style={{ fontSize:12, fontWeight:isActive?700:400, color:isActive?"#F7F6F2":"#3A3830", flex:1 }}>Uncategorized</span>
+                <span style={{ fontSize:10, background:"#E8E5DF", color:"#8C8880", borderRadius:10, padding:"1px 6px", fontWeight:600 }}>{count}</span>
+              </div>
+            );
+          })()}
+
           {/* Inline new folder input — appears right in the tree */}
           {addingFolder && (
             <div style={{ padding:"4px 8px 8px" }}>
@@ -10254,6 +10272,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     try { await signOut(auth); } catch {}
     try { localStorage.removeItem("tp_user"); } catch {}
     setUser(null); setShowHome(true); setCurrentApp(null);
+    window.history.pushState({ app: null }, "", "/");
   };
 
   // Keep user logged in across page refreshes + handle Google redirect result
@@ -10331,21 +10350,43 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     });
     trackAppLaunched(appId);
     setCurrentApp(appId);
+    window.history.pushState({ app: appId }, "", `/${appId}`);
   };
+
+  const goHome = () => {
+    setCurrentApp(null);
+    window.history.pushState({ app: null }, "", "/");
+  };
+
+  // Sync browser back/forward with app state
+  useEffect(() => {
+    // Set initial history entry so back doesn't leave the site
+    if (!window.history.state) {
+      window.history.replaceState({ app: null }, "", "/");
+    }
+
+    const handlePop = (e) => {
+      const app = e.state?.app || null;
+      setCurrentApp(app);
+    };
+
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
 
   const aiContext = buildAIContext();
   const floatingWidget = <FloatingAssistant avatar={avatar} visible={showFloating && currentApp !== "assistant"} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
 
-  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} onDeckCreated={trackDeckCreated} />}{floatingWidget}</>;
-  if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floatingWidget}</>;
-  if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
-  if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={() => setCurrentApp(null)} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
-  if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} aiContext={aiContext} />}{floatingWidget}</>;
-  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
-  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} />}{floatingWidget}</>;
+  if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floatingWidget}</>;
+  if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
+  if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
+  if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floatingWidget}</>;
+  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floatingWidget}</>;
+  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floatingWidget}</>;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
-    if (planet) return <>{<AppLanding planet={planet} onBack={() => setCurrentApp(null)} />}{floatingWidget}</>;
+    if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floatingWidget}</>;
   }
 
   return (
