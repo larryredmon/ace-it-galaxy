@@ -1565,12 +1565,12 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} user={user} userFolders={userFolders} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
-      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} />}
+      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastery = Math.round(newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length/newCards.length*100); updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
     </div>
   );
 }
@@ -2869,9 +2869,30 @@ Rules:
                       style={{ width: "100%", minHeight: 120, padding: "12px 0", fontSize: 16, fontWeight: 400, fontFamily: "'DM Sans', sans-serif", color: "#3A3830", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7 }} />
                   </div>
 
+                  {/* Card image */}
+                  {c.image && (
+                    <div style={{ padding:"0 24px 12px", display:"flex", alignItems:"center", gap:10 }}>
+                      <img src={c.image} alt="card" style={{ height:60, maxWidth:160, borderRadius:8, objectFit:"cover", border:"1px solid #ECEAE4" }} />
+                      <button onClick={()=>updateCard(c.id,"image",null)} style={{ background:"none", border:"1px solid #FECACA", borderRadius:6, padding:"4px 10px", fontSize:11, color:"#E85D3F", cursor:"pointer" }}>Remove</button>
+                    </div>
+                  )}
+
                   {/* Footer hint */}
                   <div style={{ padding: "12px 24px", background: "#FAFAF8", borderTop: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, color: "#C8C5BE" }}>Tab to jump between fields • Enter to add a new card</span>
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <span style={{ fontSize: 11, color: "#C8C5BE" }}>Tab to jump • Enter to add card</span>
+                      <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", padding:"3px 8px", borderRadius:6, border:"1px solid #ECEAE4", background:"#fff", transition:"all 0.15s" }}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>
+                        <input type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{
+                          const file=e.target.files?.[0]; if(!file) return;
+                          const reader=new FileReader();
+                          reader.onload=ev=>updateCard(c.id,"image",ev.target.result);
+                          reader.readAsDataURL(file); e.target.value="";
+                        }} />
+                        📷 Add Image
+                      </label>
+                    </div>
                     <button onClick={addCard} style={{ background: "none", border: "none", fontSize: 12, fontWeight: 600, color: "#4F6EF7", cursor: "pointer", padding: 0 }}>+ Add next card →</button>
                   </div>
                 </div>
@@ -3680,12 +3701,17 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
 // ── Deck Card (shared) ────────────────────────────────────────────────────────
 function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
   const [confirmDel, setConfirmDel] = useState(false);
+  const dueCount = (() => {
+    const now = Date.now();
+    return (deck.cards||[]).filter(c => !c.dueDate || new Date(c.dueDate).getTime() <= now).length;
+  })();
   return (
     <div className="fc-deck-card fc-fade-up" style={{ animationDelay: `${index * 0.06}s`, background: "#fff", border: "1px solid #ECEAE4", borderTop: `3px solid ${deck.color}`, borderRadius: 12, padding: "22px 22px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", position:"relative" }}
       onClick={() => !confirmDel && onOpen(deck)}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, background: `${deck.color}18`, padding: "3px 10px", borderRadius: 20 }}>{deck.subject}</div>
         <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          {dueCount > 0 && <span style={{ fontSize:10, fontWeight:700, color:"#fff", background:"#F5C842", borderRadius:10, padding:"2px 7px" }}>{dueCount} due</span>}
           <span style={{ fontSize: 11, color: "#A8A59E" }}>{deck.cardCount || deck.cards?.length || 0} cards</span>
           {onDelete && !confirmDel && (
             <button onClick={e => { e.stopPropagation(); setConfirmDel(true); }}
@@ -3726,18 +3752,83 @@ function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
 }
 
 // ── Deck View (overview + card list) ─────────────────────────────────────────
-function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, user, userFolders = [] }) {
-  const [previewCard, setPreviewCard] = useState(null);
-  const [flipped, setFlipped]         = useState(false);
+function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, onImprove, user, userFolders = [] }) {
+  const [previewCard, setPreviewCard]   = useState(null);
+  const [flipped, setFlipped]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [hoveredStar, setHoveredStar] = useState(0);
+  const [hoveredStar, setHoveredStar]   = useState(0);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [improving, setImproving]       = useState(false);
+  const [improveResult, setImproveResult] = useState(null);
+  const [shareUrl, setShareUrl]         = useState(null);
+  const [shareCopied, setShareCopied]   = useState(false);
 
   const avgRating = deck.ratings?.length
-    ? (deck.ratings.reduce((a, r) => a + r.stars, 0) / deck.ratings.length).toFixed(1)
-    : null;
+    ? (deck.ratings.reduce((a, r) => a + r.stars, 0) / deck.ratings.length).toFixed(1) : null;
   const userRating = user ? deck.ratings?.find(r => r.userId === user.uid)?.stars || 0 : 0;
   const ratingCount = deck.ratings?.length || 0;
+
+  // Struggling cards — lowest correct rate
+  const strugglingCards = [...(deck.cards||[])].filter(c=>(c.timesWrong||0)>0)
+    .sort((a,b)=>((b.timesWrong||0)/Math.max(1,(b.timesCorrect||0)+(b.timesWrong||0)))-((a.timesWrong||0)/Math.max(1,(a.timesCorrect||0)+(a.timesWrong||0))))
+    .slice(0,5);
+
+  const handleImprove = async () => {
+    if (improving) return;
+    setImproving(true);
+    try {
+      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:4000,
+          messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.
+Respond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}
+Cards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==="text")?.text||"";
+      const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
+      setImproveResult(parsed.cards);
+    } catch { alert("Could not improve deck. Please try again."); }
+    setImproving(false);
+  };
+
+  const applyImproved = () => {
+    if (!improveResult||!onImprove) return;
+    const newCards = improveResult.map((c,i)=>({...deck.cards.find(x=>x.id===c.id)||{}, id:c.id||Date.now()+i, term:c.term, definition:c.definition}));
+    onImprove(deck.id, newCards);
+    setImproveResult(null);
+  };
+
+  const handlePrint = () => {
+    const win = window.open("","_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><title>${deck.title} — Flashcards</title>
+<style>
+body{font-family:Georgia,serif;margin:0;padding:20px;background:#fff}
+h1{font-size:22px;color:#1A1814;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{border:1px solid #ddd;border-top:3px solid ${deck.color};border-radius:8px;padding:16px;page-break-inside:avoid}
+.label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:8px}
+.term{font-size:15px;font-weight:800;color:#1A1814;margin-bottom:10px;min-height:40px}
+.divider{border:none;border-top:1px solid #eee;margin:10px 0}
+.def{font-size:13px;color:#444;line-height:1.6;min-height:40px}
+@media print{.card{break-inside:avoid}}
+</style></head><body>
+<h1>${deck.title}</h1>
+<div class="sub">${deck.cards.length} cards · ${deck.subject||""} · Printed from Teacher's Pet</div>
+<div class="grid">
+${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="term">${c.term}</div><hr class="divider"><div class="label">Definition</div><div class="def">${c.definition}</div></div>`).join("")}
+</div></body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(()=>win.print(),300);
+  };
+
+  const handleShare = () => {
+    const id = deck.id;
+    const url = `${window.location.origin}/?shared=${id}`;
+    setShareUrl(url);
+    navigator.clipboard?.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=>setShareCopied(false),2000);});
+  };
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
@@ -3849,27 +3940,120 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
         </div>
       </div>
 
-      {/* Card list */}
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#8C8880", marginBottom: 14 }}>All Cards</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {deck.cards.map((card, i) => (
-          <div key={card.id} className="fc-fade-up" style={{ animationDelay: `${i * 0.04}s`, background: "#fff", border: "1px solid #ECEAE4", borderRadius: 10, padding: "18px 20px", display: "flex", gap: 20, alignItems: "flex-start", cursor: "pointer", transition: "all 0.18s" }}
-            onClick={() => { setPreviewCard(card); setFlipped(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = deck.color; e.currentTarget.style.background = `${deck.color}06`; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.background = "#fff"; }}>
-            <div style={{ width: 28, height: 28, background: "#F7F6F2", borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#A8A59E" }}>{i + 1}</div>
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E", marginBottom: 5 }}>Term</div>
-                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{card.term}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: "#A8A59E", marginBottom: 5 }}>Definition</div>
-                <div style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.55, fontWeight: 300 }}>{card.definition}</div>
-              </div>
+      {/* ── Action strip: Improve / Print / Share ── */}
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        <button onClick={handleImprove} disabled={improving}
+          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:improving?"default":"pointer", color:improving?"#A8A59E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
+          onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
+          {improving ? <><span style={{ width:12,height:12,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }} /> Improving…</> : "✨ Improve with AI"}
+        </button>
+        <button onClick={handlePrint}
+          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          🖨 Print / Export
+        </button>
+        <button onClick={handleShare}
+          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:shareUrl?"#F0FDF4":"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:shareUrl?"#2BAE7E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{if(!shareUrl){e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}}
+          onMouseLeave={e=>{if(!shareUrl){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
+          {shareCopied?"✓ Link Copied!":"🔗 Share Deck"}
+        </button>
+      </div>
+
+      {/* Share URL box */}
+      {shareUrl && (
+        <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ fontSize:13, color:"#166534", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{shareUrl}</span>
+          <button onClick={()=>{navigator.clipboard?.writeText(shareUrl);setShareCopied(true);setTimeout(()=>setShareCopied(false),2000);}}
+            style={{ padding:"5px 12px", borderRadius:7, border:"none", background:"#2BAE7E", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+            {shareCopied?"Copied!":"Copy"}
+          </button>
+          <button onClick={()=>setShareUrl(null)} style={{ background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#86EFAC" }}>✕</button>
+        </div>
+      )}
+
+      {/* Improve result */}
+      {improveResult && (
+        <div style={{ background:"#F9F5FF", border:"1.5px solid #9B59B630", borderRadius:14, padding:"20px", marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>✨ AI Improved {improveResult.length} cards</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>setImproveResult(null)} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
+              <button onClick={applyImproved} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
             </div>
           </div>
-        ))}
+          <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:280, overflowY:"auto" }}>
+            {improveResult.map((c,i) => (
+              <div key={i} style={{ background:"#fff", border:"1px solid #ECEAE4", borderLeft:`3px solid ${c.change==="improved"?"#9B59B6":c.change==="new"?"#2BAE7E":c.change==="merged"?"#F5C842":"#D8D5CE"}`, borderRadius:8, padding:"12px 14px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>{c.term}</div>
+                  <span style={{ fontSize:10, fontWeight:700, color:c.change==="improved"?"#9B59B6":c.change==="new"?"#2BAE7E":c.change==="merged"?"#D4A830":"#A8A59E", textTransform:"uppercase", letterSpacing:1 }}>{c.change}</span>
+                </div>
+                <div style={{ fontSize:12, color:"#5A5752", lineHeight:1.5 }}>{c.definition}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Struggling cards */}
+      {strugglingCards.length > 0 && (
+        <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:12, padding:"16px 18px", marginBottom:24 }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#E85D3F", marginBottom:12 }}>⚠️ Needs Work — Your 5 Weakest Cards</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {strugglingCards.map(c => {
+              const total=(c.timesCorrect||0)+(c.timesWrong||0); const pct=total>0?Math.round((c.timesCorrect||0)/total*100):0;
+              return (
+                <div key={c.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 12px", background:"#fff", borderRadius:8, border:"1px solid #FECACA" }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>{c.term}</div>
+                    <div style={{ fontSize:11, color:"#8C8880" }}>{c.definition.slice(0,60)}{c.definition.length>60?"…":""}</div>
+                  </div>
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:pct<50?"#E85D3F":"#F5A623" }}>{pct}% correct</div>
+                    <div style={{ fontSize:10, color:"#A8A59E" }}>{c.timesWrong} missed</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Card list */}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#8C8880", marginBottom: 14 }}>All Cards ({deck.cards.length})</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {deck.cards.map((card, i) => {
+          const total=(card.timesCorrect||0)+(card.timesWrong||0);
+          const pct=total>0?Math.round((card.timesCorrect||0)/total*100):-1;
+          return (
+            <div key={card.id} className="fc-fade-up" style={{ animationDelay:`${i*0.04}s`, background:"#fff", border:"1px solid #ECEAE4", borderRadius:10, padding:"16px 20px", display:"flex", gap:16, alignItems:"flex-start", cursor:"pointer", transition:"all 0.18s" }}
+              onClick={() => { setPreviewCard(card); setFlipped(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              onMouseEnter={e=>{ e.currentTarget.style.borderColor=deck.color; e.currentTarget.style.background=`${deck.color}06`; }}
+              onMouseLeave={e=>{ e.currentTarget.style.borderColor="#ECEAE4"; e.currentTarget.style.background="#fff"; }}>
+              <div style={{ width:28, height:28, background:"#F7F6F2", borderRadius:6, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#A8A59E" }}>{i+1}</div>
+              <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, letterSpacing:1, textTransform:"uppercase", color:"#A8A59E", marginBottom:5 }}>Term</div>
+                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>{card.term}</div>
+                  {card.image && <img src={card.image} alt="" style={{ maxHeight:60, maxWidth:"100%", marginTop:8, borderRadius:6, objectFit:"contain" }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, letterSpacing:1, textTransform:"uppercase", color:"#A8A59E", marginBottom:5 }}>Definition</div>
+                  <div style={{ fontSize:13, color:"#5A5752", lineHeight:1.55, fontWeight:300 }}>{card.definition}</div>
+                </div>
+              </div>
+              {pct >= 0 && (
+                <div style={{ flexShrink:0, textAlign:"right" }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:pct>=80?"#2BAE7E":pct>=50?"#F5A623":"#E85D3F" }}>{pct}%</div>
+                  <div style={{ fontSize:10, color:"#A8A59E" }}>{total} seen</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -3877,194 +4061,177 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
 
 // ── Study Setup ───────────────────────────────────────────────────────────────
 function FCStudySetup({ deck, onBack, onStart }) {
-  const [mode, setMode]             = useState("all");      // all | pick | count | progressive
+  const [mode, setMode] = useState("spaced");
   const [selectedIds, setSelectedIds] = useState(new Set(deck.cards.map(c => c.id)));
-  const [countVal, setCountVal]     = useState(Math.min(5, deck.cards.length));
-  const [progStart, setProgStart]   = useState(Math.min(3, deck.cards.length));
+  const [countVal, setCountVal]       = useState(Math.min(10, deck.cards.length));
+  const [progStart, setProgStart]     = useState(Math.min(3, deck.cards.length));
 
   const toggleCard = (id) => setSelectedIds(s => {
-    const n = new Set(s);
-    if (n.has(id)) { if (n.size > 1) n.delete(id); }
-    else n.add(id);
-    return n;
+    const n = new Set(s); if (n.has(id)) { if (n.size > 1) n.delete(id); } else n.add(id); return n;
   });
-
-  const selectAll  = () => setSelectedIds(new Set(deck.cards.map(c => c.id)));
-  const clearAll   = () => setSelectedIds(new Set([deck.cards[0].id]));
+  const selectAll = () => setSelectedIds(new Set(deck.cards.map(c => c.id)));
+  const clearAll  = () => setSelectedIds(new Set([deck.cards[0].id]));
 
   const handleStart = () => {
     let cards;
-    if      (mode === "pick")        cards = deck.cards.filter(c => selectedIds.has(c.id));
-    else if (mode === "count")       cards = deck.cards.slice(0, countVal);
-    else                             cards = deck.cards;
+    if (mode === "pick")         cards = deck.cards.filter(c => selectedIds.has(c.id));
+    else if (mode === "count")   cards = deck.cards.slice(0, countVal);
+    else if (mode === "spaced") {
+      const now = Date.now();
+      const due = deck.cards.filter(c => !c.dueDate || new Date(c.dueDate).getTime() <= now);
+      cards = due.length > 0 ? due : deck.cards;
+    } else cards = deck.cards;
     onStart({ mode, cards, progStart: mode === "progressive" ? progStart : null });
   };
 
-  const readyCount = mode === "pick" ? selectedIds.size
-    : mode === "count" ? countVal
-    : mode === "progressive" ? progStart
-    : deck.cards.length;
+  const dueCount = (() => {
+    const now = Date.now();
+    return deck.cards.filter(c => !c.dueDate || new Date(c.dueDate).getTime() <= now).length;
+  })();
+
+  const readyCount = mode==="pick" ? selectedIds.size : mode==="count" ? countVal
+    : mode==="progressive" ? progStart : mode==="spaced" ? dueCount : deck.cards.length;
 
   const MODES = [
-    { id: "smart",       icon: "✦",  label: "Smart Study",     desc: "AI picks cards based on your weaknesses and memory decay" },
-    { id: "all",         icon: "▦",  label: "Full Deck",       desc: "Go through every card in order, start to finish" },
-    { id: "pick",        icon: "◎",  label: "Pick Cards",      desc: "Choose exactly which cards to study this session" },
-    { id: "rapid",       icon: "⚡", label: "Rapid Review",    desc: "Quick-flip mode — fast cycle through all cards" },
-    { id: "quiz",        icon: "◈",  label: "Quiz Mode",       desc: "Multiple choice answers — test your knowledge" },
-    { id: "timed",       icon: "⏱",  label: "Timed Practice",  desc: "Race the clock — answer before the countdown ends" },
-    { id: "challenge",   icon: "🔥", label: "Challenge Mode",  desc: "No hints, no second chances — pure mastery test" },
-    { id: "progressive", icon: "📈", label: "Progressive",     desc: "Start with 3 cards, unlock more as you master each" },
-    { id: "focus",       icon: "🧠", label: "Focus Mode",      desc: "ADHD-friendly — larger text, slower pace, no distractions" },
+    { id:"spaced",      icon:"✦",  label:"Spaced Repetition", desc:`${dueCount} card${dueCount!==1?"s":""} due — AI schedules reviews based on memory` },
+    { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
+    { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
+    { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
+    { id:"all",         icon:"▦",  label:"Full Deck",         desc:"Go through every card in order" },
+    { id:"quiz",        icon:"◈",  label:"Multiple Choice",   desc:"Multiple choice answers — test your knowledge" },
+    { id:"rapid",       icon:"⚡", label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
+    { id:"pick",        icon:"◎",  label:"Pick Cards",        desc:"Choose exactly which cards to study" },
+    { id:"count",       icon:"🔢", label:"Set Count",         desc:"Choose how many cards to study" },
+    { id:"progressive", icon:"📈", label:"Progressive",       desc:"Start small, unlock more as you master each" },
+    { id:"challenge",   icon:"🔥", label:"Challenge",         desc:"No hints, no second chances" },
+    { id:"focus",       icon:"🧠", label:"Focus Mode",        desc:"Larger text, slower pace, fewer distractions" },
   ];
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
-      {/* Back */}
-      <span onClick={onBack} className="fc-nav-link" style={{ fontSize: 13, color: "#8C8880", cursor: "pointer", display: "inline-block", marginBottom: 28 }}>← Back to Deck</span>
-
-      {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, marginBottom: 6 }}>Study Session</div>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: "#1A1814", letterSpacing: -0.5, marginBottom: 6 }}>{deck.title}</h1>
-        <div style={{ fontSize: 13, color: "#8C8880" }}>{deck.cards.length} cards available</div>
+    <div style={{ maxWidth:720, margin:"0 auto", padding:"40px 24px" }}>
+      <span onClick={onBack} className="fc-nav-link" style={{ fontSize:13, color:"#8C8880", cursor:"pointer", display:"inline-block", marginBottom:28 }}>← Back to Deck</span>
+      <div style={{ marginBottom:28 }}>
+        <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:deck.color, marginBottom:6 }}>Study Session</div>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:"#1A1814", letterSpacing:-0.5, marginBottom:6 }}>{deck.title}</h1>
+        <div style={{ display:"flex", gap:14, fontSize:13, color:"#8C8880", flexWrap:"wrap" }}>
+          <span>{deck.cards.length} cards</span>
+          <span>·</span>
+          <span style={{ color:"#F5C842", fontWeight:600 }}>{dueCount} due today</span>
+          {deck.mastery > 0 && <><span>·</span><span style={{ color:"#2BAE7E", fontWeight:600 }}>{deck.mastery}% mastered</span></>}
+        </div>
       </div>
 
-      {/* Mode selector — 3 columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 28 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:28 }}>
         {MODES.map(m => (
-          <div key={m.id} onClick={() => setMode(m.id)} style={{ border: `2px solid ${mode === m.id ? deck.color : "#ECEAE4"}`, borderRadius: 12, padding: "13px 14px", cursor: "pointer", background: mode === m.id ? `${deck.color}10` : "#fff", transition: "all 0.18s" }}
-            onMouseEnter={e => { if (mode !== m.id) { e.currentTarget.style.borderColor = "#D8D5CE"; e.currentTarget.style.background = "#F7F6F2"; } }}
-            onMouseLeave={e => { if (mode !== m.id) { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.background = "#fff"; } }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-              <span style={{ fontSize: 14 }}>{m.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: mode === m.id ? "#1A1814" : "#5A5752", lineHeight: 1.2 }}>{m.label}</span>
-              {mode === m.id && <span style={{ marginLeft: "auto", fontSize: 10, color: deck.color, fontWeight: 700 }}>✓</span>}
+          <div key={m.id} onClick={() => setMode(m.id)}
+            style={{ border:`2px solid ${mode===m.id?deck.color:"#ECEAE4"}`, borderRadius:12, padding:"13px 14px", cursor:"pointer", background:mode===m.id?`${deck.color}10`:"#fff", transition:"all 0.18s" }}
+            onMouseEnter={e=>{if(mode!==m.id){e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.background="#F7F6F2";}}}
+            onMouseLeave={e=>{if(mode!==m.id){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.background="#fff";}}}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+              <span style={{ fontSize:14 }}>{m.icon}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:mode===m.id?"#1A1814":"#5A5752", lineHeight:1.2 }}>{m.label}</span>
+              {mode===m.id && <span style={{ marginLeft:"auto", fontSize:10, color:deck.color, fontWeight:700 }}>✓</span>}
             </div>
-            <div style={{ fontSize: 10, color: "#8C8880", lineHeight: 1.4 }}>{m.desc}</div>
+            <div style={{ fontSize:10, color:"#8C8880", lineHeight:1.4 }}>{m.desc}</div>
           </div>
         ))}
       </div>
 
-      {/* Mode-specific controls */}
-      <div className="fc-fade-in" style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 14, padding: "22px 22px 18px", marginBottom: 24 }}>
-
-        {/* ── PICK MODE ── */}
-        {mode === "pick" && (
+      <div className="fc-fade-in" style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:14, padding:"22px 22px 18px", marginBottom:24 }}>
+        {mode==="spaced" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>Select cards to study</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <span onClick={selectAll} style={{ fontSize: 11, fontWeight: 600, color: deck.color, cursor: "pointer" }}>Select all</span>
-                <span style={{ color: "#D8D5CE" }}>·</span>
-                <span onClick={clearAll} style={{ fontSize: 11, fontWeight: 600, color: "#8C8880", cursor: "pointer" }}>Clear</span>
+            <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:8 }}>Spaced Repetition — SM-2 Algorithm</div>
+            <p style={{ fontSize:12, color:"#6B6860", lineHeight:1.65, marginBottom:14 }}>The same algorithm Anki uses. After each card you rate <strong>Again / Hard / Good / Easy</strong>. Struggling cards come back sooner. Cards you know well get pushed out further.</p>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
+              {[["Again","#E85D3F","back immediately"],["Hard","#F5A623","shorter interval"],["Good","#4F6EF7","normal interval"],["Easy","#2BAE7E","longer interval"]].map(([l,c,n])=>(
+                <div key={l} style={{ padding:"7px 12px", borderRadius:8, background:`${c}12`, border:`1px solid ${c}30` }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:c }}>{l}</div>
+                  <div style={{ fontSize:10, color:"#8C8880" }}>{n}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:12, color:"#F5C842", fontWeight:600 }}>{dueCount} card{dueCount!==1?"s":""} due for review today</div>
+          </div>
+        )}
+        {(mode==="written"||mode==="truefalse"||mode==="matching") && (
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:8 }}>
+              {mode==="written"?"Written Answer — AI Graded":mode==="truefalse"?"True / False":"Matching Game"}
+            </div>
+            <p style={{ fontSize:12, color:"#6B6860", lineHeight:1.65 }}>
+              {mode==="written"&&"You'll see the term. Type your best answer. AI grades it as Correct, Close, or Wrong and shows the real answer."}
+              {mode==="truefalse"&&"You'll see statements — some true, some AI-modified to be false. Pick True or False for each one."}
+              {mode==="matching"&&"6 terms on the left, 6 definitions on the right. Click a term then click its matching definition."}
+            </p>
+          </div>
+        )}
+        {mode==="pick" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#1A1814" }}>Select cards to study</div>
+              <div style={{ display:"flex", gap:10 }}>
+                <span onClick={selectAll} style={{ fontSize:11, fontWeight:600, color:deck.color, cursor:"pointer" }}>Select all</span>
+                <span style={{ color:"#D8D5CE" }}>·</span>
+                <span onClick={clearAll} style={{ fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer" }}>Clear</span>
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {deck.cards.map((card, i) => {
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {deck.cards.map((card,i) => {
                 const on = selectedIds.has(card.id);
                 return (
-                  <div key={card.id} onClick={() => toggleCard(card.id)} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderRadius: 8, border: `1.5px solid ${on ? deck.color : "#ECEAE4"}`, background: on ? `${deck.color}06` : "#F7F6F2", cursor: "pointer", transition: "all 0.15s" }}>
-                    <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${on ? deck.color : "#D8D5CE"}`, background: on ? deck.color : "#fff", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                      {on && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span>}
+                  <div key={card.id} onClick={() => toggleCard(card.id)}
+                    style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 14px", borderRadius:8, border:`1.5px solid ${on?deck.color:"#ECEAE4"}`, background:on?`${deck.color}06`:"#F7F6F2", cursor:"pointer", transition:"all 0.15s" }}>
+                    <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${on?deck.color:"#D8D5CE"}`, background:on?deck.color:"#fff", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>
+                      {on && <span style={{ fontSize:9, color:"#fff", fontWeight:900 }}>✓</span>}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814", fontFamily: "'Playfair Display', serif", marginBottom: 2 }}>{card.term}</div>
-                      <div style={{ fontSize: 11, color: "#8C8880", lineHeight: 1.4 }}>{card.definition.length > 80 ? card.definition.slice(0, 80) + "…" : card.definition}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", fontFamily:"'Playfair Display',serif" }}>{card.term}</div>
+                      <div style={{ fontSize:11, color:"#8C8880" }}>{card.definition.length>80?card.definition.slice(0,80)+"…":card.definition}</div>
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: "#A8A59E", flexShrink: 0 }}>#{i + 1}</div>
                   </div>
                 );
               })}
             </div>
           </div>
         )}
-
-        {/* ── COUNT MODE ── */}
-        {mode === "count" && (
+        {mode==="count" && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 18 }}>How many cards do you want to study?</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 20 }}>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 52, fontWeight: 900, color: deck.color, minWidth: 60, textAlign: "center", lineHeight: 1 }}>{countVal}</span>
-              <div style={{ flex: 1 }}>
-                <input type="range" min={1} max={deck.cards.length} value={countVal} onChange={e => setCountVal(Number(e.target.value))} style={{ width: "100%", accentColor: deck.color, cursor: "pointer" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginTop: 6 }}>
-                  <span>1 card</span><span>{deck.cards.length} cards (full deck)</span>
-                </div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:18 }}>How many cards?</div>
+            <div style={{ display:"flex", alignItems:"center", gap:20, marginBottom:16 }}>
+              <span style={{ fontFamily:"'Playfair Display',serif", fontSize:52, fontWeight:900, color:deck.color, minWidth:60, textAlign:"center", lineHeight:1 }}>{countVal}</span>
+              <div style={{ flex:1 }}>
+                <input type="range" min={1} max={deck.cards.length} value={countVal} onChange={e=>setCountVal(Number(e.target.value))} style={{ width:"100%", accentColor:deck.color }} />
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:"#A8A59E", marginTop:6 }}><span>1</span><span>{deck.cards.length}</span></div>
               </div>
-            </div>
-            {/* Preview chips */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {deck.cards.slice(0, countVal).map((card, i) => (
-                <div key={card.id} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: i < countVal ? `${deck.color}18` : "#F7F6F2", color: i < countVal ? deck.color : "#A8A59E", fontWeight: 600, border: `1px solid ${i < countVal ? `${deck.color}30` : "#ECEAE4"}` }}>
-                  {card.term}
-                </div>
-              ))}
-              {deck.cards.length > countVal && <div style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: "#F7F6F2", color: "#A8A59E" }}>+{deck.cards.length - countVal} not included</div>}
             </div>
           </div>
         )}
-
-        {/* ── PROGRESSIVE MODE ── */}
-        {mode === "progressive" && (
+        {mode==="progressive" && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 6 }}>Progressive Unlock</div>
-            <div style={{ fontSize: 12, color: "#6B6860", lineHeight: 1.6, marginBottom: 20 }}>
-              Start with a small number of cards. Every time you mark <em>all active cards</em> as "Got It", a new card unlocks automatically. Keep going until you've mastered the full deck.
-            </div>
-
-            {/* Start count picker */}
-            <div style={{ background: "#F7F6F2", borderRadius: 10, padding: "16px 18px", marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#8C8880", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Start with how many cards?</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 900, color: deck.color, minWidth: 50, textAlign: "center", lineHeight: 1 }}>{progStart}</span>
-                <div style={{ flex: 1 }}>
-                  <input type="range" min={1} max={Math.min(deck.cards.length, 10)} value={progStart} onChange={e => setProgStart(Number(e.target.value))} style={{ width: "100%", accentColor: deck.color, cursor: "pointer" }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginTop: 5 }}>
-                    <span>1</span><span>10 max</span>
-                  </div>
-                </div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:6 }}>Start with how many?</div>
+            <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:14 }}>
+              <span style={{ fontFamily:"'Playfair Display',serif", fontSize:44, fontWeight:900, color:deck.color, minWidth:50, textAlign:"center", lineHeight:1 }}>{progStart}</span>
+              <div style={{ flex:1 }}>
+                <input type="range" min={1} max={Math.min(deck.cards.length,10)} value={progStart} onChange={e=>setProgStart(Number(e.target.value))} style={{ width:"100%", accentColor:deck.color }} />
               </div>
-            </div>
-
-            {/* Visual flow preview */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              {Array.from({ length: Math.min(deck.cards.length, progStart + 3) }, (_, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {i > 0 && <span style={{ fontSize: 10, color: "#D8D5CE" }}>→</span>}
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: i < progStart ? deck.color : "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i < progStart ? "#fff" : "#A8A59E", border: i >= progStart && i < progStart + 3 ? "1.5px dashed #D8D5CE" : "none" }}>
-                      {i + 1}
-                    </div>
-                    <div style={{ fontSize: 8, color: i < progStart ? deck.color : "#C8C5BE", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{i < progStart ? "Start" : "Unlock"}</div>
-                  </div>
-                </div>
-              ))}
-              {deck.cards.length > progStart + 3 && <span style={{ fontSize: 11, color: "#A8A59E" }}>…+{deck.cards.length - progStart - 3} more</span>}
             </div>
           </div>
         )}
-
-        {/* ── ALL MODE ── */}
-        {mode === "all" && (
+        {(mode==="all"||mode==="rapid"||mode==="challenge"||mode==="focus"||mode==="quiz") && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814", marginBottom: 10 }}>All {deck.cards.length} cards, in order</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {deck.cards.map((card, i) => (
-                <div key={card.id} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 20, background: `${deck.color}15`, color: deck.color, fontWeight: 600, border: `1px solid ${deck.color}28` }}>{card.term}</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#1A1814", marginBottom:8 }}>All {deck.cards.length} cards</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+              {deck.cards.map(card => (
+                <div key={card.id} style={{ fontSize:10, padding:"3px 10px", borderRadius:20, background:`${deck.color}15`, color:deck.color, fontWeight:600, border:`1px solid ${deck.color}28` }}>{card.term}</div>
               ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Start CTA */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, color: "#8C8880" }}>
-          {mode === "progressive"
-            ? `Starting with ${progStart} card${progStart !== 1 ? "s" : ""} — unlocking from ${deck.cards.length} total`
-            : `${readyCount} card${readyCount !== 1 ? "s" : ""} selected`}
-        </div>
-        <button onClick={handleStart} className="fc-btn" style={{ background: "#1A1814", border: "none", borderRadius: 10, padding: "13px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ fontSize:13, color:"#8C8880" }}>{readyCount} card{readyCount!==1?"s":""} selected</div>
+        <button onClick={handleStart} className="fc-btn" style={{ background:"#1A1814", border:"none", borderRadius:10, padding:"13px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2", transition:"all 0.2s" }}>
           Start Studying →
         </button>
       </div>
@@ -4072,226 +4239,422 @@ function FCStudySetup({ deck, onBack, onStart }) {
   );
 }
 
-// ── Study View ────────────────────────────────────────────────────────────────
-function FCStudyView({ deck, config, onBack, onBackToLibrary }) {
+function sm2Update(card, quality) {
+  const ef = Math.max(1.3, (card.easeFactor||2.5) + 0.1*(quality-3) - 0.08*(quality-2));
+  let interval;
+  if (quality === 0) interval = 1;
+  else if (quality === 1) interval = Math.max(1, Math.round((card.interval||1)*1.2));
+  else if ((card.timesCorrect||0) < 2) interval = quality===3 ? 4 : 1;
+  else interval = Math.round((card.interval||1)*ef);
+  const dueDate = new Date(Date.now() + interval*86400000).toISOString();
+  return { ...card, interval, easeFactor:ef, dueDate,
+    timesCorrect:(card.timesCorrect||0)+(quality>=2?1:0),
+    timesWrong:(card.timesWrong||0)+(quality<2?1:0),
+    lastStudied:new Date().toISOString() };
+}
+
+function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
   const { mode, cards: configCards, progStart } = config;
-
-  const [activeCount, setActiveCount] = useState(mode === "progressive" ? progStart : configCards.length);
-  const [unlockAnim,  setUnlockAnim]  = useState(false);
-
-  const allCards   = configCards;
-  const cards      = allCards.slice(0, activeCount);
-  const lockedLeft = allCards.length - activeCount;
-
-  const [index,   setIndex]   = useState(0);
+  const [cards, setCards]     = useState(configCards);
+  const [index, setIndex]     = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [known,   setKnown]   = useState(new Set());
-  // roundCount lets us detect when a loop-around completes (for the round toast)
-  const [round,   setRound]   = useState(1);
+  const [known, setKnown]     = useState(new Set());
+  const [wrong, setWrong]     = useState(new Set());
+  const [round, setRound]     = useState(1);
   const [showRoundToast, setShowRoundToast] = useState(false);
+  const [sessionDone, setSessionDone]       = useState(false);
+  const [activeCount, setActiveCount]       = useState(mode==="progressive"?progStart:configCards.length);
+  const [unlockAnim, setUnlockAnim]         = useState(false);
+  const [writtenInput, setWrittenInput]     = useState("");
+  const [writtenResult, setWrittenResult]   = useState(null);
+  const [writtenLoading, setWrittenLoading] = useState(false);
+  const [tfStatements, setTfStatements]     = useState([]);
+  const [tfLoading, setTfLoading]           = useState(false);
+  const [tfAnswer, setTfAnswer]             = useState(null);
+  const [matchCards, setMatchCards]         = useState([]);
+  const [matchSelected, setMatchSelected]   = useState(null);
+  const [matchPairs, setMatchPairs]         = useState(new Map());
+  const [matchError, setMatchError]         = useState(null);
+  const [matchComplete, setMatchComplete]   = useState(false);
+  const [matchRound, setMatchRound]         = useState(0);
 
-  const card     = cards[index];
-  const allKnown = cards.every(c => known.has(c.id));
+  const workingCards = mode==="progressive" ? cards.slice(0,activeCount) : cards;
+  const card = workingCards[index];
 
-  // Progressive unlock
   useEffect(() => {
-    if (mode !== "progressive" || !allKnown || activeCount >= allCards.length) return;
-    setUnlockAnim(true);
-    const t = setTimeout(() => {
-      setActiveCount(n => Math.min(n + 1, allCards.length));
-      setKnown(new Set());
-      setIndex(0);
-      setFlipped(false);
-      setUnlockAnim(false);
-    }, 1800);
-    return () => clearTimeout(t);
-  }, [allKnown, mode]);
+    if (mode==="matching") initMatchRound(0);
+    if (mode==="truefalse") generateTF();
+  }, []);
 
-  // Advance to next card — loops back to start instead of showing done screen
-  const advance = (nextKnown) => {
-    if (index + 1 >= cards.length) {
-      // End of round — loop back
-      setIndex(0);
-      setFlipped(false);
-      setRound(r => r + 1);
-      setShowRoundToast(true);
-      setTimeout(() => setShowRoundToast(false), 2200);
-    } else {
-      setIndex(i => i + 1);
-      setFlipped(false);
-    }
+  const initMatchRound = (rnd) => {
+    const batch = cards.slice(rnd*6, rnd*6+6);
+    if (!batch.length) { setSessionDone(true); return; }
+    const defs = [...batch].sort(()=>Math.random()-0.5);
+    setMatchCards(batch.map((c,i)=>({...c,_defShown:defs[i].definition,_defId:defs[i].id})));
+    setMatchSelected(null); setMatchPairs(new Map()); setMatchError(null); setMatchComplete(false);
   };
 
-  const markKnown = () => {
-    const n = new Set(known);
-    n.add(card.id);
-    setKnown(n);
-    advance(n);
+  const generateTF = async () => {
+    setTfLoading(true);
+    try {
+      const sample = cards.slice(0,Math.min(10,cards.length));
+      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:1200,
+          messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.
+Respond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}
+Cards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==="text")?.text||"";
+      const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
+      setTfStatements(parsed.statements||[]);
+    } catch { setTfStatements(cards.slice(0,10).map(c=>({text:`${c.term}: ${c.definition}`,isTrue:true,explanation:"Correct"}))); }
+    setTfLoading(false);
   };
 
-  // ── UNLOCK TOAST ──
-  if (unlockAnim) {
-    const newCard = allCards[activeCount];
+  const advance = () => {
+    const next = index+1;
+    if (next >= workingCards.length) {
+      if (mode==="progressive"&&known.size===workingCards.length&&activeCount<cards.length) {
+        setUnlockAnim(true);
+        setTimeout(()=>{setActiveCount(n=>Math.min(n+1,cards.length));setKnown(new Set());setIndex(0);setFlipped(false);setUnlockAnim(false);},1800);
+      } else {
+        setIndex(0);setFlipped(false);setRound(r=>r+1);
+        setShowRoundToast(true);setTimeout(()=>setShowRoundToast(false),2200);
+        if (["all","spaced","challenge","focus","written","truefalse"].includes(mode)) setSessionDone(true);
+      }
+    } else { setIndex(next);setFlipped(false);setWrittenInput("");setWrittenResult(null);setTfAnswer(null); }
+  };
+
+  const rateCard = (quality) => {
+    const updated = sm2Update(card, quality);
+    const newCards = cards.map(c=>c.id===card.id?updated:c);
+    setCards(newCards);
+    if (onUpdateCards) onUpdateCards(deck.id, newCards);
+    if (quality>=2) setKnown(p=>{const n=new Set(p);n.add(card.id);return n;});
+    else setWrong(p=>{const n=new Set(p);n.add(card.id);return n;});
+    advance();
+  };
+
+  const gradeWritten = async () => {
+    if (!writtenInput.trim()) return;
+    setWrittenLoading(true);
+    try {
+      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:200,
+          messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".
+Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==="text")?.text||"";
+      const r = JSON.parse(txt.replace(/```json|```/g,"").trim());
+      setWrittenResult(r);
+      if (r.grade==="correct") setKnown(p=>{const n=new Set(p);n.add(card.id);return n;});
+      else if (r.grade==="wrong") setWrong(p=>{const n=new Set(p);n.add(card.id);return n;});
+    } catch { setWrittenResult({grade:"close",feedback:"Could not auto-grade."}); }
+    setWrittenLoading(false);
+  };
+
+  const handleMatchTerm = (id) => { setMatchSelected(id); setMatchError(null); };
+  const handleMatchDef  = (defId) => {
+    if (!matchSelected) return;
+    if (matchSelected===defId) {
+      const np=new Map(matchPairs); np.set(matchSelected,defId); setMatchPairs(np); setMatchSelected(null);
+      if (np.size===matchCards.length) {
+        setMatchComplete(true);
+        setKnown(p=>{const n=new Set(p);matchCards.forEach(c=>n.add(c.id));return n;});
+      }
+    } else { setMatchError(matchSelected); setTimeout(()=>setMatchError(null),800); setMatchSelected(null); }
+  };
+
+  const answerTF = (answer) => {
+    const stmt = tfStatements[index]; if (!stmt) return;
+    setTfAnswer(answer);
+    if (answer===stmt.isTrue) setKnown(p=>{const n=new Set(p);n.add(index);return n;});
+    else setWrong(p=>{const n=new Set(p);n.add(index);return n;});
+  };
+
+  if (sessionDone) {
+    const total=workingCards.length; const pct=total>0?Math.round(known.size/total*100):0;
     return (
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
-        <div className="fc-fade-in" style={{ background: "#fff", border: `2px solid ${deck.color}`, borderRadius: 20, padding: "48px 40px", boxShadow: `0 0 60px ${deck.color}30` }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🔓</div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 900, color: "#1A1814", marginBottom: 8 }}>New Card Unlocked!</div>
-          <div style={{ fontSize: 14, color: "#6B6860", marginBottom: 20 }}>You mastered all active cards. Adding:</div>
-          <div style={{ background: `${deck.color}12`, border: `1.5px solid ${deck.color}30`, borderRadius: 10, padding: "14px 20px", display: "inline-block" }}>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}>{newCard?.term}</div>
+      <div style={{ maxWidth:560, margin:"0 auto", padding:"60px 24px", textAlign:"center" }}>
+        <div style={{ fontSize:56, marginBottom:16 }}>{pct>=80?"🎉":pct>=50?"👍":"💪"}</div>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814", marginBottom:8 }}>Session Complete!</h2>
+        <p style={{ fontSize:15, color:"#8C8880", marginBottom:32 }}>You studied {total} card{total!==1?"s":""}</p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:32 }}>
+          {[["✅","Correct",known.size,"#2BAE7E"],["❌","Missed",wrong.size,"#E85D3F"],["📊","Score",`${pct}%`,deck.color]].map(([icon,label,val,color])=>(
+            <div key={label} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"18px 14px" }}>
+              <div style={{ fontSize:24, marginBottom:8 }}>{icon}</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color }}>{val}</div>
+              <div style={{ fontSize:11, color:"#A8A59E", textTransform:"uppercase", letterSpacing:1, marginTop:3 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+        {wrong.size>0 && (
+          <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:12, padding:"16px", marginBottom:24, textAlign:"left" }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#E85D3F", marginBottom:10 }}>Cards to review:</div>
+            {workingCards.filter(c=>wrong.has(c.id)).map(c=>(
+              <div key={c.id} style={{ fontSize:13, color:"#1A1814", padding:"6px 0", borderBottom:"1px solid #FECACA" }}>
+                <strong>{c.term}</strong> — {c.definition.slice(0,60)}{c.definition.length>60?"…":""}
+              </div>
+            ))}
           </div>
-          <div style={{ marginTop: 20, fontSize: 12, color: "#A8A59E" }}>New round starting…</div>
+        )}
+        <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+          <button onClick={onBack} style={{ padding:"12px 24px", borderRadius:10, border:"1px solid #ECEAE4", background:"#fff", fontSize:14, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Study Again</button>
+          <button onClick={onBackToLibrary} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>Back to Library</button>
         </div>
       </div>
     );
   }
 
-  // ── MAIN CARD ──
-  const progress = Math.round(((index) / cards.length) * 100);
+  if (unlockAnim) return (
+    <div style={{ maxWidth:600, margin:"0 auto", padding:"80px 24px", textAlign:"center" }}>
+      <div className="fc-fade-in" style={{ background:"#fff", border:`2px solid ${deck.color}`, borderRadius:20, padding:"48px 40px", boxShadow:`0 0 60px ${deck.color}30` }}>
+        <div style={{ fontSize:40, marginBottom:16 }}>🔓</div>
+        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", marginBottom:8 }}>New Card Unlocked!</div>
+        <div style={{ fontSize:14, color:"#6B6860" }}>Adding: <strong>{cards[activeCount]?.term}</strong></div>
+      </div>
+    </div>
+  );
+
+  const progress = workingCards.length>0 ? Math.round((index/workingCards.length)*100) : 0;
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
-      {/* Inline styles for 3D flip */}
+    <div style={{ maxWidth:700, margin:"0 auto", padding:"32px 24px" }}>
       <style>{`
-        .fc-flip-scene { perspective: 1200px; }
-        .fc-flip-card {
-          position: relative; width: 100%; min-height: 300px;
-          transform-style: preserve-3d;
-          transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95);
-          cursor: pointer;
-        }
-        .fc-flip-card.is-flipped { transform: rotateY(180deg); }
-        .fc-flip-face {
-          position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-          border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-          padding: 56px 44px; text-align: center;
-          box-shadow: 0 4px 32px rgba(0,0,0,0.07);
-        }
-        .fc-flip-front {
-          background: #fff;
-          border: 1px solid #ECEAE4;
-          border-top: 4px solid ${deck.color};
-        }
-        .fc-flip-back {
-          background: ${deck.color}0D;
-          border: 2px solid ${deck.color}50;
-          border-top: 4px solid ${deck.color};
-          transform: rotateY(180deg);
-        }
-        .fc-flip-scene:hover .fc-flip-card { box-shadow: 0 8px 40px rgba(0,0,0,0.11); }
-        @keyframes fc-round-toast { 0%{opacity:0;transform:translateY(-10px)} 15%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0;transform:translateY(-8px)} }
-        .fc-round-toast { animation: fc-round-toast 2.2s ease forwards; }
+        .fc-flip-scene{perspective:1200px}
+        .fc-flip-card{position:relative;width:100%;min-height:280px;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(0.45,0.05,0.55,0.95);cursor:pointer}
+        .fc-flip-card.is-flipped{transform:rotateY(180deg)}
+        .fc-flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 44px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.07)}
+        .fc-flip-front{background:#fff;border:1px solid #ECEAE4;border-top:4px solid ${deck.color}}
+        .fc-flip-back{background:${deck.color}0D;border:2px solid ${deck.color}50;border-top:4px solid ${deck.color};transform:rotateY(180deg)}
+        @keyframes fc-round-toast{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
+        .fc-round-toast{animation:fc-round-toast 2.2s ease forwards}
+        @keyframes match-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+        .match-error{animation:match-shake 0.3s ease}
+        @keyframes qbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
       `}</style>
 
-      {/* Round complete toast */}
       {showRoundToast && (
-        <div className="fc-round-toast" style={{ position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)", background: "#1A1814", borderRadius: 10, padding: "10px 22px", zIndex: 999, display: "flex", alignItems: "center", gap: 10, pointerEvents: "none" }}>
-          <span style={{ fontSize: 16 }}>🔁</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#F7F6F2" }}>Round {round} complete — looping back!</span>
-          <span style={{ fontSize: 12, color: "#2BAE7E", fontWeight: 600 }}>{known.size}/{cards.length} known</span>
+        <div className="fc-round-toast" style={{ position:"fixed",top:80,left:"50%",background:"#1A1814",borderRadius:10,padding:"10px 22px",zIndex:999,display:"flex",alignItems:"center",gap:10,pointerEvents:"none" }}>
+          <span style={{ fontSize:16 }}>🔁</span>
+          <span style={{ fontSize:13, fontWeight:700, color:"#F7F6F2" }}>Round {round} complete!</span>
+          <span style={{ fontSize:12, color:"#2BAE7E", fontWeight:600 }}>{known.size}/{workingCards.length} ✓</span>
         </div>
       )}
 
-      {/* Top bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 7, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#8C8880", fontWeight: 500, transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; }}>
-          Leave Set
-        </button>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814" }}>{deck.title}</div>
-          <div style={{ fontSize: 11, color: "#A8A59E", marginTop: 2 }}>
-            {index + 1} / {cards.length} · Round {round}
-            {mode === "progressive" && lockedLeft > 0 && <span style={{ color: "#D8D5CE" }}> · 🔒{lockedLeft}</span>}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <button onClick={onBack} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:7, padding:"6px 14px", fontSize:13, cursor:"pointer", color:"#8C8880", fontWeight:500, transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>Leave Set</button>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>{deck.title}</div>
+          <div style={{ fontSize:11, color:"#A8A59E", marginTop:2 }}>
+            {!["matching","truefalse"].includes(mode) ? `${index+1} / ${workingCards.length}` : `Round ${matchRound+1}`}
+            {mode==="spaced"&&<span style={{ color:"#F5C842", marginLeft:6 }}>· Spaced Rep</span>}
           </div>
         </div>
-        <div style={{ fontSize: 13, color: "#2BAE7E", fontWeight: 700 }}>{known.size} ✓</div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 4, background: "#ECEAE4", borderRadius: 2, marginBottom: mode === "progressive" ? 10 : 28, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${progress}%`, background: deck.color, borderRadius: 2, transition: "width 0.4s ease" }} />
-      </div>
-
-      {/* Progressive unlock bar */}
-      {mode === "progressive" && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#A8A59E", marginBottom: 5 }}>
-            <span style={{ fontWeight: 700, color: deck.color }}>Unlock progress</span>
-            <span>{activeCount} / {allCards.length} unlocked</span>
-          </div>
-          <div style={{ height: 3, background: "#ECEAE4", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${Math.round((activeCount / allCards.length) * 100)}%`, background: `linear-gradient(90deg, ${deck.color}, #2BAE7E)`, borderRadius: 2, transition: "width 0.6s ease" }} />
-          </div>
+        <div style={{ display:"flex", gap:10, fontSize:13, fontWeight:700 }}>
+          {known.size>0&&<span style={{ color:"#2BAE7E" }}>{known.size} ✓</span>}
+          {wrong.size>0&&<span style={{ color:"#E85D3F" }}>{wrong.size} ✗</span>}
         </div>
-      )}
+      </div>
 
-      {/* ── Card row: left arrow · card · right arrow ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+      <div style={{ height:4, background:"#ECEAE4", borderRadius:2, marginBottom:24, overflow:"hidden" }}>
+        <div style={{ height:"100%", width:`${progress}%`, background:deck.color, borderRadius:2, transition:"width 0.4s ease" }} />
+      </div>
 
-        {/* Left arrow — prev */}
-        <button
-          onClick={() => { setIndex(i => (i - 1 + cards.length) % cards.length); setFlipped(false); }}
-          style={{ flexShrink: 0, width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #ECEAE4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#8C8880", transition: "all 0.18s", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; }}
-        >‹</button>
-
-        {/* ── 3D Flip Card ── */}
-        <div className="fc-flip-scene" style={{ flex: 1, minHeight: 300 }} onClick={() => setFlipped(f => !f)}>
-          <div className={`fc-flip-card${flipped ? " is-flipped" : ""}`}>
-            {/* Front — Term */}
-            <div className="fc-flip-face fc-flip-front">
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 24 }}>Term · click to flip</div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#1A1814", lineHeight: 1.4, maxWidth: 480 }}>{card?.term}</div>
+      {/* MATCHING */}
+      {mode==="matching" && (
+        <div>
+          {matchComplete ? (
+            <div style={{ textAlign:"center", padding:"32px 0" }}>
+              <div style={{ fontSize:40, marginBottom:14 }}>✅</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", marginBottom:16 }}>Round Complete!</div>
+              {matchRound*6+6 < cards.length ? (
+                <button onClick={()=>{const nr=matchRound+1;setMatchRound(nr);initMatchRound(nr);}} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>Next 6 Cards →</button>
+              ) : (
+                <button onClick={()=>setSessionDone(true)} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#2BAE7E", fontSize:14, fontWeight:700, cursor:"pointer", color:"#fff" }}>Finish Session →</button>
+              )}
             </div>
-            {/* Back — Definition */}
-            <div className="fc-flip-face fc-flip-back">
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: deck.color, marginBottom: 24 }}>Definition</div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 17, fontWeight: 400, color: "#1A1814", lineHeight: 1.7, maxWidth: 480 }}>{card?.definition}</div>
+          ) : (
+            <div>
+              <div style={{ fontSize:12, fontWeight:600, color:"#8C8880", textAlign:"center", marginBottom:16 }}>Click a term, then click its definition</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"#A8A59E", textTransform:"uppercase" }}>Terms</div>
+                  {matchCards.map(c => {
+                    const matched=matchPairs.has(c.id); const sel=matchSelected===c.id; const err=matchError===c.id;
+                    return (
+                      <div key={c.id} onClick={()=>!matched&&handleMatchTerm(c.id)} className={err?"match-error":""}
+                        style={{ padding:"12px 14px", borderRadius:10, border:`2px solid ${matched?"#2BAE7E":sel?deck.color:err?"#E85D3F":"#ECEAE4"}`, background:matched?"#F0FDF4":sel?`${deck.color}10`:"#fff", cursor:matched?"default":"pointer", fontSize:13, fontWeight:600, color:"#1A1814", transition:"all 0.18s", opacity:matched?0.6:1 }}>
+                        {c.term}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"#A8A59E", textTransform:"uppercase" }}>Definitions</div>
+                  {matchCards.map(c => {
+                    const matched=[...matchPairs.entries()].some(([k,v])=>v===c.id);
+                    return (
+                      <div key={`d-${c.id}`} onClick={()=>!matched&&matchSelected&&handleMatchDef(c.id)}
+                        style={{ padding:"12px 14px", borderRadius:10, border:`2px solid ${matched?"#2BAE7E":"#ECEAE4"}`, background:matched?"#F0FDF4":matchSelected?"#F7F6F2":"#fff", cursor:matched||!matchSelected?"default":"pointer", fontSize:12, color:"#5A5752", lineHeight:1.5, transition:"all 0.18s", opacity:matched?0.6:1 }}>
+                        {c._defShown?.length>80?c._defShown.slice(0,80)+"…":c._defShown}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Right arrow — next */}
-        <button
-          onClick={() => { advance(known); }}
-          style={{ flexShrink: 0, width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #ECEAE4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#8C8880", transition: "all 0.18s", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#8C8880"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; }}
-        >›</button>
-      </div>
-
-      {/* Action buttons */}
-      {flipped ? (
-        <div className="fc-fade-in" style={{ display: "flex", justifyContent: "center" }}>
-          <button onClick={markKnown} style={{ background: "#2BAE7E", border: "none", borderRadius: 10, padding: "14px 56px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#fff", transition: "all 0.18s", boxShadow: "0 4px 16px rgba(43,174,126,0.3)" }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}>
-            Got It ✓
-          </button>
-        </div>
-      ) : (
-        <div style={{ textAlign: "center" }}>
-          <button onClick={() => setFlipped(true)} className="fc-btn" style={{ background: "#1A1814", border: "none", borderRadius: 10, padding: "13px 40px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>
-            Reveal Answer
-          </button>
+          )}
         </div>
       )}
 
-      {/* Progress dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 32, flexWrap: "wrap" }}>
-        {cards.map((c, i) => (
-          <div key={i} onClick={() => { setIndex(i); setFlipped(false); }}
-            style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 3, background: known.has(c.id) ? "#2BAE7E" : i === index ? deck.color : "#ECEAE4", cursor: "pointer", transition: "all 0.25s" }} />
-        ))}
-        {mode === "progressive" && lockedLeft > 0 && Array.from({ length: Math.min(lockedLeft, 6) }, (_, i) => (
-          <div key={`lock-${i}`} style={{ width: 6, height: 6, borderRadius: 3, background: "#ECEAE4", opacity: 0.35 }} />
-        ))}
-        {mode === "progressive" && lockedLeft > 6 && <span style={{ fontSize: 10, color: "#C8C5BE" }}>+{lockedLeft - 6}</span>}
-      </div>
+      {/* TRUE/FALSE */}
+      {mode==="truefalse" && (
+        <div>
+          {tfLoading ? (
+            <div style={{ textAlign:"center", padding:"60px 0" }}>
+              <div style={{ width:40,height:40,borderRadius:"50%",border:"3px solid #ECEAE4",borderTopColor:deck.color,animation:"qbSpin 0.8s linear infinite",margin:"0 auto 16px" }} />
+              <div style={{ fontSize:14, color:"#8C8880" }}>Generating statements…</div>
+            </div>
+          ) : index<tfStatements.length ? (
+            <div>
+              <div style={{ background:"#fff", border:`2px solid ${deck.color}30`, borderTop:`4px solid ${deck.color}`, borderRadius:16, padding:"40px 36px", textAlign:"center", marginBottom:20 }}>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"#A8A59E", textTransform:"uppercase", marginBottom:20 }}>True or False?</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814", lineHeight:1.5 }}>{tfStatements[index]?.text}</div>
+              </div>
+              {tfAnswer===null ? (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  {[[true,"✓ True","#2BAE7E","#F0FDF4"],[false,"✗ False","#E85D3F","#FEF2F2"]].map(([val,lbl,c,bg])=>(
+                    <button key={String(val)} onClick={()=>answerTF(val)}
+                      style={{ padding:"16px", borderRadius:12, border:`2px solid ${c}`, background:bg, fontSize:16, fontWeight:800, cursor:"pointer", color:c, transition:"all 0.18s" }}
+                      onMouseEnter={e=>{e.currentTarget.style.background=c;e.currentTarget.style.color="#fff";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=bg;e.currentTarget.style.color=c;}}>{lbl}</button>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ padding:"16px 20px", borderRadius:12, background:tfAnswer===tfStatements[index]?.isTrue?"#F0FDF4":"#FEF2F2", border:`1.5px solid ${tfAnswer===tfStatements[index]?.isTrue?"#2BAE7E":"#E85D3F"}`, marginBottom:16, textAlign:"center" }}>
+                    <div style={{ fontSize:16, fontWeight:800, color:tfAnswer===tfStatements[index]?.isTrue?"#2BAE7E":"#E85D3F", marginBottom:6 }}>
+                      {tfAnswer===tfStatements[index]?.isTrue?"✓ Correct!":"✗ Incorrect"}
+                    </div>
+                    <div style={{ fontSize:13, color:"#5A5752" }}>{tfStatements[index]?.explanation}</div>
+                  </div>
+                  <button onClick={()=>{setTfAnswer(null);advance();}} style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>Next →</button>
+                </div>
+              )}
+            </div>
+          ) : <div style={{ textAlign:"center", padding:"40px 0" }}><button onClick={()=>setSessionDone(true)} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>See Results →</button></div>}
+        </div>
+      )}
+
+      {/* WRITTEN ANSWER */}
+      {mode==="written" && card && (
+        <div>
+          <div style={{ background:"#fff", border:`2px solid ${deck.color}30`, borderTop:`4px solid ${deck.color}`, borderRadius:16, padding:"40px 36px", textAlign:"center", marginBottom:20 }}>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"#A8A59E", textTransform:"uppercase", marginBottom:20 }}>Define this term</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:"#1A1814", lineHeight:1.4 }}>{card.term}</div>
+            {card.image&&<img src={card.image} alt="" style={{ maxHeight:120,maxWidth:"100%",marginTop:16,borderRadius:8,objectFit:"contain" }} />}
+          </div>
+          {!writtenResult ? (
+            <div>
+              <textarea value={writtenInput} onChange={e=>setWrittenInput(e.target.value)}
+                onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+                placeholder="Type your answer here…"
+                style={{ width:"100%",minHeight:100,padding:"14px",borderRadius:12,border:`1.5px solid ${deck.color}40`,background:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif",color:"#1A1814",outline:"none",resize:"none",lineHeight:1.7,boxSizing:"border-box",marginBottom:12 }}
+                onFocus={e=>e.target.style.borderColor=deck.color} onBlur={e=>e.target.style.borderColor=`${deck.color}40`} />
+              <button onClick={gradeWritten} disabled={!writtenInput.trim()||writtenLoading}
+                style={{ width:"100%",padding:"13px",borderRadius:10,border:"none",background:writtenInput.trim()&&!writtenLoading?"#1A1814":"#ECEAE4",color:writtenInput.trim()&&!writtenLoading?"#F7F6F2":"#A8A59E",fontSize:14,fontWeight:700,cursor:writtenInput.trim()&&!writtenLoading?"pointer":"default",transition:"all 0.2s" }}>
+                {writtenLoading?"Grading…":"Check Answer →"}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ padding:"18px 20px", borderRadius:12, background:writtenResult.grade==="correct"?"#F0FDF4":writtenResult.grade==="close"?"#FFFBEB":"#FEF2F2", border:`1.5px solid ${writtenResult.grade==="correct"?"#2BAE7E":writtenResult.grade==="close"?"#F5C842":"#E85D3F"}`, marginBottom:12 }}>
+                <div style={{ fontSize:14, fontWeight:800, color:writtenResult.grade==="correct"?"#2BAE7E":writtenResult.grade==="close"?"#D4A830":"#E85D3F", marginBottom:6 }}>
+                  {writtenResult.grade==="correct"?"✓ Correct!":writtenResult.grade==="close"?"~ Close!":"✗ Incorrect"}
+                </div>
+                <div style={{ fontSize:13, color:"#5A5752", marginBottom:6 }}>{writtenResult.feedback}</div>
+                <div style={{ fontSize:12, color:"#8C8880" }}>Correct answer: <strong>{card.definition}</strong></div>
+              </div>
+              <button onClick={()=>{setWrittenResult(null);setWrittenInput("");advance();}} style={{ width:"100%",padding:"13px",borderRadius:10,border:"none",background:"#1A1814",fontSize:14,fontWeight:700,cursor:"pointer",color:"#F7F6F2" }}>Next →</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FLIP MODES */}
+      {!["matching","truefalse","written"].includes(mode) && card && (
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
+            <button onClick={()=>{setIndex(i=>(i-1+workingCards.length)%workingCards.length);setFlipped(false);}}
+              style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>‹</button>
+            <div className="fc-flip-scene" style={{ flex:1, minHeight:280 }} onClick={()=>setFlipped(f=>!f)}>
+              <div className={`fc-flip-card${flipped?" is-flipped":""}`}>
+                <div className="fc-flip-face fc-flip-front">
+                  <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#A8A59E",marginBottom:20 }}>Term · click to flip</div>
+                  <div style={{ fontFamily:"'Playfair Display',serif",fontSize:mode==="focus"?32:26,fontWeight:900,color:"#1A1814",lineHeight:1.4,maxWidth:480 }}>{card.term}</div>
+                  {card.image&&<img src={card.image} alt="" style={{ maxHeight:100,maxWidth:"80%",marginTop:16,borderRadius:8,objectFit:"contain" }} />}
+                </div>
+                <div className="fc-flip-face fc-flip-back">
+                  <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:deck.color,marginBottom:20 }}>Definition</div>
+                  <div style={{ fontFamily:"'DM Sans',sans-serif",fontSize:mode==="focus"?18:16,fontWeight:400,color:"#1A1814",lineHeight:1.75,maxWidth:480 }}>{card.definition}</div>
+                  {card.image&&<img src={card.image} alt="" style={{ maxHeight:80,maxWidth:"70%",marginTop:14,borderRadius:8,objectFit:"contain",opacity:0.7 }} />}
+                </div>
+              </div>
+            </div>
+            <button onClick={()=>advance()}
+              style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>›</button>
+          </div>
+
+          {flipped ? (
+            mode==="spaced" ? (
+              <div className="fc-fade-in">
+                <div style={{ fontSize:11,fontWeight:600,color:"#A8A59E",textAlign:"center",marginBottom:12,letterSpacing:1 }}>HOW WELL DID YOU KNOW IT?</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+                  {[["Again","#E85D3F",0,"Forgot"],["Hard","#F5A623",1,"Struggled"],["Good","#4F6EF7",2,"Got it"],["Easy","#2BAE7E",3,"Easy!"]].map(([label,color,q,sub])=>(
+                    <button key={label} onClick={()=>rateCard(q)}
+                      style={{ padding:"12px 8px",borderRadius:10,border:`2px solid ${color}30`,background:`${color}10`,cursor:"pointer",transition:"all 0.18s",textAlign:"center" }}
+                      onMouseEnter={e=>{e.currentTarget.style.background=color;e.currentTarget.style.borderColor=color;Array.from(e.currentTarget.children).forEach(c=>c.style.color="#fff");}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=`${color}10`;e.currentTarget.style.borderColor=`${color}30`;Array.from(e.currentTarget.children).forEach((c,i)=>c.style.color=i===0?color:"#8C8880");}}>
+                      <div style={{ fontSize:13,fontWeight:800,color }}>{label}</div>
+                      <div style={{ fontSize:10,color:"#8C8880",marginTop:2 }}>{sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="fc-fade-in" style={{ display:"flex", gap:10, justifyContent:"center" }}>
+                <button onClick={()=>{setWrong(p=>{const n=new Set(p);n.add(card.id);return n;});advance();}}
+                  style={{ padding:"13px 32px",borderRadius:10,border:"2px solid #E85D3F",background:"#FEF2F2",fontSize:14,fontWeight:700,cursor:"pointer",color:"#E85D3F",transition:"all 0.18s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#E85D3F";e.currentTarget.style.color="#fff";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#FEF2F2";e.currentTarget.style.color="#E85D3F";}}>✗ Still Learning</button>
+                <button onClick={()=>{setKnown(p=>{const n=new Set(p);n.add(card.id);return n;});advance();}}
+                  style={{ padding:"13px 32px",borderRadius:10,border:"none",background:"#2BAE7E",fontSize:14,fontWeight:700,cursor:"pointer",color:"#fff",transition:"all 0.18s",boxShadow:"0 4px 16px rgba(43,174,126,0.3)" }}
+                  onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>Got It ✓</button>
+              </div>
+            )
+          ) : (
+            <div style={{ textAlign:"center" }}>
+              <button onClick={()=>setFlipped(true)} className="fc-btn" style={{ background:"#1A1814",border:"none",borderRadius:10,padding:"13px 40px",fontSize:14,fontWeight:700,cursor:"pointer",color:"#F7F6F2",transition:"all 0.2s" }}>
+                Reveal Answer
+              </button>
+            </div>
+          )}
+
+          <div style={{ display:"flex", justifyContent:"center", gap:5, marginTop:28, flexWrap:"wrap" }}>
+            {workingCards.map((c,i)=>(
+              <div key={i} onClick={()=>{setIndex(i);setFlipped(false);}}
+                style={{ width:i===index?20:6,height:6,borderRadius:3,background:known.has(c.id)?"#2BAE7E":wrong.has(c.id)?"#E85D3F":i===index?deck.color:"#ECEAE4",cursor:"pointer",transition:"all 0.25s" }} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
