@@ -1377,6 +1377,31 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
   const [drafts, setDrafts] = useState([]);
   const [createTab, setCreateTab] = useState("cards");
 
+  // Navigate within FC — pushes to browser history
+  const fcNavigate = (newView, deckRef = null) => {
+    setView(newView);
+    if (deckRef) setActiveDeck(deckRef);
+    window.history.pushState(
+      { screen: "app", app: "flashcards", fcView: newView, deckId: deckRef?.id || null },
+      "",
+      "/flashcards"
+    );
+  };
+
+  // Handle browser back/forward within FC
+  useEffect(() => {
+    const handlePop = (e) => {
+      const state = e.state;
+      if (!state || state.app !== "flashcards") return; // let parent handle it
+      setView(state.fcView || "home");
+      // Note: activeDeck can't be fully restored from just id without a deck lookup
+      // so for simplicity we fall back to library on back if no deck in state
+      if (!state.deckId) setActiveDeck(null);
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
+
   // ── Deck state — initialized from localStorage, falls back to sample decks ──
   const [decks, setDecks] = useState(() => {
     try {
@@ -1439,11 +1464,11 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
     });
   };
 
-  const openDeck       = (deck) => { setActiveDeck(deck); setView("deck"); };
-  const startStudy     = (deck) => { setActiveDeck(deck); setView("setup"); };
-  const goHome         = ()     => { setView("home"); setActiveDeck(null); };
-  const openCreate     = ()     => { setActiveDeck(null); setCreateTab("cards"); setView("create"); };
-  const openQuickBuild = ()     => { setActiveDeck(null); setCreateTab("quickbuild"); setView("create"); };
+  const openDeck       = (deck) => { setActiveDeck(deck); fcNavigate("deck", deck); };
+  const startStudy     = (deck) => { setActiveDeck(deck); fcNavigate("setup", deck); };
+  const goHome         = ()     => { fcNavigate("home"); setActiveDeck(null); };
+  const openCreate     = ()     => { setActiveDeck(null); setCreateTab("cards");      fcNavigate("create"); };
+  const openQuickBuild = ()     => { setActiveDeck(null); setCreateTab("quickbuild"); fcNavigate("create"); };
 
   const filteredDecks = decks.filter(d => {
     const matchSubject = activeSubject === "All" || d.subject === activeSubject;
@@ -1532,17 +1557,17 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       </nav>
 
       {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
-      <FCSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} decks={decks} view={view} setView={(v) => { setView(v); setSidebarOpen(false); setActiveDeck(null); }} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} />
+      <FCSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} decks={decks} view={view} setView={(v) => { fcNavigate(v); setSidebarOpen(false); setActiveDeck(null); }} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} />
 
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
-      {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => setView("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
+      {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => setView("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); setView("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); setView("edit"); }} onMoveFolder={(id, folderId, folderName) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} user={user} userFolders={userFolders} />}
-      {view === "create"  && <FCCreateDeck onBack={() => setView("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); setView("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
-      {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => setView("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); setView("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
-      {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => setView("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
-      {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => setView("deck")} onStart={(cfg) => { setStudyConfig(cfg); setView("study"); }} />}
-      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => setView("setup")} onBackToLibrary={() => setView("library")} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} user={user} userFolders={userFolders} />}
+      {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
+      {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
+      {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
+      {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
+      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} />}
     </div>
   );
 }
@@ -10267,6 +10292,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   const handleAuth = (userData) => {
     try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
+    window.history.pushState({ screen: "galaxy" }, "", "/");
   };
   const handleLogout = async () => {
     try { await signOut(auth); } catch {}
@@ -10337,7 +10363,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (showHome && !user) {
     return (
       <>
-        <LandingPage onEnter={() => setShowHome(false)} openAuth={(mode) => { openAuth(mode); }} />
+        <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} />
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       </>
     );
@@ -10350,29 +10376,42 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     });
     trackAppLaunched(appId);
     setCurrentApp(appId);
-    window.history.pushState({ app: appId }, "", `/${appId}`);
+    window.history.pushState({ screen: "app", app: appId }, "", `/${appId}`);
   };
 
   const goHome = () => {
     setCurrentApp(null);
-    window.history.pushState({ app: null }, "", "/");
+    window.history.pushState({ screen: "galaxy" }, "", "/");
   };
 
-  // Sync browser back/forward with app state
+  // Sync browser back/forward with all navigation layers
   useEffect(() => {
-    // Set initial history entry so back doesn't leave the site
-    if (!window.history.state) {
-      window.history.replaceState({ app: null }, "", "/");
-    }
+    // Stamp the initial state so the very first back press doesn't leave the site
+    const initialScreen = showHome ? "landing" : currentApp ? "app" : "galaxy";
+    window.history.replaceState(
+      { screen: initialScreen, app: currentApp || null },
+      "",
+      currentApp ? `/${currentApp}` : "/"
+    );
 
     const handlePop = (e) => {
-      const app = e.state?.app || null;
-      setCurrentApp(app);
+      const state = e.state;
+      if (!state) return;
+      if (state.screen === "landing") {
+        setCurrentApp(null);
+        setShowHome(true);
+      } else if (state.screen === "galaxy") {
+        setCurrentApp(null);
+        setShowHome(false);
+      } else if (state.screen === "app" && state.app) {
+        setCurrentApp(state.app);
+        setShowHome(false);
+      }
     };
 
     window.addEventListener("popstate", handlePop);
     return () => window.removeEventListener("popstate", handlePop);
-  }, []);
+  }, []); // eslint-disable-line
 
   const aiContext = buildAIContext();
   const floatingWidget = <FloatingAssistant avatar={avatar} visible={showFloating && currentApp !== "assistant"} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
