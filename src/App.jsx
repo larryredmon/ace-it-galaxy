@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Component } from "react";
 import { auth, db, googleProvider } from "./firebase";
 import {
   createUserWithEmailAndPassword,
@@ -6366,7 +6366,10 @@ function AvatarHead({ avatar = {}, size = 48 }) {
 // ── Floating AI Assistant Widget ──────────────────────────────────────────────
 function FloatingAssistant({ avatar, visible, user, onOpen }) {
   const [expanded, setExpanded]  = useState(false);
-  const [pos, setPos]            = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [pos, setPos] = useState(() => ({
+    x: (typeof window !== "undefined" ? window.innerWidth : 400) - 80,
+    y: (typeof window !== "undefined" ? window.innerHeight : 700) - 80,
+  }));
   const [dragging, setDragging]  = useState(false);
   const [messages, setMessages]  = useState([]);
   const [input, setInput]        = useState("");
@@ -10850,7 +10853,40 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
 }
 
 // ─── AceItGalaxy ─────────────────────────────────────────────────────────────
+// ─── Error Boundary — catches render crashes so mobile doesn't get blank page ──
+class AppErrorBoundary extends Component {
+  state = { crashed: false, error: null };
+  static getDerivedStateFromError(error) { return { crashed: true, error }; }
+  componentDidCatch(error, info) { console.error("[TeachersPet] Render crash:", error, info); }
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#06040E", minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:32, textAlign:"center" }}>
+          <div style={{ fontSize:48, marginBottom:20 }}>🍎</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#F7F6F2", marginBottom:10 }}>Something went wrong</div>
+          <div style={{ fontSize:14, color:"rgba(255,255,255,0.4)", marginBottom:28, maxWidth:360, lineHeight:1.7 }}>
+            Teacher's Pet hit an unexpected error. Your data is safe — try refreshing the page.
+          </div>
+          <button onClick={()=>window.location.reload()} style={{ background:"#F5C842", border:"none", borderRadius:10, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#1A1814" }}>
+            Refresh Page
+          </button>
+          {this.state.error && (
+            <div style={{ marginTop:20, fontSize:11, color:"rgba(255,255,255,0.2)", maxWidth:400, wordBreak:"break-all" }}>
+              {this.state.error.message}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function AceItGalaxy() {
+  return <AppErrorBoundary><AceItGalaxyInner /></AppErrorBoundary>;
+}
+
+function AceItGalaxyInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
@@ -11292,7 +11328,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     return () => window.removeEventListener("popstate", handlePop);
   }, []); // eslint-disable-line
 
-  const aiContext = buildAIContext();
+  const aiContext = (() => { try { return buildAIContext(); } catch { return ""; } })();
   const floatingWidget = <FloatingAssistant avatar={avatar} visible={showFloating && currentApp !== "assistant"} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
 
   if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} />}{floatingWidget}</>;
