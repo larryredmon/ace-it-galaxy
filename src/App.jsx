@@ -10816,7 +10816,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@teacherspet.app"; else onLegal?.(key); }}
+              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@teacherspet.app"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
           ))}
@@ -10855,7 +10855,12 @@ export default function AceItGalaxy() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
-  const [legalPage, setLegalPage]     = useState(null);   // null | "privacy" | "terms"
+  const [legalPage, setLegalPage]     = useState(() => {
+    const path = window.location.pathname;
+    if (path === "/privacy") return "privacy";
+    if (path === "/terms")   return "terms";
+    return null;
+  });
   const [user, setUser]             = useState(() => {
     try { const s = localStorage.getItem("tp_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -11216,7 +11221,11 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     window.addEventListener("tpSync", handleSyncEvent);
 
     // Listen for legal page navigation from modals/nested components
-    const handleLegalEvent = (e) => setLegalPage(e.detail);
+    const handleLegalEvent = (e) => {
+      const page = e.detail;
+      setLegalPage(page);
+      window.history.pushState({ screen: `legal-${page}` }, "", `/${page}`);
+    };
     window.addEventListener("tpLegal", handleLegalEvent);
 
     return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
@@ -11230,8 +11239,8 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   );
 
   // Show legal pages
-  if (legalPage === "privacy") return <PrivacyPolicyPage onBack={() => setLegalPage(null)} />;
-  if (legalPage === "terms")   return <TermsOfServicePage onBack={() => setLegalPage(null)} />;
+  if (legalPage === "privacy") return <PrivacyPolicyPage onBack={() => { setLegalPage(null); window.history.pushState({ screen: "landing" }, "", "/"); }} />;
+  if (legalPage === "terms")   return <TermsOfServicePage onBack={() => { setLegalPage(null); window.history.pushState({ screen: "landing" }, "", "/"); }} />;
 
   // Show landing page only if no user AND not in the middle of a redirect
   if (showHome && !user) {
@@ -11261,26 +11270,22 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   // Sync browser back/forward with all navigation layers
   useEffect(() => {
     // Stamp the initial state so the very first back press doesn't leave the site
-    const initialScreen = showHome ? "landing" : currentApp ? "app" : "galaxy";
+    const path = window.location.pathname;
+    const initialScreen = path==="/privacy"?"legal-privacy":path==="/terms"?"legal-terms":showHome?"landing":currentApp?"app":"galaxy";
     window.history.replaceState(
       { screen: initialScreen, app: currentApp || null },
       "",
-      currentApp ? `/${currentApp}` : "/"
+      currentApp ? `/${currentApp}` : path
     );
 
     const handlePop = (e) => {
       const state = e.state;
       if (!state) return;
-      if (state.screen === "landing") {
-        setCurrentApp(null);
-        setShowHome(true);
-      } else if (state.screen === "galaxy") {
-        setCurrentApp(null);
-        setShowHome(false);
-      } else if (state.screen === "app" && state.app) {
-        setCurrentApp(state.app);
-        setShowHome(false);
-      }
+      if (state.screen === "legal-privacy") { setLegalPage("privacy"); setCurrentApp(null); }
+      else if (state.screen === "legal-terms") { setLegalPage("terms"); setCurrentApp(null); }
+      else if (state.screen === "landing") { setLegalPage(null); setCurrentApp(null); setShowHome(true); }
+      else if (state.screen === "galaxy") { setLegalPage(null); setCurrentApp(null); setShowHome(false); }
+      else if (state.screen === "app" && state.app) { setLegalPage(null); setCurrentApp(state.app); setShowHome(false); }
     };
 
     window.addEventListener("popstate", handlePop);
@@ -11545,6 +11550,25 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
+
+      {/* Galaxy footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.05)", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10, background:"rgba(6,4,14,0.6)" }}>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.18)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
+        <div style={{ display:"flex", gap:20 }}>
+          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([label,key])=>(
+            <span key={key} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.15s" }}
+              onClick={()=>{
+                if(key==="contact") window.location.href="mailto:hello@teacherspet.app";
+                else { setLegalPage(key); window.history.pushState({screen:`legal-${key}`},"",`/${key}`); }
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.22)"}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </footer>
+
     </div>
   );
 }
