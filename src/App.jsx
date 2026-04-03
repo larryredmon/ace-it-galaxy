@@ -10857,9 +10857,12 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
 // ─── AceItGalaxy ─────────────────────────────────────────────────────────────
 // ─── Error Boundary — catches render crashes so mobile doesn't get blank page ──
 class AppErrorBoundary extends Component {
-  state = { crashed: false, error: null };
+  state = { crashed: false, error: null, stack: null };
   static getDerivedStateFromError(error) { return { crashed: true, error }; }
-  componentDidCatch(error, info) { console.error("[TeachersPet] Render crash:", error, info); }
+  componentDidCatch(error, info) {
+    console.error("[TeachersPet] Render crash:", error, info);
+    this.setState({ stack: info?.componentStack || null });
+  }
   render() {
     if (this.state.crashed) {
       return (
@@ -10869,12 +10872,13 @@ class AppErrorBoundary extends Component {
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.4)", marginBottom:28, maxWidth:360, lineHeight:1.7 }}>
             Teacher's Pet hit an unexpected error. Your data is safe — try refreshing the page.
           </div>
-          <button onClick={()=>window.location.reload()} style={{ background:"#F5C842", border:"none", borderRadius:10, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#1A1814" }}>
+          <button onClick={()=>window.location.reload()} style={{ background:"#F5C842", border:"none", borderRadius:10, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#1A1814", marginBottom:20 }}>
             Refresh Page
           </button>
           {this.state.error && (
-            <div style={{ marginTop:20, fontSize:11, color:"rgba(255,255,255,0.2)", maxWidth:400, wordBreak:"break-all" }}>
-              {this.state.error.message}
+            <div style={{ marginTop:8, fontSize:11, color:"rgba(255,255,255,0.35)", maxWidth:500, wordBreak:"break-all", textAlign:"left", background:"rgba(255,255,255,0.04)", padding:"12px 16px", borderRadius:8, lineHeight:1.6 }}>
+              <div style={{ fontWeight:700, marginBottom:6, color:"#E85D3F" }}>Error: {this.state.error.message}</div>
+              {this.state.stack && <div style={{ fontSize:10, color:"rgba(255,255,255,0.2)", whiteSpace:"pre-wrap" }}>{this.state.stack.slice(0,600)}</div>}
             </div>
           )}
         </div>
