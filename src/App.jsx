@@ -138,8 +138,10 @@ const PLANETS = [
 const TILT = 0.34;
 
 function Stars() {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const count = isMobile ? 40 : 160;
   const stars = useRef(
-    Array.from({ length: 160 }, (_, i) => ({
+    Array.from({ length: count }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() < 0.15 ? Math.random() * 1.8 + 1.2 : Math.random() * 0.9 + 0.3,
@@ -156,7 +158,7 @@ function Stars() {
           width: s.size, height: s.size, borderRadius: "50%",
           background: i % 7 === 0 ? "#e8d8ff" : i % 5 === 0 ? "#c8e8ff" : "#ffffff",
           opacity: s.opacity,
-          animation: `starPulse ${s.twinkle}s ease-in-out infinite alternate`,
+          animation: isMobile ? "none" : `starPulse ${s.twinkle}s ease-in-out infinite alternate`,
           animationDelay: `${s.delay}s`,
         }} />
       ))}
@@ -7858,8 +7860,8 @@ function NotesApp({ onBack, user, openAuth }) {
   const recognitionRef = useRef(null);
   const editorRef     = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {}; tpSync("tp_notes", notes); }, [notes]);
-  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {}; tpSync("tp_note_folders", folders); }, [folders]);
+  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} tpSync("tp_notes", notes); }, [notes]);
+  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {} tpSync("tp_note_folders", folders); }, [folders]);
 
   const newNote = (preTitle="", preContent="") => {
     setTitle(preTitle); setContent(preContent); setFolder("");
