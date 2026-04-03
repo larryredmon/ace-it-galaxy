@@ -7780,7 +7780,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
 
               {mode === "signup" && (
                 <p style={{ fontSize: 11, color: "#A8A59E", textAlign: "center", lineHeight: 1.6 }}>
-                  By creating an account you agree to our <span style={{ color: "#4F6EF7", cursor: "pointer" }}>Terms</span> and <span style={{ color: "#4F6EF7", cursor: "pointer" }}>Privacy Policy</span>.
+                  By creating an account you agree to our <span onClick={()=>{ window.dispatchEvent(new CustomEvent("tpLegal",{detail:"terms"})); }} style={{ color: "#4F6EF7", cursor: "pointer" }}>Terms</span> and <span onClick={()=>{ window.dispatchEvent(new CustomEvent("tpLegal",{detail:"privacy"})); }} style={{ color: "#4F6EF7", cursor: "pointer" }}>Privacy Policy</span>.
                 </p>
               )}
             </>
@@ -10083,7 +10083,316 @@ const LANDING_STATS = [
   { value:"∞", label:"Curiosity" },
 ];
 
-function LandingPage({ onEnter, openAuth }) {
+// ─── Privacy Policy Page ──────────────────────────────────────────────────────
+function PrivacyPolicyPage({ onBack }) {
+  const today = "April 3, 2026";
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`* { box-sizing:border-box; } ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}`}</style>
+
+      {/* Nav */}
+      <nav style={{ position:"sticky", top:0, zIndex:100, background:"rgba(6,4,14,0.96)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", height:60, display:"flex", alignItems:"center", padding:"0 32px", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.5)", transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";}}
+            onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.5)";e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";}}>
+            ← Back
+          </button>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:18 }}>🍎</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
+          </div>
+        </div>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Privacy Policy</span>
+      </nav>
+
+      {/* Content */}
+      <div style={{ maxWidth:760, margin:"0 auto", padding:"64px 32px 120px" }}>
+        <div style={{ marginBottom:48 }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"4px 14px", marginBottom:20 }}>
+            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Legal</span>
+          </div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,5vw,52px)", fontWeight:900, color:"#F7F6F2", letterSpacing:-1, lineHeight:1.1, marginBottom:16 }}>Privacy Policy</h1>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.35)" }}>Last updated: {today}</p>
+        </div>
+
+        {[
+          {
+            title: "1. Who We Are",
+            body: `Teacher's Pet ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at ace-it-galaxy.vercel.app and any associated services.`
+          },
+          {
+            title: "2. Information We Collect",
+            body: `We collect the following types of information:
+
+Account Information: When you create an account, we collect your name and email address. If you sign in with Google, we receive your name, email, and profile picture from Google.
+
+Study Content: We store the content you create on our platform — including flashcard decks, notes, brain maps, journal entries, and tracker tasks. This content is associated with your account and synced to secure cloud storage.
+
+Usage Data: We may collect basic usage information such as which features you use, how often you study, and your mastery progress. This helps us improve the platform.
+
+Device Information: We may collect basic information about your browser and device type for security and compatibility purposes.`
+          },
+          {
+            title: "3. How We Use Your Information",
+            body: `We use your information solely to:
+
+• Provide and improve the Teacher's Pet platform and its features
+• Sync your study data across devices when you are logged in
+• Power AI features (your content is sent to Anthropic's Claude API to generate flashcards, summaries, and study plans)
+• Send important account-related communications (not marketing, unless you opt in)
+• Maintain the security and integrity of your account
+
+We do not sell your data. We do not use your data for advertising. We do not share your personal information with third parties except as described in this policy.`
+          },
+          {
+            title: "4. Third-Party Services",
+            body: `Teacher's Pet uses the following third-party services to operate:
+
+Firebase (Google): We use Firebase Authentication for login and Firestore database for storing your study data. Your data is stored on Google's servers subject to Google's Privacy Policy.
+
+Anthropic Claude API: When you use AI features (generating flashcards, summaries, notes, or study plans), your content is sent to Anthropic's API for processing. Anthropic does not train their models on API inputs by default. See Anthropic's Privacy Policy for details.
+
+Vercel: Our platform is hosted on Vercel's infrastructure. Basic request logs may be retained by Vercel.
+
+We require all third-party providers to maintain appropriate data security standards.`
+          },
+          {
+            title: "5. Data Storage and Security",
+            body: `Your study data is stored in Google Firebase Firestore, a secure cloud database. Data is encrypted in transit using HTTPS/TLS. We follow industry-standard security practices to protect your information.
+
+If you are not logged in, your data is stored locally on your device using browser localStorage. This data does not leave your device unless you create an account and log in.`
+          },
+          {
+            title: "6. Student Data",
+            body: `We take the privacy of student data seriously. We do not knowingly collect personal information from children under the age of 13 without verifiable parental consent, in compliance with the Children's Online Privacy Protection Act (COPPA).
+
+If you are under 13, please do not create an account. If we discover we have inadvertently collected information from a child under 13, we will delete it promptly.
+
+For students ages 13-17, we encourage parental awareness of their use of the platform. We do not collect more information than is necessary to provide the service.`
+          },
+          {
+            title: "7. Your Rights and Choices",
+            body: `You have the following rights regarding your data:
+
+Access: You can view all your study data within the Teacher's Pet platform at any time.
+
+Deletion: You can delete individual notes, decks, or other content at any time within the app. To delete your entire account and all associated data, contact us at the email below.
+
+Export: Your study content is accessible within the app. We plan to add formal data export features in the future.
+
+California Residents (CCPA): You have the right to know what personal information we collect, request deletion of your data, and opt out of any sale of personal information (we do not sell personal information).
+
+EU/UK Residents (GDPR): You have the right to access, rectify, erase, restrict, or port your personal data. You may also object to processing. To exercise these rights, contact us below.`
+          },
+          {
+            title: "8. Cookies",
+            body: `We use minimal cookies necessary for the platform to function — primarily session authentication cookies set by Firebase. We do not use advertising cookies or tracking pixels. We do not use third-party analytics cookies.`
+          },
+          {
+            title: "9. Changes to This Policy",
+            body: `We may update this Privacy Policy from time to time. When we make significant changes, we will update the "Last updated" date at the top of this page. Continued use of Teacher's Pet after changes constitutes your acceptance of the updated policy.`
+          },
+          {
+            title: "10. Contact Us",
+            body: `If you have any questions about this Privacy Policy or wish to exercise your privacy rights, please contact us at:
+
+Teacher's Pet
+Email: privacy@teacherspet.app
+
+We aim to respond to all privacy inquiries within 30 days.`
+          },
+        ].map((section, i) => (
+          <div key={i} style={{ marginBottom:40, paddingBottom:40, borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:800, color:"#F7F6F2", marginBottom:16 }}>{section.title}</h2>
+            <div style={{ fontSize:15, color:"rgba(255,255,255,0.6)", lineHeight:1.85, whiteSpace:"pre-line" }}>{section.body}</div>
+          </div>
+        ))}
+
+        <div style={{ background:"rgba(245,200,66,0.06)", border:"1px solid rgba(245,200,66,0.15)", borderRadius:12, padding:"24px 28px", marginTop:40 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#F5C842", marginBottom:8 }}>Questions or Concerns?</div>
+          <div style={{ fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>
+            We built Teacher's Pet with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@teacherspet.app</span> — we're a small team and we read every message.
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
+      </footer>
+    </div>
+  );
+}
+
+// ─── Terms of Service Page ─────────────────────────────────────────────────────
+function TermsOfServicePage({ onBack }) {
+  const today = "April 3, 2026";
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <style>{`* { box-sizing:border-box; } ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}`}</style>
+
+      {/* Nav */}
+      <nav style={{ position:"sticky", top:0, zIndex:100, background:"rgba(6,4,14,0.96)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", height:60, display:"flex", alignItems:"center", padding:"0 32px", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.5)", transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";}}
+            onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.5)";e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";}}>
+            ← Back
+          </button>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:18 }}>🍎</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
+          </div>
+        </div>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Terms of Service</span>
+      </nav>
+
+      {/* Content */}
+      <div style={{ maxWidth:760, margin:"0 auto", padding:"64px 32px 120px" }}>
+        <div style={{ marginBottom:48 }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"4px 14px", marginBottom:20 }}>
+            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Legal</span>
+          </div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,5vw,52px)", fontWeight:900, color:"#F7F6F2", letterSpacing:-1, lineHeight:1.1, marginBottom:16 }}>Terms of Service</h1>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.35)" }}>Last updated: {today}</p>
+        </div>
+
+        {[
+          {
+            title: "1. Acceptance of Terms",
+            body: `By accessing or using Teacher's Pet ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
+
+These Terms apply to all users of Teacher's Pet, including students, educators, and casual learners. By creating an account or using any features of the Platform, you confirm that you are at least 13 years of age, or that you have obtained parental consent if you are between 13 and 18 years of age.`
+          },
+          {
+            title: "2. Description of Service",
+            body: `Teacher's Pet is an AI-powered educational platform that provides tools including but not limited to: AI-generated flashcards, note-taking, brain mapping, study planning, a personal journal, and a learning tracker. Features are subject to change as the platform evolves.
+
+Some features require an account. We offer a free tier and may introduce paid tiers in the future. We will provide advance notice of any changes to paid features.`
+          },
+          {
+            title: "3. Your Account",
+            body: `You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to:
+
+• Provide accurate and truthful information when creating your account
+• Notify us immediately of any unauthorized use of your account
+• Not share your account credentials with others
+• Not create multiple accounts to circumvent restrictions
+
+We reserve the right to suspend or terminate accounts that violate these Terms or that are used for fraudulent or harmful purposes.`
+          },
+          {
+            title: "4. Your Content",
+            body: `You retain full ownership of all content you create on Teacher's Pet — including your notes, flashcard decks, journal entries, and brain maps ("Your Content").
+
+By using the Platform, you grant Teacher's Pet a limited, non-exclusive license to store, display, and process Your Content solely for the purpose of providing the service to you.
+
+You are responsible for ensuring that Your Content does not violate any laws or third-party rights. You agree not to upload content that is illegal, harmful, or that infringes on the intellectual property of others.
+
+When you delete your content or your account, we will remove Your Content from our systems within a reasonable timeframe.`
+          },
+          {
+            title: "5. AI-Generated Content",
+            body: `Teacher's Pet uses artificial intelligence (powered by Anthropic's Claude API) to help generate flashcards, summaries, study plans, and other learning materials based on content you provide.
+
+You acknowledge that:
+
+• AI-generated content may contain errors, inaccuracies, or omissions
+• AI-generated content should be reviewed and verified before relying on it for academic, professional, or other important purposes
+• Teacher's Pet does not guarantee the accuracy, completeness, or suitability of any AI-generated content
+• You are responsible for how you use AI-generated content
+
+Teacher's Pet is not liable for any consequences arising from reliance on AI-generated content.`
+          },
+          {
+            title: "6. Acceptable Use",
+            body: `You agree to use Teacher's Pet only for lawful, educational purposes. You agree not to:
+
+• Use the Platform to generate, store, or distribute harmful, hateful, or illegal content
+• Attempt to reverse-engineer, hack, or disrupt the Platform or its infrastructure
+• Use automated tools or bots to access the Platform in ways that overload our systems
+• Impersonate other users or Teacher's Pet staff
+• Use the Platform to violate academic integrity policies (e.g., submitting AI-generated content as your own work without disclosure)
+• Attempt to extract or scrape data from the Platform at scale
+
+We reserve the right to suspend or terminate any account that violates these guidelines without prior notice.`
+          },
+          {
+            title: "7. Intellectual Property",
+            body: `The Teacher's Pet platform, including its design, code, branding, and original content, is owned by Teacher's Pet and protected by copyright and other intellectual property laws. You may not copy, reproduce, distribute, or create derivative works from the Platform without our express written permission.
+
+The Teacher's Pet name, logo, and apple icon are trademarks of Teacher's Pet. All rights reserved.`
+          },
+          {
+            title: "8. Disclaimer of Warranties",
+            body: `Teacher's Pet is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:
+
+• The Platform will be uninterrupted, error-free, or completely secure
+• The results obtained from using the Platform will be accurate or reliable
+• Any errors or defects will be corrected
+
+To the fullest extent permitted by law, we disclaim all warranties including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.`
+          },
+          {
+            title: "9. Limitation of Liability",
+            body: `To the fullest extent permitted by applicable law, Teacher's Pet and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, academic outcomes, or business opportunities, even if we have been advised of the possibility of such damages.
+
+Our total liability for any claims arising from your use of the Platform shall not exceed the amount you paid us in the twelve months prior to the claim (or $0 if you used a free plan).`
+          },
+          {
+            title: "10. Changes to Terms",
+            body: `We may update these Terms of Service from time to time. When we make material changes, we will update the "Last updated" date and notify registered users via email or an in-app notice.
+
+Continued use of Teacher's Pet after changes to these Terms constitutes your acceptance of the updated Terms. If you do not agree with the updated Terms, you should discontinue use of the Platform.`
+          },
+          {
+            title: "11. Termination",
+            body: `You may stop using Teacher's Pet at any time. You may delete your account by contacting us at the email below.
+
+We reserve the right to suspend or terminate your access to the Platform at our discretion if you violate these Terms, with or without notice. Upon termination, your right to use the Platform ceases immediately.`
+          },
+          {
+            title: "12. Governing Law",
+            body: `These Terms shall be governed by and construed in accordance with the laws of the State of Texas, United States, without regard to conflict of law provisions. Any disputes arising under these Terms shall be subject to the exclusive jurisdiction of the courts located in Texas.`
+          },
+          {
+            title: "13. Contact Us",
+            body: `If you have any questions about these Terms of Service, please contact us at:
+
+Teacher's Pet
+Email: legal@teacherspet.app
+
+We aim to respond to all inquiries within 30 days.`
+          },
+        ].map((section, i) => (
+          <div key={i} style={{ marginBottom:40, paddingBottom:40, borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:800, color:"#F7F6F2", marginBottom:16 }}>{section.title}</h2>
+            <div style={{ fontSize:15, color:"rgba(255,255,255,0.6)", lineHeight:1.85, whiteSpace:"pre-line" }}>{section.body}</div>
+          </div>
+        ))}
+
+        <div style={{ background:"rgba(245,200,66,0.06)", border:"1px solid rgba(245,200,66,0.15)", borderRadius:12, padding:"24px 28px", marginTop:40 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#F5C842", marginBottom:8 }}>Plain English Summary</div>
+          <div style={{ fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>
+            You own your content. We provide the platform in good faith. Use it for learning, not harm. AI can make mistakes — double-check important things. If you have a problem, email us and we'll work it out.
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
+      </footer>
+    </div>
+  );
+}
+
+function LandingPage({ onEnter, openAuth, onLegal }) {
   const [scrolled, setScrolled]     = useState(false);
   const [showSticky, setShowSticky] = useState(false);
   const [quizStep, setQuizStep]     = useState(0);
@@ -10505,8 +10814,9 @@ function LandingPage({ onEnter, openAuth }) {
         </div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
         <div style={{ display:"flex", gap:20 }}>
-          {["Privacy Policy","Terms of Service","Contact"].map(l => (
+          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
+              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@teacherspet.app"; else onLegal?.(key); }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
           ))}
@@ -10545,6 +10855,7 @@ export default function AceItGalaxy() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
+  const [legalPage, setLegalPage]     = useState(null);   // null | "privacy" | "terms"
   const [user, setUser]             = useState(() => {
     try { const s = localStorage.getItem("tp_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -10904,7 +11215,11 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     };
     window.addEventListener("tpSync", handleSyncEvent);
 
-    return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); };
+    // Listen for legal page navigation from modals/nested components
+    const handleLegalEvent = (e) => setLegalPage(e.detail);
+    window.addEventListener("tpLegal", handleLegalEvent);
+
+    return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
   }, []); // eslint-disable-line
 
   // Show splash while Firebase resolves auth state
@@ -10914,11 +11229,15 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     </div>
   );
 
+  // Show legal pages
+  if (legalPage === "privacy") return <PrivacyPolicyPage onBack={() => setLegalPage(null)} />;
+  if (legalPage === "terms")   return <TermsOfServicePage onBack={() => setLegalPage(null)} />;
+
   // Show landing page only if no user AND not in the middle of a redirect
   if (showHome && !user) {
     return (
       <>
-        <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} />
+        <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       </>
     );
