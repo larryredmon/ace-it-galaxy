@@ -11331,18 +11331,18 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   }, []); // eslint-disable-line
 
   const aiContext = (() => { try { return buildAIContext(); } catch { return ""; } })();
-  const floatingWidget = <FloatingAssistant avatar={avatar} visible={showFloating && currentApp !== "assistant"} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
+  const floating = (show) => show && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
 
-  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} />}{floatingWidget}</>;
-  if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floatingWidget}</>;
-  if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floatingWidget}</>;
+  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} />}{floating(true)}</>;
+  if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floating(true)}</>;
+  if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floating(true)}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
-  if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floatingWidget}</>;
-  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floatingWidget}</>;
-  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floatingWidget}</>;
+  if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floating(true)}</>;
+  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
-    if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floatingWidget}</>;
+    if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>;
   }
 
   return (
