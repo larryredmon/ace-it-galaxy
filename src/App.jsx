@@ -1509,12 +1509,16 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
     return [];
   });
 
+  const fcMounted = useRef(false);
   useEffect(() => {
+    if (!fcMounted.current) { fcMounted.current = true; return; }
     try { localStorage.setItem("tp_fc_decks", JSON.stringify(decks)); } catch {}
     tpSync("tp_fc_decks", decks);
   }, [decks]);
 
+  const fcFolderMounted = useRef(false);
   useEffect(() => {
+    if (!fcFolderMounted.current) { fcFolderMounted.current = true; return; }
     try { localStorage.setItem("tp_fc_folders", JSON.stringify(userFolders)); } catch {}
     tpSync("tp_fc_folders", userFolders);
   }, [userFolders]);
@@ -5239,7 +5243,9 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [showNewMap,  setShowNewMap] = useState(false);
   const [newTitle,    setNewTitle]   = useState("");
 
+  const bmMounted = useRef(false);
   useEffect(() => {
+    if (!bmMounted.current) { bmMounted.current = true; return; }
     try { localStorage.setItem("tp_bm_maps", JSON.stringify(maps)); } catch {}
     tpSync("tp_bm_maps", maps);
   }, [maps]);
@@ -7860,8 +7866,10 @@ function NotesApp({ onBack, user, openAuth }) {
   const recognitionRef = useRef(null);
   const editorRef     = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} tpSync("tp_notes", notes); }, [notes]);
-  useEffect(() => { try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {} tpSync("tp_note_folders", folders); }, [folders]);
+  const notesMounted = useRef(false);
+  useEffect(() => { if (!notesMounted.current) { notesMounted.current = true; return; } try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} tpSync("tp_notes", notes); }, [notes]);
+  const noteFolderMounted = useRef(false);
+  useEffect(() => { if (!noteFolderMounted.current) { noteFolderMounted.current = true; return; } try { localStorage.setItem("tp_note_folders", JSON.stringify(folders)); } catch {} tpSync("tp_note_folders", folders); }, [folders]);
 
   const newNote = (preTitle="", preContent="") => {
     setTitle(preTitle); setContent(preContent); setFolder("");
@@ -9045,7 +9053,9 @@ function TrackerApp({ onBack, user, openAuth }) {
 
   const courses = (() => { try { return JSON.parse(localStorage.getItem("tp_courses")||"[]"); } catch { return []; } })();
 
+  const trackerMounted = useRef(false);
   useEffect(() => {
+    if (!trackerMounted.current) { trackerMounted.current = true; return; }
     try { localStorage.setItem("tp_tracker_tasks", JSON.stringify(tasks)); } catch {}
     tpSync("tp_tracker_tasks", tasks);
   }, [tasks]);
@@ -9492,7 +9502,9 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
   const [saveAnim, setSaveAnim]     = useState(false);
   const textareaRef = useRef(null);
 
+  const journalMounted = useRef(false);
   useEffect(() => {
+    if (!journalMounted.current) { journalMounted.current = true; return; }
     try { localStorage.setItem("tp_journal", JSON.stringify(entries)); } catch {}
     tpSync("tp_journal", entries);
   }, [entries]);
