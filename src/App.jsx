@@ -11273,6 +11273,28 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
   }, []); // eslint-disable-line
 
+  // Sync browser back/forward with all navigation layers — MUST be here, before any early returns
+  useEffect(() => {
+    const path = window.location.pathname;
+    const initialScreen = path==="/privacy"?"legal-privacy":path==="/terms"?"legal-terms":showHome?"landing":currentApp?"app":"galaxy";
+    window.history.replaceState(
+      { screen: initialScreen, app: currentApp || null },
+      "",
+      currentApp ? `/${currentApp}` : path
+    );
+    const handlePop = (e) => {
+      const state = e.state;
+      if (!state) return;
+      if (state.screen === "legal-privacy") { setLegalPage("privacy"); setCurrentApp(null); }
+      else if (state.screen === "legal-terms") { setLegalPage("terms"); setCurrentApp(null); }
+      else if (state.screen === "landing") { setLegalPage(null); setCurrentApp(null); setShowHome(true); }
+      else if (state.screen === "galaxy") { setLegalPage(null); setCurrentApp(null); setShowHome(false); }
+      else if (state.screen === "app" && state.app) { setLegalPage(null); setCurrentApp(state.app); setShowHome(false); }
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []); // eslint-disable-line
+
   // Show splash while Firebase resolves auth state
   if (authLoading) return (
     <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -11308,31 +11330,6 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     setCurrentApp(null);
     window.history.pushState({ screen: "galaxy" }, "", "/");
   };
-
-  // Sync browser back/forward with all navigation layers
-  useEffect(() => {
-    // Stamp the initial state so the very first back press doesn't leave the site
-    const path = window.location.pathname;
-    const initialScreen = path==="/privacy"?"legal-privacy":path==="/terms"?"legal-terms":showHome?"landing":currentApp?"app":"galaxy";
-    window.history.replaceState(
-      { screen: initialScreen, app: currentApp || null },
-      "",
-      currentApp ? `/${currentApp}` : path
-    );
-
-    const handlePop = (e) => {
-      const state = e.state;
-      if (!state) return;
-      if (state.screen === "legal-privacy") { setLegalPage("privacy"); setCurrentApp(null); }
-      else if (state.screen === "legal-terms") { setLegalPage("terms"); setCurrentApp(null); }
-      else if (state.screen === "landing") { setLegalPage(null); setCurrentApp(null); setShowHome(true); }
-      else if (state.screen === "galaxy") { setLegalPage(null); setCurrentApp(null); setShowHome(false); }
-      else if (state.screen === "app" && state.app) { setLegalPage(null); setCurrentApp(state.app); setShowHome(false); }
-    };
-
-    window.addEventListener("popstate", handlePop);
-    return () => window.removeEventListener("popstate", handlePop);
-  }, []); // eslint-disable-line
 
   const aiContext = (() => { try { return buildAIContext(); } catch { return ""; } })();
   const floating = (show) => show && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
