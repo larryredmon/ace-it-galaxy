@@ -11231,6 +11231,14 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
+        // Clear any previous user localStorage data before loading new user data
+        const cachedUser = localStorage.getItem("tp_user");
+        const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
+        if (cachedUid && cachedUid !== firebaseUser.uid) {
+          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses"].forEach(k => {
+            try { localStorage.removeItem(k); } catch {}
+          });
+        }
         // Load all Firestore data on login
         fsLoadAll(firebaseUser.uid).then(() => {
           // Force re-render so apps pick up new localStorage values
