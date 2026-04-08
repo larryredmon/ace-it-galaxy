@@ -10907,7 +10907,11 @@ export default function AceItGalaxy() {
 function AceItGalaxyInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlanet, setActivePlanet] = useState(null);
-  const [currentApp, setCurrentApp] = useState(null);
+  const [currentApp, setCurrentApp] = useState(() => {
+  const path = window.location.pathname.replace("/", "").trim();
+  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker"];
+  return validApps.includes(path) ? path : null;
+});
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
   const [legalPage, setLegalPage]     = useState(() => {
     const path = window.location.pathname;
