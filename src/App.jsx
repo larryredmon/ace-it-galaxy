@@ -10137,7 +10137,7 @@ function PrivacyPolicyPage({ onBack }) {
         {[
           {
             title: "1. Who We Are",
-            body: `Teacher's Pet ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at ace-it-galaxy.vercel.app and any associated services.`
+            body: `Teacher's Pet ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
           },
           {
             title: "2. Information We Collect",
