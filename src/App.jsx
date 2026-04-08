@@ -1718,7 +1718,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
       {/* Stats strip */}
       <div style={{ background: "#ECEAE4", borderBottom: "1px solid #D8D5CE" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-          {[["4", "Study Decks"], ["20", "Total Cards"], ["56%", "Avg Mastery"], ["7", "Day Streak"]].map(([val, lbl], i) => (
+          {[[(()=>{ try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })().toString(), "Study Decks"], [(()=>{ try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").reduce((a,d)=>a+(d.cards?.length||0),0); } catch { return 0; } })().toString(), "Total Cards"], [(()=>{ try { const d=JSON.parse(localStorage.getItem("tp_fc_decks")||"[]"); return d.length?Math.round(d.reduce((a,x)=>a+(x.mastery||0),0)/d.length)+"%":"0%"; } catch { return "0%"; } })(), "Avg Mastery"], ["0", "Day Streak"]].map(([val, lbl], i) => (
             <div key={lbl} style={{ padding: "20px 0", textAlign: "center", borderRight: i < 3 ? "1px solid #D8D5CE" : "none" }}>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#1A1814" }}>{val}</div>
               <div style={{ fontSize: 11, fontWeight: 500, color: "#8C8880", letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{lbl}</div>
