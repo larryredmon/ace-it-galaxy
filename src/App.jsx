@@ -386,7 +386,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
             <div style={{
               fontFamily: "'Montserrat', sans-serif", fontSize: 17, fontWeight: 800,
               color: "#F5D96A", letterSpacing: 2, textTransform: "uppercase",
-            }}>Teacher's Pet</div>
+            }}>Ace It</div>
             <div style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 400,
               color: "rgba(255,255,255,0.28)", letterSpacing: 4, textTransform: "uppercase",
@@ -583,7 +583,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
           fontFamily: "'DM Sans', sans-serif", fontSize: 9,
           color: "rgba(255,255,255,0.15)", letterSpacing: 1,
         }}>
-          © 2026 Teacher's Pet
+          © 2026 Ace It
         </div>
       </div>
     </>
@@ -700,7 +700,7 @@ function NavDropdown({ links, label, color = "#C8B8FF", glow = "#9B7FFF" }) {
 const APP_CONFIGS = {
   notes: {
     badge: "AI Lecture Assistant",
-    headline: ["Teacher's Pet", "Notes."],
+    headline: ["Ace It", "Notes."],
     highlight: 1,
     sub: "Record any lecture, class, or meeting and watch it transform into organized notes, flashcards, and quizzes — automatically. Never miss a concept again.",
     cta: "Start Recording",
@@ -721,7 +721,7 @@ const APP_CONFIGS = {
   },
   academy: {
     badge: "AI-Powered Education",
-    headline: ["Teacher's Pet", "Academy."],
+    headline: ["Ace It", "Academy."],
     highlight: 1,
     sub: "A complete AI school — from elementary through college. Adaptive lessons, cinematic learning, and personalized paths that replace traditional studying with something far more powerful.",
     cta: "Start Learning",
@@ -742,7 +742,7 @@ const APP_CONFIGS = {
   },
   studio: {
     badge: "Real-World Skills",
-    headline: ["Teacher's Pet", "Studio."],
+    headline: ["Ace It", "Studio."],
     highlight: 1,
     sub: "Learn the skills school never taught you. Music production, car mechanics, investing, creative arts, and hundreds more — with AI coaching every step of the way.",
     cta: "Explore Skills",
@@ -763,7 +763,7 @@ const APP_CONFIGS = {
   },
   universe: {
     badge: "AI Knowledge Encyclopedia",
-    headline: ["Teacher's Pet", "Universe."],
+    headline: ["Ace It", "Universe."],
     highlight: 1,
     sub: "Replace fragmented web searching with one verified, AI-powered knowledge hub. Deep dive any topic, check facts automatically, and watch knowledge connect across every field of human understanding.",
     cta: "Explore the Universe",
@@ -784,7 +784,7 @@ const APP_CONFIGS = {
   },
   earthrecord: {
     badge: "Global Historical Archive",
-    headline: ["Teacher's Pet", "Earth's Record."],
+    headline: ["Ace It", "Earth's Record."],
     highlight: 1,
     sub: "The complete, tamper-resistant record of human history, culture, and knowledge — from ancient civilizations to today. Every perspective. Every culture. Preserved forever.",
     cta: "Open the Record",
@@ -805,7 +805,7 @@ const APP_CONFIGS = {
   },
   careercompass: {
     badge: "Life & Career Planning",
-    headline: ["Teacher's Pet", "Career Compass."],
+    headline: ["Ace It", "Career Compass."],
     highlight: 1,
     sub: "Map your path from where you are to where you want to be. Discover careers, identify skill gaps, track certifications, and get AI-powered guidance at every step of your professional journey.",
     cta: "Find My Direction",
@@ -826,7 +826,7 @@ const APP_CONFIGS = {
   },
   assistant: {
     badge: "Your AI Guide",
-    headline: ["Teacher's Pet", "Personal Assistant."],
+    headline: ["Ace It", "Personal Assistant."],
     highlight: 1,
     sub: "The AI that follows you across every app on the platform. Ask anything, get organized, detect cognitive fatigue, and receive personalized coaching — all from one intelligent companion that knows how you learn.",
     cta: "Meet Your Assistant",
@@ -847,7 +847,7 @@ const APP_CONFIGS = {
   },
   mentalhealth: {
     badge: "Emotional Wellness & Balance",
-    headline: ["Teacher's Pet", "Mental Health."],
+    headline: ["Ace It", "Mental Health."],
     highlight: 1,
     sub: "You can't pour from an empty cup. Built for students who push themselves hard, this app helps you manage stress, track your emotional health, and build the resilience to go the distance.",
     cta: "Start Your Practice",
@@ -868,7 +868,7 @@ const APP_CONFIGS = {
   },
   flow: {
     badge: "Learning Style Optimization",
-    headline: ["Teacher's Pet", "Flow."],
+    headline: ["Ace It", "Flow."],
     highlight: 1,
     sub: "Your personal study optimization engine. Ace Flow detects how your brain works best, builds your ideal study environment, and eliminates the wasted time between sitting down and actually learning.",
     cta: "Find Your Flow",
@@ -889,7 +889,7 @@ const APP_CONFIGS = {
   },
   studybuddy: {
     badge: "AI Study Partner",
-    headline: ["Teacher's Pet", "Study Buddy."],
+    headline: ["Ace It", "Study Buddy."],
     highlight: 1,
     sub: "Never study alone again. Study Buddy is your real-time AI companion — quiz you, explain concepts, keep you motivated, and celebrate every win alongside you.",
     cta: "Meet Your Buddy",
@@ -910,9 +910,9 @@ const APP_CONFIGS = {
   },
   settings: {
     badge: "Platform Preferences",
-    headline: ["Teacher's Pet", "Settings."],
+    headline: ["Ace It", "Settings."],
     highlight: 1,
-    sub: "Customize your entire Teacher's Pet experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
+    sub: "Customize your entire Ace It experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
     cta: "Open Settings",
     stats: [{ value:"50+", label:"Customization Options" },{ value:"ADHD", label:"Friendly Mode" },{ value:"A11y", label:"Accessibility First" },{ value:"Your Way", label:"Learning Style" }],
     features: [
@@ -984,7 +984,7 @@ function AppLanding({ planet, onBack }) {
               fontSize:13, color:"rgba(0,0,0,0.75)", fontFamily:"'Montserrat', sans-serif", fontWeight:800,
             }}>{symbol}</div>
             <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:14, fontWeight:700, letterSpacing:0.5 }}>
-              <span style={{ color }}> Teacher's Pet</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
+              <span style={{ color }}> Ace It</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
             </span>
           </div>
         </div>
@@ -1223,9 +1223,9 @@ function AppLanding({ planet, onBack }) {
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <div style={{ width:22, height:22, borderRadius:"50%", background:`linear-gradient(135deg, ${glow}, ${color})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontFamily:"'Montserrat', sans-serif", fontWeight:800, color:"rgba(0,0,0,0.75)" }}>{symbol}</div>
           <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:12, fontWeight:700, color:`${color}99`, letterSpacing:0.5 }}>{name}</span>
-          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Teacher's Pet</span>
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Ace It</span>
         </div>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Teacher's Pet · All rights reserved</div>
+        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Ace It · All rights reserved</div>
         <div style={{ display:"flex", gap:22 }}>
           {["Privacy","Terms","Support"].map(l => (
             <span key={l} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.18s" }}
@@ -1286,7 +1286,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             <div style={{ width: 30, height: 30, background: "#1A1814", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ color: "#F7F6F2", fontSize: 14, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Teacher's Pet</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Ace It</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
@@ -1447,7 +1447,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <span style={{ fontSize: 13, color: "#8C8880" }}>←</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Teacher's Pet</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Ace It</span>
           </div>
         </div>
       </div>
@@ -1622,7 +1622,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
               <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
               </div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Teacher's Pet</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Ace It</span>
             </div>
           </div>
 
@@ -1678,10 +1678,10 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
       <section style={{ background: "#1A1814", color: "#F7F6F2", padding: "80px 24px 72px" }}>
         <div style={{ maxWidth: 740, margin: "0 auto", textAlign: "center" }}>
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
-            Teacher's Pet Flash Cards
+            Ace It Flash Cards
           </div>
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
-            <span style={{ color: "#F5C842" }}>Teacher's Pet</span> Flash Cards
+            <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
           </h1>
           <p className="fc-fade-up" style={{ animationDelay: "0.16s", fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.7, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
             Build flash card decks, flip through terms, and track your mastery — built for students who are serious about passing.
@@ -1769,7 +1769,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
 
       {/* Footer */}
       <footer style={{ padding: "32px 24px", textAlign: "center" }}>
-        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Teacher's Pet · Part of Teacher's Pet</span>
+        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Ace It · Part of Ace It</span>
       </footer>
     </div>
   );
@@ -3909,7 +3909,7 @@ h1{font-size:22px;color:#1A1814;margin-bottom:4px}
 @media print{.card{break-inside:avoid}}
 </style></head><body>
 <h1>${deck.title}</h1>
-<div class="sub">${deck.cards.length} cards · ${deck.subject||""} · Printed from Teacher's Pet</div>
+<div class="sub">${deck.cards.length} cards · ${deck.subject||""} · Printed from Ace It</div>
 <div class="grid">
 ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="term">${c.term}</div><hr class="divider"><div class="label">Definition</div><div class="def">${c.definition}</div></div>`).join("")}
 </div></body></html>`);
@@ -4776,95 +4776,16 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const [studyCardIdx,  setStudyCardIdx]  = useState(0);
   const [studyFlipped,  setStudyFlipped]  = useState(false);
   const [showNodeMenu,  setShowNodeMenu]  = useState(false);
-  const [collapsed,     setCollapsed]     = useState(new Set());
-  const [searchQuery,   setSearchQuery]   = useState("");
-  const [searchOpen,    setSearchOpen]    = useState(false);
-  const svgRef = useRef(null);
 
+  // Undo history
   const historyRef = useRef([]);
-  const redoRef    = useRef([]);
-  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; redoRef.current = []; };
+  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
   const handleUndo = () => {
-    if (!historyRef.current.length) return;
+    if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
-    redoRef.current = [...redoRef.current, nodes];
     historyRef.current = historyRef.current.slice(0, -1);
-    setNodes(prev); setSelectedId(null);
-  };
-  const handleRedo = () => {
-    if (!redoRef.current.length) return;
-    const next = redoRef.current[redoRef.current.length - 1];
-    historyRef.current = [...historyRef.current, nodes];
-    redoRef.current = redoRef.current.slice(0, -1);
-    setNodes(next); setSelectedId(null);
-  };
-
-  const exportPNG = () => {
-    const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
-    const minX = Math.min(...xs)-120, maxX = Math.max(...xs)+120;
-    const minY = Math.min(...ys)-80,  maxY = Math.max(...ys)+80;
-    const W2 = maxX-minX, H2 = maxY-minY;
-    const sc = Math.min(1200/W2, 900/H2, 1.5);
-    const svgNS = "http://www.w3.org/2000/svg";
-    const clone = document.createElementNS(svgNS,"svg");
-    clone.setAttribute("xmlns",svgNS); clone.setAttribute("width",Math.ceil(W2*sc)); clone.setAttribute("height",Math.ceil(H2*sc));
-    clone.setAttribute("viewBox",`${minX} ${minY} ${W2} ${H2}`);
-    const bg = document.createElementNS(svgNS,"rect");
-    bg.setAttribute("x",minX); bg.setAttribute("y",minY); bg.setAttribute("width",W2); bg.setAttribute("height",H2); bg.setAttribute("fill","#0C0B18");
-    clone.appendChild(bg);
-    nodes.filter(n=>n.parentId&&!isHidden(n.id)).forEach(n=>{
-      const parent=nodes.find(p=>p.id===n.parentId); if(!parent) return;
-      const path=document.createElementNS(svgNS,"path");
-      const mx=(parent.x+n.x)/2;
-      path.setAttribute("d",`M ${parent.x} ${parent.y} C ${mx} ${parent.y}, ${mx} ${n.y}, ${n.x} ${n.y}`);
-      path.setAttribute("fill","none"); path.setAttribute("stroke",n.color); path.setAttribute("stroke-width","2"); path.setAttribute("stroke-opacity","0.55");
-      clone.appendChild(path);
-    });
-    nodes.filter(n=>!isHidden(n.id)).forEach(n=>{
-      const isRoot=n.id==="root", chars=n.label.replace("\n","").length;
-      const w=isRoot?140:Math.min(Math.max(chars*7.5+28,108),200), h=isRoot?84:n.label.includes("\n")?52:40;
-      const g=document.createElementNS(svgNS,"g");
-      g.setAttribute("transform",`translate(${n.x-w/2},${n.y-h/2})`);
-      if(isRoot){const el=document.createElementNS(svgNS,"ellipse");el.setAttribute("cx",w/2);el.setAttribute("cy",h/2);el.setAttribute("rx",w/2);el.setAttribute("ry",h/2);el.setAttribute("fill",n.color);g.appendChild(el);}
-      else{const rect=document.createElementNS(svgNS,"rect");rect.setAttribute("x",0);rect.setAttribute("y",0);rect.setAttribute("width",w);rect.setAttribute("height",h);rect.setAttribute("rx",10);rect.setAttribute("fill",n.color);g.appendChild(rect);}
-      n.label.split("\n").forEach((line,li)=>{
-        const txt=document.createElementNS(svgNS,"text");
-        txt.setAttribute("x",w/2); txt.setAttribute("y",h/2-(n.label.split("\n").length-1)*6.5+li*13);
-        txt.setAttribute("text-anchor","middle"); txt.setAttribute("dominant-baseline","middle");
-        txt.setAttribute("fill","rgba(255,255,255,0.96)"); txt.setAttribute("font-size",isRoot?"12":"10.5");
-        txt.setAttribute("font-weight","800"); txt.setAttribute("font-family","sans-serif");
-        txt.textContent=line; g.appendChild(txt);
-      });
-      clone.appendChild(g);
-    });
-    const svgStr=new XMLSerializer().serializeToString(clone);
-    const blob=new Blob([svgStr],{type:"image/svg+xml"});
-    const url=URL.createObjectURL(blob);
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement("canvas"); canvas.width=Math.ceil(W2*sc); canvas.height=Math.ceil(H2*sc);
-      const ctx2=canvas.getContext("2d"); ctx2.fillStyle="#0C0B18"; ctx2.fillRect(0,0,canvas.width,canvas.height); ctx2.drawImage(img,0,0);
-      URL.revokeObjectURL(url);
-      const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=`${mapTitle.replace(/\s+/g,"-")}.png`; a.click();
-    };
-    img.src=url;
-  };
-
-  const toggleCollapse = (id) => setCollapsed(prev=>{const next=new Set(prev);if(next.has(id))next.delete(id);else next.add(id);return next;});
-  const isHidden = (nodeId) => {
-    if(nodeId==="root") return false;
-    let n=nodes.find(x=>x.id===nodeId);
-    while(n?.parentId){if(collapsed.has(n.parentId))return true; n=nodes.find(x=>x.id===n.parentId);}
-    return false;
-  };
-  const hasChildren = (nodeId) => nodes.some(n=>n.parentId===nodeId);
-
-  const matchingIds = searchQuery.trim() ? new Set(nodes.filter(n=>n.label.toLowerCase().includes(searchQuery.toLowerCase())).map(n=>n.id)) : null;
-  const jumpToNode = (nodeId) => {
-    const n=nodes.find(x=>x.id===nodeId); if(!n) return;
-    const W2=typeof window!=="undefined"?window.innerWidth:1440;
-    const H2=typeof window!=="undefined"?window.innerHeight-56:800;
-    setPan({x:W2/2-n.x*zoom, y:H2/2-n.y*zoom}); setSelectedId(nodeId);
+    setNodes(prev);
+    setSelectedId(null);
   };
 
   // Wrapped setNodes that auto-pushes undo history for meaningful operations
@@ -4898,10 +4819,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       }
     };
     const onUp = () => { dragRef.current = null; };
-    const onKeyDown = (e) => {
-      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==="z") { e.preventDefault(); handleRedo(); }
-      else if ((e.ctrlKey||e.metaKey) && e.key==="z") { e.preventDefault(); handleUndo(); }
-    };
+    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
@@ -5012,62 +4930,34 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   return (
     <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
       {/* Title bar strip */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:44, zIndex:50, display:"flex", alignItems:"center", gap:8, padding:"0 12px", background:"rgba(12,11,24,0.94)", borderBottom:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(10px)" }}>
-        <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:6, padding:"4px 10px", fontSize:11, cursor:"pointer", color:"rgba(255,255,255,0.4)", flexShrink:0 }}
-          onMouseEnter={e=>e.currentTarget.style.color="#fff"} onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.4)"}>← Maps</button>
-        <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)", flexShrink:0 }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
+        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
         {editTitle ? (
-          <input autoFocus value={mapTitle} onChange={e=>setMapTitle(e.target.value)} onBlur={()=>setEditTitle(false)} onKeyDown={e=>e.key==="Enter"&&setEditTitle(false)}
-            style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, padding:"4px 10px", fontSize:14, fontWeight:700, color:"#F7F6F2", outline:"none", minWidth:160, maxWidth:260 }} />
+          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
         ) : (
-          <div onClick={()=>setEditTitle(true)} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", padding:"3px 7px", borderRadius:6, maxWidth:240 }}
-            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            <span style={{ fontSize:14, fontWeight:800, color:"#F7F6F2", fontFamily:"'Playfair Display',serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mapTitle}</span>
-            <span style={{ fontSize:11, color:"rgba(255,255,255,0.2)", flexShrink:0 }}>✎</span>
+          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
           </div>
         )}
-        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
-          {/* Search */}
-          <div style={{ position:"relative" }}>
-            <button onClick={()=>setSearchOpen(o=>!o)}
-              style={{ background:searchOpen?"rgba(240,168,192,0.12)":"rgba(255,255,255,0.06)", border:`1px solid ${searchOpen?"rgba(240,168,192,0.4)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:searchOpen?"#F0A8C0":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-              🔍 Search
-            </button>
-            {searchOpen && (
-              <div style={{ position:"absolute", top:32, right:0, background:"rgba(12,11,24,0.98)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, padding:10, width:240, zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5)" }}>
-                <input autoFocus value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search nodes…"
-                  style={{ width:"100%", padding:"7px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:7, fontSize:12, color:"#F7F6F2", outline:"none", fontFamily:"'DM Sans',sans-serif", marginBottom:8 }} />
-                {searchQuery.trim() && (
-                  <div style={{ maxHeight:180, overflowY:"auto" }}>
-                    {nodes.filter(n=>n.label.toLowerCase().includes(searchQuery.toLowerCase())).length===0
-                      ? <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", padding:"4px 2px" }}>No matches</div>
-                      : nodes.filter(n=>n.label.toLowerCase().includes(searchQuery.toLowerCase())).map(n=>(
-                          <div key={n.id} onClick={()=>{jumpToNode(n.id);setSearchOpen(false);setSearchQuery("");}}
-                            style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 8px", borderRadius:6, cursor:"pointer", marginBottom:2 }}
-                            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.07)"}
-                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                            <div style={{ width:8, height:8, borderRadius:"50%", background:n.color, flexShrink:0 }} />
-                            <span style={{ fontSize:12, color:"rgba(255,255,255,0.8)" }}>{n.label.replace("\n"," ")}</span>
-                          </div>
-                        ))
-                    }
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.1)" }} />
-          <button onClick={handleUndo} disabled={!historyRef.current.length} title="Undo (Ctrl+Z)"
-            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:historyRef.current.length?"pointer":"default", color:historyRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center" }}>↩ Undo</button>
-          <button onClick={handleRedo} disabled={!redoRef.current.length} title="Redo (Ctrl+Shift+Z)"
-            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:redoRef.current.length?"pointer":"default", color:redoRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center" }}>↪ Redo</button>
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.1)" }} />
-          <button onClick={()=>setZoom(z=>Math.min(z*1.18,3))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
-          <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", minWidth:38, textAlign:"center" }}>{Math.round(zoom*100)}%</span>
-          <button onClick={()=>setZoom(z=>Math.max(z*0.85,0.15))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
-          <button onClick={()=>{setPan({x:0,y:0});setZoom(0.85);}} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"3px 8px", cursor:"pointer", color:"rgba(255,255,255,0.35)", fontSize:10 }}>Reset</button>
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.1)" }} />
-          <button onClick={exportPNG} style={{ background:"rgba(240,168,192,0.1)", border:"1px solid rgba(240,168,192,0.25)", borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:"#F0A8C0", fontSize:11, fontWeight:600 }}>↓ Export PNG</button>
+        {/* Zoom + Undo */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
+            title="Undo (Ctrl+Z)"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
+            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
+            ↩ Undo
+          </button>
+          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+          <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
         </div>
       </div>
 
@@ -5086,70 +4976,83 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
         </svg>
 
         {/* Connection + Node SVG layer */}
-        <svg ref={svgRef} style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", overflow:"visible" }}
-          onClick={()=>{setSelectedId(null);setShowDeckPicker(false);setShowNodeMenu(false);setSearchOpen(false);}}>
+        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
+          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
           <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
-            {nodes.filter(n=>n.parentId&&!isHidden(n.id)).map(n => {
+
+            {/* Connections */}
+            {nodes.filter(n => n.parentId).map(n => {
               const parent = getNodeById(n.parentId);
               if (!parent) return null;
               const isSelected = n.id === selectedId || n.parentId === selectedId;
               return (
                 <path key={`e-${n.id}`} d={getPath(parent, n)}
                   fill="none" stroke={n.color} strokeWidth={(isSelected ? 3 : 2) / zoom}
-                  strokeOpacity={isSelected ? 0.85 : 0.45} style={{ pointerEvents:"none", transition:"stroke-opacity 0.2s" }} />
+                  strokeOpacity={isSelected ? 0.85 : 0.45} style={{ pointerEvents: "none", transition: "stroke-opacity 0.2s" }} />
               );
             })}
-            {nodes.filter(n=>!isHidden(n.id)).map(n => {
+
+            {/* Nodes */}
+            {nodes.map(n => {
               const { w, h, isRoot } = nodeRect(n);
-              const isSel = n.id === selectedId;
-              const lines = n.label.split("\n");
+              const isSel  = n.id === selectedId;
+              const lines  = n.label.split("\n");
               const hasCards = n.deckIds.length > 0;
-              const deckCount = FC_DECKS.filter(d=>n.deckIds.includes(d.id)).reduce((a,d)=>a+d.cards.length,0);
-              const isCollapsed = collapsed.has(n.id);
-              const nodeHasChildren = hasChildren(n.id);
-              const isMatch = matchingIds && matchingIds.has(n.id);
-              const isDimmed = matchingIds && !matchingIds.has(n.id);
+              const deckCount = FC_DECKS.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0);
+
               return (
-                <g key={n.id} transform={`translate(${n.x-w/2}, ${n.y-h/2})`}
-                  style={{ cursor:"pointer", opacity:isDimmed?0.25:1, transition:"opacity 0.2s" }}
-                  onMouseDown={e=>{onNodeDown(e,n);}}
-                  onClick={e=>{e.stopPropagation();setSelectedId(n.id);setShowDeckPicker(false);setShowNodeMenu(false);}}
-                  onDoubleClick={e=>{e.stopPropagation();startEditing(n.id,n.label);}}>
-                  {isMatch && <rect x={-6} y={-6} width={w+12} height={h+12} rx={isRoot?w/2+6:16} fill="none" stroke="#F5C842" strokeWidth={2/zoom} opacity={0.8} />}
-                  {isSel && <rect x={-4} y={-4} width={w+8} height={h+8} rx={isRoot?w/2+4:14} fill="none" stroke={n.color} strokeWidth={2.5/zoom} opacity={0.4} />}
-                  {isRoot
-                    ? <ellipse cx={w/2} cy={h/2} rx={w/2} ry={h/2} fill={n.color} opacity={isSel?1:0.9} stroke={isSel?"#fff":"transparent"} strokeWidth={2.5/zoom} />
-                    : <rect x={0} y={0} width={w} height={h} rx={10} fill={n.color} opacity={isSel?1:0.84} stroke={isSel?"#fff":"transparent"} strokeWidth={2/zoom} />
-                  }
-                  {editingId===n.id ? (
-                    <foreignObject x={4} y={4} width={w-8} height={h-8}>
-                      <textarea autoFocus value={editLabel} onChange={e=>setEditLabel(e.target.value)} onBlur={commitEdit}
-                        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();commitEdit();}if(e.key==="Escape"){setEditingId(null);}}}
-                        style={{ width:"100%", height:"100%", background:"transparent", border:"none", outline:"none", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:isRoot?12:10.5, fontWeight:800, textAlign:"center", resize:"none", lineHeight:1.35, padding:0 }} />
+                <g key={n.id} transform={`translate(${n.x - w/2}, ${n.y - h/2})`}
+                  style={{ cursor: "pointer" }}
+                  onMouseDown={e => { onNodeDown(e, n); }}
+                  onClick={e => { e.stopPropagation(); setSelectedId(n.id); setShowDeckPicker(false); setShowNodeMenu(false); }}
+                  onDoubleClick={e => { e.stopPropagation(); startEditing(n.id, n.label); }}>
+
+                  {/* Selection glow */}
+                  {isSel && <rect x={-4} y={-4} width={w+8} height={h+8} rx={isRoot ? w/2+4 : 14} fill="none" stroke={n.color} strokeWidth={2.5 / zoom} opacity={0.4} />}
+
+                  {/* Node shape */}
+                  {isRoot ? (
+                    <ellipse cx={w/2} cy={h/2} rx={w/2} ry={h/2} fill={n.color} opacity={isSel ? 1 : 0.9}
+                      stroke={isSel ? "#fff" : "transparent"} strokeWidth={2.5 / zoom} />
+                  ) : (
+                    <rect x={0} y={0} width={w} height={h} rx={10}
+                      fill={n.color} opacity={isSel ? 1 : 0.84}
+                      stroke={isSel ? "#fff" : "transparent"} strokeWidth={2 / zoom} />
+                  )}
+
+                  {/* Label or inline editor */}
+                  {editingId === n.id ? (
+                    <foreignObject x={4} y={4} width={w - 8} height={h - 8}>
+                      <textarea autoFocus value={editLabel}
+                        onChange={e => setEditLabel(e.target.value)}
+                        onBlur={commitEdit}
+                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(); } if (e.key === "Escape") { setEditingId(null); } }}
+                        style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontSize: isRoot ? 12 : 10.5, fontWeight: 800, textAlign: "center", resize: "none", lineHeight: 1.35, padding: 0 }} />
                     </foreignObject>
                   ) : (
-                    lines.map((line,li)=>(
-                      <text key={li} x={w/2} y={h/2-(lines.length-1)*6.5+li*13} textAnchor="middle" dominantBaseline="middle"
-                        fill="rgba(255,255,255,0.96)" fontSize={isRoot?12:10.5} fontWeight={800} fontFamily="'DM Sans',sans-serif"
-                        style={{ pointerEvents:"none", userSelect:"none" }}>{line}</text>
+                    lines.map((line, li) => (
+                      <text key={li} x={w / 2} y={h / 2 - (lines.length - 1) * 6.5 + li * 13}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fill="rgba(255,255,255,0.96)" fontSize={isRoot ? 12 : 10.5} fontWeight={800}
+                        fontFamily="'DM Sans', sans-serif" style={{ pointerEvents: "none", userSelect: "none" }}>
+                        {line}
+                      </text>
                     ))
                   )}
+
+                  {/* Flash card badge */}
                   {hasCards && !editingId && (
-                    <g transform={`translate(${w-8},-8)`} onClick={e=>{e.stopPropagation();openStudy(n);}} style={{ cursor:"pointer" }}>
+                    <g transform={`translate(${w - 8}, -8)`} onClick={e => { e.stopPropagation(); openStudy(n); }} style={{ cursor: "pointer" }}>
                       <circle cx={0} cy={0} r={10} fill="#F5C842" stroke="rgba(12,11,24,0.6)" strokeWidth={1.5} />
                       <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={7} fill="#1A1814" fontWeight={900}>{deckCount}</text>
                     </g>
                   )}
-                  {nodeHasChildren && !editingId && (
-                    <g transform={`translate(${w/2-8},${h+4})`} onClick={e=>{e.stopPropagation();toggleCollapse(n.id);}} style={{ cursor:"pointer" }}>
-                      <rect x={0} y={0} width={16} height={12} rx={4} fill={isCollapsed?n.color:"rgba(255,255,255,0.12)"} opacity={0.85} />
-                      <text x={8} y={6} textAnchor="middle" dominantBaseline="middle" fontSize={8} fill="#fff" fontWeight={900} style={{ pointerEvents:"none" }}>{isCollapsed?"+":"−"}</text>
-                    </g>
-                  )}
-                  {isSel && !editingId && !isCollapsed && (
-                    <g transform={`translate(${w+8},${h/2-11})`} onClick={e=>{e.stopPropagation();addChild(n.id);}} style={{ cursor:"pointer" }}>
-                      <circle cx={11} cy={11} r={11} fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5/zoom} />
-                      <text x={11} y={11} textAnchor="middle" dominantBaseline="middle" fontSize={15} fill="#fff" fontWeight={700} style={{ pointerEvents:"none" }}>+</text>
+
+                  {/* Add child button */}
+                  {isSel && !editingId && (
+                    <g transform={`translate(${w + 8}, ${h/2 - 11})`} onClick={e => { e.stopPropagation(); addChild(n.id); }} style={{ cursor: "pointer" }}>
+                      <circle cx={11} cy={11} r={11} fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5 / zoom} />
+                      <text x={11} y={11} textAnchor="middle" dominantBaseline="middle" fontSize={15} fill="#fff" fontWeight={700} style={{ pointerEvents: "none" }}>+</text>
                     </g>
                   )}
                 </g>
@@ -5339,9 +5242,6 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [sidebarOpen, setSidebarOpen]= useState(false);
   const [showNewMap,  setShowNewMap] = useState(false);
   const [newTitle,    setNewTitle]   = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [renamingId,  setRenamingId] = useState(null);
-  const [renameValue, setRenameValue]= useState("");
 
   const bmMounted = useRef(false);
   useEffect(() => {
@@ -5355,7 +5255,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
     if (!newTitle.trim()) return;
     const color = BM_PALETTE[maps.length % BM_PALETTE.length];
     const map = {
-      id: `map${Date.now()}`, title: newTitle, color, createdAt: new Date(), updatedAt: new Date(),
+      id: `map${Date.now()}`, title: newTitle, color, createdAt: new Date(),
       nodes: [{ id: "root", label: newTitle.split(" ").slice(0, 3).join("\n"), x: 0, y: 0, color, parentId: null, deckIds: [], note: "" }],
     };
     setMaps(ms => [...ms, map]);
@@ -5364,34 +5264,14 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
     setView("canvas");
     if (onMapCreated) onMapCreated(newTitle);
   };
-  const deleteMap = (id) => {
-    setMaps(ms => ms.filter(m => m.id !== id));
-    if (activeMap?.id === id) { setActiveMap(null); setView("maps"); }
-    setDeleteConfirm(null);
-  };
-  const startRename = (map) => { setRenamingId(map.id); setRenameValue(map.title); };
-  const commitRename = (id) => {
-    if (!renameValue.trim()) { setRenamingId(null); return; }
-    setMaps(ms => ms.map(m => m.id === id ? { ...m, title: renameValue.trim(), updatedAt: new Date() } : m));
-    if (activeMap?.id === id) setActiveMap(am => ({ ...am, title: renameValue.trim() }));
-    setRenamingId(null);
-  };
   const onNodesChange = (nodes, mapTitle) => {
-    setMaps(ms => ms.map(m => m.id === activeMap?.id ? { ...m, nodes, title: mapTitle, updatedAt: new Date() } : m));
+    setMaps(ms => ms.map(m => m.id === activeMap?.id ? { ...m, nodes, title: mapTitle } : m));
     setActiveMap(am => am ? { ...am, nodes, title: mapTitle } : am);
   };
+
   const updateMap = (id, changes) => {
     setMaps(ms => ms.map(m => m.id === id ? { ...m, ...changes } : m));
     setActiveMap(am => am?.id === id ? { ...am, ...changes } : am);
-  };
-  const formatDate = (d) => {
-    if (!d) return "";
-    const date = new Date(d), now = new Date();
-    const diff = Math.floor((now - date) / 1000);
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-    return date.toLocaleDateString();
   };
 
   if (view === "canvas" && activeMap) {
@@ -5433,7 +5313,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Teacher's Pet</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It</div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
@@ -5635,44 +5515,29 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {maps.map(m => (
               <div key={m.id} className="bm-card"
-                style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(255,255,255,0.08)", borderTop:`3px solid ${m.color}`, borderRadius:14, padding:"20px 20px 14px", cursor:"pointer" }}>
-                <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:4 }}>
-                  {renamingId===m.id ? (
-                    <input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)}
-                      onBlur={()=>commitRename(m.id)}
-                      onKeyDown={e=>{if(e.key==="Enter")commitRename(m.id);if(e.key==="Escape")setRenamingId(null);e.stopPropagation();}}
-                      onClick={e=>e.stopPropagation()}
-                      style={{ flex:1, background:"rgba(255,255,255,0.08)", border:"1px solid rgba(240,168,192,0.5)", borderRadius:6, padding:"4px 8px", fontSize:15, fontWeight:800, color:"#F7F6F2", outline:"none", fontFamily:"'Playfair Display',serif" }} />
-                  ) : (
-                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2", flex:1 }} onClick={()=>openMap(m)}>{m.title}</div>
-                  )}
-                  <div style={{ display:"flex", gap:4, marginLeft:8, flexShrink:0 }}>
-                    <button onClick={e=>{e.stopPropagation();startRename(m);}} title="Rename"
-                      style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:5, width:24, height:24, cursor:"pointer", color:"rgba(255,255,255,0.35)", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>✎</button>
-                    <button onClick={e=>{e.stopPropagation();setDeleteConfirm(m.id);}} title="Delete"
-                      style={{ background:"none", border:"1px solid rgba(232,93,63,0.2)", borderRadius:5, width:24, height:24, cursor:"pointer", color:"rgba(232,93,63,0.5)", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>🗑</button>
-                  </div>
-                </div>
-                <div onClick={()=>openMap(m)}>
-                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", marginBottom:10 }}>
-                    {m.nodes.length} nodes · {m.nodes.filter(n=>n.deckIds?.length>0).length} with flash cards
-                    {m.updatedAt && <span> · edited {formatDate(m.updatedAt)}</span>}
-                  </div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:12 }}>
-                    {m.nodes.filter(n=>n.parentId==="root").slice(0,6).map(n=>(
-                      <div key={n.id} style={{ padding:"3px 9px", borderRadius:5, background:n.color+"20", border:`1px solid ${n.color}40`, fontSize:10, fontWeight:700, color:n.color }}>{n.label.split("\n")[0]}</div>
+                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
+                <div onClick={() => openMap(m)}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+                    {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
+                      <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
                     ))}
                   </div>
                 </div>
+                {/* Public/Private toggle + rating */}
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:10, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-                  <button onClick={e=>{e.stopPropagation();updateMap(m.id,{isPublic:!m.isPublic});}}
-                    style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic?"#2BAE7E":"rgba(255,255,255,0.15)"}`, background:m.isPublic?"#2BAE7E18":"transparent", fontSize:11, fontWeight:700, cursor:"pointer", color:m.isPublic?"#2BAE7E":"rgba(255,255,255,0.4)" }}>
-                    {m.isPublic?"🌐 Public":"🔒 Private"}
+                  <button onClick={e => { e.stopPropagation(); updateMap(m.id, { isPublic: !m.isPublic }); }}
+                    style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.15)"}`, background: m.isPublic ? "#2BAE7E18" : "transparent", fontSize:11, fontWeight:700, cursor:"pointer", color: m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.4)", transition:"all 0.18s" }}>
+                    {m.isPublic ? "🌐 Public" : "🔒 Private"}
                   </button>
                   {m.isPublic && (
                     <div style={{ display:"flex", gap:2 }}>
-                      {[1,2,3,4,5].map(s=>{const avg=m.ratings?.length?m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length:0;return <span key={s} style={{ fontSize:13, color:s<=Math.round(avg)?"#F5C842":"rgba(255,255,255,0.15)" }}>★</span>;})}
-                      {m.ratings?.length>0 && <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginLeft:4 }}>({m.ratings.length})</span>}
+                      {[1,2,3,4,5].map(s => {
+                        const avg = m.ratings?.length ? m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length : 0;
+                        return <span key={s} style={{ fontSize:13, color: s<=Math.round(avg) ? "#F5C842" : "rgba(255,255,255,0.15)" }}>★</span>;
+                      })}
+                      {m.ratings?.length > 0 && <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginLeft:4 }}>({m.ratings.length})</span>}
                     </div>
                   )}
                 </div>
@@ -5684,21 +5549,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Create New Map</div>
             </div>
           </div>
-          {deleteConfirm && (
-            <div style={{ position:"fixed", inset:0, zIndex:400, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.7)", backdropFilter:"blur(8px)" }} onClick={()=>setDeleteConfirm(null)}>
-              <div style={{ background:"rgba(14,12,28,0.99)", border:"1px solid rgba(232,93,63,0.3)", borderRadius:16, padding:"32px 32px 28px", width:360, textAlign:"center" }} onClick={e=>e.stopPropagation()}>
-                <div style={{ fontSize:36, marginBottom:14 }}>🗑</div>
-                <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#F7F6F2", marginBottom:8 }}>Delete this map?</h3>
-                <p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:24, lineHeight:1.6 }}>"{maps.find(m=>m.id===deleteConfirm)?.title}" and all its nodes will be permanently deleted.</p>
-                <div style={{ display:"flex", gap:10 }}>
-                  <button onClick={()=>setDeleteConfirm(null)} style={{ flex:1, padding:"10px 0", borderRadius:8, border:"1px solid rgba(255,255,255,0.1)", background:"transparent", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.4)" }}>Cancel</button>
-                  <button onClick={()=>deleteMap(deleteConfirm)} style={{ flex:1, padding:"10px 0", borderRadius:8, border:"none", background:"#E85D3F", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>Delete Map</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
+
+      {/* ── EXPLORE view ── */}
       {view === "explore" && (
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
           <div style={{ marginBottom: 32 }}>
@@ -6055,7 +5909,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>≋</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Teacher's Pet</span> Text Simplifier</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Ace It</span> Text Simplifier</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -6557,7 +6411,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
     try {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
-        : `You are the Teacher's Pet AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
+        : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
       const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
@@ -6583,7 +6437,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
               {hasAvatar ? <AvatarHead avatar={avatar} size={34}/> : <span style={{fontSize:18}}>⊕</span>}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Teacher's Pet Assistant</div>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Ace It Assistant</div>
               <div style={{ fontSize:10, color:`${PA_COLOR}cc`, fontWeight:600 }}>● Online · Always here</div>
             </div>
             <button onClick={() => onOpen()} style={{ background:"rgba(255,255,255,0.1)", border:"none", borderRadius:7, padding:"5px 10px", fontSize:11, color:"rgba(255,255,255,0.7)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Open Full ↗</button>
@@ -6642,7 +6496,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
         onMouseDown={onMouseDown}
         onClick={() => { if (!dragging) setExpanded(e => !e); }}
         style={{ width:btnSize, height:btnSize, borderRadius:"50%", cursor:"grab", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow:`0 6px 28px ${PA_GLOW}55, 0 2px 8px rgba(0,0,0,0.2)`, background: hasAvatar ? "#fff" : `linear-gradient(135deg,${PA_DARK},${PA_GLOW})`, border:`3px solid ${expanded?PA_COLOR:"rgba(255,255,255,0.3)"}`, transition:"border-color 0.2s, box-shadow 0.2s", position:"relative" }}
-        title="Teacher's Pet Assistant"
+        title="Ace It Assistant"
       >
         {hasAvatar
           ? <AvatarHead avatar={avatar} size={btnSize - 8} />
@@ -6709,7 +6563,7 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 15 }}>⊕</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Teacher's Pet Assistant</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Ace It Assistant</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#90C8F8"; e.currentTarget.style.color = PA_GLOW; }}
@@ -6944,7 +6798,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
   useEffect(() => { setDraftAvatar(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); }, [avatar]);
 
-  const systemPrompt = aiContext || `You are Teacher's Pet Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
+  const systemPrompt = aiContext || `You are Ace It Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
   // Per-message intent detection — adds behavior block dynamically each call
   const buildSmartBehavior = (msg) => {
@@ -7032,7 +6886,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
           <span style={{ fontSize: 11 }}>⊕</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Teacher's Pet Assistant</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Assistant</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
           Hey {user?.name?.split(" ")[0] || "there"} 👋<br />
@@ -7256,7 +7110,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                       <div style={{ flex: 1, maxWidth: "calc(100% - 44px)" }}>
                         {/* Name + time */}
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Teacher's Pet Assistant"}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Ace It Assistant"}</span>
                           <span style={{ fontSize: 10, color: "#C0CDD8" }}>{m.ts ? new Date(m.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : ""}</span>
                         </div>
 
@@ -7289,7 +7143,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 20, animation: "pa-fadein 0.2s ease both" }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>⊕</div>
                     <div style={{ paddingTop: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Teacher's Pet Assistant</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Ace It Assistant</div>
                       <div style={{ padding: "12px 16px", borderRadius: "4px 18px 18px 18px", background: "#F4F8FF", border: "1.5px solid #E4EEF8", display: "flex", gap: 5, alignItems: "center" }}>
                         {[0, 0.18, 0.36].map((d, i) => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: PA_COLOR, animation: `pa-bounce 1.2s ${d}s infinite` }} />)}
                       </div>
@@ -7563,7 +7417,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Configuration</div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Preferences</h2>
-        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Teacher's Pet.</p>
+        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Ace It.</p>
       </div>
 
       {/* Floating assistant toggle */}
@@ -7572,7 +7426,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ width:44, height:44, borderRadius:12, background:`${PA_COLOR}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>⊕</div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>Floating Assistant Button</div>
-            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Teacher's Pet apps so you can get help from anywhere.</div>
+            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Ace It apps so you can get help from anywhere.</div>
           </div>
           <div onClick={() => setShowFloating(s => !s)} style={{ width:48, height:26, borderRadius:13, background:showFloating?PA_GLOW:"#D8ECFF", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
             <div style={{ position:"absolute", top:3, left:showFloating?24:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
@@ -7666,7 +7520,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⊕</div>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#0A1628" }}>
-              <span style={{ color: PA_GLOW }}>Teacher's Pet</span> Personal Assistant
+              <span style={{ color: PA_GLOW }}>Ace It</span> Personal Assistant
             </span>
           </div>
         </div>
@@ -7727,12 +7581,6 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
@@ -7821,9 +7669,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: isMobile ? "94vw" : "90vw", maxWidth: isMobile ? 440 : 860, maxHeight: "92vh", display: "flex", borderRadius: isMobile ? 16 : 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
-        {!isMobile && <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
+        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div>
@@ -7842,16 +7690,16 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
           </div>
           <div style={{ marginBottom: 32 }}>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderTop: "2px solid #C8B8FF", borderRadius: 12, padding: "18px 20px", marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Teacher's Pet Flash Cards</div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Teacher's Pet Flash Cards</div>
+              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Ace It Flash Cards</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Ace It Flash Cards</div>
               <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: "100%", width: "65%", background: "#C8B8FF", borderRadius: 2 }} /></div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Teacher's Pet</div>
-        </div>}
+          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It</div>
+        </div>
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: isMobile ? "24px 20px" : "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "92vh" }}>
+        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
@@ -7954,7 +7802,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   );
 }
 
-// ─── Teacher's Pet Notes ─────────────────────────────────────────────────────────
+// ─── Ace It Notes ─────────────────────────────────────────────────────────
 
 const EN_COLOR  = "#D4A830";
 const EN_LIGHT  = "#F0D080";
@@ -8276,7 +8124,7 @@ function NotesApp({ onBack, user, openAuth }) {
         <div style={{ padding:"18px 18px",borderBottom:`1px solid ${NL}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
             <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>📝</div>
-            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Teacher's Pet Notes</span>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Ace It Notes</span>
           </div>
           <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
         </div>
@@ -8355,7 +8203,7 @@ function NotesApp({ onBack, user, openAuth }) {
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
             <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>📝</div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
-              <span style={{ color:NC }}>Teacher's Pet</span> Notes
+              <span style={{ color:NC }}>Ace It</span> Notes
             </span>
           </div>
         </div>
@@ -9311,7 +9159,7 @@ function TrackerApp({ onBack, user, openAuth }) {
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${TR},${TRD})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>◷</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
-              <span style={{ color:TR }}>Teacher's Pet</span> Tracker
+              <span style={{ color:TR }}>Ace It</span> Tracker
             </span>
           </div>
         </div>
@@ -9589,7 +9437,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   );
 }
 
-// ─── Teacher's Pet Journal ──────────────────────────────────────────────────────────
+// ─── Ace It Journal ──────────────────────────────────────────────────────────
 
 const J_COLOR   = "#B060D0";
 const J_LIGHT   = "#E8C4F0";
@@ -9715,7 +9563,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
           max_tokens: 500,
-          system: `You are a warm, empathetic journal companion inside the Teacher's Pet Journal app. The user has shared a journal entry with you. Your role is to:
+          system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
 - Gently notice any patterns, emotions, or themes they may not have explicitly named
 - Ask ONE thoughtful follow-up question that might help them go deeper
@@ -9790,7 +9638,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         <div style={{ padding:"18px 20px", borderBottom:`1px solid ${J_LIGHT}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✍</div>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Teacher's Pet Journal</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Ace It Journal</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#8C6A9A", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
@@ -9910,7 +9758,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#1A1814" }}>
-              <span style={{ color:J_COLOR }}>Teacher's Pet</span> Journal
+              <span style={{ color:J_COLOR }}>Ace It</span> Journal
             </span>
           </div>
         </div>
@@ -10270,7 +10118,7 @@ function PrivacyPolicyPage({ onBack }) {
           </button>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:18 }}>🍎</span>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Ace It</span>
           </div>
         </div>
         <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Privacy Policy</span>
@@ -10289,7 +10137,7 @@ function PrivacyPolicyPage({ onBack }) {
         {[
           {
             title: "1. Who We Are",
-            body: `Teacher's Pet ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
+            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
           },
           {
             title: "2. Information We Collect",
@@ -10307,7 +10155,7 @@ Device Information: We may collect basic information about your browser and devi
             title: "3. How We Use Your Information",
             body: `We use your information solely to:
 
-• Provide and improve the Teacher's Pet platform and its features
+• Provide and improve the Ace It platform and its features
 • Sync your study data across devices when you are logged in
 • Power AI features (your content is sent to Anthropic's Claude API to generate flashcards, summaries, and study plans)
 • Send important account-related communications (not marketing, unless you opt in)
@@ -10317,7 +10165,7 @@ We do not sell your data. We do not use your data for advertising. We do not sha
           },
           {
             title: "4. Third-Party Services",
-            body: `Teacher's Pet uses the following third-party services to operate:
+            body: `Ace It uses the following third-party services to operate:
 
 Firebase (Google): We use Firebase Authentication for login and Firestore database for storing your study data. Your data is stored on Google's servers subject to Google's Privacy Policy.
 
@@ -10345,7 +10193,7 @@ For students ages 13-17, we encourage parental awareness of their use of the pla
             title: "7. Your Rights and Choices",
             body: `You have the following rights regarding your data:
 
-Access: You can view all your study data within the Teacher's Pet platform at any time.
+Access: You can view all your study data within the Ace It platform at any time.
 
 Deletion: You can delete individual notes, decks, or other content at any time within the app. To delete your entire account and all associated data, contact us at the email below.
 
@@ -10361,14 +10209,14 @@ EU/UK Residents (GDPR): You have the right to access, rectify, erase, restrict, 
           },
           {
             title: "9. Changes to This Policy",
-            body: `We may update this Privacy Policy from time to time. When we make significant changes, we will update the "Last updated" date at the top of this page. Continued use of Teacher's Pet after changes constitutes your acceptance of the updated policy.`
+            body: `We may update this Privacy Policy from time to time. When we make significant changes, we will update the "Last updated" date at the top of this page. Continued use of Ace It after changes constitutes your acceptance of the updated policy.`
           },
           {
             title: "10. Contact Us",
             body: `If you have any questions about this Privacy Policy or wish to exercise your privacy rights, please contact us at:
 
-Teacher's Pet
-Email: privacy@teacherspet.app
+Ace It
+Email: privacy@aceitgalaxy.com
 
 We aim to respond to all privacy inquiries within 30 days.`
           },
@@ -10382,15 +10230,15 @@ We aim to respond to all privacy inquiries within 30 days.`
         <div style={{ background:"rgba(245,200,66,0.06)", border:"1px solid rgba(245,200,66,0.15)", borderRadius:12, padding:"24px 28px", marginTop:40 }}>
           <div style={{ fontSize:13, fontWeight:700, color:"#F5C842", marginBottom:8 }}>Questions or Concerns?</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>
-            We built Teacher's Pet with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@teacherspet.app</span> — we're a small team and we read every message.
+            We built Ace It with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@aceitgalaxy.com</span> — we're a small team and we read every message.
           </div>
         </div>
       </div>
 
       {/* Footer */}
       <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
-        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Ace It</button>
       </footer>
     </div>
   );
@@ -10414,7 +10262,7 @@ function TermsOfServicePage({ onBack }) {
           </button>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:18 }}>🍎</span>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Ace It</span>
           </div>
         </div>
         <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Terms of Service</span>
@@ -10433,13 +10281,13 @@ function TermsOfServicePage({ onBack }) {
         {[
           {
             title: "1. Acceptance of Terms",
-            body: `By accessing or using Teacher's Pet ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
+            body: `By accessing or using Ace It ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
 
-These Terms apply to all users of Teacher's Pet, including students, educators, and casual learners. By creating an account or using any features of the Platform, you confirm that you are at least 13 years of age, or that you have obtained parental consent if you are between 13 and 18 years of age.`
+These Terms apply to all users of Ace It, including students, educators, and casual learners. By creating an account or using any features of the Platform, you confirm that you are at least 13 years of age, or that you have obtained parental consent if you are between 13 and 18 years of age.`
           },
           {
             title: "2. Description of Service",
-            body: `Teacher's Pet is an AI-powered educational platform that provides tools including but not limited to: AI-generated flashcards, note-taking, brain mapping, study planning, a personal journal, and a learning tracker. Features are subject to change as the platform evolves.
+            body: `Ace It is an AI-powered educational platform that provides tools including but not limited to: AI-generated flashcards, note-taking, brain mapping, study planning, a personal journal, and a learning tracker. Features are subject to change as the platform evolves.
 
 Some features require an account. We offer a free tier and may introduce paid tiers in the future. We will provide advance notice of any changes to paid features.`
           },
@@ -10456,9 +10304,9 @@ We reserve the right to suspend or terminate accounts that violate these Terms o
           },
           {
             title: "4. Your Content",
-            body: `You retain full ownership of all content you create on Teacher's Pet — including your notes, flashcard decks, journal entries, and brain maps ("Your Content").
+            body: `You retain full ownership of all content you create on Ace It — including your notes, flashcard decks, journal entries, and brain maps ("Your Content").
 
-By using the Platform, you grant Teacher's Pet a limited, non-exclusive license to store, display, and process Your Content solely for the purpose of providing the service to you.
+By using the Platform, you grant Ace It a limited, non-exclusive license to store, display, and process Your Content solely for the purpose of providing the service to you.
 
 You are responsible for ensuring that Your Content does not violate any laws or third-party rights. You agree not to upload content that is illegal, harmful, or that infringes on the intellectual property of others.
 
@@ -10466,25 +10314,25 @@ When you delete your content or your account, we will remove Your Content from o
           },
           {
             title: "5. AI-Generated Content",
-            body: `Teacher's Pet uses artificial intelligence (powered by Anthropic's Claude API) to help generate flashcards, summaries, study plans, and other learning materials based on content you provide.
+            body: `Ace It uses artificial intelligence (powered by Anthropic's Claude API) to help generate flashcards, summaries, study plans, and other learning materials based on content you provide.
 
 You acknowledge that:
 
 • AI-generated content may contain errors, inaccuracies, or omissions
 • AI-generated content should be reviewed and verified before relying on it for academic, professional, or other important purposes
-• Teacher's Pet does not guarantee the accuracy, completeness, or suitability of any AI-generated content
+• Ace It does not guarantee the accuracy, completeness, or suitability of any AI-generated content
 • You are responsible for how you use AI-generated content
 
-Teacher's Pet is not liable for any consequences arising from reliance on AI-generated content.`
+Ace It is not liable for any consequences arising from reliance on AI-generated content.`
           },
           {
             title: "6. Acceptable Use",
-            body: `You agree to use Teacher's Pet only for lawful, educational purposes. You agree not to:
+            body: `You agree to use Ace It only for lawful, educational purposes. You agree not to:
 
 • Use the Platform to generate, store, or distribute harmful, hateful, or illegal content
 • Attempt to reverse-engineer, hack, or disrupt the Platform or its infrastructure
 • Use automated tools or bots to access the Platform in ways that overload our systems
-• Impersonate other users or Teacher's Pet staff
+• Impersonate other users or Ace It staff
 • Use the Platform to violate academic integrity policies (e.g., submitting AI-generated content as your own work without disclosure)
 • Attempt to extract or scrape data from the Platform at scale
 
@@ -10492,13 +10340,13 @@ We reserve the right to suspend or terminate any account that violates these gui
           },
           {
             title: "7. Intellectual Property",
-            body: `The Teacher's Pet platform, including its design, code, branding, and original content, is owned by Teacher's Pet and protected by copyright and other intellectual property laws. You may not copy, reproduce, distribute, or create derivative works from the Platform without our express written permission.
+            body: `The Ace It platform, including its design, code, branding, and original content, is owned by Ace It and protected by copyright and other intellectual property laws. You may not copy, reproduce, distribute, or create derivative works from the Platform without our express written permission.
 
-The Teacher's Pet name, logo, and apple icon are trademarks of Teacher's Pet. All rights reserved.`
+The Ace It name, logo, and apple icon are trademarks of Ace It. All rights reserved.`
           },
           {
             title: "8. Disclaimer of Warranties",
-            body: `Teacher's Pet is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:
+            body: `Ace It is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:
 
 • The Platform will be uninterrupted, error-free, or completely secure
 • The results obtained from using the Platform will be accurate or reliable
@@ -10508,7 +10356,7 @@ To the fullest extent permitted by law, we disclaim all warranties including imp
           },
           {
             title: "9. Limitation of Liability",
-            body: `To the fullest extent permitted by applicable law, Teacher's Pet and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, academic outcomes, or business opportunities, even if we have been advised of the possibility of such damages.
+            body: `To the fullest extent permitted by applicable law, Ace It and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, academic outcomes, or business opportunities, even if we have been advised of the possibility of such damages.
 
 Our total liability for any claims arising from your use of the Platform shall not exceed the amount you paid us in the twelve months prior to the claim (or $0 if you used a free plan).`
           },
@@ -10516,11 +10364,11 @@ Our total liability for any claims arising from your use of the Platform shall n
             title: "10. Changes to Terms",
             body: `We may update these Terms of Service from time to time. When we make material changes, we will update the "Last updated" date and notify registered users via email or an in-app notice.
 
-Continued use of Teacher's Pet after changes to these Terms constitutes your acceptance of the updated Terms. If you do not agree with the updated Terms, you should discontinue use of the Platform.`
+Continued use of Ace It after changes to these Terms constitutes your acceptance of the updated Terms. If you do not agree with the updated Terms, you should discontinue use of the Platform.`
           },
           {
             title: "11. Termination",
-            body: `You may stop using Teacher's Pet at any time. You may delete your account by contacting us at the email below.
+            body: `You may stop using Ace It at any time. You may delete your account by contacting us at the email below.
 
 We reserve the right to suspend or terminate your access to the Platform at our discretion if you violate these Terms, with or without notice. Upon termination, your right to use the Platform ceases immediately.`
           },
@@ -10532,8 +10380,8 @@ We reserve the right to suspend or terminate your access to the Platform at our 
             title: "13. Contact Us",
             body: `If you have any questions about these Terms of Service, please contact us at:
 
-Teacher's Pet
-Email: legal@teacherspet.app
+Ace It
+Email: legal@aceitgalaxy.com
 
 We aim to respond to all inquiries within 30 days.`
           },
@@ -10554,8 +10402,8 @@ We aim to respond to all inquiries within 30 days.`
 
       {/* Footer */}
       <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
-        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Ace It</button>
       </footer>
     </div>
   );
@@ -10645,7 +10493,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
       <nav className="lp-nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Teacher's Pet</span>
+          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Ace It</span>
         </div>
         <div className="lp-nav-links" style={{ display:"flex", gap:32, alignItems:"center" }}>
           {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
@@ -10685,7 +10533,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </h1>
 
         <p className="lp-fade" style={{ animationDelay:"0.18s", fontSize:"clamp(16px,2vw,19px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.8, maxWidth:580, marginBottom:40 }}>
-          Teacher's Pet is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
+          Ace It is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
         </p>
 
         {/* Social proof */}
@@ -10750,7 +10598,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           </div>
           <div className="lp-how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
             {[
-              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Teacher's Pet reads it all." },
+              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Ace It reads it all." },
               { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
               { step:"03", icon:"🎓", color:"#6ED9B8", glow:"#2BAE7E", title:"Study & Master It", desc:"Use flashcards, quizzes, brain maps, and your AI tutor to drill the material until it sticks. Chat with your notes anytime." },
             ].map(s => (
@@ -10892,7 +10740,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Ace It vs everything else.</h2>
           <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
         </div>
         <div className="lp-compare" style={{ overflowX:"auto" }}>
@@ -10900,7 +10748,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
             <thead>
               <tr>
                 <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
-                {[{ name:"Teacher's Pet 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
+                {[{ name:"Ace It 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
                   <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", minWidth:110 }}>
                     {col.highlight && <div style={{ fontSize:10, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase", marginBottom:4 }}>★ Best</div>}
                     {col.name}
@@ -10938,7 +10786,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
         <div style={{ textAlign:"center", marginTop:36 }}>
           <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"14px 34px", fontSize:15, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-            Switch to Teacher's Pet — Free While It Lasts →
+            Switch to Ace It — Free While It Lasts →
           </button>
         </div>
       </section>
@@ -10953,10 +10801,10 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
             <span style={{ fontSize:12, fontWeight:700, color:"#FF8A6A", letterSpacing:1, textTransform:"uppercase" }}>Free During Launch — Paid Plans Coming Soon</span>
           </div>
           <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(34px,5vw,62px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20 }}>
-            Be the teacher's pet.<br/>Ace everything.
+            The future of learning is yours.
           </h2>
           <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:520, margin:"0 auto 44px" }}>
-            Teacher's Pet is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
+            Ace It is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
           </p>
           <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
             <div style={{ position:"relative" }}>
@@ -10979,13 +10827,13 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
       <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Teacher's Pet</span>
+          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Ace It</span>
         </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All learning, one platform.</div>
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@teacherspet.app"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
+              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
           ))}
@@ -11034,7 +10882,7 @@ class AppErrorBoundary extends Component {
           <div style={{ fontSize:48, marginBottom:20 }}>🍎</div>
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#F7F6F2", marginBottom:10 }}>Something went wrong</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.4)", marginBottom:28, maxWidth:360, lineHeight:1.7 }}>
-            Teacher's Pet hit an unexpected error. Your data is safe — try refreshing the page.
+            Ace It hit an unexpected error. Your data is safe — try refreshing the page.
           </div>
           <button onClick={()=>window.location.reload()} style={{ background:"#F5C842", border:"none", borderRadius:10, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#1A1814", marginBottom:20 }}>
             Refresh Page
@@ -11050,164 +10898,6 @@ class AppErrorBoundary extends Component {
     }
     return this.props.children;
   }
-}
-
-function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
-  const canvasRef = useRef(null);
-  const labelsRef = useRef(null);
-  const animRef   = useRef(null);
-  const stateRef  = useRef({
-    hov:null, T:0, last:0, searchQ:'', speedMult:1,
-    planets: PLANETS.map((p,i)=>({...p, angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2})),
-  });
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [searchQ,     setSearchQ]     = useState('');
-  const [speedMult,   setSpeedMult]   = useState(1);
-  const [isMobile,    setIsMobile]    = useState(()=>typeof window!=='undefined'&&window.innerWidth<520);
-  useEffect(()=>{stateRef.current.searchQ=searchQ;},[searchQ]);
-  useEffect(()=>{stateRef.current.speedMult=speedMult;},[speedMult]);
-  useEffect(()=>{
-    const canvas=canvasRef.current, labelWrap=labelsRef.current;
-    if(!canvas||!labelWrap) return;
-    const ctx=canvas.getContext('2d'), state=stateRef.current;
-    const labelEls={};
-    state.planets.forEach(p=>{
-      const el=document.createElement('div');
-      el.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';
-      el.textContent=p.name; labelWrap.appendChild(el); labelEls[p.appId]=el;
-    });
-    function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;setIsMobile(canvas.width<520);}
-    resize(); window.addEventListener('resize',resize);
-    const CX=()=>canvas.width/2, CY=()=>canvas.height*0.48;
-    const RX=()=>canvas.width*0.40, RY=()=>canvas.height*0.21;
-    const BASE_R=26, SPD=0.0014;
-    function smooth(x){return x*x*(3-2*x);}
-    function getPos(p){
-      const sinA=Math.sin(p.angle),depth=smooth((sinA+1)*0.5),scale=0.85+depth*0.30;
-      return{x:CX()+RX()*Math.cos(p.angle),y:CY()+RY()*sinA,scale,depth,sinA,r:BASE_R*scale};
-    }
-    function drawCenter(){
-      const x=CX(),y=CY(),T=state.T;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      for(let i=0;i<3;i++){const pr=52+i*24+4*Math.sin(T*1.1+i*1.2);ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(245,200,66,${0.07-i*0.018})`;ctx.lineWidth=0.9;ctx.stroke();}
-      ctx.beginPath();ctx.moveTo(x-90,y);ctx.lineTo(x-58,y);ctx.moveTo(x+58,y);ctx.lineTo(x+90,y);ctx.strokeStyle='rgba(245,200,66,0.18)';ctx.lineWidth=1;ctx.stroke();
-      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{const bx=x+sx*60,by=y+sy*28;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+sx*12,by);ctx.lineTo(bx+sx*12,by+sy*7);ctx.strokeStyle='rgba(245,200,66,0.15)';ctx.lineWidth=1;ctx.stroke();});
-      ctx.font='14px sans-serif';ctx.fillStyle='rgba(245,200,66,0.3)';ctx.fillText('✦',x,y-38);
-      ctx.font='900 54px sans-serif';ctx.fillStyle='#F5C842';ctx.fillText('ACE IT',x,y+2);
-      ctx.font='600 11px sans-serif';ctx.fillStyle='rgba(245,200,66,0.32)';ctx.fillText('G  A  L  A  X  Y',x,y+30);
-      ctx.textAlign='left';ctx.textBaseline='alphabetic';
-    }
-    function drawPlanet(p){
-      const pos=getPos(p),isH=state.hov===p,r=pos.r*(isH?1.12:1);
-      const hasSearch=state.searchQ.length>0,matches=hasSearch&&p.name.toLowerCase().includes(state.searchQ);
-      const bodyAlpha=hasSearch?(matches?1:0.2):1,T=state.T;
-      if(matches&&hasSearch){const pulse=0.55+0.45*Math.sin(T*3);ctx.globalAlpha=pulse*0.65;ctx.beginPath();ctx.arc(pos.x,pos.y,r+18,0,Math.PI*2);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}
-      if(isH){ctx.beginPath();ctx.arc(pos.x,pos.y,r+16,0,Math.PI*2);ctx.strokeStyle=p.color+'40';ctx.lineWidth=1.2;ctx.stroke();for(let i=0;i<6;i++){const ang=i*Math.PI/3+T*0.6;ctx.beginPath();ctx.moveTo(pos.x+Math.cos(ang)*(r+10),pos.y+Math.sin(ang)*(r+10));ctx.lineTo(pos.x+Math.cos(ang)*(r+16),pos.y+Math.sin(ang)*(r+16));ctx.strokeStyle=p.color+'90';ctx.lineWidth=1.5;ctx.stroke();}}
-      ctx.globalAlpha=bodyAlpha;
-      ctx.beginPath();ctx.arc(pos.x,pos.y,r+5,0,Math.PI*2);ctx.fillStyle=p.color+'18';ctx.fill();
-      ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();
-      ctx.beginPath();ctx.arc(pos.x-r*0.25,pos.y-r*0.28,r*0.27,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fill();
-      ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.38,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.28)';ctx.lineWidth=1.2;ctx.stroke();
-      ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.1,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fill();
-      ctx.globalAlpha=1;
-    }
-    function frame(ts){
-      const dt=state.last?Math.min((ts-state.last)/16.67,2):1;
-      state.last=ts;state.T+=0.016*dt;
-      ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);
-      const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);
-      g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);
-      ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();
-      state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});
-      const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);
-      sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);
-      drawCenter();
-      sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);
-      if(state.hov)drawPlanet(state.hov);
-      state.planets.forEach(p=>{
-        const el=labelEls[p.appId];if(!el)return;
-        const pos=getPos(p);
-        el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;
-        el.style.opacity='1';el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';el.style.zIndex=state.hov===p?'10':'1';
-      });
-      animRef.current=requestAnimationFrame(frame);
-    }
-    animRef.current=requestAnimationFrame(frame);
-    function onMouseMove(e){const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;let found=null;for(const p of state.planets){const pos=getPos(p);if(Math.hypot(mx-pos.x,my-pos.y)<pos.r+10){found=p;break;}}state.hov=found;canvas.style.cursor=found?'pointer':'default';}
-    function onMouseLeave(){state.hov=null;canvas.style.cursor='default';}
-    function onClick(){if(state.hov)setSelectedApp({...state.hov});}
-    canvas.addEventListener('mousemove',onMouseMove);canvas.addEventListener('mouseleave',onMouseLeave);canvas.addEventListener('click',onClick);
-    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());};
-  },[]);
-  const navBtn={borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",whiteSpace:'nowrap'};
-  return (
-    <div style={{ position:'fixed',inset:0,background:'#04020C',overflow:'hidden',fontFamily:"'DM Sans',sans-serif" }}>
-      {!isMobile&&<canvas ref={canvasRef} style={{ position:'absolute',inset:0,width:'100%',height:'100%' }} />}
-      {!isMobile&&<div ref={labelsRef} style={{ position:'absolute',inset:0,pointerEvents:'none',zIndex:2 }} />}
-      {isMobile&&(
-        <div style={{ position:'absolute',top:58,left:0,right:0,bottom:0,overflowY:'auto',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,alignContent:'start' }}>
-          {PLANETS.map(app=>(
-            <div key={app.appId} onClick={()=>setSelectedApp({...app})} style={{ background:'rgba(255,255,255,0.04)',border:`1px solid ${app.color}28`,borderRadius:13,padding:'14px 12px',cursor:'pointer' }}>
-              <div style={{ fontSize:22,marginBottom:7 }}>{app.symbol}</div>
-              <div style={{ fontSize:11,fontWeight:700,color:app.color,marginBottom:3 }}>{app.name}</div>
-              <div style={{ fontSize:9.5,color:'rgba(247,246,242,0.32)',lineHeight:1.4 }}>{app.desc}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <nav style={{ position:'absolute',top:0,left:0,right:0,height:56,display:'flex',alignItems:'center',padding:'0 12px',gap:8,zIndex:20,background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)' }}>
-        <button onClick={()=>setSidebarOpen(true)} style={{ background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0 }}>
-          <div style={{ width:14,height:1.5,background:'#fff',borderRadius:2 }} />
-          <div style={{ width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2 }} />
-          <div style={{ width:14,height:1.5,background:'#fff',borderRadius:2 }} />
-        </button>
-        {!isMobile&&(
-          <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',width:220 }}>
-            <span style={{ position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none' }}>🔍</span>
-            <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…"
-              style={{ width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif" }} />
-          </div>
-        )}
-        <div style={{ marginLeft:'auto',display:'flex',gap:8,alignItems:'center',background:'rgba(4,2,12,0.75)',padding:'4px 4px 4px 8px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',flexShrink:0 }}>
-          {user?(
-            <>
-              {syncStatus!=='idle'&&!isMobile&&<span style={{ fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)' }}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}
-              {!isMobile&&<div style={{ textAlign:'right' }}><div style={{ fontSize:12,fontWeight:700,color:'#fff' }}>{user.name}</div><div style={{ fontSize:10,color:'rgba(245,200,66,0.6)',letterSpacing:0.5,fontWeight:600 }}>Free Plan</div></div>}
-              <div onClick={()=>setSidebarOpen(true)} style={{ width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer' }}>{user.avatar}</div>
-            </>
-          ):(
-            <>
-              <button onClick={()=>openAuth('login')}  style={{ ...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px' }}>Log In</button>
-              <button onClick={()=>openAuth('signup')} style={{ ...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12 }}>{isMobile?'Get Started':'🍎 Get Started Free'}</button>
-            </>
-          )}
-        </div>
-      </nav>
-      <div style={{ position:'absolute',bottom:20,left:0,right:0,textAlign:'center',pointerEvents:'none',zIndex:5 }}>
-        <p style={{ fontSize:9,color:'rgba(255,255,255,0.18)',letterSpacing:2.8,textTransform:'uppercase',fontWeight:600 }}>The future of learning is yours</p>
-      </div>
-      {!isMobile&&(
-        <div style={{ position:'absolute',bottom:20,right:16,zIndex:20,display:'flex',alignItems:'center',gap:7 }}>
-          <label style={{ fontSize:8.5,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.25)' }}>Speed</label>
-          <input type="range" min="0.2" max="3" step="0.1" value={speedMult} onChange={e=>{const v=parseFloat(e.target.value);setSpeedMult(v);stateRef.current.speedMult=v;}} style={{ width:65,accentColor:'#F5C842',cursor:'pointer' }} />
-          <span style={{ fontSize:9,fontWeight:700,color:'rgba(245,200,66,0.6)',minWidth:24 }}>{speedMult.toFixed(1)}×</span>
-        </div>
-      )}
-      {selectedApp&&(
-        <div onClick={e=>{if(e.target===e.currentTarget)setSelectedApp(null);}} style={{ position:'absolute',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(4,2,12,0.78)' }}>
-          <div style={{ position:'relative',background:'rgba(7,4,20,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'0 28px 26px',width:isMobile?'86vw':250,maxWidth:300,textAlign:'center' }}>
-            <div style={{ height:3,background:selectedApp.color,borderRadius:'17px 17px 0 0',margin:'0 -28px 24px' }} />
-            <button onClick={()=>setSelectedApp(null)} style={{ position:'absolute',top:12,right:14,background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:16,cursor:'pointer' }}>✕</button>
-            <div style={{ fontSize:36,marginBottom:12 }}>{selectedApp.symbol}</div>
-            <div style={{ fontSize:17,fontWeight:800,color:selectedApp.color,marginBottom:6 }}>{selectedApp.name}</div>
-            <div style={{ fontSize:12,color:'rgba(247,246,242,0.4)',lineHeight:1.65,marginBottom:20 }}>{selectedApp.desc}</div>
-            <button onClick={()=>{launchApp(selectedApp.appId);setSelectedApp(null);}} style={{ width:'100%',padding:12,borderRadius:10,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",background:selectedApp.color,color:'#fff' }}>Launch →</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function AceItGalaxy() {
@@ -11245,7 +10935,7 @@ function AceItGalaxyInner() {
     try { return !localStorage.getItem("tp_user"); } catch { return true; }
   });
 
-  // ── Teacher's Pet AI Engine ─────────────────────────────────────────────────────────
+  // ── Ace It AI Engine ─────────────────────────────────────────────────────────
   // Central intelligence layer — reads all live user data and powers every AI
   // call across the platform. Level 2 ready: DB queries would replace localStorage
   // reads below (marked with // L2: replace with db.query(...))
@@ -11438,7 +11128,7 @@ Help them see connections ACROSS their apps. For example:
 
     // ── Always-on platform context ────────────────────────────────────────────
     const platformContext = `
-You are the Teacher's Pet AI — an intelligent, deeply personalized assistant built into the Teacher's Pet learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
+You are the Ace It AI — an intelligent, deeply personalized assistant built into the Ace It learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
 
 ═══ USER IDENTITY ═══
 Name: ${name}
@@ -11632,7 +11322,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   // Show splash while Firebase resolves auth state
   if (authLoading) return (
     <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Teacher's Pet ✦</div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Ace It ✦</div>
     </div>
   );
 
@@ -11681,11 +11371,267 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   }
 
   return (
-    <>
-      <GalaxyHomepage user={user} openAuth={openAuth} launchApp={launchApp} setSidebarOpen={setSidebarOpen} syncStatus={syncStatus} />
+    <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes gx-glow { 0%,100%{opacity:0.5} 50%{opacity:0.9} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .gx-card { transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s !important; cursor: pointer; }
+        .gx-card:hover { transform: translateY(-5px) !important; }
+        .gx-stat:hover { border-color: rgba(245,200,66,0.3) !important; background: rgba(245,200,66,0.04) !important; }
+        .gx-stat { transition: all 0.2s; }
+        @media (max-width: 768px) {
+          .gx-nav-search { display: none !important; }
+          .gx-nav { padding: 0 16px !important; }
+          .gx-main { padding: 28px 16px 80px !important; }
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .gx-cats-grid { grid-template-columns: 1fr !important; }
+          .gx-recent { flex-wrap: wrap !important; }
+          .gx-welcome h1 { font-size: 26px !important; }
+          .gx-cta { padding: 32px 24px !important; }
+          .gx-cta-btns { flex-direction: column !important; }
+          .gx-cta-btns button { width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; }
+          .gx-nav-brand span { display: none !important; }
+        }
+      `}</style>
+
+      {/* Background atmosphere */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 80% 60% at 15% 20%, rgba(107,94,228,0.07) 0%, transparent 70%)" }} />
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 60% 50% at 85% 80%, rgba(245,200,66,0.05) 0%, transparent 70%)" }} />
+
+      {/* ── NAV ── */}
+      <nav className="gx-nav" style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(6,4,14,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(245,200,66,0.4)";e.currentTarget.style.background="rgba(245,200,66,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="none";}}>
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+            <div style={{ width:10,height:1.5,background:"rgba(255,255,255,0.3)",borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+          </button>
+          <div style={{ width:1,height:20,background:"rgba(255,255,255,0.08)" }} />
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#F5D96A,#E8A82A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>🍎</div>
+            <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:800, color:"#F7F6F2", letterSpacing:0.3 }}>Ace It</span>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="gx-nav-search" style={{ position:"relative", width:260 }}>
+          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"rgba(255,255,255,0.25)",pointerEvents:"none" }}>🔍</span>
+          <input placeholder="Search apps…"
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+            style={{ width:"100%",padding:"9px 14px 9px 36px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",fontSize:13,color:"#F7F6F2",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+            onFocus={e=>{e.target.style.borderColor="rgba(245,200,66,0.5)";e.target.style.background="rgba(255,255,255,0.07)";}}
+            onBlur={e=>{e.target.style.borderColor="rgba(255,255,255,0.1)";e.target.style.background="rgba(255,255,255,0.05)";}} />
+        </div>
+
+        {/* Auth */}
+        {user ? (
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            {/* Sync status indicator */}
+            {syncStatus !== "idle" && (
+              <div style={{ display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,transition:"all 0.3s",
+                color:syncStatus==="saved"?"#2BAE7E":syncStatus==="error"?"#E85D3F":"rgba(245,200,66,0.8)" }}>
+                {syncStatus==="saving" && <span style={{ width:8,height:8,borderRadius:"50%",border:"2px solid rgba(245,200,66,0.8)",borderTopColor:"transparent",animation:"qbSpin 0.7s linear infinite",display:"inline-block" }} />}
+                {syncStatus==="saved"  && <span>☁ Saved</span>}
+                {syncStatus==="error"  && <span>⚠ Sync failed</span>}
+                {syncStatus==="saving" && <span>Saving…</span>}
+              </div>
+            )}
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{user.name}</div>
+              <div style={{ fontSize:10,color:"rgba(245,200,66,0.6)",letterSpacing:0.5,fontWeight:600 }}>Free Plan</div>
+            </div>
+            <div onClick={()=>setSidebarOpen(true)} style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#9B7FFF,#F5D96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#1A1814",cursor:"pointer",border:"2px solid rgba(255,255,255,0.12)",boxShadow:"0 0 20px rgba(155,127,255,0.3)" }}>
+              {user.avatar}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:"flex",gap:8 }}>
+            <button onClick={()=>openAuth("login")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>Log In</button>
+            <button onClick={()=>openAuth("signup")} style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:800,cursor:"pointer",color:"#1A1814",boxShadow:"0 4px 16px rgba(245,200,66,0.35)",transition:"all 0.18s" }}>Get Started Free</button>
+          </div>
+        )}
+      </nav>
+
+      {/* ── MAIN ── */}
+      <div className="gx-main" style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
+
+        {/* Welcome */}
+        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both", textAlign:"center" }}>
+          <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(245,200,66,0.08)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:20,padding:"5px 14px",marginBottom:16 }}>
+            <span style={{ width:6,height:6,borderRadius:"50%",background:"#F5C842",animation:"gx-glow 2s infinite",display:"inline-block" }} />
+            <span style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#F5C842" }}>{user ? "Your Dashboard" : "Welcome"}</span>
+          </div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,3.5vw,46px)", fontWeight:900, color:"#F7F6F2", marginBottom:10, letterSpacing:-1, lineHeight:1.1 }}>
+            {user ? `Good to see you, ${user.name?.split(" ")[0]}.` : "The smarter way to study."}
+          </h1>
+          <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,maxWidth:480,fontWeight:300,textAlign:"center",margin:"0 auto" }}>
+            {user ? "Your apps, your notes, your progress — all in one place." : "Sign up free and unlock AI-powered notes, flashcards, brain maps, and more."}
+          </p>
+        </div>
+
+        {/* Stats row */}
+        {user && (
+          <div className="gx-stats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:44,animation:"fadeUp 0.5s 0.06s ease both" }}>
+            {[
+              { icon:"📇", label:"Decks",   value:(() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })(), color:"#C8B8FF" },
+              { icon:"🧠", label:"Maps",    value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })(), color:"#F0A8C0" },
+              { icon:"📝", label:"Notes",   value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_notess")||"[]").length; } catch { return 0; } })(), color:"#F0D080" },
+              { icon:"📖", label:"Journal", value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_journal")||"[]").length; } catch { return 0; } })(), color:"#6ED9B8" },
+            ].map(s => (
+              <div key={s.label} className="gx-stat" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"22px 22px", position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg, transparent, ${s.color}88, transparent)` }} />
+                <div style={{ fontSize:20,marginBottom:12 }}>{s.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:s.color,marginBottom:4,lineHeight:1 }}>{s.value}</div>
+                <div style={{ fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:1.5 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent apps */}
+        {recentApps.length > 0 && (
+          <div style={{ marginBottom:44,animation:"fadeUp 0.5s 0.1s ease both" }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:"rgba(255,255,255,0.3)",marginBottom:14 }}>Continue where you left off</div>
+            <div className="gx-recent" style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+              {recentApps.map(appId => {
+                const p = PLANETS.find(x=>x.appId===appId);
+                if (!p) return null;
+                return (
+                  <button key={appId} onClick={()=>launchApp(appId)}
+                    style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderRadius:12,border:`1px solid ${p.color}30`,background:`rgba(255,255,255,0.03)`,cursor:"pointer",transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif",backdropFilter:"blur(10px)" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=p.color;e.currentTarget.style.background=`${p.color}12`;e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${p.color}22`;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=`${p.color}30`;e.currentTarget.style.background="rgba(255,255,255,0.03)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                    <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${p.color}33,${p.glow}18)`,border:`1px solid ${p.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>{p.symbol}</div>
+                    <span style={{ fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{p.name}</span>
+                    <span style={{ fontSize:11,color:p.color }}>↗</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* App categories */}
+        {[
+          { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","notes","brainmap","simplifier","tracker"] },
+          { label:"AI Assistants",     emoji:"🤖", color:"#4898E8", ids:["assistant","studybuddy"] },
+          { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal","mentalhealth","flow","careercompass"] },
+          { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["academy","studio","universe","earthrecord"] },
+        ].map((cat,ci) => {
+          const catPlanets = PLANETS.filter(p=>cat.ids.includes(p.appId));
+          if (!catPlanets.length) return null;
+          return (
+            <div key={cat.label} style={{ marginBottom:48,animation:`fadeUp 0.5s ${0.12+ci*0.06}s ease both` }}>
+              {/* Category header */}
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
+                <span style={{ fontSize:16 }}>{cat.emoji}</span>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:cat.color }}>{cat.label}</div>
+                <div style={{ flex:1,height:1,background:`linear-gradient(90deg,${cat.color}30,transparent)`,marginLeft:4 }} />
+              </div>
+
+              {/* Cards */}
+              <div className="gx-cats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14 }}>
+                {catPlanets.map(p => (
+                  <div key={p.id} className="gx-card" onClick={()=>launchApp(p.appId)}
+                    style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${p.color}22`, borderRadius:18, padding:"24px 22px 20px", position:"relative", overflow:"hidden", boxShadow:`0 4px 24px rgba(0,0,0,0.2)` }}>
+                    {/* Top glow line */}
+                    <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:"60%",height:1,background:`linear-gradient(90deg,transparent,${p.color}88,transparent)` }} />
+                    {/* Subtle bg glow */}
+                    <div style={{ position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:`radial-gradient(circle,${p.color}0D 0%,transparent 70%)`,pointerEvents:"none" }} />
+
+                    {/* Icon + name */}
+                    <div style={{ display:"flex",alignItems:"flex-start",gap:14,marginBottom:14,position:"relative" }}>
+                      <div style={{ width:46,height:46,borderRadius:13,background:`linear-gradient(135deg,${p.color}22,${p.glow}11)`,border:`1.5px solid ${p.color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,boxShadow:`0 4px 16px ${p.color}22` }}>
+                        {p.symbol}
+                      </div>
+                      <div style={{ flex:1,paddingTop:2 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#F7F6F2",lineHeight:1.2,marginBottom:4 }}>{p.name}</div>
+                        <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:`${p.color}15`,border:`1px solid ${p.color}30`,borderRadius:20,padding:"2px 9px" }}>
+                          <div style={{ width:5,height:5,borderRadius:"50%",background:p.color,animation:"gx-glow 2s infinite" }} />
+                          <span style={{ fontSize:9,fontWeight:700,color:p.color,letterSpacing:1,textTransform:"uppercase" }}>Ready</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p style={{ fontSize:12,color:"rgba(247,246,242,0.4)",lineHeight:1.7,margin:"0 0 16px",position:"relative" }}>{p.desc}</p>
+
+                    {/* Footer */}
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative" }}>
+                      <div style={{ fontSize:11,fontWeight:700,color:p.color,display:"flex",alignItems:"center",gap:5 }}>
+                        Launch <span style={{ fontSize:14 }}>→</span>
+                      </div>
+                      {recentApps.includes(p.appId) && (
+                        <div style={{ fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"2px 8px",letterSpacing:1,textTransform:"uppercase" }}>Recent</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Guest CTA */}
+        {!user && (
+          <div style={{ position:"relative",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:24,padding:"48px 48px",textAlign:"center",overflow:"hidden",marginTop:20,animation:"fadeUp 0.5s 0.4s ease both" }}>
+            <div style={{ position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(245,200,66,0.06) 0%,transparent 70%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:200,height:1,background:"linear-gradient(90deg,transparent,rgba(245,200,66,0.5),transparent)" }} />
+            <div style={{ fontSize:52,marginBottom:16,position:"relative" }}>🍎</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,34px)",fontWeight:900,color:"#F7F6F2",marginBottom:10,position:"relative" }}>Sign up free — 30 seconds.</h2>
+            <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,marginBottom:32,maxWidth:420,margin:"0 auto 32px",position:"relative" }}>Save your notes, decks, and progress. Access from any device. Free while we launch.</p>
+            <div className="gx-cta-btns" style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative" }}>
+              <div style={{ position:"relative" }}>
+                <div style={{ position:"absolute",inset:-3,borderRadius:12,background:"linear-gradient(135deg,#F5C842,#E8A82A)",opacity:0.3,filter:"blur(8px)" }} />
+                <button onClick={()=>openAuth("signup")} style={{ position:"relative",background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:10,padding:"14px 32px",fontSize:15,fontWeight:800,cursor:"pointer",color:"#1A1814",fontFamily:"'Montserrat',sans-serif",boxShadow:"0 6px 28px rgba(245,200,66,0.4)" }}>
+                  🍎 Create Free Account →
+                </button>
+              </div>
+              <button onClick={()=>openAuth("login")} style={{ background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px 24px",fontSize:14,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+                onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
+                onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.12)";}}>
+                Log In
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
-    </>
+
+      {/* Galaxy footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.05)", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10, background:"rgba(6,4,14,0.6)" }}>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.18)" }}>© 2026 Ace It · All learning, one platform.</div>
+        <div style={{ display:"flex", gap:20 }}>
+          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([label,key])=>(
+            <span key={key} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.15s" }}
+              onClick={()=>{
+                if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com";
+                else { setLegalPage(key); window.history.pushState({screen:`legal-${key}`},"",`/${key}`); }
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.22)"}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </footer>
+
+    </div>
   );
 }
