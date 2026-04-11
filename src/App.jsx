@@ -117,22 +117,16 @@ function tpSync(lsKey, data) {
 
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
-  { id: 1,  appId: "flashcards",   name: "Flash Cards",             symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
-  { id: 2,  appId: "notes",     name: "Notes",           symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
-  { id: 16, appId: "tracker",   name: "Tracker",         symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system. Pulls from all your courses automatically." },
-  { id: 3,  appId: "brainmap",     name: "Brain Map",               symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
-  { id: 4,  appId: "simplifier",   name: "Text Simplifier",         symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
-  { id: 5,  appId: "academy",      name: "Academy",                 symbol: "◎", color: "#7FD4C8", glow: "#4FBFB0", size: 46, orbitRadius: 280, speed: 33, desc: "Structured courses and guided learning." },
-  { id: 6,  appId: "studio",       name: "Studio",                  symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
-  { id: 7,  appId: "universe",     name: "Universe of Information", symbol: "⟡", color: "#D0A8F8", glow: "#A060E8", size: 50, orbitRadius: 360, speed: 48, desc: "Explore the world's knowledge, organized." },
-  { id: 8,  appId: "earthrecord",  name: "Earth's Record",          symbol: "◉", color: "#88D8A8", glow: "#40B870", size: 38, orbitRadius: 398, speed: 55, desc: "History, facts, and records of our world." },
-  { id: 9,  appId: "careercompass",name: "Career Compass",          symbol: "◇", color: "#F8E070", glow: "#D4B820", size: 44, orbitRadius: 435, speed: 65, desc: "Map your path, skills, and opportunities." },
-  { id: 10, appId: "assistant",    name: "Personal Assistant",      symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
-  { id: 11, appId: "mentalhealth", name: "Mental Health",           symbol: "⬟", color: "#FFB3C6", glow: "#FF6B9D", size: 40, orbitRadius: 505, speed: 58, desc: "Mindfulness, balance, and well-being." },
-  { id: 12, appId: "flow",         name: "Flow",                    symbol: "⬢", color: "#A8E6CF", glow: "#56C596", size: 46, orbitRadius: 542, speed: 50, desc: "Focus sessions, streaks, and deep work." },
-  { id: 13, appId: "studybuddy",  name: "Study Buddy",             symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Your real-time AI study partner — learn together." },
-  { id: 14, appId: "settings",    name: "Settings",                symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience, accessibility, and preferences." },
-  { id: 15, appId: "journal",     name: "Journal",                 symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply. Your private space for thoughts, feelings, and growth." },
+  { id: 1,  appId: "flashcards",   name: "Flash Cards",      symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
+  { id: 2,  appId: "notes",        name: "Notes",            symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
+  { id: 16, appId: "tracker",      name: "Tracker",          symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system. Pulls from all your courses automatically." },
+  { id: 3,  appId: "brainmap",     name: "Brain Map",        symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
+  { id: 4,  appId: "simplifier",   name: "Text Simplifier",  symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
+  { id: 6,  appId: "studio",       name: "Studio",           symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
+  { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
+  { id: 13, appId: "studybuddy",   name: "Study Buddy",      symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Your real-time AI study partner — learn together." },
+  { id: 14, appId: "settings",     name: "Settings",         symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience, accessibility, and preferences." },
+  { id: 15, appId: "journal",      name: "Journal",          symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply. Your private space for thoughts, feelings, and growth." },
 ];
 
 const TILT = 0.34;
@@ -547,8 +541,8 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
           {[
             { label:"Study Tools",       emoji:"📚", ids:["flashcards","notes","brainmap","simplifier"] },
             { label:"AI Assistants",     emoji:"🤖", ids:["assistant","studybuddy"] },
-            { label:"Personal Growth",   emoji:"🌱", ids:["journal","mentalhealth","flow","careercompass"] },
-            { label:"Knowledge",         emoji:"🌍", ids:["academy","studio","universe","earthrecord"] },
+            { label:"Personal Growth",   emoji:"🌱", ids:["journal"] },
+            { label:"Knowledge",         emoji:"🌍", ids:["studio"] },
             { label:"Settings",          emoji:"⚙️", ids:["settings"] },
           ].map(cat => {
             const catPlanets = planets.filter(p => cat.ids.includes(p.appId));
@@ -711,7 +705,7 @@ const APP_CONFIGS = {
       { icon:"⟡", title:"AI Lecture Summaries",     desc:"Get a clean, structured summary of any lecture in seconds. Key points, definitions, and takeaways organized automatically." },
       { icon:"◈", title:"Ask About Your Lecture",   desc:"Type any question about what was said in class and get a precise answer pulled directly from the recording." },
       { icon:"◎", title:"Auto Quiz Generation",     desc:"Notes auto-generates quiz questions from your lecture so you can test yourself immediately after class." },
-      { icon:"⊕", title:"Cross-App Linking",        desc:"Automatically links lecture content to your Flashcard decks, Encyclopedia entries, and Academy courses." },
+      { icon:"⊕", title:"Cross-App Linking",        desc:"Automatically links lecture content to your Flashcard decks and Brain Maps." },
     ],
     steps: [
       { num:"01", title:"Record Your Lecture",   desc:"Hit record before class starts. Notes captures audio, filters noise, and transcribes in real time." },
@@ -10079,25 +10073,21 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 // ─── Landing / Welcome Page ───────────────────────────────────────────────────
 const LANDING_APPS = [
   { icon:"✦", name:"Flash Cards",        color:"#C8B8FF", glow:"#9B7FFF", desc:"Build decks from any text, paste notes for instant AI-generated cards, and study with 9 smart modes including spaced repetition and focus mode." },
-  { icon:"⬡", name:"Notes",           color:"#F0D080", glow:"#D4A830", desc:"Write, record, and organize your notes. Upload any material — AI instantly builds comprehensive study notes, flashcards, and summaries." },
+  { icon:"⬡", name:"Notes",              color:"#F0D080", glow:"#D4A830", desc:"Write, record, and organize your notes. Upload any material — AI instantly builds comprehensive study notes, flashcards, and summaries." },
   { icon:"✺", name:"Brain Map",          color:"#F0A8C0", glow:"#D4607A", desc:"Build visual mind maps that connect ideas. Attach flashcard decks directly to any node so studying and understanding happen in the same place." },
   { icon:"≋", name:"Text Simplifier",    color:"#6ED9B8", glow:"#2BAE7E", desc:"Paste any complex text or drop a YouTube link. Choose how much detail you want and get a clean, organized version you can actually understand." },
-  { icon:"◎", name:"Ace Academy",        color:"#7FD4C8", glow:"#4FBFB0", desc:"A complete AI school from elementary through college. Adaptive lessons, cinematic story-based learning, and personalized paths for every learner." },
-  { icon:"◷", name:"Tracker",          color:"#6ED9B8", glow:"#2BAE7E", desc:"Your all-in-one planner, calendar, to-do list, and reminder system. Syncs with your courses and adds due dates directly to your device calendar." },
-  { icon:"⟡", name:"Universe",           color:"#D0A8F8", glow:"#A060E8", desc:"Replace scattered web searches with one verified AI knowledge hub. Deep dive any topic, check facts, and watch how all knowledge connects." },
-  { icon:"◉", name:"Earth's Record",     color:"#88D8A8", glow:"#40B870", desc:"A tamper-resistant global archive of human history, culture, and knowledge — every perspective, every civilization, preserved forever." },
-  { icon:"◇", name:"Career Compass",     color:"#F8E070", glow:"#D4B820", desc:"Map your path from where you are to where you want to be. Discover careers, close skill gaps, and track every certification you're working toward." },
+  { icon:"◷", name:"Tracker",            color:"#6ED9B8", glow:"#2BAE7E", desc:"Your all-in-one planner, calendar, to-do list, and reminder system. Syncs with your courses and adds due dates directly to your device calendar." },
   { icon:"⊕", name:"Personal Assistant", color:"#90C8F8", glow:"#4898E8", desc:"Your AI guide across the entire platform. Answers questions, builds study plans, detects when you're burning out, and connects all your apps." },
-  { icon:"⬟", name:"Mental Health",      color:"#FFB3C6", glow:"#FF6B9D", desc:"Study hard without burning out. Daily mood check-ins, guided mindfulness, emotional journaling, and well-being tools built for students." },
-  { icon:"⬢", name:"Flow",              color:"#A8E6CF", glow:"#56C596", desc:"Your personal learning optimizer. Detects how you learn best, builds your ideal study environment, and eliminates wasted time." },
   { icon:"❋", name:"Study Buddy",        color:"#FFA8D0", glow:"#FF5CA8", desc:"Never study alone again. Your real-time AI partner quizzes you, explains concepts, tracks your weak spots, and celebrates every win." },
+  { icon:"✍", name:"Journal",            color:"#E8C4F0", glow:"#B060D0", desc:"Write freely. Reflect deeply. Your private space for thoughts, feelings, and growth." },
+  { icon:"◈", name:"Studio",             color:"#F8C898", glow:"#E89040", desc:"Create, design, and build study content. Your creative workspace for learning materials." },
 ];
 
 const LANDING_STATS = [
-  { value:"13", label:"Learning Apps" },
-  { value:"AI", label:"Powered" },
+  { value:"9",    label:"Learning Apps" },
+  { value:"AI",   label:"Powered" },
   { value:"Free", label:"To Start" },
-  { value:"∞", label:"Curiosity" },
+  { value:"∞",   label:"Curiosity" },
 ];
 
 // ─── Privacy Policy Page ──────────────────────────────────────────────────────
@@ -11528,8 +11518,8 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
         {[
           { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","notes","brainmap","simplifier","tracker"] },
           { label:"AI Assistants",     emoji:"🤖", color:"#4898E8", ids:["assistant","studybuddy"] },
-          { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal","mentalhealth","flow","careercompass"] },
-          { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["academy","studio","universe","earthrecord"] },
+          { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal"] },
+          { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["studio"] },
         ].map((cat,ci) => {
           const catPlanets = PLANETS.filter(p=>cat.ids.includes(p.appId));
           if (!catPlanets.length) return null;
