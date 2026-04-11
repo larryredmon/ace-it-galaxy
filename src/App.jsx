@@ -26,6 +26,8 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  onSnapshot,
+  deleteField,
 } from "firebase/firestore";
 
 // ─── Firestore Sync Layer ──────────────────────────────────────────────────────
@@ -10890,6 +10892,465 @@ class AppErrorBoundary extends Component {
   }
 }
 
+// ─── Study Buddy App ──────────────────────────────────────────────────────────
+function StudyBuddyApp({ onBack, user, openAuth }) {
+  const SB = '#FFA8D0';
+  const [view,       setView]       = useState('lobby');
+  const [rooms,      setRooms]      = useState([]);
+  const [searchQ,    setSearchQ]    = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ title:'', subject:'', isPublic:true });
+  const [privateCode,setPrivateCode]= useState('');
+  const [showJoin,   setShowJoin]   = useState(false);
+  const [joinInput,  setJoinInput]  = useState('');
+  const [joining,    setJoining]    = useState(false);
+  const [activeRoom, setActiveRoom] = useState(null);
+  const [participants,setParticipants]=useState({});
+  const [messages,   setMessages]   = useState([]);
+  const [newMsg,     setNewMsg]     = useState('');
+  const [timerSecs,  setTimerSecs]  = useState(25*60);
+  const [timerOn,    setTimerOn]    = useState(false);
+  const [timerMode,  setTimerMode]  = useState('focus');
+  const [showChat,   setShowChat]   = useState(true);
+  const [localStream,setLocalStream]= useState(null);
+  const [remoteStreams,setRemoteStreams]=useState({});
+  const [videoOn,    setVideoOn]    = useState(true);
+  const [audioOn,    setAudioOn]    = useState(true);
+  const [mediaError, setMediaError] = useState(null);
+  const [errMsg,     setErrMsg]     = useState('');
+
+  const localVidRef   = useRef(null);
+  const remoteVidRefs = useRef({});
+  const peerConns     = useRef({});
+  const localStreamRef= useRef(null);
+  const activeRoomRef = useRef(null);
+  const unsubRooms    = useRef(null);
+  const unsubRoom     = useRef(null);
+  const unsubMsgs     = useRef(null);
+  const unsubSigs     = useRef(null);
+  const timerRef      = useRef(null);
+  const msgEndRef     = useRef(null);
+
+  const ICE = { iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] };
+
+  // Load public rooms
+  useEffect(()=>{
+    const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'));
+    unsubRooms.current = onSnapshot(q, snap=>{
+      setRooms(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }, ()=>{});
+    return ()=>{ unsubRooms.current?.(); };
+  },[]);
+
+  // Scroll chat
+  useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
+
+  // Attach local stream to video element
+  useEffect(()=>{
+    if(localVidRef.current && localStream) localVidRef.current.srcObject = localStream;
+  },[localStream]);
+
+  // Attach remote streams
+  useEffect(()=>{
+    Object.entries(remoteStreams).forEach(([uid,stream])=>{
+      const el = remoteVidRefs.current[uid];
+      if(el && el.srcObject !== stream) el.srcObject = stream;
+    });
+  },[remoteStreams]);
+
+  // Timer countdown
+  useEffect(()=>{
+    if(timerOn){
+      timerRef.current = setInterval(()=>{
+        setTimerSecs(s=>{
+          if(s<=1){
+            clearInterval(timerRef.current);
+            setTimerOn(false);
+            const next = timerMode==='focus'?'break':'focus';
+            setTimerMode(next);
+            return next==='focus'?25*60:5*60;
+          }
+          return s-1;
+        });
+      },1000);
+    } else clearInterval(timerRef.current);
+    return ()=>clearInterval(timerRef.current);
+  },[timerOn, timerMode]);
+
+  // Cleanup on unmount
+  useEffect(()=>()=>{ doLeave(true); unsubRooms.current?.(); },[]);
+
+  // WebRTC helpers
+  const makePC = (roomId, targetUid) => {
+    const pc = new RTCPeerConnection(ICE);
+    peerConns.current[targetUid] = pc;
+    localStreamRef.current?.getTracks().forEach(t=>pc.addTrack(t, localStreamRef.current));
+    const remote = new MediaStream();
+    pc.ontrack = e=>{ e.streams[0]?.getTracks().forEach(t=>remote.addTrack(t)); setRemoteStreams(p=>({...p,[targetUid]:remote})); };
+    pc.onicecandidate = async e=>{ if(e.candidate) await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); };
+    pc.onconnectionstatechange = ()=>{ if(['disconnected','failed','closed'].includes(pc.connectionState)){ setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;}); delete peerConns.current[targetUid]; } };
+    return pc;
+  };
+
+  const sendOffer = async (roomId, targetUid) => {
+    const pc = makePC(roomId, targetUid);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(offer),ts:serverTimestamp()});
+  };
+
+  const handleSignal = async (roomId, sig) => {
+    const {from, type, data} = sig;
+    if(from===user.uid) return;
+    if(type==='offer'){
+      let pc = peerConns.current[from] || makePC(roomId,from);
+      try{ await pc.setRemoteDescription(JSON.parse(data)); const ans=await pc.createAnswer(); await pc.setLocalDescription(ans); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(ans),ts:serverTimestamp()}); }catch{}
+    } else if(type==='answer'){
+      try{ await peerConns.current[from]?.setRemoteDescription(JSON.parse(data)); }catch{}
+    } else if(type==='ice-candidate'){
+      try{ await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data))); }catch{}
+    }
+  };
+
+  const startMedia = async () => {
+    setMediaError(null);
+    try{
+      const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+      localStreamRef.current = s; setLocalStream(s); return s;
+    }catch(e){
+      setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied — you can still chat and use the timer.':'Could not access camera or microphone.');
+      return null;
+    }
+  };
+
+  const enterRoom = async (room) => {
+    if(!user){openAuth('login');return;}
+    setJoining(true); setErrMsg('');
+    try{
+      await updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name,avatar:user.avatar,uid:user.uid,joinedAt:new Date().toISOString()}});
+      setActiveRoom(room); activeRoomRef.current=room; setView('room'); setJoining(false);
+      await startMedia();
+      unsubRoom.current = onSnapshot(doc(db,'studyRooms',room.id),snap=>{
+        if(!snap.exists()){doLeave(true);return;}
+        const d=snap.data(); setParticipants(d.participants||{});
+        if(d.timerOn!==undefined)setTimerOn(d.timerOn);
+        if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);
+        if(d.timerMode!==undefined)setTimerMode(d.timerMode);
+      },()=>{});
+      const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));
+      unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});
+      const sq=query(collection(db,'studyRooms',room.id,'signals'),where('to','==',user.uid));
+      unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')handleSignal(room.id,c.doc.data());});},()=>{});
+      const snap2=await getDoc(doc(db,'studyRooms',room.id));
+      const parts=snap2.data()?.participants||{};
+      Object.keys(parts).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);});
+    }catch(e){ setErrMsg('Failed to join room. Try again.'); setJoining(false); }
+  };
+
+  const doLeave = async (silent=false) => {
+    localStreamRef.current?.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; setLocalStream(null);
+    Object.values(peerConns.current).forEach(pc=>pc.close()); peerConns.current={}; setRemoteStreams({});
+    unsubRoom.current?.(); unsubMsgs.current?.(); unsubSigs.current?.(); clearInterval(timerRef.current);
+    if(!silent && activeRoomRef.current && user){
+      try{
+        await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});
+        const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));
+        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0) await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
+      }catch{}
+    }
+    setActiveRoom(null); activeRoomRef.current=null; setMessages([]); setParticipants({});
+    setTimerSecs(25*60); setTimerOn(false); setTimerMode('focus'); setPrivateCode(''); setView('lobby');
+  };
+
+  const createRoom = async () => {
+    if(!user){openAuth('login');return;}
+    if(!createForm.title.trim()||!createForm.subject.trim()) return;
+    const code = createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
+    const ref = await addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus'});
+    setShowCreate(false); if(!createForm.isPublic) setPrivateCode(code);
+    enterRoom({id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{}});
+  };
+
+  const joinByCode = async () => {
+    if(!joinInput.trim()) return;
+    const q=query(collection(db,'studyRooms'),where('code','==',joinInput.trim().toUpperCase()));
+    const snap=await getDocs(q);
+    if(snap.empty){setErrMsg('Room not found. Check the code and try again.');return;}
+    setShowJoin(false); setJoinInput(''); setErrMsg('');
+    enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});
+  };
+
+  const sendMsg = async () => {
+    if(!newMsg.trim()||!activeRoom) return;
+    const t=newMsg.trim(); setNewMsg('');
+    await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp()});
+  };
+
+  const syncTimer = async (updates) => {
+    if(!activeRoom) return;
+    await updateDoc(doc(db,'studyRooms',activeRoom.id),updates);
+  };
+
+  const toggleVideo=()=>{ const t=localStreamRef.current?.getVideoTracks()[0]; if(t){t.enabled=!videoOn;setVideoOn(!videoOn);} };
+  const toggleAudio=()=>{ const t=localStreamRef.current?.getAudioTracks()[0]; if(t){t.enabled=!audioOn;setAudioOn(!audioOn);} };
+  const fmt = s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const filteredRooms = rooms.filter(r=>{
+    if(!r.isPublic) return false;
+    if(searchQ&&!r.subject?.toLowerCase().includes(searchQ.toLowerCase())&&!r.title?.toLowerCase().includes(searchQ.toLowerCase())) return false;
+    return true;
+  });
+
+  const partList = Object.values(participants);
+  const otherStreams = Object.entries(remoteStreams);
+  const isHost = activeRoom && user && activeRoom.host===user.uid;
+
+  // ── ROOM VIEW ──
+  if(view==='room' && activeRoom){
+    return(
+      <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
+        {/* Top bar */}
+        <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 16px',gap:12,flexShrink:0}}>
+          <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)'}}>← Leave</button>
+          <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)'}}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:800,fontSize:14,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
+            <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying</div>
+          </div>
+          {/* Timer */}
+          <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'6px 14px'}}>
+            <div style={{fontSize:10,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
+            <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.4)',minWidth:56,textAlign:'center'}}>{fmt(timerSecs)}</div>
+            <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
+            <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'rgba(255,255,255,0.25)'}}>Reset</button>
+            <button onClick={()=>{const m=timerMode==='focus'?'break':'focus';const s=m==='focus'?25*60:5*60;setTimerMode(m);setTimerSecs(s);setTimerOn(false);syncTimer({timerOn:false,timerSecs:s,timerMode:m});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'rgba(255,255,255,0.25)'}}>{timerMode==='focus'?'→ Break':'→ Focus'}</button>
+          </div>
+          <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬 Chat</button>
+        </div>
+
+        <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+          {/* Video area */}
+          <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C'}}>
+            {/* Video grid */}
+            <div style={{flex:1,overflow:'auto',padding:12,display:'grid',gap:8,gridTemplateColumns:otherStreams.length===0?'1fr':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',alignContent:'start'}}>
+              {/* Local video */}
+              <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:12,overflow:'hidden'}}>
+                {localStream
+                  ? <video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}} />
+                  : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
+                      <div style={{width:52,height:52,borderRadius:'50%',background:SB+'30',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:800,color:SB}}>{user?.avatar||'?'}</div>
+                      <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Loading…'}</div>
+                    </div>
+                }
+                <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.6)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600,color:'#fff'}}>{user?.name||'You'} (you)</div>
+                {!videoOn&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{fontSize:24}}>📷</span></div>}
+              </div>
+              {/* Remote videos */}
+              {otherStreams.map(([uid,stream])=>{
+                const p=participants[uid];
+                return(
+                  <div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}>
+                    <video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                    <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.6)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600,color:'#fff'}}>{p?.name||'User'}</div>
+                  </div>
+                );
+              })}
+              {/* Participants without video */}
+              {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(
+                <div key={p.uid} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
+                  <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.7)'}}>{p.avatar||p.name?.[0]||'?'}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div>
+                  <div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div>
+                </div>
+              ))}
+            </div>
+            {/* Media error */}
+            {mediaError&&<div style={{padding:'8px 16px',background:'rgba(232,93,63,0.1)',borderTop:'1px solid rgba(232,93,63,0.2)',fontSize:12,color:'rgba(232,93,63,0.8)'}}>{mediaError}</div>}
+            {/* Controls */}
+            <div style={{height:52,background:'rgba(6,4,18,0.95)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexShrink:0}}>
+              <button onClick={toggleAudio} style={{width:40,height:40,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}} title={audioOn?'Mute':'Unmute'}>{audioOn?'🎙️':'🔇'}</button>
+              <button onClick={toggleVideo} style={{width:40,height:40,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}} title={videoOn?'Camera off':'Camera on'}>{videoOn?'📹':'📷'}</button>
+              <button onClick={()=>doLeave()} style={{padding:'8px 22px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:12,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
+            </div>
+          </div>
+
+          {/* Chat sidebar */}
+          {showChat&&(
+            <div style={{width:300,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(6,4,18,0.98)',flexShrink:0}}>
+              {/* Participants */}
+              <div style={{padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.25)',marginBottom:8}}>In this room</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                  {partList.map(p=>(
+                    <div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'4px 8px'}}>
+                      <div style={{width:18,height:18,borderRadius:'50%',background:SB+'40',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB}}>{p.avatar||p.name?.[0]||'?'}</div>
+                      <span style={{fontSize:11,color:'rgba(255,255,255,0.7)'}}>{p.name}{p.uid===user?.uid?' (you)':''}</span>
+                      {p.uid===activeRoom.host&&<span style={{fontSize:9,color:SB}}>host</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Messages */}
+              <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+                {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet. Say hello! 👋</div>}
+                {messages.map(m=>(
+                  <div key={m.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                    <div style={{width:26,height:26,borderRadius:'50%',background:SB+'30',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.5)',marginBottom:2}}>{m.userId===user?.uid?'You':m.userName}</div>
+                      <div style={{fontSize:13,color:'rgba(247,246,242,0.85)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={msgEndRef}/>
+              </div>
+              {/* Input */}
+              <div style={{padding:10,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8}}>
+                <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…"
+                  style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}} />
+                <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:36,cursor:'pointer',fontSize:16,color:'#1A1814',fontWeight:800}}>↑</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── LOBBY VIEW ──
+  return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#060412',minHeight:'100vh',color:'#F7F6F2'}}>
+      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
+      {/* Nav */}
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
+        <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
+        <div style={{display:'flex',alignItems:'center',gap:9}}>
+          <div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div>
+          <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span>
+        </div>
+        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          {user
+            ? <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.7)'}}>{user.name}</div>
+            : <button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>
+          }
+        </div>
+      </nav>
+
+      <div style={{maxWidth:1000,margin:'0 auto',padding:'40px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
+        {/* Hero */}
+        <div style={{textAlign:'center',marginBottom:48}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:20}}>❋ Virtual Study Rooms</div>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(32px,5vw,52px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:14,letterSpacing:-1}}>Find your study crew</h1>
+          <p style={{fontSize:16,color:'rgba(247,246,242,0.4)',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like meeting at the library, but from anywhere.</p>
+          <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+            <button onClick={()=>{ if(!user){openAuth('login');return;} setShowCreate(true); }} style={{background:SB,border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Study Room</button>
+            <button onClick={()=>setShowJoin(true)} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'12px 22px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
+          </div>
+        </div>
+
+        {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
+
+        {/* Search */}
+        <div style={{position:'relative',marginBottom:28}}>
+          <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.35,pointerEvents:'none'}}>🔍</span>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…"
+            style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}} />
+        </div>
+
+        {/* Rooms */}
+        {filteredRooms.length===0
+          ? <div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}>
+              <div style={{fontSize:48,marginBottom:16}}>📚</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div>
+              <p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room for that subject.':'Be the first — create a room and others studying the same thing will find you.'}</p>
+            </div>
+          : <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
+              {filteredRooms.map(r=>{
+                const count=Object.keys(r.participants||{}).length;
+                return(
+                  <div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}20`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',cursor:'pointer',transition:'all 0.2s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,165,208,0.06)';e.currentTarget.style.borderColor=SB+'50';}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.03)';e.currentTarget.style.borderColor=SB+'20';}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                      <div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}>
+                        <span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/>
+                        <span style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>{count} studying</span>
+                      </div>
+                    </div>
+                    <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div>
+                    <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:14}}>Hosted by {r.hostName||'Anonymous'}</div>
+                    <button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814',opacity:joining?0.6:1}}>
+                      {joining?'Joining…':'Join Room →'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+        }
+      </div>
+
+      {/* Create room modal */}
+      {showCreate&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
+          <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:28,marginBottom:14}}>❋</div>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>
+            <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24,lineHeight:1.6}}>Give your room a name and subject so others can find you.</p>
+            <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep"
+              style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}} />
+            <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Subject e.g. Biology, Calculus, Spanish"
+              style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}} />
+            <div style={{display:'flex',gap:8,marginBottom:24}}>
+              {[true,false].map(pub=>(
+                <button key={pub?'pub':'priv'} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))}
+                  style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>
+                  {pub?'🌐 Public':'🔒 Private'}
+                </button>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+              <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>Create Room →</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Private code display */}
+      {privateCode&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setPrivateCode('')}>
+          <div style={{background:'rgba(10,8,24,0.99)',border:`1px solid ${SB}40`,borderRadius:18,padding:'36px',width:380,textAlign:'center',animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:32,marginBottom:12}}>🔒</div>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#F7F6F2',marginBottom:8}}>Your private room code</h3>
+            <p style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20}}>Share this code with people you want to study with.</p>
+            <div style={{background:`${SB}15`,border:`2px solid ${SB}`,borderRadius:12,padding:'18px',fontSize:32,fontWeight:900,letterSpacing:8,color:SB,marginBottom:20,fontFamily:'monospace'}}>{privateCode}</div>
+            <button onClick={()=>setPrivateCode('')} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Got it, go to room</button>
+          </div>
+        </div>
+      )}
+
+      {/* Join private modal */}
+      {showJoin&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
+          <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:28,marginBottom:14}}>🔒</div>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>
+            <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>
+            {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}
+            <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6}
+              style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}} />
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+              <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AceItGalaxy() {
   return <AppErrorBoundary><AceItGalaxyInner /></AppErrorBoundary>;
 }
@@ -11353,8 +11814,9 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floating(true)}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floating(true)}</>;
-  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
-  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'studybuddy') return <StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} />;
   if (currentApp) {
     const planet = PLANETS.find(p => p.appId === currentApp);
     if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>;
