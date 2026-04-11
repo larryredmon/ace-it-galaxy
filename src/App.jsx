@@ -4776,16 +4776,161 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const [studyCardIdx,  setStudyCardIdx]  = useState(0);
   const [studyFlipped,  setStudyFlipped]  = useState(false);
   const [showNodeMenu,  setShowNodeMenu]  = useState(false);
+  const [collapsed,     setCollapsed]     = useState(new Set());
+  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchOpen,    setSearchOpen]    = useState(false);
+  const svgRef = useRef(null);
 
-  // Undo history
+  // Undo / Redo history
   const historyRef = useRef([]);
-  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
+  const redoRef    = useRef([]);
+  const pushHistory = (prevNodes) => {
+    historyRef.current = [...historyRef.current.slice(-29), prevNodes];
+    redoRef.current = []; // clear redo on new action
+  };
   const handleUndo = () => {
     if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
+    redoRef.current = [...redoRef.current, nodes];
     historyRef.current = historyRef.current.slice(0, -1);
     setNodes(prev);
     setSelectedId(null);
+  };
+  const handleRedo = () => {
+    if (redoRef.current.length === 0) return;
+    const next = redoRef.current[redoRef.current.length - 1];
+    historyRef.current = [...historyRef.current, nodes];
+    redoRef.current = redoRef.current.slice(0, -1);
+    setNodes(next);
+    setSelectedId(null);
+  };
+
+  // Export map as PNG
+  const exportPNG = () => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    // Calculate bounding box of all nodes
+    const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+    const minX = Math.min(...xs) - 120, maxX = Math.max(...xs) + 120;
+    const minY = Math.min(...ys) - 80,  maxY = Math.max(...ys) + 80;
+    const W2 = maxX - minX, H2 = maxY - minY;
+    const scale2 = Math.min(1200 / W2, 900 / H2, 1.5);
+    const imgW = Math.ceil(W2 * scale2), imgH = Math.ceil(H2 * scale2);
+    // Build a standalone SVG string
+    const svgNS = "http://www.w3.org/2000/svg";
+    const clone = document.createElementNS(svgNS, "svg");
+    clone.setAttribute("xmlns", svgNS);
+    clone.setAttribute("width", imgW);
+    clone.setAttribute("height", imgH);
+    clone.setAttribute("viewBox", `${minX} ${minY} ${W2} ${H2}`);
+    clone.style.background = "#0C0B18";
+    // Add background rect
+    const bg = document.createElementNS(svgNS, "rect");
+    bg.setAttribute("x", minX); bg.setAttribute("y", minY);
+    bg.setAttribute("width", W2); bg.setAttribute("height", H2);
+    bg.setAttribute("fill", "#0C0B18");
+    clone.appendChild(bg);
+    // Draw connections
+    nodes.filter(n => n.parentId).forEach(n => {
+      if (collapsed.has(n.parentId)) return;
+      const parent = nodes.find(p => p.id === n.parentId);
+      if (!parent) return;
+      const path = document.createElementNS(svgNS, "path");
+      const mx = (parent.x + n.x) / 2;
+      path.setAttribute("d", `M ${parent.x} ${parent.y} C ${mx} ${parent.y}, ${mx} ${n.y}, ${n.x} ${n.y}`);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", n.color);
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("stroke-opacity", "0.55");
+      clone.appendChild(path);
+    });
+    // Draw nodes
+    nodes.forEach(n => {
+      if (isHidden(n.id)) return;
+      const isRoot = n.id === "root";
+      const chars = n.label.replace("\n","").length;
+      const w = isRoot ? 140 : Math.min(Math.max(chars * 7.5 + 28, 108), 200);
+      const h = isRoot ? 84 : n.label.includes("\n") ? 52 : 40;
+      const g = document.createElementNS(svgNS, "g");
+      g.setAttribute("transform", `translate(${n.x - w/2}, ${n.y - h/2})`);
+      if (isRoot) {
+        const el = document.createElementNS(svgNS, "ellipse");
+        el.setAttribute("cx", w/2); el.setAttribute("cy", h/2);
+        el.setAttribute("rx", w/2); el.setAttribute("ry", h/2);
+        el.setAttribute("fill", n.color);
+        g.appendChild(el);
+      } else {
+        const rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("x", 0); rect.setAttribute("y", 0);
+        rect.setAttribute("width", w); rect.setAttribute("height", h);
+        rect.setAttribute("rx", 10); rect.setAttribute("fill", n.color);
+        g.appendChild(rect);
+      }
+      n.label.split("\n").forEach((line, li) => {
+        const txt = document.createElementNS(svgNS, "text");
+        txt.setAttribute("x", w/2);
+        txt.setAttribute("y", h/2 - (n.label.split("\n").length - 1) * 6.5 + li * 13);
+        txt.setAttribute("text-anchor", "middle");
+        txt.setAttribute("dominant-baseline", "middle");
+        txt.setAttribute("fill", "rgba(255,255,255,0.96)");
+        txt.setAttribute("font-size", isRoot ? "12" : "10.5");
+        txt.setAttribute("font-weight", "800");
+        txt.setAttribute("font-family", "sans-serif");
+        txt.textContent = line;
+        g.appendChild(txt);
+      });
+      clone.appendChild(g);
+    });
+    const svgStr = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([svgStr], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = imgW; canvas.height = imgH;
+      const ctx2 = canvas.getContext("2d");
+      ctx2.fillStyle = "#0C0B18";
+      ctx2.fillRect(0, 0, imgW, imgH);
+      ctx2.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `${mapTitle.replace(/\s+/g,"-")}.png`;
+      a.click();
+    };
+    img.src = url;
+  };
+
+  // Collapse/expand helpers
+  const toggleCollapse = (id) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const isHidden = (nodeId) => {
+    if (nodeId === "root") return false;
+    let n = nodes.find(x => x.id === nodeId);
+    while (n?.parentId) {
+      if (collapsed.has(n.parentId)) return true;
+      n = nodes.find(x => x.id === n.parentId);
+    }
+    return false;
+  };
+  const hasChildren = (nodeId) => nodes.some(n => n.parentId === nodeId);
+
+  // Search helpers
+  const matchingIds = searchQuery.trim()
+    ? new Set(nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase())).map(n => n.id))
+    : null;
+  const jumpToNode = (nodeId) => {
+    const n = nodes.find(x => x.id === nodeId);
+    if (!n) return;
+    const W2 = typeof window !== "undefined" ? window.innerWidth  : 1440;
+    const H2 = typeof window !== "undefined" ? window.innerHeight - 56 : 800;
+    setPan({ x: W2/2 - n.x * zoom, y: H2/2 - n.y * zoom });
+    setSelectedId(nodeId);
   };
 
   // Wrapped setNodes that auto-pushes undo history for meaningful operations
@@ -4819,7 +4964,10 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       }
     };
     const onUp = () => { dragRef.current = null; };
-    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") { e.preventDefault(); handleRedo(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); }
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
@@ -4930,34 +5078,83 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   return (
     <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
       {/* Title bar strip */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 8, padding: "0 12px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}
           onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
+        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
         {editTitle ? (
-          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
+          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)}
+            onBlur={() => setEditTitle(false)}
+            onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 160, maxWidth: 260 }} />
         ) : (
-          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
+          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6, maxWidth: 240 }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mapTitle}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>✎</span>
           </div>
         )}
-        {/* Zoom + Undo */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
-            title="Undo (Ctrl+Z)"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
-            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
+
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
+          {/* Search */}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setSearchOpen(o => !o)}
+              style={{ background: searchOpen ? "rgba(240,168,192,0.12)" : "rgba(255,255,255,0.06)", border: `1px solid ${searchOpen ? "rgba(240,168,192,0.4)" : "rgba(255,255,255,0.09)"}`, borderRadius: 5, padding: "0 10px", height: 26, cursor: "pointer", color: searchOpen ? "#F0A8C0" : "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              🔍 Search
+            </button>
+            {searchOpen && (
+              <div style={{ position: "absolute", top: 32, right: 0, background: "rgba(12,11,24,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px", width: 240, zIndex: 200, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => e.stopPropagation()}
+                  placeholder="Search nodes…"
+                  style={{ width: "100%", padding: "7px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, fontSize: 12, color: "#F7F6F2", outline: "none", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }} />
+                {searchQuery.trim() && (
+                  <div style={{ maxHeight: 180, overflowY: "auto" }}>
+                    {nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase())).length === 0
+                      ? <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", padding: "4px 2px" }}>No matches</div>
+                      : nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase())).map(n => (
+                          <div key={n.id} onClick={() => { jumpToNode(n.id); setSearchOpen(false); setSearchQuery(""); }}
+                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, cursor: "pointer", marginBottom: 2 }}
+                            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: n.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>{n.label.replace("\n"," ")}</span>
+                          </div>
+                        ))
+                    }
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+
+          {/* Undo / Redo */}
+          <button onClick={handleUndo} disabled={historyRef.current.length === 0} title="Undo (Ctrl+Z)"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 9px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
             ↩ Undo
           </button>
+          <button onClick={handleRedo} disabled={redoRef.current.length === 0} title="Redo (Ctrl+Shift+Z)"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 9px", height: 26, cursor: redoRef.current.length === 0 ? "default" : "pointer", color: redoRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+            ↪ Redo
+          </button>
+
           <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+
+          {/* Zoom */}
           <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
           <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
+          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
+
+          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+
+          {/* Export */}
+          <button onClick={exportPNG} title="Export as PNG"
+            style={{ background: "rgba(240,168,192,0.1)", border: "1px solid rgba(240,168,192,0.25)", borderRadius: 5, padding: "0 10px", height: 26, cursor: "pointer", color: "#F0A8C0", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            ↓ Export PNG
+          </button>
         </div>
       </div>
 
@@ -4976,12 +5173,12 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
         </svg>
 
         {/* Connection + Node SVG layer */}
-        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
-          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
+        <svg ref={svgRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
+          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); setSearchOpen(false); }}>
           <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
 
             {/* Connections */}
-            {nodes.filter(n => n.parentId).map(n => {
+            {nodes.filter(n => n.parentId && !isHidden(n.id)).map(n => {
               const parent = getNodeById(n.parentId);
               if (!parent) return null;
               const isSelected = n.id === selectedId || n.parentId === selectedId;
@@ -4993,19 +5190,26 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
             })}
 
             {/* Nodes */}
-            {nodes.map(n => {
+            {nodes.filter(n => !isHidden(n.id)).map(n => {
               const { w, h, isRoot } = nodeRect(n);
               const isSel  = n.id === selectedId;
               const lines  = n.label.split("\n");
               const hasCards = n.deckIds.length > 0;
               const deckCount = FC_DECKS.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0);
+              const isCollapsed = collapsed.has(n.id);
+              const nodeHasChildren = hasChildren(n.id);
+              const isMatch = matchingIds && matchingIds.has(n.id);
+              const isDimmed = matchingIds && !matchingIds.has(n.id);
 
               return (
                 <g key={n.id} transform={`translate(${n.x - w/2}, ${n.y - h/2})`}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", opacity: isDimmed ? 0.25 : 1, transition: "opacity 0.2s" }}
                   onMouseDown={e => { onNodeDown(e, n); }}
                   onClick={e => { e.stopPropagation(); setSelectedId(n.id); setShowDeckPicker(false); setShowNodeMenu(false); }}
                   onDoubleClick={e => { e.stopPropagation(); startEditing(n.id, n.label); }}>
+
+                  {/* Search match glow */}
+                  {isMatch && <rect x={-6} y={-6} width={w+12} height={h+12} rx={isRoot ? w/2+6 : 16} fill="none" stroke="#F5C842" strokeWidth={2/zoom} opacity={0.8} />}
 
                   {/* Selection glow */}
                   {isSel && <rect x={-4} y={-4} width={w+8} height={h+8} rx={isRoot ? w/2+4 : 14} fill="none" stroke={n.color} strokeWidth={2.5 / zoom} opacity={0.4} />}
@@ -5048,8 +5252,17 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
                     </g>
                   )}
 
+                  {/* Collapse/Expand button — shown when node has children */}
+                  {nodeHasChildren && !editingId && (
+                    <g transform={`translate(${w/2 - 8}, ${h + 4})`}
+                      onClick={e => { e.stopPropagation(); toggleCollapse(n.id); }} style={{ cursor: "pointer" }}>
+                      <rect x={0} y={0} width={16} height={12} rx={4} fill={isCollapsed ? n.color : "rgba(255,255,255,0.12)"} opacity={0.85} />
+                      <text x={8} y={6} textAnchor="middle" dominantBaseline="middle" fontSize={8} fill="#fff" fontWeight={900} style={{ pointerEvents: "none" }}>{isCollapsed ? "+" : "−"}</text>
+                    </g>
+                  )}
+
                   {/* Add child button */}
-                  {isSel && !editingId && (
+                  {isSel && !editingId && !isCollapsed && (
                     <g transform={`translate(${w + 8}, ${h/2 - 11})`} onClick={e => { e.stopPropagation(); addChild(n.id); }} style={{ cursor: "pointer" }}>
                       <circle cx={11} cy={11} r={11} fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5 / zoom} />
                       <text x={11} y={11} textAnchor="middle" dominantBaseline="middle" fontSize={15} fill="#fff" fontWeight={700} style={{ pointerEvents: "none" }}>+</text>
@@ -5242,6 +5455,9 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [sidebarOpen, setSidebarOpen]= useState(false);
   const [showNewMap,  setShowNewMap] = useState(false);
   const [newTitle,    setNewTitle]   = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // mapId to delete
+  const [renamingId,  setRenamingId] = useState(null);
+  const [renameValue, setRenameValue]= useState("");
 
   const bmMounted = useRef(false);
   useEffect(() => {
@@ -5255,7 +5471,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
     if (!newTitle.trim()) return;
     const color = BM_PALETTE[maps.length % BM_PALETTE.length];
     const map = {
-      id: `map${Date.now()}`, title: newTitle, color, createdAt: new Date(),
+      id: `map${Date.now()}`, title: newTitle, color, createdAt: new Date(), updatedAt: new Date(),
       nodes: [{ id: "root", label: newTitle.split(" ").slice(0, 3).join("\n"), x: 0, y: 0, color, parentId: null, deckIds: [], note: "" }],
     };
     setMaps(ms => [...ms, map]);
@@ -5264,14 +5480,40 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
     setView("canvas");
     if (onMapCreated) onMapCreated(newTitle);
   };
+
+  const deleteMap = (id) => {
+    setMaps(ms => ms.filter(m => m.id !== id));
+    if (activeMap?.id === id) { setActiveMap(null); setView("maps"); }
+    setDeleteConfirm(null);
+  };
+
+  const startRename = (map) => { setRenamingId(map.id); setRenameValue(map.title); };
+  const commitRename = (id) => {
+    if (!renameValue.trim()) { setRenamingId(null); return; }
+    setMaps(ms => ms.map(m => m.id === id ? { ...m, title: renameValue.trim(), updatedAt: new Date() } : m));
+    if (activeMap?.id === id) setActiveMap(am => ({ ...am, title: renameValue.trim() }));
+    setRenamingId(null);
+  };
+
   const onNodesChange = (nodes, mapTitle) => {
-    setMaps(ms => ms.map(m => m.id === activeMap?.id ? { ...m, nodes, title: mapTitle } : m));
+    setMaps(ms => ms.map(m => m.id === activeMap?.id ? { ...m, nodes, title: mapTitle, updatedAt: new Date() } : m));
     setActiveMap(am => am ? { ...am, nodes, title: mapTitle } : am);
   };
 
   const updateMap = (id, changes) => {
     setMaps(ms => ms.map(m => m.id === id ? { ...m, ...changes } : m));
     setActiveMap(am => am?.id === id ? { ...am, ...changes } : am);
+  };
+
+  const formatDate = (d) => {
+    if (!d) return "";
+    const date = new Date(d);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60)   return "just now";
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400)return `${Math.floor(diff/3600)}h ago`;
+    return date.toLocaleDateString();
   };
 
   if (view === "canvas" && activeMap) {
@@ -5312,8 +5554,8 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 268, zIndex: 151, background: "linear-gradient(160deg, rgba(12,10,28,0.99) 0%, rgba(6,4,18,0.99) 100%)", borderRight: "1px solid rgba(255,255,255,0.06)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Teacher's Pet Brain Map</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Teacher's Pet</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It</div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
@@ -5382,7 +5624,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: "#F0A8C0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✺</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</span>
             </div>
           </div>
           <div className="bm-nav-tabs" style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
@@ -5416,7 +5658,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               ✺ Visual Mind Mapping
             </div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, color: "#F7F6F2", lineHeight: 1.08, marginBottom: 20, letterSpacing: -1.5 }}>
-              <span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</h1>
+              <span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</h1>
             <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 40px" }}>
               Build beautiful mind maps and attach flash card decks directly to topics — so studying and understanding happen in the same place.
             </p>
@@ -5460,7 +5702,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                 <div key={m.id} className="bm-card" onClick={() => openMap(m)}
                   style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>
+                    {m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards
+                    {m.updatedAt && <span> · {formatDate(m.updatedAt)}</span>}
+                  </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {m.nodes.filter(n => n.parentId === "root").slice(0, 5).map(n => (
                       <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
@@ -5515,11 +5760,33 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {maps.map(m => (
               <div key={m.id} className="bm-card"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
+                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "20px 20px 14px", cursor: "pointer" }}>
+                {/* Title row with rename */}
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
+                  {renamingId === m.id ? (
+                    <input autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onBlur={() => commitRename(m.id)}
+                      onKeyDown={e => { if (e.key === "Enter") commitRename(m.id); if (e.key === "Escape") setRenamingId(null); e.stopPropagation(); }}
+                      onClick={e => e.stopPropagation()}
+                      style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(240,168,192,0.5)", borderRadius: 6, padding: "4px 8px", fontSize: 15, fontWeight: 800, color: "#F7F6F2", outline: "none", fontFamily: "'Playfair Display', serif" }} />
+                  ) : (
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#F7F6F2", flex: 1 }} onClick={() => openMap(m)}>{m.title}</div>
+                  )}
+                  <div style={{ display: "flex", gap: 4, marginLeft: 8, flexShrink: 0 }}>
+                    <button onClick={e => { e.stopPropagation(); startRename(m); }}
+                      title="Rename"
+                      style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 5, width: 24, height: 24, cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
+                    <button onClick={e => { e.stopPropagation(); setDeleteConfirm(m.id); }}
+                      title="Delete"
+                      style={{ background: "none", border: "1px solid rgba(232,93,63,0.2)", borderRadius: 5, width: 24, height: 24, cursor: "pointer", color: "rgba(232,93,63,0.5)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>🗑</button>
+                  </div>
+                </div>
                 <div onClick={() => openMap(m)}>
-                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 10 }}>
+                    {m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards
+                    {m.updatedAt && <span> · edited {formatDate(m.updatedAt)}</span>}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
                     {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
                       <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
                     ))}
@@ -5549,6 +5816,23 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Create New Map</div>
             </div>
           </div>
+
+          {/* Delete confirmation modal */}
+          {deleteConfirm && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} onClick={() => setDeleteConfirm(null)}>
+              <div style={{ background: "rgba(14,12,28,0.99)", border: "1px solid rgba(232,93,63,0.3)", borderRadius: 16, padding: "32px 32px 28px", width: 360, textAlign: "center" }} onClick={e => e.stopPropagation()}>
+                <div style={{ fontSize: 36, marginBottom: 14 }}>🗑</div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 800, color: "#F7F6F2", marginBottom: 8 }}>Delete this map?</h3>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 24, lineHeight: 1.6 }}>
+                  "{maps.find(m => m.id === deleteConfirm)?.title}" and all its nodes will be permanently deleted. This can't be undone.
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>Cancel</button>
+                  <button onClick={() => deleteMap(deleteConfirm)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: "#E85D3F", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#fff" }}>Delete Map</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -7580,12 +7864,6 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [showConf, setShowConf] = useState(false);
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
   const [resetSent, setResetSent] = useState(false);
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
@@ -7675,9 +7953,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: isMobile ? "94vw" : "90vw", maxWidth: isMobile ? 440 : 860, maxHeight: "92vh", display: "flex", borderRadius: isMobile ? 16 : 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
-        {!isMobile && <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
+        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div>
@@ -7702,10 +7980,10 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
             </div>
           </div>
           <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Teacher's Pet</div>
-        </div>}
+        </div>
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: isMobile ? "24px 20px" : "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "92vh" }}>
+        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
@@ -10906,268 +11184,6 @@ class AppErrorBoundary extends Component {
   }
 }
 
-function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
-  const canvasRef  = useRef(null);
-  const labelsRef  = useRef(null);
-  const animRef    = useRef(null);
-  const stateRef   = useRef({
-    hov: null, T: 0, last: 0, searchQ: '', speedMult: 1,
-    planets: PLANETS.map((p, i) => ({ ...p, angle: (i / PLANETS.length) * Math.PI * 2 - Math.PI / 2 })),
-  });
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [searchQ,     setSearchQ]     = useState('');
-  const [speedMult,   setSpeedMult]   = useState(1);
-  const [isMobile,    setIsMobile]    = useState(() => typeof window !== 'undefined' && window.innerWidth < 520);
-
-  useEffect(() => { stateRef.current.searchQ   = searchQ;   }, [searchQ]);
-  useEffect(() => { stateRef.current.speedMult = speedMult; }, [speedMult]);
-
-  useEffect(() => {
-    const canvas    = canvasRef.current;
-    const labelWrap = labelsRef.current;
-    if (!canvas || !labelWrap) return;
-    const ctx   = canvas.getContext('2d');
-    const state = stateRef.current;
-
-    const labelEls = {};
-    state.planets.forEach(p => {
-      const el = document.createElement('div');
-      el.style.cssText = 'position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';
-      el.textContent = p.name;
-      labelWrap.appendChild(el);
-      labelEls[p.appId] = el;
-    });
-
-    function resize() {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      setIsMobile(canvas.width < 520);
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    const CX     = () => canvas.width  / 2;
-    const CY     = () => canvas.height * 0.48;
-    const RX     = () => canvas.width  * 0.40;
-    const RY     = () => canvas.height * 0.21;
-    const BASE_R = 26;
-    const SPD    = 0.0014;
-    function smooth(x) { return x * x * (3 - 2 * x); }
-
-    function getPos(p) {
-      const sinA  = Math.sin(p.angle);
-      const depth = smooth((sinA + 1) * 0.5);
-      const scale = 0.85 + depth * 0.30;
-      return { x: CX() + RX() * Math.cos(p.angle), y: CY() + RY() * sinA, scale, depth, sinA, r: BASE_R * scale };
-    }
-
-    function drawCenter() {
-      const x = CX(), y = CY(), T = state.T;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      for (let i = 0; i < 3; i++) {
-        const pr = 52 + i * 24 + 4 * Math.sin(T * 1.1 + i * 1.2);
-        ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(245,200,66,${0.07 - i * 0.018})`; ctx.lineWidth = 0.9; ctx.stroke();
-      }
-      ctx.beginPath();
-      ctx.moveTo(x - 90, y); ctx.lineTo(x - 58, y);
-      ctx.moveTo(x + 58, y); ctx.lineTo(x + 90, y);
-      ctx.strokeStyle = 'rgba(245,200,66,0.18)'; ctx.lineWidth = 1; ctx.stroke();
-      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
-        const bx = x + sx*60, by = y + sy*28;
-        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+sx*12,by); ctx.lineTo(bx+sx*12,by+sy*7);
-        ctx.strokeStyle = 'rgba(245,200,66,0.15)'; ctx.lineWidth = 1; ctx.stroke();
-      });
-      ctx.font = '14px sans-serif'; ctx.fillStyle = 'rgba(245,200,66,0.3)'; ctx.fillText('✦', x, y - 38);
-      ctx.font = '900 54px sans-serif'; ctx.fillStyle = '#F5C842'; ctx.fillText('ACE IT', x, y + 2);
-      ctx.font = '600 11px sans-serif'; ctx.fillStyle = 'rgba(245,200,66,0.32)'; ctx.fillText('G  A  L  A  X  Y', x, y + 30);
-      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    }
-
-    function drawPlanet(p) {
-      const pos = getPos(p);
-      const isH = state.hov === p;
-      const r   = pos.r * (isH ? 1.12 : 1);
-      const hasSearch = state.searchQ.length > 0;
-      const matches   = hasSearch && p.name.toLowerCase().includes(state.searchQ);
-      const bodyAlpha = hasSearch ? (matches ? 1 : 0.2) : 1;
-      const T = state.T;
-      if (matches && hasSearch) {
-        const pulse = 0.55 + 0.45 * Math.sin(T * 3);
-        ctx.globalAlpha = pulse * 0.65;
-        ctx.beginPath(); ctx.arc(pos.x, pos.y, r + 18, 0, Math.PI * 2);
-        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-      if (isH) {
-        ctx.beginPath(); ctx.arc(pos.x, pos.y, r + 16, 0, Math.PI * 2);
-        ctx.strokeStyle = p.color + '40'; ctx.lineWidth = 1.2; ctx.stroke();
-        for (let i = 0; i < 6; i++) {
-          const ang = i * Math.PI / 3 + T * 0.6;
-          ctx.beginPath();
-          ctx.moveTo(pos.x + Math.cos(ang)*(r+10), pos.y + Math.sin(ang)*(r+10));
-          ctx.lineTo(pos.x + Math.cos(ang)*(r+16), pos.y + Math.sin(ang)*(r+16));
-          ctx.strokeStyle = p.color + '90'; ctx.lineWidth = 1.5; ctx.stroke();
-        }
-      }
-      ctx.globalAlpha = bodyAlpha;
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r+5, 0, Math.PI*2); ctx.fillStyle = p.color+'18'; ctx.fill();
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r,   0, Math.PI*2); ctx.fillStyle = p.color;      ctx.fill();
-      ctx.beginPath(); ctx.arc(pos.x-r*0.25, pos.y-r*0.28, r*0.27, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill();
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r*0.38, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r*0.1,  0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.5)';   ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    function frame(ts) {
-      const dt = state.last ? Math.min((ts - state.last) / 16.67, 2) : 1;
-      state.last = ts; state.T += 0.016 * dt;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#04020C'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const g = ctx.createRadialGradient(CX()*0.5, CY(), 0, CX()*0.5, CY(), canvas.width*0.6);
-      g.addColorStop(0, 'rgba(65,25,140,0.09)'); g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.save(); ctx.translate(CX(), CY());
-      ctx.beginPath(); ctx.ellipse(0, 0, RX(), RY(), 0, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba(180,160,255,0.07)'; ctx.lineWidth = 1;
-      ctx.setLineDash([3, 10]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.restore();
-      state.planets.forEach(p => { if (p !== state.hov) p.angle += SPD * state.speedMult * dt; });
-      const sorted = [...state.planets].sort((a,b) => getPos(a).depth - getPos(b).depth);
-      sorted.filter(p => p !== state.hov && getPos(p).sinA <= 0).forEach(drawPlanet);
-      drawCenter();
-      sorted.filter(p => p !== state.hov && getPos(p).sinA > 0).forEach(drawPlanet);
-      if (state.hov) drawPlanet(state.hov);
-      state.planets.forEach(p => {
-        const el = labelEls[p.appId]; if (!el) return;
-        const pos = getPos(p);
-        el.style.transform = `translate(calc(${pos.x}px - 50%), ${pos.y + pos.r + 7}px)`;
-        el.style.opacity   = '1';
-        el.style.color     = state.hov === p ? p.color : 'rgba(247,246,242,0.92)';
-        el.style.zIndex    = state.hov === p ? '10' : '1';
-      });
-      animRef.current = requestAnimationFrame(frame);
-    }
-    animRef.current = requestAnimationFrame(frame);
-
-    function onMouseMove(e) {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-      let found = null;
-      for (const p of state.planets) {
-        const pos = getPos(p);
-        if (Math.hypot(mx - pos.x, my - pos.y) < pos.r + 10) { found = p; break; }
-      }
-      state.hov = found;
-      canvas.style.cursor = found ? 'pointer' : 'default';
-    }
-    function onMouseLeave() { state.hov = null; canvas.style.cursor = 'default'; }
-    function onClick()      { if (state.hov) setSelectedApp({ ...state.hov }); }
-    canvas.addEventListener('mousemove',  onMouseMove);
-    canvas.addEventListener('mouseleave', onMouseLeave);
-    canvas.addEventListener('click',      onClick);
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove',  onMouseMove);
-      canvas.removeEventListener('mouseleave', onMouseLeave);
-      canvas.removeEventListener('click',      onClick);
-      Object.values(labelEls).forEach(el => el.remove());
-    };
-  }, []);
-
-  const navBtn = { borderRadius: 7, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" };
-
-  return (
-    <div style={{ position:'fixed', inset:0, background:'#04020C', overflow:'hidden', fontFamily:"'DM Sans',sans-serif" }}>
-      {!isMobile && <canvas ref={canvasRef} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} />}
-      {!isMobile && <div ref={labelsRef}    style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:2 }} />}
-
-      {isMobile && (
-        <div style={{ position:'absolute', top:58, left:0, right:0, bottom:0, overflowY:'auto', padding:'10px 12px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, alignContent:'start' }}>
-          {PLANETS.map(app => (
-            <div key={app.appId} onClick={() => setSelectedApp({...app})}
-              style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${app.color}28`, borderRadius:13, padding:'14px 12px', cursor:'pointer' }}>
-              <div style={{ fontSize:22, marginBottom:7 }}>{app.symbol}</div>
-              <div style={{ fontSize:11, fontWeight:700, color:app.color, marginBottom:3 }}>{app.name}</div>
-              <div style={{ fontSize:9.5, color:'rgba(247,246,242,0.32)', lineHeight:1.4 }}>{app.desc}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <nav style={{ position:'absolute', top:0, left:0, right:0, height:56, display:'flex', alignItems:'center', padding:'0 14px', zIndex:20, background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)' }}>
-        <button onClick={() => setSidebarOpen(true)}
-          style={{ background:'none', border:'1.5px solid rgba(255,255,255,0.3)', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4.5, flexShrink:0 }}>
-          <div style={{ width:14, height:1.5, background:'#fff', borderRadius:2 }} />
-          <div style={{ width:10, height:1.5, background:'#fff', borderRadius:2, alignSelf:'flex-start', marginLeft:2 }} />
-          <div style={{ width:14, height:1.5, background:'#fff', borderRadius:2 }} />
-        </button>
-        <div style={{ position:'absolute', left:'50%', transform:'translateX(-50%)', width:220 }}>
-          <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', fontSize:10, color:'rgba(255,255,255,0.45)', pointerEvents:'none' }}>🔍</span>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} onKeyDown={e => e.stopPropagation()}
-            placeholder="Search apps…"
-            style={{ width:'100%', padding:'7px 12px 7px 30px', background:'rgba(255,255,255,0.07)', border:'1.5px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:11, color:'#fff', outline:'none', fontFamily:"'DM Sans',sans-serif" }} />
-        </div>
-        <div style={{ marginLeft:'auto', display:'flex', gap:8, alignItems:'center', background:'rgba(4,2,12,0.75)', padding:'5px 5px 5px 8px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)' }}>
-          {user ? (
-            <>
-              {syncStatus !== 'idle' && (
-                <span style={{ fontSize:11, fontWeight:600, color: syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)' }}>
-                  {syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}
-                </span>
-              )}
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:12, fontWeight:700, color:'#fff' }}>{user.name}</div>
-                <div style={{ fontSize:10, color:'rgba(245,200,66,0.6)', letterSpacing:0.5, fontWeight:600 }}>Free Plan</div>
-              </div>
-              <div onClick={() => setSidebarOpen(true)} style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#9B7FFF,#F5D96A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'#1A1814', cursor:'pointer' }}>
-                {user.avatar}
-              </div>
-            </>
-          ) : (
-            <>
-              <button onClick={() => openAuth('login')}  style={{ ...navBtn, fontWeight:700, background:'rgba(255,255,255,0.12)', border:'1.5px solid rgba(255,255,255,0.5)', color:'#ffffff' }}>Log In</button>
-              <button onClick={() => openAuth('signup')} style={{ ...navBtn, fontWeight:800, background:'#D4920A', border:'1.5px solid #F5C842', color:'#ffffff', boxShadow:'0 0 16px rgba(245,200,66,0.4)' }}>🍎 Get Started Free</button>
-            </>
-          )}
-        </div>
-      </nav>
-
-      <div style={{ position:'absolute', bottom:20, left:0, right:0, textAlign:'center', pointerEvents:'none', zIndex:5 }}>
-        <p style={{ fontSize:9, color:'rgba(255,255,255,0.18)', letterSpacing:2.8, textTransform:'uppercase', fontWeight:600 }}>The future of learning is yours</p>
-      </div>
-
-      {!isMobile && (
-        <div style={{ position:'absolute', bottom:20, right:16, zIndex:20, display:'flex', alignItems:'center', gap:7 }}>
-          <label style={{ fontSize:8.5, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.25)' }}>Speed</label>
-          <input type="range" min="0.2" max="3" step="0.1" value={speedMult}
-            onChange={e => { const v=parseFloat(e.target.value); setSpeedMult(v); stateRef.current.speedMult=v; }}
-            style={{ width:65, accentColor:'#F5C842', cursor:'pointer' }} />
-          <span style={{ fontSize:9, fontWeight:700, color:'rgba(245,200,66,0.6)', minWidth:24 }}>{speedMult.toFixed(1)}×</span>
-        </div>
-      )}
-
-      {selectedApp && (
-        <div onClick={e => { if(e.target===e.currentTarget)setSelectedApp(null); }}
-          style={{ position:'absolute', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(4,2,12,0.78)' }}>
-          <div style={{ position:'relative', background:'rgba(7,4,20,0.99)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:18, padding:'0 28px 26px', width:250, textAlign:'center' }}>
-            <div style={{ height:3, background:selectedApp.color, borderRadius:'17px 17px 0 0', margin:'0 -28px 24px' }} />
-            <button onClick={() => setSelectedApp(null)} style={{ position:'absolute', top:12, right:14, background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:16, cursor:'pointer' }}>✕</button>
-            <div style={{ fontSize:36, marginBottom:12 }}>{selectedApp.symbol}</div>
-            <div style={{ fontSize:17, fontWeight:800, color:selectedApp.color, marginBottom:6 }}>{selectedApp.name}</div>
-            <div style={{ fontSize:12, color:'rgba(247,246,242,0.4)', lineHeight:1.65, marginBottom:20 }}>{selectedApp.desc}</div>
-            <button onClick={() => { launchApp(selectedApp.appId); setSelectedApp(null); }}
-              style={{ width:'100%', padding:12, borderRadius:10, border:'none', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:selectedApp.color, color:'#fff' }}>
-              Launch →
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function AceItGalaxy() {
   return <AppErrorBoundary><AceItGalaxyInner /></AppErrorBoundary>;
 }
@@ -11639,11 +11655,267 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   }
 
   return (
-    <>
-      <GalaxyHomepage user={user} openAuth={openAuth} launchApp={launchApp} setSidebarOpen={setSidebarOpen} syncStatus={syncStatus} />
+    <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes gx-glow { 0%,100%{opacity:0.5} 50%{opacity:0.9} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .gx-card { transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s !important; cursor: pointer; }
+        .gx-card:hover { transform: translateY(-5px) !important; }
+        .gx-stat:hover { border-color: rgba(245,200,66,0.3) !important; background: rgba(245,200,66,0.04) !important; }
+        .gx-stat { transition: all 0.2s; }
+        @media (max-width: 768px) {
+          .gx-nav-search { display: none !important; }
+          .gx-nav { padding: 0 16px !important; }
+          .gx-main { padding: 28px 16px 80px !important; }
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .gx-cats-grid { grid-template-columns: 1fr !important; }
+          .gx-recent { flex-wrap: wrap !important; }
+          .gx-welcome h1 { font-size: 26px !important; }
+          .gx-cta { padding: 32px 24px !important; }
+          .gx-cta-btns { flex-direction: column !important; }
+          .gx-cta-btns button { width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; }
+          .gx-nav-brand span { display: none !important; }
+        }
+      `}</style>
+
+      {/* Background atmosphere */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 80% 60% at 15% 20%, rgba(107,94,228,0.07) 0%, transparent 70%)" }} />
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 60% 50% at 85% 80%, rgba(245,200,66,0.05) 0%, transparent 70%)" }} />
+
+      {/* ── NAV ── */}
+      <nav className="gx-nav" style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(6,4,14,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(245,200,66,0.4)";e.currentTarget.style.background="rgba(245,200,66,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="none";}}>
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+            <div style={{ width:10,height:1.5,background:"rgba(255,255,255,0.3)",borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+          </button>
+          <div style={{ width:1,height:20,background:"rgba(255,255,255,0.08)" }} />
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#F5D96A,#E8A82A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>🍎</div>
+            <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:800, color:"#F7F6F2", letterSpacing:0.3 }}>Teacher's Pet</span>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="gx-nav-search" style={{ position:"relative", width:260 }}>
+          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"rgba(255,255,255,0.25)",pointerEvents:"none" }}>🔍</span>
+          <input placeholder="Search apps…"
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+            style={{ width:"100%",padding:"9px 14px 9px 36px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",fontSize:13,color:"#F7F6F2",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+            onFocus={e=>{e.target.style.borderColor="rgba(245,200,66,0.5)";e.target.style.background="rgba(255,255,255,0.07)";}}
+            onBlur={e=>{e.target.style.borderColor="rgba(255,255,255,0.1)";e.target.style.background="rgba(255,255,255,0.05)";}} />
+        </div>
+
+        {/* Auth */}
+        {user ? (
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            {/* Sync status indicator */}
+            {syncStatus !== "idle" && (
+              <div style={{ display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,transition:"all 0.3s",
+                color:syncStatus==="saved"?"#2BAE7E":syncStatus==="error"?"#E85D3F":"rgba(245,200,66,0.8)" }}>
+                {syncStatus==="saving" && <span style={{ width:8,height:8,borderRadius:"50%",border:"2px solid rgba(245,200,66,0.8)",borderTopColor:"transparent",animation:"qbSpin 0.7s linear infinite",display:"inline-block" }} />}
+                {syncStatus==="saved"  && <span>☁ Saved</span>}
+                {syncStatus==="error"  && <span>⚠ Sync failed</span>}
+                {syncStatus==="saving" && <span>Saving…</span>}
+              </div>
+            )}
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{user.name}</div>
+              <div style={{ fontSize:10,color:"rgba(245,200,66,0.6)",letterSpacing:0.5,fontWeight:600 }}>Free Plan</div>
+            </div>
+            <div onClick={()=>setSidebarOpen(true)} style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#9B7FFF,#F5D96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#1A1814",cursor:"pointer",border:"2px solid rgba(255,255,255,0.12)",boxShadow:"0 0 20px rgba(155,127,255,0.3)" }}>
+              {user.avatar}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:"flex",gap:8 }}>
+            <button onClick={()=>openAuth("login")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>Log In</button>
+            <button onClick={()=>openAuth("signup")} style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:800,cursor:"pointer",color:"#1A1814",boxShadow:"0 4px 16px rgba(245,200,66,0.35)",transition:"all 0.18s" }}>Get Started Free</button>
+          </div>
+        )}
+      </nav>
+
+      {/* ── MAIN ── */}
+      <div className="gx-main" style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
+
+        {/* Welcome */}
+        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both", textAlign:"center" }}>
+          <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(245,200,66,0.08)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:20,padding:"5px 14px",marginBottom:16 }}>
+            <span style={{ width:6,height:6,borderRadius:"50%",background:"#F5C842",animation:"gx-glow 2s infinite",display:"inline-block" }} />
+            <span style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#F5C842" }}>{user ? "Your Dashboard" : "Welcome"}</span>
+          </div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,3.5vw,46px)", fontWeight:900, color:"#F7F6F2", marginBottom:10, letterSpacing:-1, lineHeight:1.1 }}>
+            {user ? `Good to see you, ${user.name?.split(" ")[0]}.` : "The smarter way to study."}
+          </h1>
+          <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,maxWidth:480,fontWeight:300,textAlign:"center",margin:"0 auto" }}>
+            {user ? "Your apps, your notes, your progress — all in one place." : "Sign up free and unlock AI-powered notes, flashcards, brain maps, and more."}
+          </p>
+        </div>
+
+        {/* Stats row */}
+        {user && (
+          <div className="gx-stats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:44,animation:"fadeUp 0.5s 0.06s ease both" }}>
+            {[
+              { icon:"📇", label:"Decks",   value:(() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })(), color:"#C8B8FF" },
+              { icon:"🧠", label:"Maps",    value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })(), color:"#F0A8C0" },
+              { icon:"📝", label:"Notes",   value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_notess")||"[]").length; } catch { return 0; } })(), color:"#F0D080" },
+              { icon:"📖", label:"Journal", value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_journal")||"[]").length; } catch { return 0; } })(), color:"#6ED9B8" },
+            ].map(s => (
+              <div key={s.label} className="gx-stat" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"22px 22px", position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg, transparent, ${s.color}88, transparent)` }} />
+                <div style={{ fontSize:20,marginBottom:12 }}>{s.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:s.color,marginBottom:4,lineHeight:1 }}>{s.value}</div>
+                <div style={{ fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:1.5 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent apps */}
+        {recentApps.length > 0 && (
+          <div style={{ marginBottom:44,animation:"fadeUp 0.5s 0.1s ease both" }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:"rgba(255,255,255,0.3)",marginBottom:14 }}>Continue where you left off</div>
+            <div className="gx-recent" style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+              {recentApps.map(appId => {
+                const p = PLANETS.find(x=>x.appId===appId);
+                if (!p) return null;
+                return (
+                  <button key={appId} onClick={()=>launchApp(appId)}
+                    style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderRadius:12,border:`1px solid ${p.color}30`,background:`rgba(255,255,255,0.03)`,cursor:"pointer",transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif",backdropFilter:"blur(10px)" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=p.color;e.currentTarget.style.background=`${p.color}12`;e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${p.color}22`;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=`${p.color}30`;e.currentTarget.style.background="rgba(255,255,255,0.03)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                    <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${p.color}33,${p.glow}18)`,border:`1px solid ${p.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>{p.symbol}</div>
+                    <span style={{ fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{p.name}</span>
+                    <span style={{ fontSize:11,color:p.color }}>↗</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* App categories */}
+        {[
+          { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","notes","brainmap","simplifier","tracker"] },
+          { label:"AI Assistants",     emoji:"🤖", color:"#4898E8", ids:["assistant","studybuddy"] },
+          { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal","mentalhealth","flow","careercompass"] },
+          { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["academy","studio","universe","earthrecord"] },
+        ].map((cat,ci) => {
+          const catPlanets = PLANETS.filter(p=>cat.ids.includes(p.appId));
+          if (!catPlanets.length) return null;
+          return (
+            <div key={cat.label} style={{ marginBottom:48,animation:`fadeUp 0.5s ${0.12+ci*0.06}s ease both` }}>
+              {/* Category header */}
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
+                <span style={{ fontSize:16 }}>{cat.emoji}</span>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:cat.color }}>{cat.label}</div>
+                <div style={{ flex:1,height:1,background:`linear-gradient(90deg,${cat.color}30,transparent)`,marginLeft:4 }} />
+              </div>
+
+              {/* Cards */}
+              <div className="gx-cats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14 }}>
+                {catPlanets.map(p => (
+                  <div key={p.id} className="gx-card" onClick={()=>launchApp(p.appId)}
+                    style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${p.color}22`, borderRadius:18, padding:"24px 22px 20px", position:"relative", overflow:"hidden", boxShadow:`0 4px 24px rgba(0,0,0,0.2)` }}>
+                    {/* Top glow line */}
+                    <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:"60%",height:1,background:`linear-gradient(90deg,transparent,${p.color}88,transparent)` }} />
+                    {/* Subtle bg glow */}
+                    <div style={{ position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:`radial-gradient(circle,${p.color}0D 0%,transparent 70%)`,pointerEvents:"none" }} />
+
+                    {/* Icon + name */}
+                    <div style={{ display:"flex",alignItems:"flex-start",gap:14,marginBottom:14,position:"relative" }}>
+                      <div style={{ width:46,height:46,borderRadius:13,background:`linear-gradient(135deg,${p.color}22,${p.glow}11)`,border:`1.5px solid ${p.color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,boxShadow:`0 4px 16px ${p.color}22` }}>
+                        {p.symbol}
+                      </div>
+                      <div style={{ flex:1,paddingTop:2 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#F7F6F2",lineHeight:1.2,marginBottom:4 }}>{p.name}</div>
+                        <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:`${p.color}15`,border:`1px solid ${p.color}30`,borderRadius:20,padding:"2px 9px" }}>
+                          <div style={{ width:5,height:5,borderRadius:"50%",background:p.color,animation:"gx-glow 2s infinite" }} />
+                          <span style={{ fontSize:9,fontWeight:700,color:p.color,letterSpacing:1,textTransform:"uppercase" }}>Ready</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p style={{ fontSize:12,color:"rgba(247,246,242,0.4)",lineHeight:1.7,margin:"0 0 16px",position:"relative" }}>{p.desc}</p>
+
+                    {/* Footer */}
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative" }}>
+                      <div style={{ fontSize:11,fontWeight:700,color:p.color,display:"flex",alignItems:"center",gap:5 }}>
+                        Launch <span style={{ fontSize:14 }}>→</span>
+                      </div>
+                      {recentApps.includes(p.appId) && (
+                        <div style={{ fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"2px 8px",letterSpacing:1,textTransform:"uppercase" }}>Recent</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Guest CTA */}
+        {!user && (
+          <div style={{ position:"relative",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:24,padding:"48px 48px",textAlign:"center",overflow:"hidden",marginTop:20,animation:"fadeUp 0.5s 0.4s ease both" }}>
+            <div style={{ position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(245,200,66,0.06) 0%,transparent 70%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:200,height:1,background:"linear-gradient(90deg,transparent,rgba(245,200,66,0.5),transparent)" }} />
+            <div style={{ fontSize:52,marginBottom:16,position:"relative" }}>🍎</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,34px)",fontWeight:900,color:"#F7F6F2",marginBottom:10,position:"relative" }}>Sign up free — 30 seconds.</h2>
+            <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,marginBottom:32,maxWidth:420,margin:"0 auto 32px",position:"relative" }}>Save your notes, decks, and progress. Access from any device. Free while we launch.</p>
+            <div className="gx-cta-btns" style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative" }}>
+              <div style={{ position:"relative" }}>
+                <div style={{ position:"absolute",inset:-3,borderRadius:12,background:"linear-gradient(135deg,#F5C842,#E8A82A)",opacity:0.3,filter:"blur(8px)" }} />
+                <button onClick={()=>openAuth("signup")} style={{ position:"relative",background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:10,padding:"14px 32px",fontSize:15,fontWeight:800,cursor:"pointer",color:"#1A1814",fontFamily:"'Montserrat',sans-serif",boxShadow:"0 6px 28px rgba(245,200,66,0.4)" }}>
+                  🍎 Create Free Account →
+                </button>
+              </div>
+              <button onClick={()=>openAuth("login")} style={{ background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px 24px",fontSize:14,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+                onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
+                onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.12)";}}>
+                Log In
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
-    </>
+
+      {/* Galaxy footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.05)", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10, background:"rgba(6,4,14,0.6)" }}>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.18)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
+        <div style={{ display:"flex", gap:20 }}>
+          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([label,key])=>(
+            <span key={key} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.15s" }}
+              onClick={()=>{
+                if(key==="contact") window.location.href="mailto:hello@teacherspet.app";
+                else { setLegalPage(key); window.history.pushState({screen:`legal-${key}`},"",`/${key}`); }
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.22)"}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </footer>
+
+    </div>
   );
 }
