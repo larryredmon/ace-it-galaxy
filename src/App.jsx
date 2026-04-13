@@ -119,16 +119,16 @@ function tpSync(lsKey, data) {
 
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
-  { id: 1,  appId: "flashcards",   name: "Flash Cards",      symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
-  { id: 2,  appId: "notes",        name: "Notes",            symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
-  { id: 16, appId: "tracker",      name: "Tracker",          symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system." },
-  { id: 3,  appId: "brainmap",     name: "Brain Map",        symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
-  { id: 4,  appId: "simplifier",   name: "Text Simplifier",  symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
-  { id: 6,  appId: "studio",       name: "Studio",           symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
+  { id: 1,  appId: "flashcards",   name: "Flash Cards",       symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
+  { id: 2,  appId: "notes",        name: "Notes",             symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
+  { id: 16, appId: "tracker",      name: "Tracker",           symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system." },
+  { id: 3,  appId: "brainmap",     name: "Brain Map",         symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
+  { id: 4,  appId: "simplifier",   name: "Text Simplifier",   symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
+  { id: 6,  appId: "studio",       name: "Studio",            symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
   { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
-  { id: 13, appId: "studybuddy",   name: "Study Buddy",      symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
-  { id: 14, appId: "settings",     name: "Settings",         symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
-  { id: 15, appId: "journal",      name: "Journal",          symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
+  { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
+  { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
+  { id: 15, appId: "journal",      name: "Journal",           symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
 ];
 
 const TILT = 0.34;
@@ -7577,6 +7577,8 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  useEffect(() => { const check = () => setIsMobile(window.innerWidth < 640); window.addEventListener("resize", check); return () => window.removeEventListener("resize", check); }, []);
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
@@ -7665,9 +7667,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: isMobile ? "94vw" : "90vw", maxWidth: isMobile ? 440 : 860, maxHeight: "92vh", display: "flex", borderRadius: isMobile ? 16 : 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
-        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
+        {!isMobile && <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div>
@@ -7692,10 +7694,10 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
             </div>
           </div>
           <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It</div>
-        </div>
+        </div>}
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
+        <div style={{ flex: 1, background: "#fff", padding: isMobile ? "24px 20px" : "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "92vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
@@ -10899,29 +10901,29 @@ class AppErrorBoundary extends Component {
 // ─── Study Buddy App ─────────────────────────────────────────────────────────
 function StudyBuddyApp({ onBack, user, openAuth }) {
   const SB = '#FFA8D0';
-  const [view,        setView]        = useState('lobby');
-  const [rooms,       setRooms]       = useState([]);
-  const [searchQ,     setSearchQ]     = useState('');
-  const [showCreate,  setShowCreate]  = useState(false);
-  const [createForm,  setCreateForm]  = useState({ title:'', subject:'', isPublic:true });
-  const [showJoin,    setShowJoin]    = useState(false);
-  const [joinInput,   setJoinInput]   = useState('');
-  const [joining,     setJoining]     = useState(false);
-  const [activeRoom,  setActiveRoom]  = useState(null);
-  const [roomCode,    setRoomCode]    = useState('');
-  const [participants,setParticipants]= useState({});
-  const [messages,    setMessages]    = useState([]);
-  const [newMsg,      setNewMsg]      = useState('');
-  const [timerSecs,   setTimerSecs]   = useState(25*60);
-  const [timerOn,     setTimerOn]     = useState(false);
-  const [timerMode,   setTimerMode]   = useState('focus');
-  const [showChat,    setShowChat]    = useState(true);
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams,setRemoteStreams]=useState({});
-  const [videoOn,     setVideoOn]     = useState(true);
-  const [audioOn,     setAudioOn]     = useState(true);
-  const [mediaError,  setMediaError]  = useState(null);
-  const [errMsg,      setErrMsg]      = useState('');
+  const [view,         setView]         = useState('lobby');
+  const [rooms,        setRooms]        = useState([]);
+  const [searchQ,      setSearchQ]      = useState('');
+  const [showCreate,   setShowCreate]   = useState(false);
+  const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true });
+  const [showJoin,     setShowJoin]     = useState(false);
+  const [joinInput,    setJoinInput]    = useState('');
+  const [joining,      setJoining]      = useState(false);
+  const [activeRoom,   setActiveRoom]   = useState(null);
+  const [roomCode,     setRoomCode]     = useState('');
+  const [participants, setParticipants] = useState({});
+  const [messages,     setMessages]     = useState([]);
+  const [newMsg,       setNewMsg]       = useState('');
+  const [timerSecs,    setTimerSecs]    = useState(25*60);
+  const [timerOn,      setTimerOn]      = useState(false);
+  const [timerMode,    setTimerMode]    = useState('focus');
+  const [showChat,     setShowChat]     = useState(true);
+  const [localStream,  setLocalStream]  = useState(null);
+  const [remoteStreams,setRemoteStreams] = useState({});
+  const [videoOn,      setVideoOn]      = useState(true);
+  const [audioOn,      setAudioOn]      = useState(true);
+  const [mediaError,   setMediaError]   = useState(null);
+  const [errMsg,       setErrMsg]       = useState('');
 
   const localVidRef    = useRef(null);
   const remoteVidRefs  = useRef({});
@@ -10934,10 +10936,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const unsubSigs      = useRef(null);
   const timerRef       = useRef(null);
   const msgEndRef      = useRef(null);
-
   const ICE = { iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] };
 
-  // Load public rooms
   useEffect(()=>{
     try {
       const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'));
@@ -10949,30 +10949,25 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   },[]);
 
   useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
-  useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject=localStream; },[localStream]);
+  useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject = localStream; },[localStream]);
   useEffect(()=>{
     Object.entries(remoteStreams).forEach(([uid,stream])=>{
-      const el=remoteVidRefs.current[uid];
-      if(el && el.srcObject!==stream) el.srcObject=stream;
+      const el = remoteVidRefs.current[uid];
+      if(el && el.srcObject !== stream) el.srcObject = stream;
     });
   },[remoteStreams]);
-
-  // Local timer countdown
   useEffect(()=>{
     if(timerOn){
-      timerRef.current=setInterval(()=>{
+      timerRef.current = setInterval(()=>{
         setTimerSecs(s=>{ if(s<=1){clearInterval(timerRef.current);setTimerOn(false);const next=timerMode==='focus'?'break':'focus';setTimerMode(next);return next==='focus'?25*60:5*60;} return s-1; });
       },1000);
     } else clearInterval(timerRef.current);
     return ()=>clearInterval(timerRef.current);
   },[timerOn,timerMode]);
-
   useEffect(()=>()=>{ doLeave(true); unsubRooms.current?.(); },[]);
 
-  // WebRTC helpers
   const makePC=(roomId,targetUid)=>{
-    const pc=new RTCPeerConnection(ICE);
-    peerConns.current[targetUid]=pc;
+    const pc=new RTCPeerConnection(ICE); peerConns.current[targetUid]=pc;
     localStreamRef.current?.getTracks().forEach(t=>pc.addTrack(t,localStreamRef.current));
     const remote=new MediaStream();
     pc.ontrack=e=>{e.streams[0]?.getTracks().forEach(t=>remote.addTrack(t));setRemoteStreams(p=>({...p,[targetUid]:remote}));};
@@ -10980,10 +10975,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     pc.onconnectionstatechange=()=>{if(['disconnected','failed','closed'].includes(pc.connectionState)){setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});delete peerConns.current[targetUid];}};
     return pc;
   };
-  const sendOffer=async(roomId,targetUid)=>{const pc=makePC(roomId,targetUid);try{const offer=await pc.createOffer();await pc.setLocalDescription(offer);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(offer),ts:serverTimestamp()});}catch{}};
+  const sendOffer=async(roomId,uid)=>{const pc=makePC(roomId,uid);try{const o=await pc.createOffer();await pc.setLocalDescription(o);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:uid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()});}catch{}};
   const handleSignal=async(roomId,sig)=>{
     const{from,type,data}=sig; if(from===user.uid)return;
-    if(type==='offer'){let pc=peerConns.current[from]||makePC(roomId,from);try{await pc.setRemoteDescription(JSON.parse(data));const ans=await pc.createAnswer();await pc.setLocalDescription(ans);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(ans),ts:serverTimestamp()});}catch{}}
+    if(type==='offer'){const pc=peerConns.current[from]||makePC(roomId,from);try{await pc.setRemoteDescription(JSON.parse(data));const a=await pc.createAnswer();await pc.setLocalDescription(a);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()});}catch{}}
     else if(type==='answer'){try{await peerConns.current[from]?.setRemoteDescription(JSON.parse(data));}catch{}}
     else if(type==='ice-candidate'){try{await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data)));}catch{}}
   };
@@ -10991,57 +10986,42 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const startMedia=async()=>{
     setMediaError(null);
     try{const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});localStreamRef.current=s;setLocalStream(s);return s;}
-    catch(e){setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied — you can still chat and use the timer.':'Could not access camera or microphone.');return null;}
+    catch(e){setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied — you can still chat.':'Could not access camera or microphone.');return null;}
   };
 
-  // BUG FIX: enterRoom now always clears joining and never conflicts with modals
+  // KEY FIX: go straight to room, show code as banner inside room instead of blocking modal
   const enterRoom=async(room)=>{
     if(!user){openAuth('login');return;}
     setJoining(true);setErrMsg('');
     try{
       await updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name,avatar:user.avatar,uid:user.uid,joinedAt:new Date().toISOString()}});
-      setActiveRoom(room); activeRoomRef.current=room;
-      setView('room'); // switch view immediately
+      setActiveRoom(room);activeRoomRef.current=room;
+      setView('room'); // ← go to room immediately
       setJoining(false);
-      startMedia(); // don't await — let it load in background
-      // Subscribe room
-      unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{
-        if(!snap.exists()){doLeave(true);return;}
-        const d=snap.data();
-        setParticipants(d.participants||{});
-        if(d.timerOn!==undefined)setTimerOn(d.timerOn);
-        if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);
-        if(d.timerMode!==undefined)setTimerMode(d.timerMode);
-      },()=>{});
-      // Subscribe messages
+      startMedia(); // runs in background, no await
+      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();setParticipants(d.participants||{});if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
-      // Subscribe signals
       try{const sq=query(collection(db,'studyRooms',room.id,'signals'),where('to','==',user.uid));unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')handleSignal(room.id,c.doc.data());});},()=>{});}catch{}
-      // Send offers to existing participants
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);});}catch{}
     }catch(e){
-      console.error('enterRoom error',e);
-      setErrMsg('Failed to join. Please try again.');
+      setErrMsg('Failed to join room. Please try again.');
       setJoining(false);
     }
   };
 
-  // BUG FIX: createRoom goes straight to room — no privateCode modal blocking the way
+  // KEY FIX: no privateCode modal — go straight to room, show code as banner
   const createRoom=async()=>{
     if(!user){openAuth('login');return;}
-    if(!createForm.title.trim()||!createForm.subject.trim()) return;
-    setJoining(true);
+    if(!createForm.title.trim()||!createForm.subject.trim())return;
+    setJoining(true);setErrMsg('');
     try{
       const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
-      const ref=await addDoc(collection(db,'studyRooms'),{
-        title:createForm.title.trim(),subject:createForm.subject.trim(),
-        host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,
-        participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus'
-      });
+      const ref=await addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus'});
       const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{}};
-      setShowCreate(false);
-      setRoomCode(code); // store code — shown as a banner inside the room
-      await enterRoom(room);
+      setShowCreate(false); // close the create modal
+      if(!createForm.isPublic) setRoomCode(code); // store code to show as banner in room
+      setCreateForm({title:'',subject:'',isPublic:true});
+      await enterRoom(room); // go straight to room
     }catch(e){
       setErrMsg('Failed to create room. Please try again.');
       setJoining(false);
@@ -11049,29 +11029,27 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   };
 
   const joinByCode=async()=>{
-    if(!joinInput.trim()||!user){if(!user)openAuth('login');return;}
+    if(!user){openAuth('login');return;}
+    if(joinInput.length<6)return;
     setErrMsg('');
     try{
       const q=query(collection(db,'studyRooms'),where('code','==',joinInput.trim().toUpperCase()));
       const snap=await getDocs(q);
-      if(snap.empty){setErrMsg('Room not found. Check the code and try again.');return;}
+      if(snap.empty){setErrMsg('Room not found. Check the code.');return;}
       setShowJoin(false);setJoinInput('');
       await enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});
     }catch{setErrMsg('Could not find that room. Try again.');}
   };
 
   const doLeave=async(silent=false)=>{
-    localStreamRef.current?.getTracks().forEach(t=>t.stop());
-    localStreamRef.current=null;setLocalStream(null);
-    Object.values(peerConns.current).forEach(pc=>pc.close());
-    peerConns.current={};setRemoteStreams({});
-    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();
-    clearInterval(timerRef.current);
-    if(!silent && activeRoomRef.current && user){
+    localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
+    Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
+    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);
+    if(!silent&&activeRoomRef.current&&user){
       try{
         await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});
         const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));
-        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0) await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
+        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
       }catch{}
     }
     setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});
@@ -11083,124 +11061,76 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     const t=newMsg.trim();setNewMsg('');
     try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp()});}catch{}
   };
-
   const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
   const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
   const toggleAudio=()=>{const t=localStreamRef.current?.getAudioTracks()[0];if(t){t.enabled=!audioOn;setAudioOn(!audioOn);}};
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-
   const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
   const partList=Object.values(participants);
   const otherStreams=Object.entries(remoteStreams);
 
   // ── ROOM VIEW ──
-  if(view==='room'&&activeRoom){
-    return(
-      <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
-        {/* Private room code banner — shown inside the room for host */}
-        {roomCode&&activeRoom.host===user?.uid&&(
-          <div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-            <span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Private room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share this with your study group</span>
-            <button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:14}}>✕</button>
-          </div>
-        )}
-        {/* Top bar */}
-        <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 16px',gap:12,flexShrink:0}}>
-          <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)'}}>← Leave</button>
-          <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)'}}/>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:800,fontSize:14,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
-            <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying</div>
-          </div>
-          {/* Timer */}
-          <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'6px 12px'}}>
-            <div style={{fontSize:10,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
-            <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:52,textAlign:'center'}}>{fmt(timerSecs)}</div>
-            <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
-            <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'rgba(255,255,255,0.22)'}}>↺</button>
-          </div>
-          <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬 Chat</button>
+  if(view==='room'&&activeRoom) return(
+    <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
+      {roomCode&&activeRoom.host===user?.uid&&(
+        <div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Private room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share with your study group</span>
+          <button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:14}}>✕</button>
         </div>
-
-        <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-          {/* Video area */}
-          <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C'}}>
-            <div style={{flex:1,overflow:'auto',padding:12,display:'grid',gap:8,gridTemplateColumns:otherStreams.length===0?'1fr':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',alignContent:'start'}}>
-              {/* Local video */}
-              <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:12,overflow:'hidden'}}>
-                {localStream
-                  ?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
-                  :<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
-                    <div style={{width:52,height:52,borderRadius:'50%',background:`${SB}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:800,color:SB}}>{user?.avatar||'?'}</div>
-                    <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Starting camera…'}</div>
-                  </div>
-                }
-                <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{user?.name||'You'} (you)</div>
-                {!videoOn&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📷</div>}
-              </div>
-              {/* Remote videos */}
-              {otherStreams.map(([uid,stream])=>{
-                const p=participants[uid];
-                return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}>
-                  <video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                  <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div>
-                </div>);
-              })}
-              {/* Participants connecting */}
-              {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(
-                <div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
-                  <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.6)'}}>{p.avatar||p.name?.[0]||'?'}</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div>
-                  <div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div>
-                </div>
-              ))}
-            </div>
-            {mediaError&&<div style={{padding:'8px 16px',background:'rgba(232,93,63,0.08)',borderTop:'1px solid rgba(232,93,63,0.15)',fontSize:12,color:'rgba(232,93,63,0.7)'}}>{mediaError}</div>}
-            {/* Controls */}
-            <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
-              <button onClick={toggleAudio} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-              <button onClick={toggleVideo} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
-              <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
-            </div>
-          </div>
-          {/* Chat sidebar */}
-          {showChat&&(
-            <div style={{width:290,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
-              <div style={{padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-                <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:8}}>In this room</div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                  {partList.map(p=>(
-                    <div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'4px 8px'}}>
-                      <div style={{width:18,height:18,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB}}>{p.avatar||p.name?.[0]||'?'}</div>
-                      <span style={{fontSize:11,color:'rgba(255,255,255,0.65)'}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
-                {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet — say hello! 👋</div>}
-                {messages.map(m=>(
-                  <div key={m.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
-                    <div style={{width:26,height:26,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)',marginBottom:2}}>{m.userId===user?.uid?'You':m.userName}</div>
-                      <div style={{fontSize:13,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div>
-                    </div>
-                  </div>
-                ))}
-                <div ref={msgEndRef}/>
-              </div>
-              <div style={{padding:10,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8}}>
-                <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…"
-                  style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
-                <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:36,cursor:'pointer',fontSize:16,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
-              </div>
-            </div>
-          )}
+      )}
+      <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 16px',gap:12,flexShrink:0}}>
+        <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)'}}>← Leave</button>
+        <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)'}}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:800,fontSize:14,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
+          <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying</div>
         </div>
+        <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'6px 12px'}}>
+          <div style={{fontSize:10,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
+          <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:52,textAlign:'center'}}>{fmt(timerSecs)}</div>
+          <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
+          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.25)'}}>↺</button>
+        </div>
+        <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬</button>
       </div>
-    );
-  }
+      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C'}}>
+          <div style={{flex:1,overflow:'auto',padding:12,display:'grid',gap:8,gridTemplateColumns:otherStreams.length===0?'1fr':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',alignContent:'start'}}>
+            <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:12,overflow:'hidden'}}>
+              {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>:<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:`${SB}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Starting camera…'}</div></div>}
+              <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{user?.name} (you)</div>
+              {!videoOn&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📷</div>}
+            </div>
+            {otherStreams.map(([uid,stream])=>{const p=participants[uid];return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div></div>);})}
+            {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.6)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div></div>))}
+          </div>
+          {mediaError&&<div style={{padding:'8px 16px',background:'rgba(232,93,63,0.08)',borderTop:'1px solid rgba(232,93,63,0.15)',fontSize:12,color:'rgba(232,93,63,0.7)'}}>{mediaError}</div>}
+          <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
+            <button onClick={toggleAudio} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
+            <button onClick={toggleVideo} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
+            <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
+          </div>
+        </div>
+        {showChat&&(<div style={{width:290,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
+          <div style={{padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+            <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:8}}>In this room</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {partList.map(p=>(<div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'4px 8px'}}><div style={{width:18,height:18,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB}}>{p.avatar||p.name?.[0]||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.65)'}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span></div>))}
+            </div>
+          </div>
+          <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+            {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet — say hello! 👋</div>}
+            {messages.map(m=>(<div key={m.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}><div style={{width:26,height:26,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div><div style={{flex:1,minWidth:0}}><div style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)',marginBottom:2}}>{m.userId===user?.uid?'You':m.userName}</div><div style={{fontSize:13,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div></div></div>))}
+            <div ref={msgEndRef}/>
+          </div>
+          <div style={{padding:10,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8}}>
+            <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…" style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
+            <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:36,cursor:'pointer',fontSize:16,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+          </div>
+        </div>)}
+      </div>
+    </div>
+  );
 
   // ── LOBBY VIEW ──
   return(
@@ -11208,19 +11138,14 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
       <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
         <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:9}}>
-          <div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div>
-          <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span>
-        </div>
-        <div style={{marginLeft:'auto'}}>
-          {user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}
-        </div>
+        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
+        <div style={{marginLeft:'auto'}}>{user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}</div>
       </nav>
       <div style={{maxWidth:1000,margin:'0 auto',padding:'40px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
         <div style={{textAlign:'center',marginBottom:48}}>
           <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:20}}>❋ Virtual Study Rooms</div>
           <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(32px,5vw,52px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:14,letterSpacing:-1}}>Find your study crew</h1>
-          <p style={{fontSize:16,color:'rgba(247,246,242,0.4)',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like meeting at the library, but from anywhere.</p>
+          <p style={{fontSize:16,color:'rgba(247,246,242,0.4)',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like the library, but from anywhere.</p>
           <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
             <button onClick={()=>{if(!user){openAuth('login');return;}setShowCreate(true);}} style={{background:SB,border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Study Room</button>
             <button onClick={()=>{if(!user){openAuth('login');return;}setShowJoin(true);}} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'12px 22px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
@@ -11229,84 +11154,44 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
         <div style={{position:'relative',marginBottom:28}}>
           <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.3,pointerEvents:'none'}}>🔍</span>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…"
-            style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…" style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
         </div>
-        {filteredRooms.length===0
-          ?<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}>
-            <div style={{fontSize:48,marginBottom:16}}>📚</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div>
-            <p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p>
-          </div>
-          :<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
-            {filteredRooms.map(r=>{
-              const count=Object.keys(r.participants||{}).length;
-              return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}}
-                onMouseEnter={e=>{e.currentTarget.style.background=`${SB}08`;e.currentTarget.style.borderColor=`${SB}55`;}}
-                onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.03)';e.currentTarget.style.borderColor=`${SB}22`;}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-                  <div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div>
-                  <div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}>
-                    <span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/>
-                    <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{count} studying</span>
-                  </div>
-                </div>
-                <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div>
-                <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginBottom:14}}>Host: {r.hostName||'Anonymous'}</div>
-                <button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:joining?'default':'pointer',color:'#1A1814',opacity:joining?0.5:1}}>
-                  {joining?'Joining…':'Join Room →'}
-                </button>
-              </div>);
-            })}
-          </div>
-        }
+        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>{e.currentTarget.style.background=`${SB}08`;}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.03)';}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}><span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{count} studying</span></div></div>
+          <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginBottom:14}}>Host: {r.hostName||'Anonymous'}</div>
+          <button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:joining?'default':'pointer',color:'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':'Join Room →'}</button>
+        </div>);})}</div>)}
       </div>
-      {/* Create room modal */}
-      {showCreate&&(
-        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
-          <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:28,marginBottom:14}}>❋</div>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>
-            <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24,lineHeight:1.6}}>Name your room and subject so others can find you.</p>
-            <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep"
-              style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/>
-            <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Subject e.g. Biology, Calculus, Spanish"
-              style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/>
-            <div style={{display:'flex',gap:8,marginBottom:24}}>
-              {[true,false].map(pub=>(
-                <button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))}
-                  style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>
-                  {pub?'🌐 Public':'🔒 Private'}
-                </button>
-              ))}
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-              <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining}
-                style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>
-                {joining?'Creating…':'Create Room →'}
-              </button>
-            </div>
+      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
+        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:28,marginBottom:14}}>❋</div>
+          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>
+          <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24,lineHeight:1.6}}>Name your room and subject so others can find you.</p>
+          <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/>
+          <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/>
+          <div style={{display:'flex',gap:8,marginBottom:24}}>
+            {[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+            <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button>
           </div>
         </div>
-      )}
-      {/* Join private modal */}
-      {showJoin&&(
-        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
-          <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:28,marginBottom:14}}>🔒</div>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>
-            <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>
-            {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}
-            <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6}
-              style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-              <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
-            </div>
+      </div>)}
+      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
+        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:28,marginBottom:14}}>🔒</div>
+          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>
+          <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>
+          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}
+          <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/>
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+            <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
           </div>
         </div>
-      )}
+      </div>)}
     </div>
   );
 }
@@ -11351,14 +11236,7 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
         <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
         {!isMobile&&(<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…" style={{width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/></div>)}
         <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',background:'rgba(4,2,12,0.75)',padding:'4px 4px 4px 8px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',flexShrink:0}}>
-          {user?(
-            <>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}
-            {!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div><div style={{fontSize:10,color:'rgba(245,200,66,0.6)',letterSpacing:0.5,fontWeight:600}}>Free Plan</div></div>}
-            <div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>
-          ):(
-            <><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button>
-            <button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'🍎 Get Started Free'}</button></>
-          )}
+          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div><div style={{fontSize:10,color:'rgba(245,200,66,0.6)',letterSpacing:0.5,fontWeight:600}}>Free Plan</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'🍎 Get Started Free'}</button></>)}
         </div>
       </nav>
       <div style={{position:'absolute',bottom:20,left:0,right:0,textAlign:'center',pointerEvents:'none',zIndex:5}}><p style={{fontSize:9,color:'rgba(255,255,255,0.18)',letterSpacing:2.8,textTransform:'uppercase',fontWeight:600}}>The future of learning is yours</p></div>
