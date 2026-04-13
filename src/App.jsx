@@ -28,6 +28,7 @@ import {
   serverTimestamp,
   onSnapshot,
   deleteField,
+  limit,
 } from "firebase/firestore";
 
 // ─── Firestore Sync Layer ──────────────────────────────────────────────────────
@@ -10936,13 +10937,43 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const unsubSigs      = useRef(null);
   const timerRef       = useRef(null);
   const msgEndRef      = useRef(null);
-  const ICE = { iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] };
 
+  // TURN servers — free Open Relay Project by Metered, works through firewalls
+  const ICE_CONFIG = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      // Free TURN servers via Open Relay Project (no signup needed)
+      { urls: 'turn:openrelay.metered.ca:80',      username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443',     username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+    ]
+  };
+
+  // Load rooms — filter out stale ones (older than 24h with no participants)
   useEffect(()=>{
     try {
-      const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'));
-      unsubRooms.current = onSnapshot(q, snap=>{
-        setRooms(snap.docs.map(d=>({id:d.id,...d.data()})));
+      const cutoff = new Date(Date.now() - 24*60*60*1000);
+      const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'), limit(50));
+      unsubRooms.current = onSnapshot(q, async snap=>{
+        const now = Date.now();
+        const fresh = [];
+        const staleIds = [];
+        snap.docs.forEach(d=>{
+          const data = d.data();
+          const parts = Object.keys(data.participants || {}).length;
+          const created = data.createdAt?.toDate?.() || new Date(0);
+          const ageMs = now - created.getTime();
+          // Mark stale: no participants + older than 2 hours
+          if(parts === 0 && ageMs > 2*60*60*1000) {
+            staleIds.push(d.id);
+          } else {
+            fresh.push({id:d.id,...data});
+          }
+        });
+        setRooms(fresh);
+        // Clean up stale rooms silently
+        staleIds.forEach(async id => { try { await deleteDoc(doc(db,'studyRooms',id)); } catch {} });
       }, ()=>{});
     } catch {}
     return ()=>{ unsubRooms.current?.(); };
@@ -10959,57 +10990,67 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   useEffect(()=>{
     if(timerOn){
       timerRef.current = setInterval(()=>{
-        setTimerSecs(s=>{ if(s<=1){clearInterval(timerRef.current);setTimerOn(false);const next=timerMode==='focus'?'break':'focus';setTimerMode(next);return next==='focus'?25*60:5*60;} return s-1; });
+        setTimerSecs(s=>{ if(s<=1){ clearInterval(timerRef.current); setTimerOn(false); const next=timerMode==='focus'?'break':'focus'; setTimerMode(next); return next==='focus'?25*60:5*60; } return s-1; });
       },1000);
     } else clearInterval(timerRef.current);
     return ()=>clearInterval(timerRef.current);
   },[timerOn,timerMode]);
   useEffect(()=>()=>{ doLeave(true); unsubRooms.current?.(); },[]);
 
+  // WebRTC
   const makePC=(roomId,targetUid)=>{
-    const pc=new RTCPeerConnection(ICE); peerConns.current[targetUid]=pc;
+    const pc=new RTCPeerConnection(ICE_CONFIG);
+    peerConns.current[targetUid]=pc;
     localStreamRef.current?.getTracks().forEach(t=>pc.addTrack(t,localStreamRef.current));
     const remote=new MediaStream();
-    pc.ontrack=e=>{e.streams[0]?.getTracks().forEach(t=>remote.addTrack(t));setRemoteStreams(p=>({...p,[targetUid]:remote}));};
-    pc.onicecandidate=async e=>{if(e.candidate)try{await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()});}catch{}};
-    pc.onconnectionstatechange=()=>{if(['disconnected','failed','closed'].includes(pc.connectionState)){setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});delete peerConns.current[targetUid];}};
+    pc.ontrack=e=>{ e.streams[0]?.getTracks().forEach(t=>remote.addTrack(t)); setRemoteStreams(p=>({...p,[targetUid]:remote})); };
+    pc.onicecandidate=async e=>{ if(e.candidate) try{ await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); }catch{} };
+    pc.onconnectionstatechange=()=>{ if(['disconnected','failed','closed'].includes(pc.connectionState)){ setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;}); delete peerConns.current[targetUid]; } };
     return pc;
   };
-  const sendOffer=async(roomId,uid)=>{const pc=makePC(roomId,uid);try{const o=await pc.createOffer();await pc.setLocalDescription(o);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:uid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()});}catch{}};
+  const sendOffer=async(roomId,uid)=>{ const pc=makePC(roomId,uid); try{ const o=await pc.createOffer(); await pc.setLocalDescription(o); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:uid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()}); }catch{} };
   const handleSignal=async(roomId,sig)=>{
     const{from,type,data}=sig; if(from===user.uid)return;
-    if(type==='offer'){const pc=peerConns.current[from]||makePC(roomId,from);try{await pc.setRemoteDescription(JSON.parse(data));const a=await pc.createAnswer();await pc.setLocalDescription(a);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()});}catch{}}
-    else if(type==='answer'){try{await peerConns.current[from]?.setRemoteDescription(JSON.parse(data));}catch{}}
-    else if(type==='ice-candidate'){try{await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data)));}catch{}}
+    if(type==='offer'){ const pc=peerConns.current[from]||makePC(roomId,from); try{ await pc.setRemoteDescription(JSON.parse(data)); const a=await pc.createAnswer(); await pc.setLocalDescription(a); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()}); }catch{} }
+    else if(type==='answer'){ try{ await peerConns.current[from]?.setRemoteDescription(JSON.parse(data)); }catch{} }
+    else if(type==='ice-candidate'){ try{ await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data))); }catch{} }
   };
 
   const startMedia=async()=>{
     setMediaError(null);
-    try{const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});localStreamRef.current=s;setLocalStream(s);return s;}
-    catch(e){setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied — you can still chat.':'Could not access camera or microphone.');return null;}
+    try{ const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); localStreamRef.current=s; setLocalStream(s); return s; }
+    catch(e){ setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied. You can still chat and use the timer.':'Could not access camera or microphone.'); return null; }
   };
 
-  // KEY FIX: go straight to room, show code as banner inside room instead of blocking modal
+  // BUG FIX: go straight to room, show code as banner inside room
   const enterRoom=async(room)=>{
     if(!user){openAuth('login');return;}
     setJoining(true);setErrMsg('');
     try{
-      await updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name,avatar:user.avatar,uid:user.uid,joinedAt:new Date().toISOString()}});
-      setActiveRoom(room);activeRoomRef.current=room;
-      setView('room'); // ← go to room immediately
+      // Timeout wrapper — if Firestore hangs, fail after 8s instead of forever
+      const updatePromise = updateDoc(doc(db,'studyRooms',room.id),{
+        [`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||user.name?.[0]||'?',uid:user.uid,joinedAt:new Date().toISOString()}
+      });
+      await Promise.race([
+        updatePromise,
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Check your internet connection.')),8000))
+      ]);
+      setActiveRoom(room); activeRoomRef.current=room;
+      setView('room');
       setJoining(false);
-      startMedia(); // runs in background, no await
-      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();setParticipants(d.participants||{});if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);},()=>{});}catch{}
-      try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
-      try{const sq=query(collection(db,'studyRooms',room.id,'signals'),where('to','==',user.uid));unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')handleSignal(room.id,c.doc.data());});},()=>{});}catch{}
-      try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);});}catch{}
+      startMedia();
+      try{ unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{ if(!snap.exists()){doLeave(true);return;} const d=snap.data(); setParticipants(d.participants||{}); if(d.timerOn!==undefined)setTimerOn(d.timerOn); if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs); if(d.timerMode!==undefined)setTimerMode(d.timerMode); },()=>{}); }catch{}
+      try{ const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc')); unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{}); }catch{}
+      try{ const sq=query(collection(db,'studyRooms',room.id,'signals'),where('to','==',user.uid)); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')handleSignal(room.id,c.doc.data());});},()=>{}); }catch{}
+      try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);}); }catch{}
     }catch(e){
-      setErrMsg('Failed to join room. Please try again.');
+      console.error('enterRoom error:', e);
+      setErrMsg(e.message||'Failed to join room. Please try again.');
       setJoining(false);
     }
   };
 
-  // KEY FIX: no privateCode modal — go straight to room, show code as banner
+  // BUG FIX: no blocking modal after create — go straight to room
   const createRoom=async()=>{
     if(!user){openAuth('login');return;}
     if(!createForm.title.trim()||!createForm.subject.trim())return;
@@ -11018,10 +11059,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
       const ref=await addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus'});
       const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{}};
-      setShowCreate(false); // close the create modal
-      if(!createForm.isPublic) setRoomCode(code); // store code to show as banner in room
+      setShowCreate(false);
+      if(!createForm.isPublic) setRoomCode(code); // shown as banner inside room
       setCreateForm({title:'',subject:'',isPublic:true});
-      await enterRoom(room); // go straight to room
+      await enterRoom(room);
     }catch(e){
       setErrMsg('Failed to create room. Please try again.');
       setJoining(false);
@@ -11038,18 +11079,18 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       if(snap.empty){setErrMsg('Room not found. Check the code.');return;}
       setShowJoin(false);setJoinInput('');
       await enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});
-    }catch{setErrMsg('Could not find that room. Try again.');}
+    }catch{ setErrMsg('Could not find that room. Try again.'); }
   };
 
   const doLeave=async(silent=false)=>{
-    localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
-    Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
-    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);
+    localStreamRef.current?.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; setLocalStream(null);
+    Object.values(peerConns.current).forEach(pc=>pc.close()); peerConns.current={}; setRemoteStreams({});
+    unsubRoom.current?.(); unsubMsgs.current?.(); unsubSigs.current?.(); clearInterval(timerRef.current);
     if(!silent&&activeRoomRef.current&&user){
       try{
         await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});
         const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));
-        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
+        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0) await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
       }catch{}
     }
     setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});
@@ -11059,11 +11100,11 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const sendMsg=async()=>{
     if(!newMsg.trim()||!activeRoom)return;
     const t=newMsg.trim();setNewMsg('');
-    try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp()});}catch{}
+    try{ await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp()}); }catch{}
   };
-  const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
-  const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
-  const toggleAudio=()=>{const t=localStreamRef.current?.getAudioTracks()[0];if(t){t.enabled=!audioOn;setAudioOn(!audioOn);}};
+  const syncTimer=async(u)=>{ if(!activeRoom)return; try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),u); }catch{} };
+  const toggleVideo=()=>{ const t=localStreamRef.current?.getVideoTracks()[0]; if(t){t.enabled=!videoOn;setVideoOn(!videoOn);} };
+  const toggleAudio=()=>{ const t=localStreamRef.current?.getAudioTracks()[0]; if(t){t.enabled=!audioOn;setAudioOn(!audioOn);} };
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
   const partList=Object.values(participants);
@@ -11075,7 +11116,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       {roomCode&&activeRoom.host===user?.uid&&(
         <div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
           <span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Private room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share with your study group</span>
-          <button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:14}}>✕</button>
+          <button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button>
         </div>
       )}
       <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 16px',gap:12,flexShrink:0}}>
@@ -11089,7 +11130,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           <div style={{fontSize:10,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
           <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:52,textAlign:'center'}}>{fmt(timerSecs)}</div>
           <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
-          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.25)'}}>↺</button>
+          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'rgba(255,255,255,0.25)'}}>↺</button>
         </div>
         <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬</button>
       </div>
@@ -11101,13 +11142,13 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
               <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{user?.name} (you)</div>
               {!videoOn&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📷</div>}
             </div>
-            {otherStreams.map(([uid,stream])=>{const p=participants[uid];return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div></div>);})}
+            {otherStreams.map(([uid,stream])=>{ const p=participants[uid]; return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div></div>); })}
             {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.6)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div></div>))}
           </div>
           {mediaError&&<div style={{padding:'8px 16px',background:'rgba(232,93,63,0.08)',borderTop:'1px solid rgba(232,93,63,0.15)',fontSize:12,color:'rgba(232,93,63,0.7)'}}>{mediaError}</div>}
           <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
-            <button onClick={toggleAudio} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-            <button onClick={toggleVideo} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
+            <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
+            <button onClick={toggleVideo} title={videoOn?'Camera off':'Camera on'} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
             <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
           </div>
         </div>
@@ -11156,42 +11197,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.3,pointerEvents:'none'}}>🔍</span>
           <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…" style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
         </div>
-        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>{e.currentTarget.style.background=`${SB}08`;}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.03)';}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}><span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{count} studying</span></div></div>
-          <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div>
-          <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginBottom:14}}>Host: {r.hostName||'Anonymous'}</div>
-          <button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:joining?'default':'pointer',color:'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':'Join Room →'}</button>
-        </div>);})}</div>)}
+        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}><span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{count} studying</span></div></div><div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginBottom:14}}>Host: {r.hostName||'Anonymous'}</div><button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:joining?'default':'pointer',color:'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':'Join Room →'}</button></div>);})}</div>)}
       </div>
-      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
-        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
-          <div style={{fontSize:28,marginBottom:14}}>❋</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>
-          <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24,lineHeight:1.6}}>Name your room and subject so others can find you.</p>
-          <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/>
-          <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/>
-          <div style={{display:'flex',gap:8,marginBottom:24}}>
-            {[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}
-          </div>
-          <div style={{display:'flex',gap:10}}>
-            <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-            <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button>
-          </div>
-        </div>
-      </div>)}
-      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
-        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
-          <div style={{fontSize:28,marginBottom:14}}>🔒</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>
-          <p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>
-          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}
-          <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/>
-          <div style={{display:'flex',gap:10}}>
-            <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-            <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
-          </div>
-        </div>
-      </div>)}
+      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>❋</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3><p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24,lineHeight:1.6}}>Name your room and subject so others can find you.</p><input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginBottom:24}}>{[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}</div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button></div></div></div>)}
+      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>🔒</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3><p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>{errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}<input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/><div style={{display:'flex',gap:10}}><button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button></div></div></div>)}
     </div>
   );
 }
