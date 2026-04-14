@@ -10962,9 +10962,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         snap.docs.forEach(d=>{
           const data = d.data();
           const parts = Object.keys(data.participants || {}).length;
-          const created = data.createdAt?.toDate?.() || new Date(0);
+          // Use current time as fallback — pending serverTimestamp() returns null briefly
+          // This prevents newly created rooms from being deleted immediately
+          const created = data.createdAt?.toDate?.() || new Date();
           const ageMs = now - created.getTime();
-          // Mark stale: no participants + older than 2 hours
           if(parts === 0 && ageMs > 2*60*60*1000) {
             staleIds.push(d.id);
           } else {
@@ -10972,7 +10973,6 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           }
         });
         setRooms(fresh);
-        // Clean up stale rooms silently
         staleIds.forEach(async id => { try { await deleteDoc(doc(db,'studyRooms',id)); } catch {} });
       }, ()=>{});
     } catch {}
