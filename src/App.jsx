@@ -11018,8 +11018,25 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
 
   const startMedia=async()=>{
     setMediaError(null);
-    try{ const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); localStreamRef.current=s; setLocalStream(s); return s; }
-    catch(e){ setMediaError(e.name==='NotAllowedError'?'Camera/mic access denied. You can still chat and use the timer.':'Could not access camera or microphone.'); return null; }
+    try{
+      const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+      localStreamRef.current=s; setLocalStream(s); return s;
+    }catch(e){
+      // Try audio only if video fails
+      try{
+        const s=await navigator.mediaDevices.getUserMedia({video:false,audio:true});
+        localStreamRef.current=s; setLocalStream(s);
+        setMediaError('Camera blocked — using audio only. To enable video, check your browser settings.');
+        return s;
+      }catch(e2){
+        if(e.name==='NotAllowedError'||e2.name==='NotAllowedError'){
+          setMediaError('Camera & mic blocked by your browser. Click the 🔒 icon in the address bar → allow camera & mic → refresh.');
+        } else {
+          setMediaError('Could not access camera or microphone. Check your device settings.');
+        }
+        return null;
+      }
+    }
   };
 
   // BUG FIX: go straight to room, show code as banner inside room
@@ -11155,7 +11172,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
             {otherStreams.map(([uid,stream])=>{ const p=participants[uid]; return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div></div>); })}
             {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.6)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div></div>))}
           </div>
-          {mediaError&&<div style={{padding:'8px 16px',background:'rgba(232,93,63,0.08)',borderTop:'1px solid rgba(232,93,63,0.15)',fontSize:12,color:'rgba(232,93,63,0.7)'}}>{mediaError}</div>}
+          {mediaError&&<div style={{padding:'10px 16px',background:'rgba(232,93,63,0.12)',borderTop:'1px solid rgba(232,93,63,0.25)',fontSize:12,color:'#E85D3F',display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:16}}>⚠️</span>
+            <span>{mediaError}</span>
+          </div>}
           <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
             <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
             <button onClick={toggleVideo} title={videoOn?'Camera off':'Camera on'} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
