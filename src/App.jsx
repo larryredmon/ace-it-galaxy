@@ -10997,9 +10997,15 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
   useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject=localStream; },[localStream]);
   useEffect(()=>{
+    // Always re-attach remote streams to video elements when streams change
     Object.entries(remoteStreams).forEach(([uid,stream])=>{
       const el=remoteVidRefs.current[uid];
-      if(el && el.srcObject!==stream) el.srcObject=stream;
+      if(el){
+        if(el.srcObject!==stream){
+          el.srcObject=stream;
+          el.play().catch(()=>{});
+        }
+      }
     });
   },[remoteStreams]);
   useEffect(()=>{
@@ -11022,17 +11028,68 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const makePC=(roomId,targetUid)=>{
     const pc=new RTCPeerConnection(ICE_CONFIG);
     peerConns.current[targetUid]=pc;
+    // Add all local tracks
     localStreamRef.current?.getTracks().forEach(t=>pc.addTrack(t,localStreamRef.current));
-    const remote=new MediaStream();
-    pc.ontrack=e=>{ e.streams[0]?.getTracks().forEach(t=>remote.addTrack(t)); setRemoteStreams(p=>({...p,[targetUid]:remote})); };
-    pc.onicecandidate=async e=>{ if(e.candidate) try{ await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); }catch{} };
-    pc.onconnectionstatechange=()=>{ if(['disconnected','failed','closed'].includes(pc.connectionState)){ setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;}); delete peerConns.current[targetUid]; } };
+    // Build remote stream from incoming tracks
+    const remoteStreamsMap = {};
+    pc.ontrack=e=>{
+      const stream = e.streams[0] || new MediaStream([e.track]);
+      const streamId = stream.id;
+      if(!remoteStreamsMap[streamId]){
+        remoteStreamsMap[streamId] = stream;
+        setRemoteStreams(p=>({...p,[targetUid]:stream}));
+      } else {
+        // Add new track to existing stream if missing
+        if(!remoteStreamsMap[streamId].getTracks().find(t=>t.id===e.track.id)){
+          remoteStreamsMap[streamId].addTrack(e.track);
+        }
+      }
+    };
+    pc.onicecandidate=async e=>{ 
+      if(e.candidate) try{ 
+        await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); 
+      }catch{} 
+    };
+    pc.onconnectionstatechange=()=>{
+      const state = pc.connectionState;
+      if(state==='failed'){
+        // Try ICE restart on failure
+        pc.restartIce();
+      }
+      if(state==='closed'){
+        setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});
+        delete peerConns.current[targetUid];
+      }
+    };
+    pc.oniceconnectionstatechange=()=>{
+      if(pc.iceConnectionState==='disconnected'){
+        // Give it 3s to recover before removing
+        setTimeout(()=>{
+          if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'){
+            setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});
+          }
+        },3000);
+      }
+    };
     return pc;
   };
   const sendOffer=async(roomId,targetUid)=>{
-    if(peerConns.current[targetUid]) return;
+    // Allow reconnect if existing connection is dead/closed
+    const existing = peerConns.current[targetUid];
+    if(existing){
+      const state = existing.connectionState || existing.iceConnectionState;
+      if(state==='connected'||state==='connecting') return; // truly active, skip
+      existing.close();
+      delete peerConns.current[targetUid];
+    }
     const pc=makePC(roomId,targetUid);
-    try{ const o=await pc.createOffer(); await pc.setLocalDescription(o); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()}); }catch(e){ console.error('sendOffer',e); }
+    try{
+      const o=await pc.createOffer();
+      await pc.setLocalDescription(o);
+      await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+        from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()
+      });
+    }catch(e){ console.error('sendOffer',e); }
   };
   const handleSignal=async(roomId,sig,sigId)=>{
     if(sigId && processedSigs.current.has(sigId)) return;
@@ -11260,17 +11317,61 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           {/* Pinned message */}
           {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span style={{fontSize:12}}>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
           {/* Video grid */}
-          <div style={{flex:showBoard?0:1,overflow:'auto',padding:8,display:'grid',gap:6,gridTemplateColumns:otherStreams.length===0?'400px':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',justifyContent:'center',alignContent:'start',minHeight:showBoard?0:'auto',maxHeight:showBoard?0:'none',transition:'all 0.3s'}}>
-            {!showBoard&&(<>
-              <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:10,overflow:'hidden'}}>
-                {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:screenSharing?'none':'scaleX(-1)'}}/>:<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}><div style={{width:44,height:44,borderRadius:'50%',background:`${SB}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Starting…'}</div></div>}
-                <div style={{position:'absolute',bottom:6,left:6,background:'rgba(0,0,0,0.7)',borderRadius:4,padding:'2px 7px',fontSize:10,fontWeight:600}}>{user?.name} (you){screenSharing?' 🖥️':''}</div>
-                {!videoOn&&!screenSharing&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24}}>📷</div>}
+          {!showBoard&&(()=>{
+            const totalTiles = 1 + partList.filter(p=>p.uid!==user?.uid).length;
+            const cols = totalTiles===1?1:totalTiles===2?2:totalTiles<=4?2:3;
+            const gridCols = `repeat(${cols}, 1fr)`;
+            return(
+              <div style={{flex:1,overflow:'auto',padding:8,display:'grid',gap:6,gridTemplateColumns:gridCols,gridAutoRows:'1fr',alignContent:totalTiles<=cols?'center':'start'}}>
+                {/* Local video */}
+                <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:`2px solid ${SB}60`,borderRadius:10,overflow:'hidden',minHeight:0}}>
+                  {localStream
+                    ?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:screenSharing?'none':'scaleX(-1)'}}/>
+                    :<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8,background:'rgba(255,165,208,0.05)'}}>
+                      <div style={{width:52,height:52,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
+                      <div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting camera…'}</div>
+                    </div>
+                  }
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.7))',padding:'16px 8px 6px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <span style={{fontSize:10,fontWeight:700,color:'#fff'}}>{user?.name} (you){screenSharing?' 🖥️':''}</span>
+                    <div style={{display:'flex',gap:4}}>
+                      {!audioOn&&<span style={{fontSize:10,background:'rgba(232,93,63,0.8)',borderRadius:3,padding:'1px 5px'}}>🔇</span>}
+                      {!videoOn&&!screenSharing&&<span style={{fontSize:10,background:'rgba(232,93,63,0.8)',borderRadius:3,padding:'1px 5px'}}>📷 off</span>}
+                    </div>
+                  </div>
+                  {!videoOn&&!screenSharing&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.9)',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}>
+                    <div style={{width:52,height:52,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
+                    <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>Camera off</span>
+                  </div>}
+                </div>
+                {/* Remote streams - active video */}
+                {otherStreams.map(([uid,stream])=>{
+                  const p=participants[uid];
+                  return(
+                    <div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:'2px solid rgba(255,255,255,0.12)',borderRadius:10,overflow:'hidden',minHeight:0}}>
+                      <video ref={el=>{
+                        if(el){
+                          remoteVidRefs.current[uid]=el;
+                          if(el.srcObject!==stream) el.srcObject=stream;
+                        }
+                      }} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                      <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.7))',padding:'16px 8px 6px'}}>
+                        <span style={{fontSize:10,fontWeight:700,color:'#fff'}}>{p?.name||'User'}{p?.uid===activeRoom.host?' 👑':''}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Participants connecting (no stream yet) */}
+                {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(
+                  <div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:'2px solid rgba(255,255,255,0.07)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8,minHeight:0}}>
+                    <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div>
+                    <div style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>{p.name}{p.uid===activeRoom.host?' 👑':''}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:6,height:6,borderRadius:'50%',background:SB,animation:'pulse 1.5s infinite'}}/><span style={{fontSize:9,color:'rgba(255,255,255,0.3)'}}>Connecting…</span></div>
+                  </div>
+                ))}
               </div>
-              {otherStreams.map(([uid,stream])=>{ const p=participants[uid]; return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:10,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:6,left:6,background:'rgba(0,0,0,0.7)',borderRadius:4,padding:'2px 7px',fontSize:10,fontWeight:600}}>{p?.name||'User'}</div></div>); })}
-              {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}><div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.2)'}}>Connecting…</div></div>))}
-            </>)}
-          </div>
+            );
+          })()}
 
           {/* Whiteboard */}
           {showBoard&&(
@@ -11391,7 +11492,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   // ── LOBBY VIEW ──
   return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#060412',minHeight:'100vh',color:'#F7F6F2'}}>
-      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
+      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
       <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
         <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
         <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:28,height:28,borderRadius:7,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
