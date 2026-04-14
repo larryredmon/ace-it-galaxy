@@ -130,6 +130,7 @@ const PLANETS = [
   { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
   { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
   { id: 15, appId: "journal",      name: "Journal",           symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
+  { id: 17, appId: "coursehub",    name: "Course Hub",        symbol: "◎", color: "#6ED9B8", glow: "#2BAE7E", size: 46, orbitRadius: 740, speed: 34, desc: "Upload your coursework once. Get flash cards, brain maps, and study plans automatically." },
 ];
 
 const TILT = 0.34;
@@ -11996,6 +11997,819 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   );
 }
 
+// ─── Course Hub App ───────────────────────────────────────────────────────────
+function CourseHubApp({ onBack, user, openAuth }) {
+  const CH = '#6ED9B8';
+  const [view,        setView]        = useState('home');
+  const [courses,     setCourses]     = useState(()=>{ try{return JSON.parse(localStorage.getItem('tp_courses')||'[]');}catch{return [];} });
+  const [activeCourse,setActiveCourse]= useState(null);
+  const [tab,         setTab]         = useState('overview');
+  const [showCreate,  setShowCreate]  = useState(false);
+  const [createForm,  setCreateForm]  = useState({name:'',subject:'',instructor:'',semester:'',color:CH});
+  const [materialText,setMaterialText]= useState('');
+  const [materialName,setMaterialName]= useState('');
+  const [generating,  setGenerating]  = useState(null); // null | 'decks' | 'map'
+  const [genProgress, setGenProgress] = useState('');
+  const [notification,setNotification]= useState('');
+
+  const COLORS = ['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#88D8A8'];
+
+  useEffect(()=>{
+    try{ localStorage.setItem('tp_courses', JSON.stringify(courses)); }catch{}
+    // tpSync for Firebase
+    window.dispatchEvent(new CustomEvent('tpSync',{detail:{lsKey:'tp_courses',data:courses}}));
+  },[courses]);
+
+  const saveCourse = (course) => setCourses(cs=>{const idx=cs.findIndex(c=>c.id===course.id); return idx>=0?cs.map(c=>c.id===course.id?course:c):[...cs,course];});
+
+  const createCourse = () => {
+    if(!createForm.name.trim()) return;
+    const course = { id:`c${Date.now()}`, ...createForm, name:createForm.name.trim(), createdAt:new Date().toISOString(), materials:[], linkedDeckIds:[], linkedMapIds:[] };
+    setCourses(cs=>[...cs,course]); setActiveCourse(course); setShowCreate(false); setView('course'); setTab('materials');
+    setCreateForm({name:'',subject:'',instructor:'',semester:'',color:CH});
+  };
+
+  const addMaterial = () => {
+    if(!materialText.trim()||!activeCourse) return;
+    const mat = { id:`m${Date.now()}`, name:materialName.trim()||`Material ${(activeCourse.materials?.length||0)+1}`, text:materialText.trim(), addedAt:new Date().toISOString() };
+    const updated = {...activeCourse, materials:[...(activeCourse.materials||[]),mat]};
+    setActiveCourse(updated); saveCourse(updated); setMaterialText(''); setMaterialName('');
+    notify('✓ Material added');
+  };
+
+  const notify = (msg) => { setNotification(msg); setTimeout(()=>setNotification(''),3000); };
+
+  // ── Generate Flash Card Decks from course materials ──
+  const generateDecks = async () => {
+    if(!activeCourse?.materials?.length) return;
+    setGenerating('decks'); setGenProgress('Analyzing your course materials…');
+    try {
+      const allText = activeCourse.materials.map(m=>`[${m.name}]\n${m.text}`).join('\n\n---\n\n');
+      const words = allText.split(/\s+/);
+      const CHUNK = 2500;
+      const chunks = [];
+      for(let i=0;i<words.length;i+=CHUNK) chunks.push(words.slice(i,i+CHUNK).join(' '));
+
+      // Step 1: identify topics/chapters
+      setGenProgress('Identifying topics and chapters…');
+      const topicRes = await fetch('/api/claude',{ method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ model:'claude-sonnet-4-5-20250514', max_tokens:500,
+          messages:[{role:'user',content:`For this course "${activeCourse.name}", identify 3-8 main topics or chapters to organize flashcard decks.\nRespond ONLY with JSON: {"topics":["Topic 1","Topic 2",...]}\n\nMaterial sample:\n${words.slice(0,1000).join(' ')}`}]})});
+      const topicData = await topicRes.json();
+      const topicTxt = topicData.content?.find(b=>b.type==='text')?.text||'';
+      let topics = ['General'];
+      try{ topics = JSON.parse(topicTxt.replace(/```json|```/g,'').trim()).topics||['General']; }catch{}
+
+      // Step 2: generate cards per chunk
+      const allCards = [];
+      for(let ci=0;ci<chunks.length;ci++){
+        setGenProgress(`Generating cards from section ${ci+1} of ${chunks.length}…`);
+        const res = await fetch('/api/claude',{ method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ model:'claude-sonnet-4-5-20250514', max_tokens:4000,
+            messages:[{role:'user',content:`Create flashcards from this course material for "${activeCourse.name}".
+Assign each card to one of these topics: ${topics.join(', ')}
+Create cards for every definition, concept, fact, formula, and key term.
+Respond ONLY with JSON: {"cards":[{"term":"...","definition":"...","topic":"..."},...]}
+
+Material (section ${ci+1}/${chunks.length}):
+${chunks[ci]}`}]})});
+        const data = await res.json();
+        const raw = data.content?.find(b=>b.type==='text')?.text||'';
+        try{ const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); allCards.push(...(parsed.cards||[])); }catch{}
+      }
+
+      // Step 3: group by topic into decks
+      setGenProgress(`Organizing ${allCards.length} cards into decks…`);
+      const deckColor = activeCourse.color||CH;
+      const byTopic = {};
+      allCards.forEach(c=>{ if(!byTopic[c.topic]) byTopic[c.topic]=[]; byTopic[c.topic].push(c); });
+
+      const existingDecks = JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');
+      const newDecks = Object.entries(byTopic).map(([topic,cards])=>({
+        id:`cd${Date.now()}${Math.random().toString(36).substr(2,4)}`,
+        title:`${activeCourse.name} — ${topic}`,
+        subject:activeCourse.subject||topic,
+        description:`Auto-generated from ${activeCourse.name}`,
+        color:deckColor,
+        courseId:activeCourse.id,
+        courseName:activeCourse.name,
+        cards:cards.map((c,i)=>({id:`cc${Date.now()}${i}`,term:c.term,definition:c.definition,hint:'',image:null,deckIds:[],note:'',dueDate:null,interval:1,easeFactor:2.5,repetitions:0})),
+        cardCount:cards.length, mastery:0, isPublic:false, createdAt:new Date().toISOString(), author:user?.name||'You'
+      }));
+
+      const updatedDecks = [...existingDecks, ...newDecks];
+      localStorage.setItem('tp_fc_decks', JSON.stringify(updatedDecks));
+      window.dispatchEvent(new CustomEvent('tpSync',{detail:{lsKey:'tp_fc_decks',data:updatedDecks}}));
+
+      // Update course with linked deck IDs
+      const updated = {...activeCourse, linkedDeckIds:[...(activeCourse.linkedDeckIds||[]),...newDecks.map(d=>d.id)]};
+      setActiveCourse(updated); saveCourse(updated);
+      notify(`✓ Created ${newDecks.length} decks with ${allCards.length} cards in Flash Cards!`);
+    }catch(e){ console.error(e); notify('Error generating decks. Try again.'); }
+    setGenerating(null); setGenProgress('');
+  };
+
+  // ── Generate Brain Map from course materials ──
+  const generateMap = async () => {
+    if(!activeCourse?.materials?.length) return;
+    setGenerating('map'); setGenProgress('Building brain map structure…');
+    try {
+      const sample = activeCourse.materials.map(m=>m.text).join('\n\n').split(/\s+/).slice(0,2000).join(' ');
+      const res = await fetch('/api/claude',{ method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ model:'claude-sonnet-4-5-20250514', max_tokens:2000,
+          messages:[{role:'user',content:`Create a brain map structure for the course "${activeCourse.name}".
+Generate a root node and 5-8 main branches, each with 3-5 sub-topics.
+Respond ONLY with JSON:
+{"root":"${activeCourse.name}","branches":[{"label":"Branch 1","children":["Sub 1","Sub 2","Sub 3"]},...]}\n\nMaterial:\n${sample}`}]})});
+      const data = await res.json();
+      const raw = data.content?.find(b=>b.type==='text')?.text||'';
+      let structure = null;
+      try{ structure = JSON.parse(raw.replace(/```json|```/g,'').trim()); }catch{}
+      if(!structure) throw new Error('Parse failed');
+
+      // Build nodes array
+      const color = activeCourse.color||CH;
+      const palette = ['#4F6EF7','#E85D3F','#2BAE7E','#9B59B6','#F5C842','#E67E22','#1DA1F2','#E91E8C'];
+      const nodes = [{ id:'root', label:structure.root||activeCourse.name, x:0, y:0, color, parentId:null, deckIds:[], note:'' }];
+      (structure.branches||[]).forEach((branch,bi)=>{
+        const branchAngle = (bi/structure.branches.length)*Math.PI*2 - Math.PI/2;
+        const branchColor = palette[bi%palette.length];
+        const bx = Math.cos(branchAngle)*280, by = Math.sin(branchAngle)*280;
+        const bid = `b${bi}`;
+        nodes.push({ id:bid, label:branch.label, x:bx, y:by, color:branchColor, parentId:'root', deckIds:[], note:'' });
+        (branch.children||[]).forEach((child,ci)=>{
+          const spread = (ci-(branch.children.length-1)/2)*0.5;
+          const childAngle = branchAngle+spread;
+          nodes.push({ id:`b${bi}c${ci}`, label:child, x:bx+Math.cos(childAngle)*180, y:by+Math.sin(childAngle)*180, color:branchColor, parentId:bid, deckIds:[], note:'' });
+        });
+      });
+
+      const map = { id:`cm${Date.now()}`, title:activeCourse.name, color, courseId:activeCourse.id, courseName:activeCourse.name, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), nodes };
+      const existingMaps = JSON.parse(localStorage.getItem('tp_bm_maps')||'[]');
+      const updatedMaps = [...existingMaps, map];
+      localStorage.setItem('tp_bm_maps', JSON.stringify(updatedMaps));
+      window.dispatchEvent(new CustomEvent('tpSync',{detail:{lsKey:'tp_bm_maps',data:updatedMaps}}));
+
+      const updated = {...activeCourse, linkedMapIds:[...(activeCourse.linkedMapIds||[]),map.id]};
+      setActiveCourse(updated); saveCourse(updated);
+      notify(`✓ Brain map "${activeCourse.name}" created in Brain Map app!`);
+    }catch(e){ console.error(e); notify('Error generating map. Try again.'); }
+    setGenerating(null); setGenProgress('');
+  };
+
+  const linked_decks = () => { try{ const all=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]'); return all.filter(d=>(activeCourse?.linkedDeckIds||[]).includes(d.id)); }catch{return[];} };
+  const linked_maps  = () => { try{ const all=JSON.parse(localStorage.getItem('tp_bm_maps')||'[]'); return all.filter(m=>(activeCourse?.linkedMapIds||[]).includes(m.id)); }catch{return[];} };
+  const total_cards  = () => linked_decks().reduce((a,d)=>a+(d.cards?.length||0),0);
+
+  const btnStyle = (active,color='#1A1814') => ({ padding:'8px 18px', borderRadius:8, border:`1.5px solid ${active?color:'#ECEAE4'}`, background:active?color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', color:active?'#fff':'#5A5752', transition:'all 0.15s' });
+
+  // ── COURSE DETAIL VIEW ──
+  if(view==='course'&&activeCourse) return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
+      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      {notification&&<div style={{position:'fixed',top:70,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'#1A1814',color:'#F7F6F2',borderRadius:10,padding:'10px 24px',fontSize:13,fontWeight:600,boxShadow:'0 4px 20px rgba(0,0,0,0.2)'}}>{notification}</div>}
+      {/* Nav */}
+      <div style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 24px',gap:12}}>
+        <button onClick={()=>{setView('home');setActiveCourse(null);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Courses</button>
+        <div style={{width:10,height:10,borderRadius:'50%',background:activeCourse.color}}/>
+        <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}>{activeCourse.name}</span>
+        {activeCourse.subject&&<span style={{fontSize:12,color:'#8C8880',background:'#F0EDE8',borderRadius:20,padding:'3px 10px'}}>{activeCourse.subject}</span>}
+        {activeCourse.semester&&<span style={{fontSize:12,color:'#8C8880'}}>{activeCourse.semester}</span>}
+      </div>
+
+      {/* Stats bar */}
+      <div style={{background:'#fff',borderBottom:'1px solid #ECEAE4',padding:'12px 24px',display:'flex',gap:24,flexWrap:'wrap'}}>
+        {[[linked_decks().length,'Flash Decks'],[total_cards(),'Total Cards'],[linked_maps().length,'Brain Maps'],[(activeCourse.materials?.length||0),'Materials']].map(([val,label])=>(
+          <div key={label} style={{textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:900,color:activeCourse.color,fontFamily:"'Playfair Display',serif"}}>{val}</div>
+            <div style={{fontSize:10,color:'#A8A59E',letterSpacing:1,textTransform:'uppercase'}}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',padding:'0 24px',gap:4}}>
+        {[['overview','📊 Overview'],['materials','📄 Materials'],['generate','✨ Generate'],['content','🔗 Content']].map(([t,label])=>(
+          <button key={t} onClick={()=>setTab(t)} style={{padding:'12px 16px',border:'none',background:'none',fontSize:13,fontWeight:tab===t?700:400,color:tab===t?activeCourse.color:'#8C8880',borderBottom:tab===t?`2px solid ${activeCourse.color}`:'2px solid transparent',cursor:'pointer',transition:'all 0.15s'}}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{maxWidth:800,margin:'0 auto',padding:'32px 24px',animation:'ch-fade 0.3s ease'}}>
+        {/* OVERVIEW TAB */}
+        {tab==='overview'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:20}}>
+            <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:`4px solid ${activeCourse.color}`,borderRadius:12,padding:20}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,marginBottom:8}}>Quick Actions</h3>
+              <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Upload your course materials, then generate flash cards and brain maps automatically.</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <button onClick={()=>setTab('materials')} style={{padding:'14px',borderRadius:10,border:`1.5px solid ${activeCourse.color}30`,background:`${activeCourse.color}08`,fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',textAlign:'left'}}>
+                  <div style={{fontSize:22,marginBottom:6}}>📄</div>
+                  <div style={{fontWeight:700}}>Upload Materials</div>
+                  <div style={{fontSize:11,color:'#8C8880',marginTop:2}}>{activeCourse.materials?.length||0} uploaded</div>
+                </button>
+                <button onClick={()=>setTab('generate')} style={{padding:'14px',borderRadius:10,border:`1.5px solid ${activeCourse.color}30`,background:`${activeCourse.color}08`,fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',textAlign:'left'}}>
+                  <div style={{fontSize:22,marginBottom:6}}>✨</div>
+                  <div style={{fontWeight:700}}>Generate Study Materials</div>
+                  <div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Flash cards + Brain map</div>
+                </button>
+              </div>
+            </div>
+            {activeCourse.instructor&&<div style={{fontSize:13,color:'#8C8880'}}>👨‍🏫 {activeCourse.instructor}</div>}
+            {linked_decks().length>0&&(
+              <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:12,padding:16}}>
+                <div style={{fontSize:12,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#A8A59E',marginBottom:10}}>Flash Card Decks</div>
+                {linked_decks().map(d=>(
+                  <div key={d.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid #F0EDE8'}}>
+                    <div style={{width:10,height:10,borderRadius:3,background:d.color,flexShrink:0}}/>
+                    <div style={{flex:1,fontSize:13,fontWeight:600}}>{d.title}</div>
+                    <div style={{fontSize:11,color:'#A8A59E'}}>{d.cards?.length||0} cards · {d.mastery||0}% mastered</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MATERIALS TAB */}
+        {tab==='materials'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
+            <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:12,padding:20}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,marginBottom:6}}>Add Course Material</h3>
+              <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Paste your lecture notes, textbook chapters, syllabus, or any study material. The more you add, the better your generated content will be.</p>
+              <input value={materialName} onChange={e=>setMaterialName(e.target.value)} placeholder="Name this material (e.g. Chapter 3 — Cell Division)"
+                style={{width:'100%',padding:'10px 14px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:10,boxSizing:'border-box'}}
+                onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              <textarea value={materialText} onChange={e=>setMaterialText(e.target.value)} placeholder="Paste your notes, textbook chapter, lecture slides, or any course content here…&#10;&#10;The AI will read and understand everything — the more detail the better."
+                style={{width:'100%',minHeight:200,padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'vertical',lineHeight:1.6,boxSizing:'border-box',marginBottom:12}}
+                onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                <button onClick={addMaterial} disabled={!materialText.trim()}
+                  style={{padding:'10px 24px',borderRadius:9,border:'none',background:materialText.trim()?activeCourse.color:'#ECEAE4',color:materialText.trim()?'#fff':'#A8A59E',fontSize:13,fontWeight:700,cursor:materialText.trim()?'pointer':'default'}}>
+                  + Add Material
+                </button>
+                <label style={{padding:'10px 16px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#5A5752',display:'flex',alignItems:'center',gap:6}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>
+                  <input type="file" accept=".txt,.md" style={{display:'none'}} onChange={e=>{
+                    const file=e.target.files?.[0]; if(!file)return;
+                    const reader=new FileReader(); reader.onload=ev=>{ setMaterialText(ev.target.result); setMaterialName(file.name.replace(/\.[^.]+$/,'')); }; reader.readAsText(file); e.target.value='';
+                  }}/>
+                  📁 Import .txt
+                </label>
+              </div>
+            </div>
+            {(activeCourse.materials||[]).length>0&&(
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E'}}>Uploaded Materials ({activeCourse.materials.length})</div>
+                {activeCourse.materials.map(m=>(
+                  <div key={m.id} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
+                    <span style={{fontSize:16}}>📄</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>{m.name}</div>
+                      <div style={{fontSize:11,color:'#A8A59E'}}>{m.text.split(/\s+/).length.toLocaleString()} words · Added {new Date(m.addedAt).toLocaleDateString()}</div>
+                    </div>
+                    <button onClick={()=>{ const updated={...activeCourse,materials:activeCourse.materials.filter(x=>x.id!==m.id)}; setActiveCourse(updated);saveCourse(updated); }}
+                      style={{background:'none',border:'none',cursor:'pointer',color:'#D8D5CE',fontSize:14}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!(activeCourse.materials?.length)&&<div style={{textAlign:'center',padding:'40px',color:'#A8A59E',fontSize:13}}>No materials yet — paste your first lecture notes above.</div>}
+          </div>
+        )}
+
+        {/* GENERATE TAB */}
+        {tab==='generate'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
+            {!(activeCourse.materials?.length)&&(
+              <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:10,padding:'14px 18px',fontSize:13,color:'#E85D3F'}}>
+                ⚠ Add course materials first before generating — go to the Materials tab.
+              </div>
+            )}
+            {generating&&(
+              <div style={{background:'#fff',border:`1.5px solid ${activeCourse.color}30`,borderRadius:12,padding:20,textAlign:'center'}}>
+                <div style={{width:32,height:32,border:`3px solid ${activeCourse.color}30`,borderTopColor:activeCourse.color,borderRadius:'50%',animation:'qbSpin 0.7s linear infinite',margin:'0 auto 12px'}}/>
+                <div style={{fontSize:14,fontWeight:600,color:'#1A1814',marginBottom:4}}>{generating==='decks'?'Generating Flash Cards…':'Building Brain Map…'}</div>
+                <div style={{fontSize:12,color:'#8C8880'}}>{genProgress}</div>
+              </div>
+            )}
+            {/* Generate Flash Cards */}
+            <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:12,padding:20}}>
+              <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
+                <div style={{width:48,height:48,borderRadius:12,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>✦</div>
+                <div style={{flex:1}}>
+                  <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,marginBottom:4}}>Generate Flash Card Decks</h3>
+                  <p style={{fontSize:13,color:'#8C8880',lineHeight:1.6,marginBottom:14}}>AI reads all your uploaded materials and creates organized flash card decks — one deck per chapter or topic. Cards appear instantly in your Flash Cards app.</p>
+                  <div style={{fontSize:12,color:'#A8A59E',marginBottom:14}}>
+                    {(activeCourse.materials||[]).length} material{activeCourse.materials?.length!==1?'s':''} · ~{Math.round((activeCourse.materials||[]).reduce((a,m)=>a+m.text.split(/\s+/).length,0)/500)*10}+ cards estimated
+                  </div>
+                  <button onClick={generateDecks} disabled={!activeCourse.materials?.length||!!generating}
+                    style={{padding:'11px 24px',borderRadius:9,border:'none',background:activeCourse.materials?.length&&!generating?'#1A1814':'#ECEAE4',color:activeCourse.materials?.length&&!generating?'#F7F6F2':'#A8A59E',fontSize:13,fontWeight:700,cursor:activeCourse.materials?.length&&!generating?'pointer':'default',display:'flex',alignItems:'center',gap:8}}>
+                    {generating==='decks'?<><span style={{width:12,height:12,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>Generating…</>:'✦ Generate Flash Decks →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Generate Brain Map */}
+            <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:12,padding:20}}>
+              <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
+                <div style={{width:48,height:48,borderRadius:12,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>✺</div>
+                <div style={{flex:1}}>
+                  <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,marginBottom:4}}>Generate Brain Map</h3>
+                  <p style={{fontSize:13,color:'#8C8880',lineHeight:1.6,marginBottom:14}}>AI builds a visual mind map of your entire course — main topics as branches, subtopics as nodes. Opens directly in your Brain Map app.</p>
+                  <button onClick={generateMap} disabled={!activeCourse.materials?.length||!!generating}
+                    style={{padding:'11px 24px',borderRadius:9,border:'none',background:activeCourse.materials?.length&&!generating?activeCourse.color:'#ECEAE4',color:activeCourse.materials?.length&&!generating?'#fff':'#A8A59E',fontSize:13,fontWeight:700,cursor:activeCourse.materials?.length&&!generating?'pointer':'default',display:'flex',alignItems:'center',gap:8}}>
+                    {generating==='map'?<><span style={{width:12,height:12,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>Building…</>:'✺ Generate Brain Map →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CONTENT TAB */}
+        {tab==='content'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:10}}>Flash Card Decks ({linked_decks().length})</div>
+              {linked_decks().length===0?<div style={{color:'#A8A59E',fontSize:13,padding:'12px 0'}}>No decks yet — go to Generate tab.</div>:linked_decks().map(d=>(
+                <div key={d.id} style={{background:'#fff',border:`1.5px solid ${d.color}30`,borderLeft:`3px solid ${d.color}`,borderRadius:10,padding:'12px 16px',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700}}>{d.title}</div>
+                    <div style={{fontSize:11,color:'#A8A59E'}}>{d.cards?.length||0} cards · {d.mastery||0}% mastered</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:10}}>Brain Maps ({linked_maps().length})</div>
+              {linked_maps().length===0?<div style={{color:'#A8A59E',fontSize:13,padding:'12px 0'}}>No maps yet — go to Generate tab.</div>:linked_maps().map(m=>(
+                <div key={m.id} style={{background:'#fff',border:`1.5px solid ${m.color}30`,borderLeft:`3px solid ${m.color}`,borderRadius:10,padding:'12px 16px',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700}}>{m.title}</div>
+                    <div style={{fontSize:11,color:'#A8A59E'}}>{m.nodes?.length||0} nodes</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── HOME VIEW ──
+  return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
+      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      {notification&&<div style={{position:'fixed',top:70,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'#1A1814',color:'#F7F6F2',borderRadius:10,padding:'10px 24px',fontSize:13,fontWeight:600,boxShadow:'0 4px 20px rgba(0,0,0,0.2)'}}>{notification}</div>}
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 24px',gap:12}}>
+        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
+        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:28,height:28,borderRadius:8,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800}}><span style={{color:CH}}>Ace It</span> Course Hub</span></div>
+        <div style={{marginLeft:'auto'}}>
+          {user?<div style={{fontSize:13,fontWeight:700,color:'#8C8880'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:CH,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#fff'}}>Log In</button>}
+        </div>
+      </nav>
+      <div style={{maxWidth:960,margin:'0 auto',padding:'40px 24px',animation:'ch-fade 0.4s ease'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32,flexWrap:'wrap',gap:12}}>
+          <div>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,4vw,42px)',fontWeight:900,letterSpacing:-1,marginBottom:6}}>Your Courses</h1>
+            <p style={{fontSize:14,color:'#8C8880'}}>Upload your coursework once. Get flash cards, brain maps, and study plans — automatically.</p>
+          </div>
+          <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:10,padding:'12px 24px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2',display:'flex',alignItems:'center',gap:8}}>+ New Course</button>
+        </div>
+        {courses.length===0?(
+          <div style={{textAlign:'center',padding:'80px 24px'}}>
+            <div style={{fontSize:56,marginBottom:16}}>📚</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,marginBottom:8}}>No courses yet</h2>
+            <p style={{fontSize:14,color:'#8C8880',maxWidth:360,margin:'0 auto 24px',lineHeight:1.7}}>Create your first course, upload your notes, and let AI build your flash cards and brain maps automatically.</p>
+            <button onClick={()=>setShowCreate(true)} style={{background:CH,border:'none',borderRadius:10,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#fff'}}>+ Create Your First Course</button>
+          </div>
+        ):(
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
+            {courses.map(course=>{
+              const decks = (() => { try{ return JSON.parse(localStorage.getItem('tp_fc_decks')||'[]').filter(d=>(course.linkedDeckIds||[]).includes(d.id)); }catch{return[];} })();
+              const cards = decks.reduce((a,d)=>a+(d.cards?.length||0),0);
+              const maps  = (() => { try{ return JSON.parse(localStorage.getItem('tp_bm_maps')||'[]').filter(m=>(course.linkedMapIds||[]).includes(m.id)).length; }catch{return 0;} })();
+              return(
+                <div key={course.id} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`3px solid ${course.color}`,borderRadius:14,padding:20,cursor:'pointer',transition:'all 0.2s'}}
+                  onClick={()=>{setActiveCourse(course);setView('course');setTab('overview');}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=course.color+'60';e.currentTarget.style.boxShadow=`0 4px 20px ${course.color}20`;}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.boxShadow='none';}}>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,marginBottom:4}}>{course.name}</div>
+                  {course.subject&&<div style={{display:'inline-block',background:`${course.color}18`,borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700,color:course.color,marginBottom:10}}>{course.subject}</div>}
+                  <div style={{display:'flex',gap:16,fontSize:12,color:'#A8A59E',marginBottom:14,flexWrap:'wrap'}}>
+                    <span>📄 {course.materials?.length||0} materials</span>
+                    <span>✦ {decks.length} decks · {cards} cards</span>
+                    <span>✺ {maps} maps</span>
+                  </div>
+                  {course.semester&&<div style={{fontSize:11,color:'#C8C5BE'}}>{course.semester}{course.instructor?` · ${course.instructor}`:''}</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Create course modal */}
+      {showCreate&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.4)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}>
+          <div style={{background:'#fff',borderRadius:18,padding:'36px',width:460,maxHeight:'90vh',overflowY:'auto',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,marginBottom:6}}>New Course</h3>
+            <p style={{fontSize:13,color:'#8C8880',marginBottom:24}}>Give your course a name and a few details.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:14}}>
+              <input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} placeholder="Course name e.g. Biology 101, AP Calculus, Spanish III"
+                style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',boxSizing:'border-box'}}
+                onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology"
+                  style={{padding:'10px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none'}}/>
+                <input value={createForm.semester} onChange={e=>setCreateForm(f=>({...f,semester:e.target.value}))} placeholder="Semester e.g. Fall 2026"
+                  style={{padding:'10px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none'}}/>
+              </div>
+              <input value={createForm.instructor} onChange={e=>setCreateForm(f=>({...f,instructor:e.target.value}))} placeholder="Instructor (optional)"
+                style={{width:'100%',padding:'10px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',boxSizing:'border-box'}}/>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#5A5752',marginBottom:8}}>Color</div>
+                <div style={{display:'flex',gap:8}}>{COLORS.map(col=><button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>)}</div>
+              </div>
+              <div style={{display:'flex',gap:10,paddingTop:8}}>
+                <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#5A5752'}}>Cancel</button>
+                <button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Course Hub App ────────────────────────────────────────────────────────────
+function CourseHubApp({ onBack, user, openAuth, launchApp }) {
+  const CH = '#6ED9B8';
+  const PALETTE = ['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#E85D3F'];
+
+  const [courses,     setCourses]     = useState(()=>{ try{return JSON.parse(localStorage.getItem('tp_courses')||'[]');}catch{return[];} });
+  const [view,        setView]        = useState('home'); // home | course | create
+  const [active,      setActive]      = useState(null);
+  const [showAddDoc,  setShowAddDoc]  = useState(false);
+  const [docName,     setDocName]     = useState('');
+  const [docText,     setDocText]     = useState('');
+  const [generating,  setGenerating]  = useState(null); // null|'cards'|'map'
+  const [genProgress, setGenProgress] = useState('');
+  const [genResult,   setGenResult]   = useState(null);
+  const [createForm,  setCreateForm]  = useState({name:'',subject:'',color:CH,description:''});
+  const [showCreate,  setShowCreate]  = useState(false);
+  const [errMsg,      setErrMsg]      = useState('');
+
+  useEffect(()=>{ localStorage.setItem('tp_courses', JSON.stringify(courses)); },[courses]);
+
+  const saveCourse = (c) => setCourses(cs=>[...cs,c]);
+  const updateCourse = (id,changes) => {
+    setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));
+    setActive(a=>a?.id===id?{...a,...changes}:a);
+  };
+  const deleteCourse = (id) => { setCourses(cs=>cs.filter(c=>c.id!==id)); setView('home'); setActive(null); };
+
+  const createCourse = () => {
+    if(!createForm.name.trim()) return;
+    const c = { id:`course_${Date.now()}`, ...createForm, name:createForm.name.trim(), documents:[], flashDeckIds:[], brainMapIds:[], createdAt:new Date().toISOString() };
+    saveCourse(c); setActive(c); setView('course'); setShowCreate(false); setCreateForm({name:'',subject:'',color:CH,description:''});
+  };
+
+  const addDocument = () => {
+    if(!docText.trim()) return;
+    const doc = { id:`doc_${Date.now()}`, name:docName.trim()||`Document ${(active.documents?.length||0)+1}`, content:docText.trim(), addedAt:new Date().toISOString() };
+    updateCourse(active.id, {documents:[...(active.documents||[]),doc]});
+    setDocName(''); setDocText(''); setShowAddDoc(false);
+  };
+
+  const removeDocument = (docId) => updateCourse(active.id, {documents:(active.documents||[]).filter(d=>d.id!==docId)});
+
+  // ── Generate Flash Cards ──
+  const generateFlashCards = async () => {
+    if(!active?.documents?.length){ setErrMsg('Add at least one document first.'); return; }
+    if(!user){ openAuth('login'); return; }
+    setGenerating('cards'); setGenResult(null); setErrMsg('');
+    const allText = active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
+    try{
+      setGenProgress('Analyzing course structure…');
+      // Step 1: identify sections
+      const sRes = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:500,
+          messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material for organizing flashcard decks. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
+      const sData = await sRes.json();
+      const sTxt = sData.content?.find(b=>b.type==='text')?.text||'';
+      let sections = ['General'];
+      try{ sections = JSON.parse(sTxt.replace(/```json|```/g,'').trim()).sections||['General']; }catch{}
+
+      // Step 2: generate cards per section
+      const newDecks = [];
+      for(let i=0;i<sections.length;i++){
+        const section = sections[i];
+        setGenProgress(`Generating cards for "${section}" (${i+1}/${sections.length})…`);
+        const res = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:4000,
+            messages:[{role:'user',content:`Create comprehensive flashcards for the "${section}" topic from this course: ${active.name}.
+Extract EVERY key term, definition, concept, fact, process, formula, and principle.
+Respond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional short hint"},...]}
+
+Material:\n${allText.slice(0,5000)}`}]})});
+        const data = await res.json();
+        const txt = data.content?.find(b=>b.type==='text')?.text||'';
+        try{
+          const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+          if(parsed.cards?.length>0){
+            newDecks.push({
+              id:`deck_${Date.now()}_${i}`,
+              title:`${active.name} — ${section}`,
+              subject:active.subject||'',
+              color:active.color,
+              description:`Generated from ${active.name}`,
+              tags:[active.name.toLowerCase().replace(/\s+/g,'-'),section.toLowerCase().replace(/\s+/g,'-')],
+              courseId:active.id,
+              cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),
+              cardCount:parsed.cards.length,
+              mastery:0, isPublic:false,
+              author:user?.name||'You',
+              createdAt:new Date().toISOString(),
+            });
+          }
+        }catch{}
+      }
+      if(newDecks.length>0){
+        // Save to Flash Cards app localStorage
+        const existing = JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');
+        localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,...newDecks]));
+        const deckIds = newDecks.map(d=>d.id);
+        updateCourse(active.id,{flashDeckIds:[...(active.flashDeckIds||[]),...deckIds]});
+        setGenResult({type:'cards',count:newDecks.length,total:newDecks.reduce((a,d)=>a+d.cardCount,0),deckIds});
+        setGenProgress('');
+      } else { setErrMsg('Could not generate cards. Try adding more content.'); }
+    }catch(e){ console.error(e); setErrMsg('Generation failed. Please try again.'); }
+    setGenerating(null);
+  };
+
+  // ── Generate Brain Map ──
+  const generateBrainMap = async () => {
+    if(!active?.documents?.length){ setErrMsg('Add at least one document first.'); return; }
+    if(!user){ openAuth('login'); return; }
+    setGenerating('map'); setGenResult(null); setErrMsg('');
+    const allText = active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
+    try{
+      setGenProgress('Building brain map structure…');
+      const res = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:2000,
+          messages:[{role:'user',content:`Create a hierarchical brain map for this course: "${active.name}".
+Root = course name. 4-7 main branches (major topics/chapters). Each branch has 3-5 child nodes (subtopics).
+Respond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"one sentence"},...]},...]}
+
+Material:\n${allText.slice(0,4000)}`}]})});
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==='text')?.text||'';
+      const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+
+      const bmPalette = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
+      const nodes = [{id:'root',label:parsed.root||active.name,x:0,y:0,color:active.color,parentId:null,deckIds:[],note:''}];
+
+      (parsed.branches||[]).forEach((branch,bi)=>{
+        const bColor = bmPalette[bi%bmPalette.length];
+        const bAngle = (bi/(parsed.branches.length))*Math.PI*2-Math.PI/2;
+        const bx = Math.cos(bAngle)*260, by = Math.sin(bAngle)*260;
+        const bid = `b${bi}`;
+        nodes.push({id:bid,label:branch.label,x:bx,y:by,color:bColor,parentId:'root',deckIds:[],note:''});
+        (branch.children||[]).forEach((child,ci)=>{
+          const cAngle = bAngle+(ci-(branch.children.length-1)/2)*0.55;
+          nodes.push({id:`${bid}c${ci}`,label:child.label,x:bx+Math.cos(cAngle)*190,y:by+Math.sin(cAngle)*190,color:bColor,parentId:bid,deckIds:[],note:child.note||''});
+        });
+      });
+
+      const newMap = {id:`map_${Date.now()}`,title:active.name,color:active.color,courseId:active.id,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
+      const existing = JSON.parse(localStorage.getItem('tp_bm_maps')||'[]');
+      localStorage.setItem('tp_bm_maps',JSON.stringify([...existing,newMap]));
+      updateCourse(active.id,{brainMapIds:[...(active.brainMapIds||[]),newMap.id]});
+      setGenResult({type:'map',mapId:newMap.id,nodeCount:nodes.length});
+      setGenProgress('');
+    }catch(e){ console.error(e); setErrMsg('Generation failed. Please try again.'); }
+    setGenerating(null);
+  };
+
+  const CH_SUBJECTS = ['Biology','Chemistry','Physics','Math','History','English','Computer Science','Economics','Psychology','Other'];
+
+  // ── COURSE DETAIL VIEW ──
+  if(view==='course'&&active) return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
+      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      {/* Nav */}
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
+        <button onClick={()=>{setView('home');setActive(null);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← All Courses</button>
+        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
+        <div style={{width:4,height:4,borderRadius:'50%',background:active.color}}/>
+        <span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:'#1A1814'}}>{active.name}</span>
+        <span style={{fontSize:12,color:'#8C8880'}}>{active.subject}</span>
+      </nav>
+
+      <div style={{maxWidth:900,margin:'0 auto',padding:'32px 24px 80px',animation:'ch-fade 0.3s ease'}}>
+        {/* Header */}
+        <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${active.color}`,borderRadius:16,padding:'28px 28px 24px',marginBottom:24}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:active.color,marginBottom:6}}>{active.subject||'Course'}</div>
+              <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:'#1A1814',marginBottom:8}}>{active.name}</h1>
+              {active.description&&<p style={{fontSize:14,color:'#6B6860',lineHeight:1.6}}>{active.description}</p>}
+              <div style={{display:'flex',gap:16,marginTop:12,fontSize:13,color:'#8C8880'}}>
+                <span>📄 {(active.documents||[]).length} documents</span>
+                <span>📇 {(active.flashDeckIds||[]).length} flash decks</span>
+                <span>✺ {(active.brainMapIds||[]).length} brain maps</span>
+              </div>
+            </div>
+            <button onClick={()=>deleteCourse(active.id)} style={{background:'none',border:'1px solid rgba(232,93,63,0.2)',borderRadius:7,padding:'6px 12px',fontSize:11,cursor:'pointer',color:'rgba(232,93,63,0.6)'}}>Delete Course</button>
+          </div>
+        </div>
+
+        {errMsg&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20}}>{errMsg}<button onClick={()=>setErrMsg('')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#E85D3F'}}>✕</button></div>}
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+          {/* Documents */}
+          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',gridColumn:'1/-1'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+              <div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>📄 Course Documents</div><div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Paste notes, textbook chapters, syllabi, or any course material</div></div>
+              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
+            </div>
+            {(active.documents||[]).length===0
+              ?<div style={{textAlign:'center',padding:'32px 0',color:'#A8A59E'}}>
+                <div style={{fontSize:36,marginBottom:10}}>📄</div>
+                <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>No documents yet</div>
+                <p style={{fontSize:12,maxWidth:280,margin:'0 auto'}}>Add your notes, textbook chapters, or any course material to get started.</p>
+              </div>
+              :<div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {(active.documents||[]).map(doc=>(
+                  <div key={doc.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2',borderRadius:10,border:'1px solid #ECEAE4'}}>
+                    <div style={{width:36,height:36,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📄</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc.name}</div>
+                      <div style={{fontSize:11,color:'#8C8880'}}>{doc.content.split(/\s+/).length} words · added {new Date(doc.addedAt).toLocaleDateString()}</div>
+                    </div>
+                    <button onClick={()=>removeDocument(doc.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#D8D5CE',fontSize:14}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                  </div>
+                ))}
+              </div>
+            }
+            {/* Add document form */}
+            {showAddDoc&&(
+              <div style={{marginTop:16,padding:'16px',background:'#F7F6F2',borderRadius:12,border:'1.5px solid #ECEAE4'}}>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (e.g. Chapter 3 Notes)"
+                  style={{width:'100%',padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}
+                  onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapter, lecture slides, or any course material here…"
+                  style={{width:'100%',minHeight:160,padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',lineHeight:1.6,fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box',marginBottom:10}}
+                  onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');}} style={{flex:1,padding:'10px',borderRadius:8,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button>
+                  <button onClick={addDocument} disabled={!docText.trim()} style={{flex:2,padding:'10px',borderRadius:8,border:'none',background:docText.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:docText.trim()?'pointer':'default',color:docText.trim()?'#F7F6F2':'#A8A59E'}}>Add Document →</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Generate Flash Cards */}
+          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:`4px solid ${active.color}`,borderRadius:14,padding:'20px'}}>
+            <div style={{fontSize:20,marginBottom:10}}>📇</div>
+            <div style={{fontSize:15,fontWeight:800,color:'#1A1814',marginBottom:6}}>Flash Card Decks</div>
+            <p style={{fontSize:12,color:'#6B6860',lineHeight:1.6,marginBottom:16}}>AI reads your documents and creates organized flash card decks — one deck per chapter or major topic.</p>
+            {(active.flashDeckIds||[]).length>0&&(
+              <div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>
+                ✓ {(active.flashDeckIds||[]).length} deck{(active.flashDeckIds||[]).length!==1?'s':''} already generated
+                <button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button>
+              </div>
+            )}
+            {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards total!<button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
+            <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length}
+              style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              {generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✦ Generate Flash Cards'}
+            </button>
+          </div>
+
+          {/* Generate Brain Map */}
+          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:'4px solid #F0A8C0',borderRadius:14,padding:'20px'}}>
+            <div style={{fontSize:20,marginBottom:10}}>✺</div>
+            <div style={{fontSize:15,fontWeight:800,color:'#1A1814',marginBottom:6}}>Brain Map</div>
+            <p style={{fontSize:12,color:'#6B6860',lineHeight:1.6,marginBottom:16}}>AI builds a visual brain map showing how all the topics in your course connect to each other.</p>
+            {(active.brainMapIds||[]).length>0&&(
+              <div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#9B1446'}}>
+                ✓ {(active.brainMapIds||[]).length} map{(active.brainMapIds||[]).length!==1?'s':''} already generated
+                <button onClick={()=>launchApp('brainmap')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button>
+              </div>
+            )}
+            {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#9B1446'}}>✓ Map created with {genResult.nodeCount} nodes!<button onClick={()=>launchApp('brainmap')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
+            <button onClick={generateBrainMap} disabled={generating==='map'||!(active.documents||[]).length}
+              style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?'#F0A8C0':'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              {generating==='map'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✺ Generate Brain Map'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── HOME VIEW ──
+  return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
+      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
+        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:28,height:28,borderRadius:7,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div>
+          <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}><span style={{color:CH}}>Ace It</span> Course Hub</span>
+        </div>
+        <div style={{marginLeft:'auto'}}>
+          {!user&&<button onClick={()=>openAuth('login')} style={{background:CH,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In</button>}
+        </div>
+      </nav>
+
+      <div style={{maxWidth:900,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
+        <div style={{textAlign:'center',marginBottom:40}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:CH+'20',border:`1px solid ${CH}40`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'#166534',marginBottom:16}}>◎ Course Hub</div>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,44px)',fontWeight:900,color:'#1A1814',lineHeight:1.1,marginBottom:12,letterSpacing:-1}}>Your coursework, connected</h1>
+          <p style={{fontSize:15,color:'#6B6860',maxWidth:480,margin:'0 auto 28px',lineHeight:1.7}}>Upload your course materials once. Get flash card decks, brain maps, and study tools — all organized and ready to use across every app.</p>
+          <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Create a Course</button>
+        </div>
+
+        {/* How it works */}
+        {courses.length===0&&(
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>
+            {[['1','Upload','Paste your notes, syllabus, or textbook chapters into a course.','📄'],
+              ['2','Generate','AI creates organized flash card decks and brain maps from your content.','✦'],
+              ['3','Study','Use your generated content across Flash Cards, Brain Map, and more.','🚀']
+            ].map(([n,title,desc,icon])=>(
+              <div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}>
+                <div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:CH,marginBottom:6}}>Step {n}</div>
+                <div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div>
+                <div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Courses grid */}
+        {courses.length>0&&(
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:16}}>
+            {courses.map(c=>(
+              <div key={c.id} onClick={()=>{setActive(c);setView('course');}} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${c.color}`,borderRadius:14,padding:'20px',cursor:'pointer',transition:'all 0.2s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=c.color;e.currentTarget.style.boxShadow=`0 4px 20px ${c.color}20`;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.boxShadow='none';}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                  <div style={{width:40,height:40,borderRadius:10,background:c.color+'25',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>◎</div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:800,color:'#1A1814'}}>{c.name}</div>
+                    <div style={{fontSize:11,color:c.color,fontWeight:600}}>{c.subject||'Course'}</div>
+                  </div>
+                </div>
+                {c.description&&<p style={{fontSize:12,color:'#6B6860',lineHeight:1.5,marginBottom:12}}>{c.description}</p>}
+                <div style={{display:'flex',gap:12,fontSize:11,color:'#8C8880'}}>
+                  <span>📄 {(c.documents||[]).length} docs</span>
+                  <span>📇 {(c.flashDeckIds||[]).length} decks</span>
+                  <span>✺ {(c.brainMapIds||[]).length} maps</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Create course modal */}
+      {showCreate&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}>
+          <div style={{background:'#fff',borderRadius:18,padding:'36px',width:440,maxWidth:'94vw',animation:'ch-fade 0.2s ease'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:28,marginBottom:14}}>◎</div>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814',marginBottom:6}}>Create a Course</h3>
+            <p style={{fontSize:13,color:'#8C8880',marginBottom:24,lineHeight:1.6}}>Give your course a name. You'll add documents after.</p>
+            <input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createCourse();e.stopPropagation();}} placeholder="Course name e.g. Biology 101, AP History"
+              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}}
+              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+            <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology, Math, History"
+              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}}
+              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+            <textarea value={createForm.description} onChange={e=>setCreateForm(f=>({...f,description:e.target.value}))} placeholder="Description (optional)"
+              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'none',minHeight:72,marginBottom:16,boxSizing:'border-box'}}
+              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+            {/* Color */}
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#8C8880',marginBottom:8}}>Color</div>
+              <div style={{display:'flex',gap:8}}>{PALETTE.map(col=>(<button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>))}</div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button>
+              <button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
   const canvasRef=useRef(null),labelsRef=useRef(null),animRef=useRef(null);
   const stateRef=useRef({hov:null,T:0,last:0,searchQ:'',speedMult:1,planets:PLANETS.map((p,i)=>({...p,angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2}))});
@@ -12116,17 +12930,19 @@ function AceItGalaxyInner() {
 
   // ── Live data readers — these give the AI real-time knowledge of user's content
   const readLiveDecks = () => {
-    // L2: replace with await db.getDecks(userId)
     try { const s = localStorage.getItem("tp_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveMaps = () => {
-    // L2: replace with await db.getMaps(userId)
     try { const s = localStorage.getItem("tp_bm_maps"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveFolders = () => {
     try { const s = localStorage.getItem("tp_fc_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
+  };
+
+  const readLiveCourses = () => {
+    try { const s = localStorage.getItem("tp_courses"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   // ── Profile update trackers ───────────────────────────────────────────────────
@@ -12259,6 +13075,7 @@ Help them see connections ACROSS their apps. For example:
     const decks   = readLiveDecks();
     const maps    = readLiveMaps();
     const folders = readLiveFolders();
+    const courses = readLiveCourses();
     const prof    = userProfile;
     const name    = user?.name || "the user";
     const intent  = intentOverride || detectIntent(userMessage, prof);
@@ -12291,6 +13108,13 @@ ${decks.length > 10 ? `  ...and ${decks.length - 10} more` : ""}` : "No flashcar
 ${maps.length ? `BRAIN MAPS (${maps.length} total):
 ${maps.slice(0, 6).map(m => `  • "${m.title}" — ${m.nodes?.length || 0} nodes`).join("\n")}` : "No brain maps yet"}
 
+${courses.length ? `COURSES IN COURSE HUB (${courses.length} total):
+${courses.map(co => {
+  const coDecks = decks.filter(d => (co.linkedDeckIds||[]).includes(d.id));
+  const coMaps  = maps.filter(m  => (co.linkedMapIds||[]).includes(m.id));
+  return `  • "${co.name}"${co.subject?` (${co.subject})`:''}${co.semester?` — ${co.semester}`:''}: ${co.materials?.length||0} materials, ${coDecks.length} decks (${coDecks.reduce((a,d)=>a+(d.cards?.length||0),0)} cards), ${coMaps.length} maps`;
+}).join("\n")}` : "No courses in Course Hub yet"}
+
 ${prof.goals?.length ? `ACTIVE GOALS:
 ${prof.goals.map(g => `  ${g.done ? "✅" : "○"} [${g.priority}] ${g.text}`).join("\n")}` : "No goals set yet"}
 
@@ -12298,20 +13122,17 @@ ${prof.recentTopics.length ? `RECENT TOPICS: ${prof.recentTopics.join(", ")}` : 
 ${prof.weakSubjects?.length ? `STRUGGLING WITH: ${prof.weakSubjects.join(", ")}` : ""}
 ${prof.strongSubjects?.length ? `MASTERED: ${prof.strongSubjects.join(", ")}` : ""}
 
-═══ THE 13 TEACHER'S PET APPS YOU CAN HELP WITH ═══
+═══ THE ACE IT APPS YOU CAN HELP WITH ═══
+Course Hub — upload coursework once, AI generates flash cards + brain maps per course
 Flash Cards — build decks, study with spaced repetition, Quick Build from text
 Notes — record lectures, auto-transcribe, generate study material
 Brain Map — visual mind maps connected to flashcard decks
 Text Simplifier — simplify text or summarize YouTube videos
-Ace Academy — full AI school, adaptive courses
 Studio — real-world skills (music, mechanics, trading, etc.)
-Universe of Information — verified AI encyclopedia
-Earth's Record — global historical archive
-Career Compass — career planning, skill gaps, certifications
 Personal Assistant — this app — chat, goals, planner
-Mental Health — mood tracking, mindfulness, burnout support
-Flow — focus optimization, learning style detection
-Study Buddy — real-time AI quiz partner
+Study Buddy — virtual study rooms with video/audio, real-time collaboration
+Journal — private daily journaling with AI reflection
+Tracker — tasks, calendar, deadlines pulled from your courses
 
 ═══ HOW TO BEHAVE ═══
 - Use ${name}'s name naturally but not every message
@@ -12511,6 +13332,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
   if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
   if (currentApp === 'studybuddy') return <StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} />;
+  if (currentApp === 'coursehub')  return <CourseHubApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />;
   if (currentApp) { const planet = PLANETS.find(p => p.appId === currentApp); if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>; }
 
   return (
