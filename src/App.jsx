@@ -11038,10 +11038,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       setActiveRoom(room); activeRoomRef.current=room;
       setView('room');
       setJoining(false);
-      startMedia();
+      await startMedia(); // wait for camera/mic BEFORE making peer connections
       try{ unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{ if(!snap.exists()){doLeave(true);return;} const d=snap.data(); setParticipants(d.participants||{}); if(d.timerOn!==undefined)setTimerOn(d.timerOn); if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs); if(d.timerMode!==undefined)setTimerMode(d.timerMode); },()=>{}); }catch{}
       try{ const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc')); unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{}); }catch{}
-      try{ const sq=query(collection(db,'studyRooms',room.id,'signals'),where('to','==',user.uid)); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')handleSignal(room.id,c.doc.data());});},()=>{}); }catch{}
+      try{ const sq=collection(db,'studyRooms',room.id,'signals'); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){ const sig=c.doc.data(); if(sig.to===user.uid) handleSignal(room.id,sig); }});},()=>{}); }catch{}
       try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);}); }catch{}
     }catch(e){
       console.error('enterRoom error:', e);
