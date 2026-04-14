@@ -11024,84 +11024,128 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,canvas.width,canvas.height);
   },[showBoard]);
 
-  // WebRTC
+  // WebRTC — Perfect Negotiation Pattern (RFC 8827)
+  // Prevents offer collision when multiple users join simultaneously
+  const makePCRef = useRef(null);
+
   const makePC=(roomId,targetUid)=>{
+    if(peerConns.current[targetUid]){
+      peerConns.current[targetUid].close();
+    }
     const pc=new RTCPeerConnection(ICE_CONFIG);
     peerConns.current[targetUid]=pc;
-    // Add all local tracks
-    localStreamRef.current?.getTracks().forEach(t=>pc.addTrack(t,localStreamRef.current));
-    // Build remote stream from incoming tracks
-    const remoteStreamsMap = {};
+    // Add all local tracks upfront
+    localStreamRef.current?.getTracks().forEach(t=>{
+      try{ pc.addTrack(t, localStreamRef.current); }catch{}
+    });
+    // Receive remote tracks
+    const remoteStream = new MediaStream();
     pc.ontrack=e=>{
-      const stream = e.streams[0] || new MediaStream([e.track]);
-      const streamId = stream.id;
-      if(!remoteStreamsMap[streamId]){
-        remoteStreamsMap[streamId] = stream;
-        setRemoteStreams(p=>({...p,[targetUid]:stream}));
-      } else {
-        // Add new track to existing stream if missing
-        if(!remoteStreamsMap[streamId].getTracks().find(t=>t.id===e.track.id)){
-          remoteStreamsMap[streamId].addTrack(e.track);
+      e.streams[0]?.getTracks().forEach(track=>{
+        if(!remoteStream.getTracks().find(t=>t.id===track.id)){
+          remoteStream.addTrack(track);
         }
-      }
+      });
+      setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));
     };
-    pc.onicecandidate=async e=>{ 
-      if(e.candidate) try{ 
-        await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); 
-      }catch{} 
+    // Send ICE candidates
+    pc.onicecandidate=async e=>{
+      if(!e.candidate) return;
+      try{ await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+        from:user.uid, to:targetUid, type:'ice-candidate',
+        data:JSON.stringify(e.candidate), ts:serverTimestamp()
+      }); }catch{}
     };
+    // Handle connection state
     pc.onconnectionstatechange=()=>{
-      const state = pc.connectionState;
-      if(state==='failed'){
-        // Try ICE restart on failure
-        pc.restartIce();
-      }
-      if(state==='closed'){
-        setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});
-        delete peerConns.current[targetUid];
-      }
-    };
-    pc.oniceconnectionstatechange=()=>{
-      if(pc.iceConnectionState==='disconnected'){
-        // Give it 3s to recover before removing
-        setTimeout(()=>{
-          if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'){
-            setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;});
-          }
-        },3000);
+      if(pc.connectionState==='failed') pc.restartIce();
+      if(pc.connectionState==='closed'){
+        setRemoteStreams(prev=>{const n={...prev};delete n[targetUid];return n;});
+        if(peerConns.current[targetUid]===pc) delete peerConns.current[targetUid];
       }
     };
     return pc;
   };
+
+  // Perfect negotiation: lower UID is "polite" (will rollback on collision)
+  const isPolite=(remoteUid)=> user.uid < remoteUid;
+
+  const makingOfferRef = useRef({});
+
+  const negotiate=async(roomId,targetUid)=>{
+    const pc = peerConns.current[targetUid] || makePC(roomId,targetUid);
+    try{
+      makingOfferRef.current[targetUid]=true;
+      await pc.setLocalDescription(); // browser auto-generates offer
+      await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+        from:user.uid, to:targetUid, type:'offer',
+        data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
+      });
+    }catch(e){ console.error('negotiate',e); }
+    finally{ makingOfferRef.current[targetUid]=false; }
+  };
+
   const sendOffer=async(roomId,targetUid)=>{
-    // Allow reconnect if existing connection is dead/closed
-    const existing = peerConns.current[targetUid];
+    // Skip if already properly connected
+    const existing=peerConns.current[targetUid];
     if(existing){
-      const state = existing.connectionState || existing.iceConnectionState;
-      if(state==='connected'||state==='connecting') return; // truly active, skip
+      const cs=existing.connectionState;
+      if(cs==='connected') return;
+      if(cs==='connecting'||cs==='new') return;
       existing.close();
       delete peerConns.current[targetUid];
     }
-    const pc=makePC(roomId,targetUid);
-    try{
-      const o=await pc.createOffer();
-      await pc.setLocalDescription(o);
-      await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-        from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()
-      });
-    }catch(e){ console.error('sendOffer',e); }
+    makePC(roomId,targetUid);
+    await negotiate(roomId,targetUid);
   };
+
   const handleSignal=async(roomId,sig,sigId)=>{
     if(sigId && processedSigs.current.has(sigId)) return;
     if(sigId) processedSigs.current.add(sigId);
-    const{from,type,data}=sig; if(from===user.uid)return;
-    if(type==='offer'){
-      if(peerConns.current[from]){ peerConns.current[from].close(); delete peerConns.current[from]; }
-      const pc=makePC(roomId,from);
-      try{ await pc.setRemoteDescription(JSON.parse(data)); const a=await pc.createAnswer(); await pc.setLocalDescription(a); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()}); }catch(e){ console.error('handle offer',e); }
-    }
-    else if(type==='answer'){ try{ await peerConns.current[from]?.setRemoteDescription(JSON.parse(data)); }catch{} }
-    else if(type==='ice-candidate'){ try{ await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data))); }catch{} }
+    const{from,type,data}=sig;
+    if(from===user.uid) return;
+
+    // Get or create peer connection for this remote user
+    let pc=peerConns.current[from];
+    if(!pc) pc=makePC(roomId,from);
+
+    try{
+      if(type==='offer'){
+        const parsedDesc=JSON.parse(data);
+        const offerCollision=(parsedDesc.type==='offer')&&(makingOfferRef.current[from]||pc.signalingState!=='stable');
+        const impolite=!isPolite(from);
+        if(offerCollision && impolite) return; // impolite peer ignores colliding offer
+        if(offerCollision){
+          // Polite peer: rollback own offer and accept theirs
+          await Promise.all([
+            pc.setLocalDescription({type:'rollback'}),
+            pc.setRemoteDescription(parsedDesc)
+          ]);
+        } else {
+          await pc.setRemoteDescription(parsedDesc);
+        }
+        if(parsedDesc.type==='offer'){
+          await pc.setLocalDescription();
+          await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+            from:user.uid, to:from, type:'answer',
+            data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
+          });
+        }
+      }
+      else if(type==='answer'){
+        // Ignore if we're not expecting an answer
+        if(pc.signalingState==='have-local-offer'||pc.signalingState==='have-local-pranswer'){
+          await pc.setRemoteDescription(JSON.parse(data));
+        }
+      }
+      else if(type==='ice-candidate'){
+        const candidate=JSON.parse(data);
+        try{ await pc.addIceCandidate(candidate); }catch(e){
+          // Queue candidates if remote description not set yet
+          if(pc.remoteDescription) throw e;
+        }
+      }
+    }catch(e){ console.error('handleSignal',type,e); }
   };
 
   const startMedia=async()=>{
@@ -11311,63 +11355,76 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         ))}
       </div>
 
-      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+      <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
         {/* Main area */}
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative'}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative',minHeight:0}}>
           {/* Pinned message */}
           {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span style={{fontSize:12}}>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
-          {/* Video grid */}
+          {/* Video grid — Zoom-style, fills available height equally */}
           {!showBoard&&(()=>{
-            const totalTiles = 1 + partList.filter(p=>p.uid!==user?.uid).length;
-            const cols = totalTiles===1?1:totalTiles===2?2:totalTiles<=4?2:3;
-            const gridCols = `repeat(${cols}, 1fr)`;
+            const allParts = partList.filter(p=>p.uid!==user?.uid);
+            const total = 1 + allParts.length; // include self
+            // Calculate optimal cols/rows to fill space
+            const cols = total===1?1 : total===2?2 : total<=4?2 : total<=6?3 : 3;
+            const rows = Math.ceil(total/cols);
+            // Tile component — reused for all participants
+            const Tile=({children,border,label,sublabel,isYou,camOff,muted})=>(
+              <div style={{position:'relative',background:'#111020',borderRadius:10,overflow:'hidden',border:`2px solid ${border||'rgba(255,255,255,0.08)'}`,display:'flex',alignItems:'center',justifyContent:'center',minHeight:0,minWidth:0}}>
+                {children}
+                {camOff&&<div style={{position:'absolute',inset:0,background:'#0D0B1E',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
+                  <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{sublabel||'?'}</div>
+                </div>}
+                {/* Name bar */}
+                <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.75))',padding:'20px 10px 7px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <span style={{fontSize:11,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'70%'}}>{label}</span>
+                  <div style={{display:'flex',gap:3,flexShrink:0}}>
+                    {muted&&<span style={{background:'rgba(232,93,63,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>🔇</span>}
+                    {camOff&&<span style={{background:'rgba(60,60,80,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>CAM OFF</span>}
+                  </div>
+                </div>
+              </div>
+            );
             return(
-              <div style={{flex:1,overflow:'auto',padding:8,display:'grid',gap:6,gridTemplateColumns:gridCols,gridAutoRows:'1fr',alignContent:totalTiles<=cols?'center':'start'}}>
-                {/* Local video */}
-                <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:`2px solid ${SB}60`,borderRadius:10,overflow:'hidden',minHeight:0}}>
+              <div style={{
+                flex:1, display:'grid', gap:5, padding:8,
+                gridTemplateColumns:`repeat(${cols}, 1fr)`,
+                gridTemplateRows:`repeat(${rows}, 1fr)`,
+                overflow:'hidden', // critical — forces tiles to fill height
+                boxSizing:'border-box',
+              }}>
+                {/* Self tile */}
+                <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${screenSharing?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn&&!screenSharing} muted={!audioOn}>
                   {localStream
-                    ?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:screenSharing?'none':'scaleX(-1)'}}/>
-                    :<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8,background:'rgba(255,165,208,0.05)'}}>
-                      <div style={{width:52,height:52,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
-                      <div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting camera…'}</div>
+                    ?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:screenSharing?'none':'scaleX(-1)'}}/>
+                    :<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                      <div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
+                      <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting…'}</span>
                     </div>
                   }
-                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.7))',padding:'16px 8px 6px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <span style={{fontSize:10,fontWeight:700,color:'#fff'}}>{user?.name} (you){screenSharing?' 🖥️':''}</span>
-                    <div style={{display:'flex',gap:4}}>
-                      {!audioOn&&<span style={{fontSize:10,background:'rgba(232,93,63,0.8)',borderRadius:3,padding:'1px 5px'}}>🔇</span>}
-                      {!videoOn&&!screenSharing&&<span style={{fontSize:10,background:'rgba(232,93,63,0.8)',borderRadius:3,padding:'1px 5px'}}>📷 off</span>}
-                    </div>
-                  </div>
-                  {!videoOn&&!screenSharing&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.9)',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}>
-                    <div style={{width:52,height:52,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
-                    <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>Camera off</span>
-                  </div>}
-                </div>
-                {/* Remote streams - active video */}
+                </Tile>
+                {/* Remote streams with active video */}
                 {otherStreams.map(([uid,stream])=>{
                   const p=participants[uid];
                   return(
-                    <div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:'2px solid rgba(255,255,255,0.12)',borderRadius:10,overflow:'hidden',minHeight:0}}>
+                    <Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}>
                       <video ref={el=>{
-                        if(el){
+                        if(el&&el.srcObject!==stream){
                           remoteVidRefs.current[uid]=el;
-                          if(el.srcObject!==stream) el.srcObject=stream;
+                          el.srcObject=stream;
+                          el.play().catch(()=>{});
                         }
-                      }} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                      <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.7))',padding:'16px 8px 6px'}}>
-                        <span style={{fontSize:10,fontWeight:700,color:'#fff'}}>{p?.name||'User'}{p?.uid===activeRoom.host?' 👑':''}</span>
-                      </div>
-                    </div>
+                      }} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
+                    </Tile>
                   );
                 })}
-                {/* Participants connecting (no stream yet) */}
-                {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(
-                  <div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(10,8,24,0.8)',border:'2px solid rgba(255,255,255,0.07)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8,minHeight:0}}>
-                    <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div>
-                    <div style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>{p.name}{p.uid===activeRoom.host?' 👑':''}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:6,height:6,borderRadius:'50%',background:SB,animation:'pulse 1.5s infinite'}}/><span style={{fontSize:9,color:'rgba(255,255,255,0.3)'}}>Connecting…</span></div>
-                  </div>
+                {/* Participants still connecting */}
+                {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(
+                  <Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                      <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div>
+                    </div>
+                  </Tile>
                 ))}
               </div>
             );
