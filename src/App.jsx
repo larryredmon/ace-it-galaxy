@@ -4877,15 +4877,26 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const [studyFlipped,  setStudyFlipped]  = useState(false);
   const [showNodeMenu,  setShowNodeMenu]  = useState(false);
 
-  // Undo history
+  // Undo/Redo history
   const historyRef = useRef([]);
-  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
+  const redoRef    = useRef([]);
+  const pushHistory = (prevNodes) => {
+    historyRef.current = [...historyRef.current.slice(-29), prevNodes];
+    redoRef.current = []; // clear redo on new action
+  };
   const handleUndo = () => {
-    if (historyRef.current.length === 0) return;
+    if (!historyRef.current.length) return;
     const prev = historyRef.current[historyRef.current.length - 1];
+    redoRef.current = [...redoRef.current, nodes];
     historyRef.current = historyRef.current.slice(0, -1);
-    setNodes(prev);
-    setSelectedId(null);
+    setNodes(prev); setSelectedId(null);
+  };
+  const handleRedo = () => {
+    if (!redoRef.current.length) return;
+    const next = redoRef.current[redoRef.current.length - 1];
+    historyRef.current = [...historyRef.current, nodes];
+    redoRef.current = redoRef.current.slice(0, -1);
+    setNodes(next); setSelectedId(null);
   };
 
   // Wrapped setNodes that auto-pushes undo history for meaningful operations
@@ -4897,7 +4908,16 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     });
   };
 
-  const dragRef  = useRef(null); // { type: "node"|"pan", id?, startX, startY, origX, origY, origPanX, origPanY }
+  // AI expansion
+  const [showAI,       setShowAI]       = useState(false);
+  const [aiTopic,      setAiTopic]      = useState('');
+  const [aiLoading,    setAiLoading]    = useState(false);
+  // Minimap
+  const [showMinimap,  setShowMinimap]  = useState(true);
+  // Multi-select
+  const [selectedIds,  setSelectedIds]  = useState(new Set());
+
+  const dragRef  = useRef(null);
   const canvasRef= useRef(null);
 
   const selectedNode = nodes.find(n => n.id === selectedId);
@@ -4919,7 +4939,24 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       }
     };
     const onUp = () => { dragRef.current = null; };
-    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
+    const onKeyDown = (e) => {
+      // Undo/Redo
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault(); handleRedo(); return; }
+      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); handleUndo(); return; }
+      // Don't capture when editing text
+      if (editingId || e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
+      // Tab = add child to selected node
+      if (e.key==='Tab' && selectedId) { e.preventDefault(); addChild(selectedId); return; }
+      // Enter = edit selected node label
+      if (e.key==='Enter' && selectedId) { e.preventDefault(); const n=nodes.find(x=>x.id===selectedId); if(n)startEditing(n.id,n.label); return; }
+      // Delete/Backspace = delete selected node
+      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') { e.preventDefault(); deleteNode(selectedId); return; }
+      // Escape = deselect
+      if (e.key==='Escape') { setSelectedId(null); setShowAI(false); return; }
+      // +/= zoom in, - zoom out
+      if (e.key==='+' || e.key==='=') { setZoom(z=>Math.min(z*1.15,3)); return; }
+      if (e.key==='-') { setZoom(z=>Math.max(z*0.87,0.15)); return; }
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
@@ -5008,6 +5045,64 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     else if (studyDeckIdx > 0) { setStudyDeckIdx(i => i - 1); setStudyCardIdx(0); setStudyFlipped(false); }
   };
 
+  // ── Auto-layout: radial tree ──
+  const autoLayout = () => {
+    const root = nodes.find(n=>n.id==='root');
+    if(!root) return;
+    const children = (pid) => nodes.filter(n=>n.parentId===pid);
+    const positioned = new Map();
+    positioned.set('root', {x:0, y:0});
+    const layoutLevel = (parentId, startAngle, sweepAngle, radius) => {
+      const kids = children(parentId);
+      if(!kids.length) return;
+      const angleStep = sweepAngle / Math.max(kids.length, 1);
+      kids.forEach((kid, i) => {
+        const angle = startAngle + angleStep * i + angleStep/2 - sweepAngle/2;
+        const x = (positioned.get(parentId)?.x||0) + Math.cos(angle)*radius;
+        const y = (positioned.get(parentId)?.y||0) + Math.sin(angle)*radius;
+        positioned.set(kid.id, {x, y});
+        layoutLevel(kid.id, angle-sweepAngle/4, sweepAngle/2, radius*0.75);
+      });
+    };
+    layoutLevel('root', -Math.PI/2, Math.PI*2, 240);
+    setNodesWithHistory(ns => ns.map(n => positioned.has(n.id) ? {...n, ...positioned.get(n.id)} : n));
+  };
+
+  // ── AI expand: generate child nodes from a topic ──
+  const aiExpand = async (parentId, topic) => {
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/claude', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-5-20250514', max_tokens:600,
+          messages:[{role:'user', content:`Generate 5-7 key subtopics for a brain map node about "${topic}". These will be child nodes.
+Respond ONLY with JSON: {"nodes":[{"label":"short label","note":"one sentence description"},...]}
+Labels must be 1-4 words. No duplicates.`}]
+        })
+      });
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==='text')?.text||'';
+      const parsed = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const parent = nodes.find(n=>n.id===parentId);
+      if(!parent||!parsed.nodes) return;
+      const color = getBranchColor(parentId)||parent.color;
+      const newNodes = parsed.nodes.map((item,i) => {
+        const angle = (-Math.PI/2) + (i/parsed.nodes.length)*Math.PI*2;
+        const dist = parentId==='root' ? 260 : 180;
+        return {
+          id:`ai${Date.now()}${i}`, label:item.label, note:item.note||'',
+          x: parent.x + Math.cos(angle)*dist,
+          y: parent.y + Math.sin(angle)*dist,
+          color, parentId, deckIds:[]
+        };
+      });
+      setNodesWithHistory(ns => [...ns, ...newNodes]);
+      setShowAI(false); setAiTopic('');
+    } catch(e) { console.error('AI expand',e); }
+    setAiLoading(false);
+  };
+
   // ── Connection path (cubic bezier) ──
   const getPath = (parent, child) => {
     const mx = (parent.x + child.x) / 2;
@@ -5029,55 +5124,97 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   return (
     <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
-      {/* Title bar strip */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
-        {editTitle ? (
-          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
-        ) : (
-          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
+      {/* ── Toolbar ── */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:44, zIndex:50, display:"flex", alignItems:"center", gap:8, padding:"0 12px", background:"rgba(12,11,24,0.96)", borderBottom:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(10px)" }}>
+        <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:6, padding:"4px 10px", fontSize:11, cursor:"pointer", color:"rgba(255,255,255,0.4)", flexShrink:0 }}
+          onMouseEnter={e=>e.currentTarget.style.color="#fff"} onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.4)"}>← Maps</button>
+        <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)", flexShrink:0 }} />
+        {/* Map title */}
+        {editTitle
+          ? <input autoFocus value={mapTitle} onChange={e=>setMapTitle(e.target.value)} onBlur={()=>setEditTitle(false)} onKeyDown={e=>{if(e.key==="Enter")setEditTitle(false);e.stopPropagation();}}
+              style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, padding:"4px 10px", fontSize:14, fontWeight:700, color:"#F7F6F2", outline:"none", minWidth:160, maxWidth:260 }} />
+          : <div onClick={()=>setEditTitle(true)} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", padding:"3px 7px", borderRadius:6, maxWidth:240 }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <span style={{ fontSize:14, fontWeight:800, color:"#F7F6F2", fontFamily:"'Playfair Display',serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mapTitle}</span>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", flexShrink:0 }}>✎</span>
+            </div>
+        }
+        {/* Right side tools */}
+        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
+          {/* AI Expand */}
+          <div style={{ position:"relative" }}>
+            <button onClick={()=>setShowAI(a=>!a)} title="AI Expand — generate subtopics with AI"
+              style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+              ✦ AI Expand
+            </button>
+            {showAI && (
+              <div style={{ position:"absolute", top:32, right:0, background:"rgba(12,10,28,0.99)", border:"1px solid rgba(155,127,255,0.2)", borderRadius:12, padding:14, width:280, zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.6)" }} onClick={e=>e.stopPropagation()}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#9B7FFF", marginBottom:8 }}>✦ AI Generate Subtopics</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginBottom:10 }}>{selectedId ? `Adding children to: ${nodes.find(n=>n.id===selectedId)?.label||'selected node'}` : 'Select a node first, then expand it'}</div>
+                <input value={aiTopic} onChange={e=>setAiTopic(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&selectedId&&aiTopic.trim())aiExpand(selectedId,aiTopic.trim());e.stopPropagation();}}
+                  placeholder="Topic to expand (or leave blank to use node label)"
+                  style={{ width:"100%", padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:7, fontSize:12, color:"#F7F6F2", outline:"none", marginBottom:10, boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif" }} />
+                <button onClick={()=>{ const n=nodes.find(x=>x.id===selectedId); const topic=aiTopic.trim()||n?.label||mapTitle; if(selectedId)aiExpand(selectedId,topic); }}
+                  disabled={!selectedId||aiLoading}
+                  style={{ width:"100%", padding:"8px", borderRadius:8, border:"none", background:selectedId?"#9B7FFF":"rgba(255,255,255,0.07)", fontSize:12, fontWeight:700, cursor:selectedId?"pointer":"default", color:selectedId?"#fff":"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                  {aiLoading ? <><span style={{ width:10,height:10,border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/> Generating…</> : "✦ Generate Subtopics"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
-        {/* Zoom + Undo */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
-            title="Undo (Ctrl+Z)"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
-            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
-            ↩ Undo
+          {/* Auto-layout */}
+          <button onClick={autoLayout} title="Auto-arrange all nodes in a radial tree layout"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600 }}>
+            ⊞ Layout
           </button>
-          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
-          <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
+          {/* Undo/Redo */}
+          <button onClick={handleUndo} disabled={!historyRef.current.length} title="Undo (Ctrl+Z)"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:historyRef.current.length?"pointer":"default", color:historyRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600 }}>↩</button>
+          <button onClick={handleRedo} disabled={!redoRef.current.length} title="Redo (Ctrl+Shift+Z)"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:redoRef.current.length?"pointer":"default", color:redoRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600 }}>↪</button>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
+          {/* Zoom */}
+          <button onClick={()=>setZoom(z=>Math.min(z*1.18,3))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+          <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", minWidth:36, textAlign:"center" }}>{Math.round(zoom*100)}%</span>
+          <button onClick={()=>setZoom(z=>Math.max(z*0.85,0.15))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+          <button onClick={()=>{setPan({x:0,y:0});setZoom(0.85);}} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"3px 8px", cursor:"pointer", color:"rgba(255,255,255,0.35)", fontSize:10 }}>Fit</button>
+          {/* Minimap toggle */}
+          <button onClick={()=>setShowMinimap(m=>!m)} title="Toggle minimap"
+            style={{ background:showMinimap?"rgba(240,168,192,0.12)":"rgba(255,255,255,0.06)", border:`1px solid ${showMinimap?"rgba(240,168,192,0.3)":"rgba(255,255,255,0.09)"}`, borderRadius:5, width:26, height:26, cursor:"pointer", color:showMinimap?"#F0A8C0":"rgba(255,255,255,0.4)", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>⊡</button>
         </div>
       </div>
 
-      {/* ── Canvas area (starts below title bar at top: 44px) ── */}
-      <div ref={canvasRef} style={{ position: "absolute", top: 44, left: 0, right: 0, bottom: 0, cursor: dragRef.current?.type === "pan" ? "grabbing" : "grab" }}
+      {/* Keyboard shortcuts hint */}
+      <div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", zIndex:40, pointerEvents:"none" }}>
+        <div style={{ background:"rgba(12,11,24,0.8)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"4px 14px", fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:0.5, display:"flex", gap:12, whiteSpace:"nowrap" }}>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Tab</strong> add child</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Enter</strong> edit</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Del</strong> delete</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Ctrl+Z</strong> undo</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>+/−</strong> zoom</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Scroll</strong> zoom</span>
+        </div>
+      </div>
+
+      {/* ── Canvas area ── */}
+      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab" }}
         onMouseDown={onCanvasDown}>
 
         {/* Dot grid */}
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}>
           <defs>
-            <pattern id={`bmDots-${map.id}`} x={(pan.x % (28 * zoom))} y={(pan.y % (28 * zoom))} width={28 * zoom} height={28 * zoom} patternUnits="userSpaceOnUse">
-              <circle cx={14 * zoom} cy={14 * zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
+            <pattern id={`bmDots-${map.id}`} x={(pan.x%(28*zoom))} y={(pan.y%(28*zoom))} width={28*zoom} height={28*zoom} patternUnits="userSpaceOnUse">
+              <circle cx={14*zoom} cy={14*zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill={`url(#bmDots-${map.id})`} />
         </svg>
 
         {/* Connection + Node SVG layer */}
-        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
-          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
+        <svg style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", overflow:"visible" }}
+          onClick={()=>{ setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); setShowAI(false); }}>
+
           <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
 
             {/* Connections */}
@@ -5256,12 +5393,46 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
           </div>
         )}
 
-        {/* ── Bottom hint ── */}
-        {!selectedNode && !studyNode && (
-          <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(10,9,22,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 18px", backdropFilter: "blur(10px)", pointerEvents: "none" }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Click node to select · Double-click to rename · Drag to move · Scroll to zoom · 📇 = flash cards</span>
-          </div>
-        )}
+        {/* ── Minimap ── */}
+        {showMinimap && nodes.length > 1 && (()=>{
+          const MM_W=160, MM_H=100, PAD=12;
+          const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+          const minX=Math.min(...xs)-60, maxX=Math.max(...xs)+60;
+          const minY=Math.min(...ys)-40, maxY=Math.max(...ys)+40;
+          const rangeX=maxX-minX||1, rangeY=maxY-minY||1;
+          const scaleX=MM_W/rangeX, scaleY=MM_H/rangeY;
+          const sc=Math.min(scaleX,scaleY,1);
+          const offX=(MM_W-(rangeX*sc))/2, offY=(MM_H-(rangeY*sc))/2;
+          const toMM=(x,y)=>({ x:offX+(x-minX)*sc, y:offY+(y-minY)*sc });
+          return(
+            <div style={{ position:"absolute", bottom:20, right:16, zIndex:60, background:"rgba(10,9,22,0.92)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:10, overflow:"hidden", width:MM_W+PAD*2, height:MM_H+PAD*2, backdropFilter:"blur(8px)" }}>
+              <svg width={MM_W+PAD*2} height={MM_H+PAD*2}>
+                <g transform={`translate(${PAD},${PAD})`}>
+                  {nodes.filter(n=>n.parentId).map(n=>{
+                    const par=nodes.find(p=>p.id===n.parentId); if(!par)return null;
+                    const a=toMM(par.x,par.y), b=toMM(n.x,n.y);
+                    return <line key={`ml-${n.id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={n.color} strokeWidth={0.8} strokeOpacity={0.4}/>;
+                  })}
+                  {nodes.map(n=>{
+                    const pos=toMM(n.x,n.y);
+                    const isRoot=n.id==='root';
+                    return <circle key={`mm-${n.id}`} cx={pos.x} cy={pos.y} r={isRoot?4:2.5} fill={n.color} opacity={n.id===selectedId?1:0.7}/>;
+                  })}
+                  {/* Viewport indicator */}
+                  {(()=>{
+                    const vW=typeof window!=='undefined'?window.innerWidth:1440;
+                    const vH=typeof window!=='undefined'?window.innerHeight-100:800;
+                    const vpX=(-(pan.x)-minX-(vW/(2*zoom)))*sc+offX;
+                    const vpY=(-(pan.y)-minY-(vH/(2*zoom)))*sc+offY;
+                    const vpW=(vW/zoom)*sc, vpH=(vH/zoom)*sc;
+                    return <rect x={vpX} y={vpY} width={vpW} height={vpH} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
+                  })()}
+                </g>
+              </svg>
+            </div>
+          );
+        })()}
+
       </div>
 
       {/* ── Flash Card Study Drawer ── */}
