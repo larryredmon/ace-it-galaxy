@@ -121,12 +121,12 @@ function tpSync(lsKey, data) {
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
   { id: 1,  appId: "flashcards",   name: "Flash Cards",       symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
-  { id: 2,  appId: "notes",        name: "Notes",             symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
-  { id: 16, appId: "tracker",      name: "Tracker",           symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system." },
+  { id: 2,  appId: "notes",        name: "Notes",             symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center." },
+  { id: 16, appId: "tracker",      name: "Tracker",           symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner and calendar." },
   { id: 3,  appId: "brainmap",     name: "Brain Map",         symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
   { id: 4,  appId: "simplifier",   name: "Text Simplifier",   symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
-  { id: 6,  appId: "studio",       name: "Studio",            symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
-  { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
+  { id: 6,  appId: "studio",       name: "Studio",            symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create and build study content." },
+  { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study companion." },
   { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
   { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
   { id: 15, appId: "journal",      name: "Journal",           symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
@@ -7578,8 +7578,6 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
-  useEffect(() => { const check = () => setIsMobile(window.innerWidth < 640); window.addEventListener("resize", check); return () => window.removeEventListener("resize", check); }, []);
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
@@ -7668,9 +7666,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: isMobile ? "94vw" : "90vw", maxWidth: isMobile ? 440 : 860, maxHeight: "92vh", display: "flex", borderRadius: isMobile ? 16 : 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         {/* LEFT */}
-        {!isMobile && <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
+        <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div>
@@ -7695,10 +7693,10 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
             </div>
           </div>
           <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It</div>
-        </div>}
+        </div>
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: isMobile ? "24px 20px" : "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "92vh" }}>
+        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
@@ -10902,100 +10900,123 @@ class AppErrorBoundary extends Component {
 // ─── Study Buddy App ─────────────────────────────────────────────────────────
 function StudyBuddyApp({ onBack, user, openAuth }) {
   const SB = '#FFA8D0';
-  const [view,         setView]         = useState('lobby');
-  const [rooms,        setRooms]        = useState([]);
-  const [searchQ,      setSearchQ]      = useState('');
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true });
-  const [showJoin,     setShowJoin]     = useState(false);
-  const [joinInput,    setJoinInput]    = useState('');
-  const [joining,      setJoining]      = useState(false);
-  const [activeRoom,   setActiveRoom]   = useState(null);
-  const [roomCode,     setRoomCode]     = useState('');
-  const [participants, setParticipants] = useState({});
-  const [messages,     setMessages]     = useState([]);
-  const [newMsg,       setNewMsg]       = useState('');
-  const [timerSecs,    setTimerSecs]    = useState(25*60);
-  const [timerOn,      setTimerOn]      = useState(false);
-  const [timerMode,    setTimerMode]    = useState('focus');
-  const [showChat,     setShowChat]     = useState(true);
-  const [localStream,  setLocalStream]  = useState(null);
-  const [remoteStreams,setRemoteStreams] = useState({});
-  const [videoOn,      setVideoOn]      = useState(true);
-  const [audioOn,      setAudioOn]      = useState(true);
-  const [mediaError,   setMediaError]   = useState(null);
-  const [errMsg,       setErrMsg]       = useState('');
+  // Views & rooms
+  const [view,           setView]           = useState('lobby');
+  const [rooms,          setRooms]          = useState([]);
+  const [searchQ,        setSearchQ]        = useState('');
+  const [showCreate,     setShowCreate]     = useState(false);
+  const [createForm,     setCreateForm]     = useState({ title:'', subject:'', isPublic:true, maxParticipants:10 });
+  const [showJoin,       setShowJoin]       = useState(false);
+  const [joinInput,      setJoinInput]      = useState('');
+  const [joining,        setJoining]        = useState(false);
+  const [activeRoom,     setActiveRoom]     = useState(null);
+  const [roomCode,       setRoomCode]       = useState('');
+  const [participants,   setParticipants]   = useState({});
+  const [errMsg,         setErrMsg]         = useState('');
+  // Chat
+  const [messages,       setMessages]       = useState([]);
+  const [newMsg,         setNewMsg]         = useState('');
+  const [pinnedMsg,      setPinnedMsg]      = useState(null);
+  const [showChat,       setShowChat]       = useState(true);
+  // Timer
+  const [timerSecs,      setTimerSecs]      = useState(25*60);
+  const [timerOn,        setTimerOn]        = useState(false);
+  const [timerMode,      setTimerMode]      = useState('focus');
+  // Media
+  const [localStream,    setLocalStream]    = useState(null);
+  const [remoteStreams,  setRemoteStreams]   = useState({});
+  const [videoOn,        setVideoOn]        = useState(true);
+  const [audioOn,        setAudioOn]        = useState(true);
+  const [mediaError,     setMediaError]     = useState(null);
+  const [screenSharing,  setScreenSharing]  = useState(false);
+  // Whiteboard
+  const [showBoard,      setShowBoard]      = useState(false);
+  const [boardTool,      setBoardTool]      = useState('pen');
+  const [boardColor,     setBoardColor]     = useState('#FFA8D0');
+  const [boardSize,      setBoardSize]      = useState(3);
+  const [isDrawing,      setIsDrawing]      = useState(false);
+  // Room settings
+  const [showSettings,   setShowSettings]   = useState(false);
+  const [roomLocked,     setRoomLocked]     = useState(false);
+  // User profile
+  const [showProfile,    setShowProfile]    = useState(false);
+  const [userSubjects,   setUserSubjects]   = useState([]);
+  const [subjectInput,   setSubjectInput]   = useState('');
 
-  const localVidRef    = useRef(null);
-  const remoteVidRefs  = useRef({});
-  const peerConns      = useRef({});
-  const localStreamRef = useRef(null);
-  const activeRoomRef  = useRef(null);
-  const unsubRooms     = useRef(null);
-  const unsubRoom      = useRef(null);
-  const unsubMsgs      = useRef(null);
-  const unsubSigs      = useRef(null);
-  const timerRef       = useRef(null);
-  const msgEndRef      = useRef(null);
+  const localVidRef     = useRef(null);
+  const remoteVidRefs   = useRef({});
+  const peerConns       = useRef({});
+  const localStreamRef  = useRef(null);
+  const screenStreamRef = useRef(null);
+  const activeRoomRef   = useRef(null);
+  const unsubRooms      = useRef(null);
+  const unsubRoom       = useRef(null);
+  const unsubMsgs       = useRef(null);
+  const unsubSigs       = useRef(null);
+  const timerRef        = useRef(null);
+  const msgEndRef       = useRef(null);
+  const boardRef        = useRef(null);
+  const boardCtx        = useRef(null);
+  const lastPos         = useRef(null);
+  const processedSigs   = useRef(new Set());
 
-  // TURN servers — free Open Relay Project by Metered, works through firewalls
   const ICE_CONFIG = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      // Free TURN servers via Open Relay Project (no signup needed)
-      { urls: 'turn:openrelay.metered.ca:80',      username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443',     username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:80',              username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443',             username: 'openrelayproject', credential: 'openrelayproject' },
       { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
     ]
   };
 
-  // Load rooms — filter out stale ones (older than 24h with no participants)
+  // Load user subjects from localStorage
+  useEffect(()=>{ try{ const s=localStorage.getItem('sb_subjects'); if(s) setUserSubjects(JSON.parse(s)); }catch{} },[]);
+  const saveSubjects = (arr) => { setUserSubjects(arr); try{ localStorage.setItem('sb_subjects',JSON.stringify(arr)); }catch{} };
+
+  // Load rooms with stale cleanup
   useEffect(()=>{
-    try {
-      const cutoff = new Date(Date.now() - 24*60*60*1000);
+    try{
       const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'), limit(50));
       unsubRooms.current = onSnapshot(q, async snap=>{
-        const now = Date.now();
-        const fresh = [];
-        const staleIds = [];
+        const now = Date.now(), fresh = [], staleIds = [];
         snap.docs.forEach(d=>{
-          const data = d.data();
-          const parts = Object.keys(data.participants || {}).length;
-          // Use current time as fallback — pending serverTimestamp() returns null briefly
-          // This prevents newly created rooms from being deleted immediately
-          const created = data.createdAt?.toDate?.() || new Date();
-          const ageMs = now - created.getTime();
-          if(parts === 0 && ageMs > 2*60*60*1000) {
-            staleIds.push(d.id);
-          } else {
-            fresh.push({id:d.id,...data});
-          }
+          const data=d.data(), parts=Object.keys(data.participants||{}).length;
+          const created=data.createdAt?.toDate?.() || new Date();
+          const ageMs=now-created.getTime();
+          if(parts===0 && ageMs>2*60*60*1000) staleIds.push(d.id);
+          else fresh.push({id:d.id,...data});
         });
         setRooms(fresh);
-        staleIds.forEach(async id => { try { await deleteDoc(doc(db,'studyRooms',id)); } catch {} });
+        staleIds.forEach(async id=>{ try{ await deleteDoc(doc(db,'studyRooms',id)); }catch{} });
       }, ()=>{});
-    } catch {}
+    }catch{}
     return ()=>{ unsubRooms.current?.(); };
   },[]);
 
   useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
-  useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject = localStream; },[localStream]);
+  useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject=localStream; },[localStream]);
   useEffect(()=>{
     Object.entries(remoteStreams).forEach(([uid,stream])=>{
-      const el = remoteVidRefs.current[uid];
-      if(el && el.srcObject !== stream) el.srcObject = stream;
+      const el=remoteVidRefs.current[uid];
+      if(el && el.srcObject!==stream) el.srcObject=stream;
     });
   },[remoteStreams]);
   useEffect(()=>{
-    if(timerOn){
-      timerRef.current = setInterval(()=>{
-        setTimerSecs(s=>{ if(s<=1){ clearInterval(timerRef.current); setTimerOn(false); const next=timerMode==='focus'?'break':'focus'; setTimerMode(next); return next==='focus'?25*60:5*60; } return s-1; });
-      },1000);
-    } else clearInterval(timerRef.current);
+    if(timerOn){ timerRef.current=setInterval(()=>{ setTimerSecs(s=>{ if(s<=1){ clearInterval(timerRef.current); setTimerOn(false); const next=timerMode==='focus'?'break':'focus'; setTimerMode(next); return next==='focus'?25*60:5*60; } return s-1; }); },1000); }
+    else clearInterval(timerRef.current);
     return ()=>clearInterval(timerRef.current);
   },[timerOn,timerMode]);
   useEffect(()=>()=>{ doLeave(true); unsubRooms.current?.(); },[]);
+
+  // Whiteboard setup
+  useEffect(()=>{
+    if(!showBoard || !boardRef.current) return;
+    const canvas=boardRef.current;
+    canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight;
+    boardCtx.current=canvas.getContext('2d');
+    boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,canvas.width,canvas.height);
+  },[showBoard]);
 
   // WebRTC
   const makePC=(roomId,targetUid)=>{
@@ -11008,111 +11029,118 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     pc.onconnectionstatechange=()=>{ if(['disconnected','failed','closed'].includes(pc.connectionState)){ setRemoteStreams(p=>{const n={...p};delete n[targetUid];return n;}); delete peerConns.current[targetUid]; } };
     return pc;
   };
-  const sendOffer=async(roomId,uid)=>{ const pc=makePC(roomId,uid); try{ const o=await pc.createOffer(); await pc.setLocalDescription(o); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:uid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()}); }catch{} };
-  const handleSignal=async(roomId,sig)=>{
+  const sendOffer=async(roomId,targetUid)=>{
+    if(peerConns.current[targetUid]) return;
+    const pc=makePC(roomId,targetUid);
+    try{ const o=await pc.createOffer(); await pc.setLocalDescription(o); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(o),ts:serverTimestamp()}); }catch(e){ console.error('sendOffer',e); }
+  };
+  const handleSignal=async(roomId,sig,sigId)=>{
+    if(sigId && processedSigs.current.has(sigId)) return;
+    if(sigId) processedSigs.current.add(sigId);
     const{from,type,data}=sig; if(from===user.uid)return;
-    if(type==='offer'){ const pc=peerConns.current[from]||makePC(roomId,from); try{ await pc.setRemoteDescription(JSON.parse(data)); const a=await pc.createAnswer(); await pc.setLocalDescription(a); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()}); }catch{} }
+    if(type==='offer'){
+      if(peerConns.current[from]){ peerConns.current[from].close(); delete peerConns.current[from]; }
+      const pc=makePC(roomId,from);
+      try{ await pc.setRemoteDescription(JSON.parse(data)); const a=await pc.createAnswer(); await pc.setLocalDescription(a); await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(a),ts:serverTimestamp()}); }catch(e){ console.error('handle offer',e); }
+    }
     else if(type==='answer'){ try{ await peerConns.current[from]?.setRemoteDescription(JSON.parse(data)); }catch{} }
     else if(type==='ice-candidate'){ try{ await peerConns.current[from]?.addIceCandidate(new RTCIceCandidate(JSON.parse(data))); }catch{} }
   };
 
   const startMedia=async()=>{
     setMediaError(null);
-    try{
-      const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-      localStreamRef.current=s; setLocalStream(s); return s;
-    }catch(e){
-      // Try audio only if video fails
-      try{
-        const s=await navigator.mediaDevices.getUserMedia({video:false,audio:true});
-        localStreamRef.current=s; setLocalStream(s);
-        setMediaError('Camera blocked — using audio only. To enable video, check your browser settings.');
-        return s;
-      }catch(e2){
-        if(e.name==='NotAllowedError'||e2.name==='NotAllowedError'){
-          setMediaError('Camera & mic blocked by your browser. Click the 🔒 icon in the address bar → allow camera & mic → refresh.');
-        } else {
-          setMediaError('Could not access camera or microphone. Check your device settings.');
-        }
-        return null;
-      }
+    try{ const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); localStreamRef.current=s; setLocalStream(s); return s; }
+    catch(e){
+      try{ const s=await navigator.mediaDevices.getUserMedia({video:false,audio:true}); localStreamRef.current=s; setLocalStream(s); setMediaError('Camera blocked — audio only. Click 🔒 in address bar → allow camera → refresh.'); return s; }
+      catch(e2){ setMediaError('Camera & mic blocked. Click 🔒 in address bar → allow → refresh.'); return null; }
     }
   };
 
-  // BUG FIX: go straight to room, show code as banner inside room
+  // Screen sharing
+  const toggleScreenShare=async()=>{
+    if(screenSharing){
+      screenStreamRef.current?.getTracks().forEach(t=>t.stop());
+      screenStreamRef.current=null; setScreenSharing(false);
+      // Switch back to camera
+      const camTrack=localStreamRef.current?.getVideoTracks()[0];
+      if(camTrack){ Object.values(peerConns.current).forEach(pc=>{ const sender=pc.getSenders().find(s=>s.track?.kind==='video'); if(sender)sender.replaceTrack(camTrack); }); }
+    } else {
+      try{
+        const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+        screenStreamRef.current=screen; setScreenSharing(true);
+        const screenTrack=screen.getVideoTracks()[0];
+        // Replace video track in all peer connections
+        Object.values(peerConns.current).forEach(pc=>{ const sender=pc.getSenders().find(s=>s.track?.kind==='video'); if(sender)sender.replaceTrack(screenTrack); });
+        // Also show locally
+        if(localVidRef.current){ const mixed=new MediaStream([screenTrack,...(localStreamRef.current?.getAudioTracks()||[])]); localVidRef.current.srcObject=mixed; }
+        screenTrack.onended=()=>toggleScreenShare();
+      }catch(e){ console.error('screen share error',e); }
+    }
+  };
+
   const enterRoom=async(room)=>{
     if(!user){openAuth('login');return;}
+    if(room.isLocked && room.host!==user.uid){ setErrMsg('This room is locked by the host.'); return; }
+    const partCount=Object.keys(room.participants||{}).length;
+    if(room.maxParticipants && partCount>=room.maxParticipants){ setErrMsg(`Room is full (max ${room.maxParticipants} people).`); return; }
     setJoining(true);setErrMsg('');
     try{
-      // Timeout wrapper — if Firestore hangs, fail after 8s instead of forever
-      const updatePromise = updateDoc(doc(db,'studyRooms',room.id),{
-        [`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||user.name?.[0]||'?',uid:user.uid,joinedAt:new Date().toISOString()}
+      const updatePromise=updateDoc(doc(db,'studyRooms',room.id),{
+        [`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||user.name?.[0]||'?',uid:user.uid,joinedAt:new Date().toISOString(),subjects:userSubjects}
       });
-      await Promise.race([
-        updatePromise,
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Check your internet connection.')),8000))
-      ]);
+      await Promise.race([updatePromise, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
       setActiveRoom(room); activeRoomRef.current=room;
-      setView('room');
-      setJoining(false);
-      await startMedia(); // wait for camera/mic BEFORE making peer connections
-      try{ unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{ if(!snap.exists()){doLeave(true);return;} const d=snap.data(); setParticipants(d.participants||{}); if(d.timerOn!==undefined)setTimerOn(d.timerOn); if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs); if(d.timerMode!==undefined)setTimerMode(d.timerMode); },()=>{}); }catch{}
+      setRoomLocked(room.isLocked||false);
+      setView('room'); setJoining(false);
+      await startMedia();
+      try{ unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{
+        if(!snap.exists()){doLeave(true);return;}
+        const d=snap.data(); const parts=d.participants||{};
+        setParticipants(parts); setRoomLocked(d.isLocked||false);
+        if(d.timerOn!==undefined)setTimerOn(d.timerOn);
+        if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);
+        if(d.timerMode!==undefined)setTimerMode(d.timerMode);
+        if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
+        Object.keys(parts).forEach(uid=>{ if(uid!==user.uid&&!peerConns.current[uid]&&localStreamRef.current) sendOffer(room.id,uid); });
+      },()=>{}); }catch{}
       try{ const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc')); unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{}); }catch{}
-      try{ const sq=collection(db,'studyRooms',room.id,'signals'); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){ const sig=c.doc.data(); if(sig.to===user.uid) handleSignal(room.id,sig); }});},()=>{}); }catch{}
+      try{ const sq=collection(db,'studyRooms',room.id,'signals'); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{}); }catch{}
       try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);}); }catch{}
-    }catch(e){
-      console.error('enterRoom error:', e);
-      setErrMsg(e.message||'Failed to join room. Please try again.');
-      setJoining(false);
-    }
+    }catch(e){ console.error('enterRoom',e); setErrMsg(e.message||'Failed to join.'); setJoining(false); }
   };
 
-  // BUG FIX: no blocking modal after create — go straight to room
   const createRoom=async()=>{
     if(!user){openAuth('login');return;}
     if(!createForm.title.trim()||!createForm.subject.trim())return;
     setJoining(true);setErrMsg('');
     try{
       const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
-      // Timeout on addDoc so it never hangs forever
-      const addPromise = addDoc(collection(db,'studyRooms'),{
-        title:createForm.title.trim(),subject:createForm.subject.trim(),
-        host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,
-        participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus'
-      });
-      const ref = await Promise.race([
-        addPromise,
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firestore timed out. Check your internet or Firebase config.')),8000))
-      ]);
-      const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{}};
-      setShowCreate(false);
-      if(!createForm.isPublic) setRoomCode(code);
-      setCreateForm({title:'',subject:'',isPublic:true});
+      const addPromise=addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,maxParticipants:createForm.maxParticipants||10,isLocked:false,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus',pinnedMsg:null});
+      const ref=await Promise.race([addPromise, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firestore timed out.')),8000))]);
+      const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{},isLocked:false};
+      setShowCreate(false); if(!createForm.isPublic) setRoomCode(code);
+      setCreateForm({title:'',subject:'',isPublic:true,maxParticipants:10});
       await enterRoom(room);
-    }catch(e){
-      console.error('createRoom error:', e);
-      setErrMsg(e.message||'Failed to create room. Please try again.');
-      setJoining(false);
-    }
+    }catch(e){ console.error('createRoom',e); setErrMsg(e.message||'Failed to create room.'); setJoining(false); }
   };
 
   const joinByCode=async()=>{
-    if(!user){openAuth('login');return;}
-    if(joinInput.length<6)return;
-    setErrMsg('');
+    if(!user){openAuth('login');return;} if(joinInput.length<6)return; setErrMsg('');
     try{
       const q=query(collection(db,'studyRooms'),where('code','==',joinInput.trim().toUpperCase()));
       const snap=await getDocs(q);
-      if(snap.empty){setErrMsg('Room not found. Check the code.');return;}
+      if(snap.empty){setErrMsg('Room not found.');return;}
       setShowJoin(false);setJoinInput('');
       await enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});
-    }catch{ setErrMsg('Could not find that room. Try again.'); }
+    }catch{ setErrMsg('Could not find that room.'); }
   };
 
   const doLeave=async(silent=false)=>{
     localStreamRef.current?.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; setLocalStream(null);
+    screenStreamRef.current?.getTracks().forEach(t=>t.stop()); screenStreamRef.current=null; setScreenSharing(false);
     Object.values(peerConns.current).forEach(pc=>pc.close()); peerConns.current={}; setRemoteStreams({});
     unsubRoom.current?.(); unsubMsgs.current?.(); unsubSigs.current?.(); clearInterval(timerRef.current);
+    processedSigs.current.clear();
     if(!silent&&activeRoomRef.current&&user){
       try{
         await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});
@@ -11120,83 +11148,240 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0) await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
       }catch{}
     }
-    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});
-    setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');
+    setActiveRoom(null); activeRoomRef.current=null; setMessages([]); setParticipants({});
+    setTimerSecs(25*60); setTimerOn(false); setTimerMode('focus'); setRoomCode(''); setView('lobby'); setPinnedMsg(null);
+  };
+
+  // Host controls
+  const kickUser=async(uid)=>{
+    if(!activeRoom||activeRoom.host!==user.uid)return;
+    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`participants.${uid}`]:deleteField()}); }catch{}
+  };
+  const toggleLock=async()=>{
+    if(!activeRoom||activeRoom.host!==user.uid)return;
+    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{isLocked:!roomLocked}); setRoomLocked(!roomLocked); }catch{}
   };
 
   const sendMsg=async()=>{
     if(!newMsg.trim()||!activeRoom)return;
-    const t=newMsg.trim();setNewMsg('');
-    try{ await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp()}); }catch{}
+    const t=newMsg.trim(); setNewMsg('');
+    try{ await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}}); }catch{}
   };
+
+  const addReaction=async(msgId,emoji)=>{
+    if(!activeRoom)return;
+    try{
+      const msgRef=doc(db,'studyRooms',activeRoom.id,'messages',msgId);
+      const snap=await getDoc(msgRef);
+      if(!snap.exists())return;
+      const reactions=snap.data().reactions||{};
+      const users=reactions[emoji]||[];
+      const updated=users.includes(user.uid)?users.filter(u=>u!==user.uid):[...users,user.uid];
+      await updateDoc(msgRef,{[`reactions.${emoji}`]:updated});
+    }catch{}
+  };
+
+  const pinMessage=async(msg)=>{
+    if(!activeRoom||activeRoom.host!==user.uid)return;
+    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{pinnedMsg:msg.id===pinnedMsg?.id?null:{id:msg.id,text:msg.text,userName:msg.userName}}); }catch{}
+  };
+
   const syncTimer=async(u)=>{ if(!activeRoom)return; try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),u); }catch{} };
   const toggleVideo=()=>{ const t=localStreamRef.current?.getVideoTracks()[0]; if(t){t.enabled=!videoOn;setVideoOn(!videoOn);} };
   const toggleAudio=()=>{ const t=localStreamRef.current?.getAudioTracks()[0]; if(t){t.enabled=!audioOn;setAudioOn(!audioOn);} };
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  // Whiteboard drawing
+  const getCanvasPos=(e)=>{
+    const r=boardRef.current.getBoundingClientRect();
+    const touch=e.touches?.[0]||e;
+    return{x:touch.clientX-r.left, y:touch.clientY-r.top};
+  };
+  const startDraw=(e)=>{
+    if(!boardCtx.current)return; e.preventDefault();
+    const pos=getCanvasPos(e); lastPos.current=pos; setIsDrawing(true);
+    if(boardTool==='eraser'){ boardCtx.current.globalCompositeOperation='destination-out'; boardCtx.current.lineWidth=20; }
+    else{ boardCtx.current.globalCompositeOperation='source-over'; boardCtx.current.strokeStyle=boardColor; boardCtx.current.lineWidth=boardSize; }
+    boardCtx.current.lineCap='round'; boardCtx.current.lineJoin='round';
+    boardCtx.current.beginPath(); boardCtx.current.arc(pos.x,pos.y,1,0,Math.PI*2); boardCtx.current.fill();
+  };
+  const draw=(e)=>{
+    if(!isDrawing||!boardCtx.current||!lastPos.current)return; e.preventDefault();
+    const pos=getCanvasPos(e);
+    boardCtx.current.beginPath(); boardCtx.current.moveTo(lastPos.current.x,lastPos.current.y);
+    boardCtx.current.lineTo(pos.x,pos.y); boardCtx.current.stroke();
+    lastPos.current=pos;
+  };
+  const stopDraw=()=>{ setIsDrawing(false); lastPos.current=null; };
+  const clearBoard=()=>{ if(!boardCtx.current||!boardRef.current)return; boardCtx.current.globalCompositeOperation='source-over'; boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,boardRef.current.width,boardRef.current.height); };
+
   const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
   const partList=Object.values(participants);
   const otherStreams=Object.entries(remoteStreams);
+  const isHost=activeRoom&&user&&activeRoom.host===user.uid;
+  const REACTIONS=['👍','❤️','😂','🔥','💯','🤔'];
 
   // ── ROOM VIEW ──
   if(view==='room'&&activeRoom) return(
     <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
-      {roomCode&&activeRoom.host===user?.uid&&(
-        <div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-          <span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Private room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share with your study group</span>
-          <button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button>
-        </div>
-      )}
-      <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 16px',gap:12,flexShrink:0}}>
-        <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)'}}>← Leave</button>
-        <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)'}}/>
+      {/* Private code banner */}
+      {roomCode&&isHost&&(<div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}><span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share with your study group</span><button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button></div>)}
+      {/* Top bar */}
+      <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 12px',gap:8,flexShrink:0,flexWrap:'nowrap',overflow:'hidden'}}>
+        <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)',flexShrink:0}}>← Leave</button>
+        <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)',flexShrink:0}}/>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:800,fontSize:14,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
-          <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying</div>
+          <div style={{fontWeight:800,fontSize:13,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
+          <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying {roomLocked&&'· 🔒 Locked'}</div>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'6px 12px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
-          <div style={{fontFamily:'monospace',fontSize:18,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:52,textAlign:'center'}}>{fmt(timerSecs)}</div>
-          <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
-          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'rgba(255,255,255,0.25)'}}>↺</button>
+        {/* Timer */}
+        <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'5px 10px',flexShrink:0}}>
+          <div style={{fontSize:9,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
+          <div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:46}}>{fmt(timerSecs)}</div>
+          <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:5,padding:'2px 8px',fontSize:10,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
+          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.2)'}}>↺</button>
         </div>
-        <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬</button>
+        {/* Toolbar buttons */}
+        {[
+          {label:'💬', active:showChat, onClick:()=>setShowChat(c=>!c), title:'Chat'},
+          {label:'✏️', active:showBoard, onClick:()=>setShowBoard(b=>!b), title:'Whiteboard'},
+          ...(isHost?[{label:'⚙️', active:showSettings, onClick:()=>setShowSettings(s=>!s), title:'Room Settings'}]:[]),
+        ].map(btn=>(
+          <button key={btn.label} onClick={btn.onClick} title={btn.title}
+            style={{background:btn.active?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${btn.active?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 10px',fontSize:14,cursor:'pointer',color:btn.active?SB:'rgba(255,255,255,0.4)',flexShrink:0}}>
+            {btn.label}
+          </button>
+        ))}
       </div>
+
       <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C'}}>
-          <div style={{flex:1,overflow:'auto',padding:12,display:'grid',gap:8,gridTemplateColumns:otherStreams.length===0?'1fr':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',alignContent:'start'}}>
-            <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:12,overflow:'hidden'}}>
-              {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>:<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:`${SB}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Starting camera…'}</div></div>}
-              <div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{user?.name} (you)</div>
-              {!videoOn&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📷</div>}
-            </div>
-            {otherStreams.map(([uid,stream])=>{ const p=participants[uid]; return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:12,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:8,left:8,background:'rgba(0,0,0,0.65)',borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{p?.name||'User'}</div></div>); })}
-            {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'rgba(255,255,255,0.6)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.25)'}}>Connecting…</div></div>))}
+        {/* Main area */}
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative'}}>
+          {/* Pinned message */}
+          {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span style={{fontSize:12}}>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
+          {/* Video grid */}
+          <div style={{flex:showBoard?0:1,overflow:'auto',padding:8,display:'grid',gap:6,gridTemplateColumns:otherStreams.length===0?'400px':otherStreams.length<=1?'1fr 1fr':'repeat(3,1fr)',justifyContent:'center',alignContent:'start',minHeight:showBoard?0:'auto',maxHeight:showBoard?0:'none',transition:'all 0.3s'}}>
+            {!showBoard&&(<>
+              <div style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:`2px solid ${SB}50`,borderRadius:10,overflow:'hidden'}}>
+                {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',transform:screenSharing?'none':'scaleX(-1)'}}/>:<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}><div style={{width:44,height:44,borderRadius:'50%',background:`${SB}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'No camera':'Starting…'}</div></div>}
+                <div style={{position:'absolute',bottom:6,left:6,background:'rgba(0,0,0,0.7)',borderRadius:4,padding:'2px 7px',fontSize:10,fontWeight:600}}>{user?.name} (you){screenSharing?' 🖥️':''}</div>
+                {!videoOn&&!screenSharing&&<div style={{position:'absolute',inset:0,background:'rgba(6,4,18,0.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24}}>📷</div>}
+              </div>
+              {otherStreams.map(([uid,stream])=>{ const p=participants[uid]; return(<div key={uid} style={{position:'relative',aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.1)',borderRadius:10,overflow:'hidden'}}><video ref={el=>{if(el){remoteVidRefs.current[uid]=el;el.srcObject=stream;}}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/><div style={{position:'absolute',bottom:6,left:6,background:'rgba(0,0,0,0.7)',borderRadius:4,padding:'2px 7px',fontSize:10,fontWeight:600}}>{p?.name||'User'}</div></div>); })}
+              {partList.filter(p=>p.uid!==user?.uid&&!remoteStreams[p.uid]).map(p=>(<div key={p.uid||p.name} style={{aspectRatio:'16/9',background:'rgba(255,255,255,0.04)',border:'2px solid rgba(255,255,255,0.08)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:6}}><div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{p.name}</div><div style={{fontSize:10,color:'rgba(255,255,255,0.2)'}}>Connecting…</div></div>))}
+            </>)}
           </div>
-          {mediaError&&<div style={{padding:'10px 16px',background:'rgba(232,93,63,0.12)',borderTop:'1px solid rgba(232,93,63,0.25)',fontSize:12,color:'#E85D3F',display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:16}}>⚠️</span>
-            <span>{mediaError}</span>
-          </div>}
-          <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
-            <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-            <button onClick={toggleVideo} title={videoOn?'Camera off':'Camera on'} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
-            <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
+
+          {/* Whiteboard */}
+          {showBoard&&(
+            <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+              <div style={{padding:'6px 12px',background:'rgba(6,4,18,0.9)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                {['pen','eraser'].map(t=>(<button key={t} onClick={()=>setBoardTool(t)} style={{padding:'4px 10px',borderRadius:6,border:`1px solid ${boardTool===t?SB:'rgba(255,255,255,0.1)'}`,background:boardTool===t?`${SB}20`:'transparent',fontSize:11,fontWeight:600,cursor:'pointer',color:boardTool===t?SB:'rgba(255,255,255,0.4)'}}>{t==='pen'?'✏️ Pen':'⬜ Eraser'}</button>))}
+                <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                  {['#FFA8D0','#C8B8FF','#6ED9B8','#F5C842','#fff','#E85D3F'].map(col=>(<button key={col} onClick={()=>setBoardColor(col)} style={{width:18,height:18,borderRadius:'50%',background:col,border:`2px solid ${boardColor===col?'#fff':'transparent'}`,cursor:'pointer'}}/>))}
+                </div>
+                <input type="range" min={1} max={16} value={boardSize} onChange={e=>setBoardSize(+e.target.value)} style={{width:60,accentColor:SB}}/>
+                <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{boardSize}px</span>
+                <button onClick={clearBoard} style={{marginLeft:'auto',padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,93,63,0.3)',background:'transparent',fontSize:11,cursor:'pointer',color:'rgba(232,93,63,0.7)'}}>🗑 Clear</button>
+              </div>
+              <canvas ref={boardRef} onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw} onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
+                style={{flex:1,cursor:boardTool==='eraser'?'cell':'crosshair',touchAction:'none'}}/>
+            </div>
+          )}
+
+          {mediaError&&<div style={{padding:'8px 14px',background:'rgba(232,93,63,0.1)',borderTop:'1px solid rgba(232,93,63,0.2)',fontSize:11,color:'#E85D3F',display:'flex',gap:6,alignItems:'center',flexShrink:0}}><span>⚠️</span><span>{mediaError}</span></div>}
+
+          {/* Media controls */}
+          <div style={{height:52,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexShrink:0}}>
+            <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:40,height:40,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
+            <button onClick={toggleVideo} title={videoOn?'Camera off':'Camera on'} style={{width:40,height:40,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
+            <button onClick={toggleScreenShare} title={screenSharing?'Stop sharing':'Share screen'} style={{width:40,height:40,borderRadius:'50%',background:screenSharing?`${SB}25`:'rgba(255,255,255,0.08)',border:`1px solid ${screenSharing?SB:'rgba(255,255,255,0.12)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>🖥️</button>
+            <button onClick={()=>doLeave()} style={{padding:'8px 20px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:12,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave</button>
           </div>
         </div>
-        {showChat&&(<div style={{width:290,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
-          <div style={{padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-            <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:8}}>In this room</div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-              {partList.map(p=>(<div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'4px 8px'}}><div style={{width:18,height:18,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB}}>{p.avatar||p.name?.[0]||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.65)'}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span></div>))}
+
+        {/* Chat sidebar */}
+        {showChat&&(<div style={{width:280,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
+          {/* Participants */}
+          <div style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+            <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:7}}>In this room ({partList.length})</div>
+            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+              {partList.map(p=>(
+                <div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 6px',borderRadius:7,background:'rgba(255,255,255,0.03)'}}>
+                  <div style={{width:22,height:22,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{p.avatar||p.name?.[0]||'?'}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.75)',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</div>
+                    {p.subjects?.length>0&&<div style={{fontSize:9,color:'rgba(255,255,255,0.3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.subjects.join(', ')}</div>}
+                  </div>
+                  {isHost&&p.uid!==user.uid&&(<button onClick={()=>kickUser(p.uid)} title="Kick user" style={{background:'none',border:'none',cursor:'pointer',color:'rgba(232,93,63,0.4)',fontSize:12,flexShrink:0,padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(232,93,63,0.4)'}>✕</button>)}
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
-            {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet — say hello! 👋</div>}
-            {messages.map(m=>(<div key={m.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}><div style={{width:26,height:26,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div><div style={{flex:1,minWidth:0}}><div style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)',marginBottom:2}}>{m.userId===user?.uid?'You':m.userName}</div><div style={{fontSize:13,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div></div></div>))}
+          {/* Messages */}
+          <div style={{flex:1,overflowY:'auto',padding:'10px 12px',display:'flex',flexDirection:'column',gap:8}}>
+            {messages.length===0&&<div style={{textAlign:'center',padding:'20px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet 👋</div>}
+            {messages.map(m=>{
+              const reactionEntries=Object.entries(m.reactions||{}).filter(([,users])=>users.length>0);
+              return(
+                <div key={m.id} style={{display:'flex',gap:7,alignItems:'flex-start',group:'msg'}}>
+                  <div style={{width:24,height:24,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                      <span style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)'}}>{m.userId===user?.uid?'You':m.userName}</span>
+                      {isHost&&<button onClick={()=>pinMessage(m)} title="Pin message" style={{background:'none',border:'none',cursor:'pointer',fontSize:9,color:pinnedMsg?.id===m.id?'#F5C842':'rgba(255,255,255,0.15)',padding:0}}>📌</button>}
+                    </div>
+                    <div style={{fontSize:12,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div>
+                    {/* Reactions */}
+                    <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:4}}>
+                      {reactionEntries.map(([emoji,users])=>(
+                        <button key={emoji} onClick={()=>addReaction(m.id,emoji)}
+                          style={{background:users.includes(user?.uid)?`${SB}25`:'rgba(255,255,255,0.05)',border:`1px solid ${users.includes(user?.uid)?SB+'40':'rgba(255,255,255,0.08)'}`,borderRadius:10,padding:'1px 6px',fontSize:10,cursor:'pointer',color:'rgba(255,255,255,0.7)',display:'flex',alignItems:'center',gap:3}}>
+                          {emoji} <span style={{fontSize:9}}>{users.length}</span>
+                        </button>
+                      ))}
+                      <div style={{position:'relative',display:'inline-block'}}>
+                        <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:'1px 5px',fontSize:9,cursor:'pointer',color:'rgba(255,255,255,0.25)'}}>+😊
+                          <select onChange={e=>{if(e.target.value){addReaction(m.id,e.target.value);e.target.value=''}}} style={{position:'absolute',inset:0,opacity:0,cursor:'pointer',width:'100%'}}>
+                            <option value="">React</option>
+                            {REACTIONS.map(r=><option key={r} value={r}>{r}</option>)}
+                          </select>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
             <div ref={msgEndRef}/>
           </div>
-          <div style={{padding:10,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8}}>
-            <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…" style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
-            <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:36,cursor:'pointer',fontSize:16,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+          {/* Input */}
+          <div style={{padding:8,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:6}}>
+            <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…"
+              style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'7px 10px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
+            <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:32,cursor:'pointer',fontSize:14,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+          </div>
+        </div>)}
+
+        {/* Room settings panel (host only) */}
+        {showSettings&&isHost&&(<div style={{width:240,borderLeft:'1px solid rgba(255,255,255,0.07)',background:'rgba(5,3,14,0.99)',padding:16,flexShrink:0,overflowY:'auto'}}>
+          <div style={{fontSize:12,fontWeight:800,color:'#F7F6F2',marginBottom:16}}>⚙️ Room Settings</div>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Room Access</div>
+            <button onClick={toggleLock} style={{width:'100%',padding:'9px',borderRadius:8,border:`1px solid ${roomLocked?'rgba(232,93,63,0.4)':'rgba(255,255,255,0.1)'}`,background:roomLocked?'rgba(232,93,63,0.1)':'rgba(255,255,255,0.04)',fontSize:12,fontWeight:600,cursor:'pointer',color:roomLocked?'#E85D3F':'rgba(255,255,255,0.5)',textAlign:'left'}}>
+              {roomLocked?'🔒 Room Locked — click to unlock':'🔓 Room Open — click to lock'}
+            </button>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.2)',marginTop:5,lineHeight:1.5}}>Locking prevents new users from joining.</div>
+          </div>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Participants ({partList.length})</div>
+            {partList.filter(p=>p.uid!==user.uid).map(p=>(
+              <div key={p.uid} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{p.name}</span>
+                <button onClick={()=>kickUser(p.uid)} style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.3)',borderRadius:5,padding:'3px 8px',fontSize:10,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Kick</button>
+              </div>
+            ))}
+            {partList.filter(p=>p.uid!==user.uid).length===0&&<div style={{fontSize:11,color:'rgba(255,255,255,0.2)'}}>You're the only one here.</div>}
           </div>
         </div>)}
       </div>
@@ -11209,33 +11394,119 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
       <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
         <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
-        <div style={{marginLeft:'auto'}}>{user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}</div>
+        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:28,height:28,borderRadius:7,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
+        <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center'}}>
+          {user&&<button onClick={()=>setShowProfile(p=>!p)} style={{background:showProfile?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showProfile?SB+'40':'rgba(255,255,255,0.1)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:showProfile?SB:'rgba(255,255,255,0.5)'}}>👤 My Subjects</button>}
+          {user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}
+        </div>
       </nav>
-      <div style={{maxWidth:1000,margin:'0 auto',padding:'40px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
-        <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:20}}>❋ Virtual Study Rooms</div>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(32px,5vw,52px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:14,letterSpacing:-1}}>Find your study crew</h1>
-          <p style={{fontSize:16,color:'rgba(247,246,242,0.4)',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like the library, but from anywhere.</p>
+
+      {/* User profile / subjects panel */}
+      {showProfile&&user&&(
+        <div style={{background:'rgba(10,8,24,0.98)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:12,margin:'12px 20px',padding:'16px 20px',animation:'sb-fade 0.2s ease'}}>
+          <div style={{fontSize:13,fontWeight:800,color:'#F7F6F2',marginBottom:4}}>Your Study Subjects</div>
+          <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:12}}>These show on your profile in rooms so study partners know what you're studying.</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+            {userSubjects.map(s=>(<div key={s} style={{display:'flex',alignItems:'center',gap:5,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'3px 10px',fontSize:11,fontWeight:600,color:SB}}>
+              {s}<button onClick={()=>saveSubjects(userSubjects.filter(x=>x!==s))} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:12,padding:0,lineHeight:1}}>✕</button>
+            </div>))}
+            {userSubjects.length===0&&<span style={{fontSize:11,color:'rgba(255,255,255,0.25)'}}>No subjects added yet</span>}
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <input value={subjectInput} onChange={e=>setSubjectInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&subjectInput.trim()){saveSubjects([...new Set([...userSubjects,subjectInput.trim()])]);setSubjectInput('');}e.stopPropagation();}} placeholder="Add a subject e.g. Biology"
+              style={{flex:1,padding:'8px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:8,fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
+            <button onClick={()=>{if(subjectInput.trim()){saveSubjects([...new Set([...userSubjects,subjectInput.trim()])]);setSubjectInput('');}}} style={{background:SB,border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Add</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{maxWidth:1000,margin:'0 auto',padding:'32px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
+        <div style={{textAlign:'center',marginBottom:40}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:16}}>❋ Virtual Study Rooms</div>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,48px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:12,letterSpacing:-1}}>Find your study crew</h1>
+          <p style={{fontSize:15,color:'rgba(247,246,242,0.4)',maxWidth:440,margin:'0 auto 28px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like the library, but from anywhere.</p>
           <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowCreate(true);}} style={{background:SB,border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Study Room</button>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowJoin(true);}} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'12px 22px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
+            <button onClick={()=>{if(!user){openAuth('login');return;}setShowCreate(true);}} style={{background:SB,border:'none',borderRadius:9,padding:'11px 24px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Room</button>
+            <button onClick={()=>{if(!user){openAuth('login');return;}setShowJoin(true);}} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'11px 20px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
           </div>
         </div>
         {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
-        <div style={{position:'relative',marginBottom:28}}>
-          <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.3,pointerEvents:'none'}}>🔍</span>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…" style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
+        <div style={{position:'relative',marginBottom:24}}>
+          <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:13,opacity:0.3,pointerEvents:'none'}}>🔍</span>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…"
+            style={{width:'100%',padding:'11px 16px 11px 40px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:13,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
         </div>
-        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'3px 8px',flexShrink:0}}><span style={{width:6,height:6,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{count} studying</span></div></div><div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,color:SB,marginBottom:12}}>{r.subject}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginBottom:14}}>Host: {r.hostName||'Anonymous'}</div><button onClick={()=>enterRoom(r)} disabled={joining} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',background:SB,fontSize:13,fontWeight:700,cursor:joining?'default':'pointer',color:'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':'Join Room →'}</button></div>);})}</div>)}
+        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:44,marginBottom:14}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:7}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:13,maxWidth:300,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>)
+        :(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14}}>
+          {filteredRooms.map(r=>{
+            const count=Object.keys(r.participants||{}).length;
+            const full=r.maxParticipants&&count>=r.maxParticipants;
+            return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${full?'rgba(232,93,63,0.5)':SB}`,borderRadius:14,padding:'18px',transition:'all 0.2s'}}
+              onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:7}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div>
+                <div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0}}>
+                  {r.isLocked&&<span title="Locked" style={{fontSize:11}}>🔒</span>}
+                  <div style={{display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'2px 7px'}}>
+                    <span style={{width:5,height:5,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/>
+                    <span style={{fontSize:10,color:'rgba(255,255,255,0.45)'}}>{count}{r.maxParticipants?`/${r.maxParticipants}`:''}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'2px 9px',fontSize:10,fontWeight:700,color:SB,marginBottom:10}}>{r.subject}</div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginBottom:12}}>Host: {r.hostName||'Anonymous'}</div>
+              <button onClick={()=>enterRoom(r)} disabled={joining||full||r.isLocked} style={{width:'100%',padding:'8px',borderRadius:8,border:'none',background:full?'rgba(255,255,255,0.06)':r.isLocked?'rgba(255,255,255,0.06)':SB,fontSize:12,fontWeight:700,cursor:joining||full||r.isLocked?'default':'pointer',color:full||r.isLocked?'rgba(255,255,255,0.25)':'#1A1814',opacity:joining?0.5:1}}>
+                {joining?'Joining…':full?'Room Full':r.isLocked?'🔒 Locked':'Join Room →'}
+              </button>
+            </div>);
+          })}
+        </div>)}
       </div>
-      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>❋</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3><p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:16,lineHeight:1.6}}>Name your room and subject so others can find you.</p>{errMsg&&<div style={{background:'rgba(232,93,63,0.12)',border:'1px solid rgba(232,93,63,0.3)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'#E85D3F',marginBottom:16,lineHeight:1.5,wordBreak:'break-word'}}>{errMsg}</div>}<input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginBottom:24}}>{[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}</div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button></div></div></div>)}
-      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>🔒</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3><p style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginBottom:24}}>Enter the 6-character room code.</p>{errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}<input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/><div style={{display:'flex',gap:10}}><button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button></div></div></div>)}
+
+      {/* Create modal */}
+      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
+        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'32px',width:420,animation:'sb-fade 0.22s ease',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:26,marginBottom:12}}>❋</div>
+          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#F7F6F2',marginBottom:5}}>Create a Study Room</h3>
+          <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:20,lineHeight:1.6}}>Name your room and subject so others can find you.</p>
+          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:11,color:'#E85D3F',marginBottom:12,wordBreak:'break-word'}}>{errMsg}</div>}
+          <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep"
+            style={{width:'100%',padding:'11px 13px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:13,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:10,boxSizing:'border-box'}}/>
+          <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish"
+            style={{width:'100%',padding:'11px 13px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:13,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/>
+          <div style={{display:'flex',gap:6,marginBottom:12}}>
+            {[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'9px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:12,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}
+          </div>
+          <div style={{marginBottom:20}}>
+            <label style={{fontSize:11,color:'rgba(255,255,255,0.35)',display:'block',marginBottom:6}}>Max participants: <strong style={{color:'rgba(255,255,255,0.6)'}}>{createForm.maxParticipants}</strong></label>
+            <input type="range" min={2} max={20} value={createForm.maxParticipants} onChange={e=>setCreateForm(f=>({...f,maxParticipants:+e.target.value}))} style={{width:'100%',accentColor:SB}}/>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:12,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+            <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'10px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:12,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button>
+          </div>
+        </div>
+      </div>)}
+
+      {/* Join private modal */}
+      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
+        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'32px',width:360,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:26,marginBottom:12}}>🔒</div>
+          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#F7F6F2',marginBottom:5}}>Join Private Room</h3>
+          <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:20}}>Enter the 6-character room code.</p>
+          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:11,color:'#E85D3F',marginBottom:12}}>{errMsg}</div>}
+          <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6}
+            style={{width:'100%',padding:'13px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:20,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:14}}/>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'10px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:12,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
+            <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'10px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:12,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
+          </div>
+        </div>
+      </div>)}
     </div>
   );
 }
 
-// ─── Galaxy Homepage ──────────────────────────────────────────────────────────
 function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
   const canvasRef=useRef(null),labelsRef=useRef(null),animRef=useRef(null);
   const stateRef=useRef({hov:null,T:0,last:0,searchQ:'',speedMult:1,planets:PLANETS.map((p,i)=>({...p,angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2}))});
