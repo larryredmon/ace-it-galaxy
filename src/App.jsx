@@ -26,9 +26,6 @@ import {
   where,
   orderBy,
   serverTimestamp,
-  onSnapshot,
-  deleteField,
-  limit,
 } from "firebase/firestore";
 
 // ─── Firestore Sync Layer ──────────────────────────────────────────────────────
@@ -120,17 +117,22 @@ function tpSync(lsKey, data) {
 
 // Refined, curated palette — desaturated sophistication with precise accents
 const PLANETS = [
-  { id: 1,  appId: "flashcards",   name: "Flash Cards",       symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
-  { id: 2,  appId: "notes",        name: "Notes",             symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center." },
-  { id: 16, appId: "tracker",      name: "Tracker",           symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner and calendar." },
-  { id: 3,  appId: "brainmap",     name: "Brain Map",         symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
-  { id: 4,  appId: "simplifier",   name: "Text Simplifier",   symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
-  { id: 6,  appId: "studio",       name: "Studio",            symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create and build study content." },
-  { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study companion." },
-  { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
-  { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
-  { id: 15, appId: "journal",      name: "Journal",           symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
-  { id: 17, appId: "coursehub",    name: "Course Hub",        symbol: "◎", color: "#6ED9B8", glow: "#2BAE7E", size: 46, orbitRadius: 740, speed: 34, desc: "Upload your coursework once. Get flash cards, brain maps, and study plans automatically." },
+  { id: 1,  appId: "flashcards",   name: "Flash Cards",             symbol: "✦", color: "#C8B8FF", glow: "#9B7FFF", size: 48, orbitRadius: 110, speed: 45, desc: "Build decks, flip cards, master anything." },
+  { id: 2,  appId: "notes",     name: "Notes",           symbol: "⬡", color: "#F0D080", glow: "#D4A830", size: 42, orbitRadius: 152, speed: 52, desc: "Your course command center. Upload syllabi, textbooks, and materials — AI builds your personalized study plan, flashcards, and brain maps." },
+  { id: 16, appId: "tracker",   name: "Tracker",         symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system. Pulls from all your courses automatically." },
+  { id: 3,  appId: "brainmap",     name: "Brain Map",               symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
+  { id: 4,  appId: "simplifier",   name: "Text Simplifier",         symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
+  { id: 5,  appId: "academy",      name: "Academy",                 symbol: "◎", color: "#7FD4C8", glow: "#4FBFB0", size: 46, orbitRadius: 280, speed: 33, desc: "Structured courses and guided learning." },
+  { id: 6,  appId: "studio",       name: "Studio",                  symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
+  { id: 7,  appId: "universe",     name: "Universe of Information", symbol: "⟡", color: "#D0A8F8", glow: "#A060E8", size: 50, orbitRadius: 360, speed: 48, desc: "Explore the world's knowledge, organized." },
+  { id: 8,  appId: "earthrecord",  name: "Earth's Record",          symbol: "◉", color: "#88D8A8", glow: "#40B870", size: 38, orbitRadius: 398, speed: 55, desc: "History, facts, and records of our world." },
+  { id: 9,  appId: "careercompass",name: "Career Compass",          symbol: "◇", color: "#F8E070", glow: "#D4B820", size: 44, orbitRadius: 435, speed: 65, desc: "Map your path, skills, and opportunities." },
+  { id: 10, appId: "assistant",    name: "Personal Assistant",      symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
+  { id: 11, appId: "mentalhealth", name: "Mental Health",           symbol: "⬟", color: "#FFB3C6", glow: "#FF6B9D", size: 40, orbitRadius: 505, speed: 58, desc: "Mindfulness, balance, and well-being." },
+  { id: 12, appId: "flow",         name: "Flow",                    symbol: "⬢", color: "#A8E6CF", glow: "#56C596", size: 46, orbitRadius: 542, speed: 50, desc: "Focus sessions, streaks, and deep work." },
+  { id: 13, appId: "studybuddy",  name: "Study Buddy",             symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Your real-time AI study partner — learn together." },
+  { id: 14, appId: "settings",    name: "Settings",                symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience, accessibility, and preferences." },
+  { id: 15, appId: "journal",     name: "Journal",                 symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply. Your private space for thoughts, feelings, and growth." },
 ];
 
 const TILT = 0.34;
@@ -384,7 +386,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
             <div style={{
               fontFamily: "'Montserrat', sans-serif", fontSize: 17, fontWeight: 800,
               color: "#F5D96A", letterSpacing: 2, textTransform: "uppercase",
-            }}>Ace It</div>
+            }}>Teacher's Pet</div>
             <div style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 400,
               color: "rgba(255,255,255,0.28)", letterSpacing: 4, textTransform: "uppercase",
@@ -581,7 +583,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
           fontFamily: "'DM Sans', sans-serif", fontSize: 9,
           color: "rgba(255,255,255,0.15)", letterSpacing: 1,
         }}>
-          © 2026 Ace It
+          © 2026 Teacher's Pet
         </div>
       </div>
     </>
@@ -698,7 +700,7 @@ function NavDropdown({ links, label, color = "#C8B8FF", glow = "#9B7FFF" }) {
 const APP_CONFIGS = {
   notes: {
     badge: "AI Lecture Assistant",
-    headline: ["Ace It", "Notes."],
+    headline: ["Teacher's Pet", "Notes."],
     highlight: 1,
     sub: "Record any lecture, class, or meeting and watch it transform into organized notes, flashcards, and quizzes — automatically. Never miss a concept again.",
     cta: "Start Recording",
@@ -719,7 +721,7 @@ const APP_CONFIGS = {
   },
   academy: {
     badge: "AI-Powered Education",
-    headline: ["Ace It", "Academy."],
+    headline: ["Teacher's Pet", "Academy."],
     highlight: 1,
     sub: "A complete AI school — from elementary through college. Adaptive lessons, cinematic learning, and personalized paths that replace traditional studying with something far more powerful.",
     cta: "Start Learning",
@@ -740,7 +742,7 @@ const APP_CONFIGS = {
   },
   studio: {
     badge: "Real-World Skills",
-    headline: ["Ace It", "Studio."],
+    headline: ["Teacher's Pet", "Studio."],
     highlight: 1,
     sub: "Learn the skills school never taught you. Music production, car mechanics, investing, creative arts, and hundreds more — with AI coaching every step of the way.",
     cta: "Explore Skills",
@@ -761,7 +763,7 @@ const APP_CONFIGS = {
   },
   universe: {
     badge: "AI Knowledge Encyclopedia",
-    headline: ["Ace It", "Universe."],
+    headline: ["Teacher's Pet", "Universe."],
     highlight: 1,
     sub: "Replace fragmented web searching with one verified, AI-powered knowledge hub. Deep dive any topic, check facts automatically, and watch knowledge connect across every field of human understanding.",
     cta: "Explore the Universe",
@@ -782,7 +784,7 @@ const APP_CONFIGS = {
   },
   earthrecord: {
     badge: "Global Historical Archive",
-    headline: ["Ace It", "Earth's Record."],
+    headline: ["Teacher's Pet", "Earth's Record."],
     highlight: 1,
     sub: "The complete, tamper-resistant record of human history, culture, and knowledge — from ancient civilizations to today. Every perspective. Every culture. Preserved forever.",
     cta: "Open the Record",
@@ -803,7 +805,7 @@ const APP_CONFIGS = {
   },
   careercompass: {
     badge: "Life & Career Planning",
-    headline: ["Ace It", "Career Compass."],
+    headline: ["Teacher's Pet", "Career Compass."],
     highlight: 1,
     sub: "Map your path from where you are to where you want to be. Discover careers, identify skill gaps, track certifications, and get AI-powered guidance at every step of your professional journey.",
     cta: "Find My Direction",
@@ -824,7 +826,7 @@ const APP_CONFIGS = {
   },
   assistant: {
     badge: "Your AI Guide",
-    headline: ["Ace It", "Personal Assistant."],
+    headline: ["Teacher's Pet", "Personal Assistant."],
     highlight: 1,
     sub: "The AI that follows you across every app on the platform. Ask anything, get organized, detect cognitive fatigue, and receive personalized coaching — all from one intelligent companion that knows how you learn.",
     cta: "Meet Your Assistant",
@@ -845,7 +847,7 @@ const APP_CONFIGS = {
   },
   mentalhealth: {
     badge: "Emotional Wellness & Balance",
-    headline: ["Ace It", "Mental Health."],
+    headline: ["Teacher's Pet", "Mental Health."],
     highlight: 1,
     sub: "You can't pour from an empty cup. Built for students who push themselves hard, this app helps you manage stress, track your emotional health, and build the resilience to go the distance.",
     cta: "Start Your Practice",
@@ -866,7 +868,7 @@ const APP_CONFIGS = {
   },
   flow: {
     badge: "Learning Style Optimization",
-    headline: ["Ace It", "Flow."],
+    headline: ["Teacher's Pet", "Flow."],
     highlight: 1,
     sub: "Your personal study optimization engine. Ace Flow detects how your brain works best, builds your ideal study environment, and eliminates the wasted time between sitting down and actually learning.",
     cta: "Find Your Flow",
@@ -887,7 +889,7 @@ const APP_CONFIGS = {
   },
   studybuddy: {
     badge: "AI Study Partner",
-    headline: ["Ace It", "Study Buddy."],
+    headline: ["Teacher's Pet", "Study Buddy."],
     highlight: 1,
     sub: "Never study alone again. Study Buddy is your real-time AI companion — quiz you, explain concepts, keep you motivated, and celebrate every win alongside you.",
     cta: "Meet Your Buddy",
@@ -908,9 +910,9 @@ const APP_CONFIGS = {
   },
   settings: {
     badge: "Platform Preferences",
-    headline: ["Ace It", "Settings."],
+    headline: ["Teacher's Pet", "Settings."],
     highlight: 1,
-    sub: "Customize your entire Ace It experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
+    sub: "Customize your entire Teacher's Pet experience — learning style, accessibility options, ADHD mode, notification preferences, and more. Make the platform work exactly the way your brain does.",
     cta: "Open Settings",
     stats: [{ value:"50+", label:"Customization Options" },{ value:"ADHD", label:"Friendly Mode" },{ value:"A11y", label:"Accessibility First" },{ value:"Your Way", label:"Learning Style" }],
     features: [
@@ -982,7 +984,7 @@ function AppLanding({ planet, onBack }) {
               fontSize:13, color:"rgba(0,0,0,0.75)", fontFamily:"'Montserrat', sans-serif", fontWeight:800,
             }}>{symbol}</div>
             <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:14, fontWeight:700, letterSpacing:0.5 }}>
-              <span style={{ color }}> Ace It</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
+              <span style={{ color }}> Teacher's Pet</span> <span style={{ color: "rgba(255,255,255,0.85)" }}>{name}</span>
             </span>
           </div>
         </div>
@@ -1221,9 +1223,9 @@ function AppLanding({ planet, onBack }) {
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <div style={{ width:22, height:22, borderRadius:"50%", background:`linear-gradient(135deg, ${glow}, ${color})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontFamily:"'Montserrat', sans-serif", fontWeight:800, color:"rgba(0,0,0,0.75)" }}>{symbol}</div>
           <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:12, fontWeight:700, color:`${color}99`, letterSpacing:0.5 }}>{name}</span>
-          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Ace It</span>
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginLeft:6 }}>· Part of Teacher's Pet</span>
         </div>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Ace It · All rights reserved</div>
+        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)" }}>© 2026 Teacher's Pet · All rights reserved</div>
         <div style={{ display:"flex", gap:22 }}>
           {["Privacy","Terms","Support"].map(l => (
             <span key={l} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.18s" }}
@@ -1284,7 +1286,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             <div style={{ width: 30, height: 30, background: "#1A1814", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ color: "#F7F6F2", fontSize: 14, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Ace It</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 800, color: "#1A1814", letterSpacing: -0.3 }}>Teacher's Pet</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#1A1814"; e.currentTarget.style.color = "#1A1814"; }}
@@ -1445,7 +1447,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
             onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <span style={{ fontSize: 13, color: "#8C8880" }}>←</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Ace It</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#8C8880" }}>Back to Teacher's Pet</span>
           </div>
         </div>
       </div>
@@ -1620,7 +1622,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
               <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
               </div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Ace It</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Teacher's Pet</span>
             </div>
           </div>
 
@@ -1676,10 +1678,10 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
       <section style={{ background: "#1A1814", color: "#F7F6F2", padding: "80px 24px 72px" }}>
         <div style={{ maxWidth: 740, margin: "0 auto", textAlign: "center" }}>
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
-            Ace It Flash Cards
+            Teacher's Pet Flash Cards
           </div>
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
-            <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
+            <span style={{ color: "#F5C842" }}>Teacher's Pet</span> Flash Cards
           </h1>
           <p className="fc-fade-up" style={{ animationDelay: "0.16s", fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.7, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
             Build flash card decks, flip through terms, and track your mastery — built for students who are serious about passing.
@@ -1767,7 +1769,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
 
       {/* Footer */}
       <footer style={{ padding: "32px 24px", textAlign: "center" }}>
-        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Ace It · Part of Ace It</span>
+        <span style={{ fontSize: 12, color: "#A8A59E" }}>© 2026 Teacher's Pet · Part of Teacher's Pet</span>
       </footer>
     </div>
   );
@@ -1949,7 +1951,6 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [subject, setSubject]   = useState(initialDeck?.subject || "");
   const [color, setColor]       = useState(initialDeck?.color || "#4F6EF7");
   const [isPublic, setIsPublic] = useState(initialDeck?.isPublic || false);
-  const [tags, setTags]         = useState(initialDeck?.tags || []);
   const isEditing = !!initialDeck;
   // Quick Build
   const [qbText, setQbText]         = useState("");
@@ -2404,7 +2405,7 @@ Rules:
             const folderKey = selectedCustom
               ? selectedCustom
               : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
-            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic, tags });
+            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic });
           }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -2963,13 +2964,6 @@ Rules:
                       style={{ width: "100%", minHeight: 120, padding: "12px 0", fontSize: 16, fontWeight: 400, fontFamily: "'DM Sans', sans-serif", color: "#3A3830", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7 }} />
                   </div>
 
-                  {/* Hint */}
-                  <div style={{ padding: "12px 24px", borderTop: "1px solid #F7F6F2" }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", display: "block", marginBottom: 6 }}>Hint <span style={{ fontWeight:400, textTransform:"none", color:"#C8C5BE" }}>(optional — shown on demand during study)</span></label>
-                    <input value={c.hint||""} onChange={e => updateCard(c.id, "hint", e.target.value)} placeholder="e.g. Think about the first letter… or relates to Chapter 4"
-                      style={{ width: "100%", padding: "8px 0", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#6B6860", border: "none", borderBottom: "1px dashed #ECEAE4", outline: "none", background: "transparent", fontStyle: "italic" }} />
-                  </div>
-
                   {/* Card image */}
                   {c.image && (
                     <div style={{ padding:"0 24px 12px", display:"flex", alignItems:"center", gap:10 }}>
@@ -3053,27 +3047,6 @@ Rules:
                     <button key={c} onClick={() => setColor(c)}
                       style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: `3px solid ${color === c ? "#1A1814" : "transparent"}`, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2, cursor: "pointer", transition: "all 0.15s" }} />
                   ))}
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Tags <span style={{ fontWeight:400, textTransform:"none", color:"#A8A59E" }}>(optional)</span></label>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:8 }}>
-                  {(tags||[]).map(t=>(
-                    <div key={t} style={{ display:"flex", alignItems:"center", gap:4, background:"#F0EDE8", borderRadius:20, padding:"4px 10px", fontSize:12, fontWeight:600, color:"#5A5752" }}>
-                      #{t}
-                      <button onClick={()=>setTags(ts=>ts.filter(x=>x!==t))} style={{ background:"none", border:"none", cursor:"pointer", color:"#A8A59E", fontSize:11, padding:0, lineHeight:1 }}>✕</button>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display:"flex", gap:8 }}>
-                  <input id="tag-input" placeholder="Add a tag e.g. midterm, chapter3…"
-                    style={{ flex:1, padding:"8px 12px", border:"1.5px solid #ECEAE4", borderRadius:8, fontSize:13, color:"#1A1814", fontFamily:"'DM Sans',sans-serif", outline:"none" }}
-                    onFocus={e=>e.target.style.borderColor="#1A1814"} onBlur={e=>e.target.style.borderColor="#ECEAE4"}
-                    onKeyDown={e=>{ if(e.key==="Enter"||e.key===","){ e.preventDefault(); const v=e.target.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){ setTags(ts=>[...(ts||[]),v]); } e.target.value=""; }}} />
-                  <button onClick={()=>{ const el=document.getElementById("tag-input"); const v=el.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){ setTags(ts=>[...(ts||[]),v]); el.value=""; }}}
-                    style={{ padding:"8px 14px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Add</button>
                 </div>
               </div>
 
@@ -3411,13 +3384,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   const allHere = currentDecks;
 
   const searchResults = searchQuery.trim()
-    ? allDecks.filter(d => {
-        const q = searchQuery.toLowerCase();
-        return d.title.toLowerCase().includes(q)
-          || (d.subject||"").toLowerCase().includes(q)
-          || (d.tags||[]).some(t=>t.toLowerCase().includes(q))
-          || (d.cards||[]).some(c=>c.term?.toLowerCase().includes(q)||c.definition?.toLowerCase().includes(q));
-      })
+    ? allDecks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || (d.subject||"").toLowerCase().includes(searchQuery.toLowerCase()))
     : [];
 
   const enterFolder  = (id) => setFolderPath(p => [...p, id]);
@@ -3942,7 +3909,7 @@ h1{font-size:22px;color:#1A1814;margin-bottom:4px}
 @media print{.card{break-inside:avoid}}
 </style></head><body>
 <h1>${deck.title}</h1>
-<div class="sub">${deck.cards.length} cards · ${deck.subject||""} · Printed from Ace It</div>
+<div class="sub">${deck.cards.length} cards · ${deck.subject||""} · Printed from Teacher's Pet</div>
 <div class="grid">
 ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="term">${c.term}</div><hr class="divider"><div class="label">Definition</div><div class="def">${c.definition}</div></div>`).join("")}
 </div></body></html>`);
@@ -3978,14 +3945,6 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
             <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#8C8880", fontWeight: deck.mastery === 100 ? 600 : 400 }}>{deck.mastery || 0}% mastered</span>
             {deck.author && <><span>·</span><span>by {deck.author}</span></>}
           </div>
-          {/* Tags */}
-          {deck.tags?.length > 0 && (
-            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
-              {deck.tags.map(t=>(
-                <span key={t} style={{ background:"#F0EDE8", borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:600, color:"#6B6860" }}>#{t}</span>
-              ))}
-            </div>
-          )}
 
           {/* Star rating */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:10 }}>
@@ -4083,15 +4042,6 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
           onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
           {improving ? <><span style={{ width:12,height:12,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }} /> Improving…</> : "✨ Improve with AI"}
-        </button>
-        <button onClick={()=>{
-          const csv=["Term,Definition,Hint",...deck.cards.map(c=>`"${(c.term||"").replace(/"/g,'""')}","${(c.definition||"").replace(/"/g,'""')}","${(c.hint||"").replace(/"/g,'""')}"`)] .join("\n");
-          const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`${deck.title.replace(/\s+/g,"-")}.csv`; a.click();
-        }}
-          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-          ⬇ Export CSV
         </button>
         <button onClick={handlePrint}
           style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
@@ -4242,7 +4192,6 @@ function FCStudySetup({ deck, onBack, onStart }) {
     { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
     { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
     { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
-    { id:"timed",       icon:"⏱",  label:"Timed",             desc:"Beat the clock — 10 seconds per card, race to the end" },
     { id:"all",         icon:"▦",  label:"Full Deck",         desc:"Go through every card in order" },
     { id:"quiz",        icon:"◈",  label:"Multiple Choice",   desc:"Multiple choice answers — test your knowledge" },
     { id:"rapid",       icon:"⚡", label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
@@ -4423,13 +4372,6 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
   const [matchError, setMatchError]         = useState(null);
   const [matchComplete, setMatchComplete]   = useState(false);
   const [matchRound, setMatchRound]         = useState(0);
-  // Timed mode
-  const [timedSecs, setTimedSecs]           = useState(10);
-  const [timedExpired, setTimedExpired]     = useState(false);
-  const [totalTime, setTotalTime]           = useState(0);
-  const timedRef = useRef(null);
-  // Hints
-  const [showHint, setShowHint]             = useState(false);
 
   const workingCards = mode==="progressive" ? cards.slice(0,activeCount) : cards;
   const card = workingCards[index];
@@ -4438,28 +4380,6 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     if (mode==="matching") initMatchRound(0);
     if (mode==="truefalse") generateTF();
   }, []);
-
-  // Timed mode countdown
-  useEffect(() => {
-    if (mode!=="timed") return;
-    setTimedSecs(10); setTimedExpired(false); setShowHint(false);
-    clearInterval(timedRef.current);
-    timedRef.current = setInterval(() => {
-      setTimedSecs(s => {
-        setTotalTime(t => t+1);
-        if (s <= 1) {
-          clearInterval(timedRef.current);
-          setTimedExpired(true);
-          setWrong(p => { const n=new Set(p); n.add(card?.id); return n; });
-          setTimeout(() => advance(), 1200);
-          return 0;
-        }
-        return s-1;
-      });
-    }, 1000);
-    return () => clearInterval(timedRef.current);
-  }, [mode, index]);
-
 
   const initMatchRound = (rnd) => {
     const batch = cards.slice(rnd*6, rnd*6+6);
@@ -4762,18 +4682,6 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
       {/* FLIP MODES */}
       {!["matching","truefalse","written"].includes(mode) && card && (
         <div>
-          {/* Timed mode countdown bar */}
-          {mode==="timed" && (
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                <span style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:"#8C8880", textTransform:"uppercase" }}>Time Remaining</span>
-                <span style={{ fontFamily:"monospace", fontSize:22, fontWeight:900, color:timedExpired?"#E85D3F":timedSecs<=3?"#F5A623":"#2BAE7E" }}>{timedExpired?"⏰":timedSecs+"s"}</span>
-              </div>
-              <div style={{ height:6, background:"#ECEAE4", borderRadius:3, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${timedSecs*10}%`, background:timedSecs<=3?"#E85D3F":timedSecs<=6?"#F5A623":"#2BAE7E", borderRadius:3, transition:"width 1s linear" }}/>
-              </div>
-            </div>
-          )}
           <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
             <button onClick={()=>{setIndex(i=>(i-1+workingCards.length)%workingCards.length);setFlipped(false);}}
               style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
@@ -4785,15 +4693,6 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#A8A59E",marginBottom:20 }}>Term · click to flip</div>
                   <div style={{ fontFamily:"'Playfair Display',serif",fontSize:mode==="focus"?32:26,fontWeight:900,color:"#1A1814",lineHeight:1.4,maxWidth:480 }}>{card.term}</div>
                   {card.image&&<img src={card.image} alt="" style={{ maxHeight:100,maxWidth:"80%",marginTop:16,borderRadius:8,objectFit:"contain" }} />}
-                  {/* Hint button */}
-                  {card.hint && !flipped && (
-                    <div style={{ marginTop:20 }}>
-                      {showHint
-                        ? <div style={{ fontSize:13,color:"#6B6860",fontStyle:"italic",background:"#F7F6F2",borderRadius:8,padding:"8px 14px",maxWidth:400 }}>💡 {card.hint}</div>
-                        : <button onClick={e=>{e.stopPropagation();setShowHint(true);}} style={{ background:"transparent",border:"1px solid #ECEAE4",borderRadius:7,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#A8A59E",fontWeight:600 }}>💡 Show Hint</button>
-                      }
-                    </div>
-                  )}
                 </div>
                 <div className="fc-flip-face fc-flip-back">
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:deck.color,marginBottom:20 }}>Definition</div>
@@ -4878,26 +4777,15 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const [studyFlipped,  setStudyFlipped]  = useState(false);
   const [showNodeMenu,  setShowNodeMenu]  = useState(false);
 
-  // Undo/Redo history
+  // Undo history
   const historyRef = useRef([]);
-  const redoRef    = useRef([]);
-  const pushHistory = (prevNodes) => {
-    historyRef.current = [...historyRef.current.slice(-29), prevNodes];
-    redoRef.current = []; // clear redo on new action
-  };
+  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
   const handleUndo = () => {
-    if (!historyRef.current.length) return;
+    if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
-    redoRef.current = [...redoRef.current, nodes];
     historyRef.current = historyRef.current.slice(0, -1);
-    setNodes(prev); setSelectedId(null);
-  };
-  const handleRedo = () => {
-    if (!redoRef.current.length) return;
-    const next = redoRef.current[redoRef.current.length - 1];
-    historyRef.current = [...historyRef.current, nodes];
-    redoRef.current = redoRef.current.slice(0, -1);
-    setNodes(next); setSelectedId(null);
+    setNodes(prev);
+    setSelectedId(null);
   };
 
   // Wrapped setNodes that auto-pushes undo history for meaningful operations
@@ -4909,16 +4797,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     });
   };
 
-  // AI expansion
-  const [showAI,       setShowAI]       = useState(false);
-  const [aiTopic,      setAiTopic]      = useState('');
-  const [aiLoading,    setAiLoading]    = useState(false);
-  // Minimap
-  const [showMinimap,  setShowMinimap]  = useState(true);
-  // Multi-select
-  const [selectedIds,  setSelectedIds]  = useState(new Set());
-
-  const dragRef  = useRef(null);
+  const dragRef  = useRef(null); // { type: "node"|"pan", id?, startX, startY, origX, origY, origPanX, origPanY }
   const canvasRef= useRef(null);
 
   const selectedNode = nodes.find(n => n.id === selectedId);
@@ -4940,24 +4819,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       }
     };
     const onUp = () => { dragRef.current = null; };
-    const onKeyDown = (e) => {
-      // Undo/Redo
-      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault(); handleRedo(); return; }
-      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); handleUndo(); return; }
-      // Don't capture when editing text
-      if (editingId || e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
-      // Tab = add child to selected node
-      if (e.key==='Tab' && selectedId) { e.preventDefault(); addChild(selectedId); return; }
-      // Enter = edit selected node label
-      if (e.key==='Enter' && selectedId) { e.preventDefault(); const n=nodes.find(x=>x.id===selectedId); if(n)startEditing(n.id,n.label); return; }
-      // Delete/Backspace = delete selected node
-      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') { e.preventDefault(); deleteNode(selectedId); return; }
-      // Escape = deselect
-      if (e.key==='Escape') { setSelectedId(null); setShowAI(false); return; }
-      // +/= zoom in, - zoom out
-      if (e.key==='+' || e.key==='=') { setZoom(z=>Math.min(z*1.15,3)); return; }
-      if (e.key==='-') { setZoom(z=>Math.max(z*0.87,0.15)); return; }
-    };
+    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
@@ -5046,64 +4908,6 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     else if (studyDeckIdx > 0) { setStudyDeckIdx(i => i - 1); setStudyCardIdx(0); setStudyFlipped(false); }
   };
 
-  // ── Auto-layout: radial tree ──
-  const autoLayout = () => {
-    const root = nodes.find(n=>n.id==='root');
-    if(!root) return;
-    const children = (pid) => nodes.filter(n=>n.parentId===pid);
-    const positioned = new Map();
-    positioned.set('root', {x:0, y:0});
-    const layoutLevel = (parentId, startAngle, sweepAngle, radius) => {
-      const kids = children(parentId);
-      if(!kids.length) return;
-      const angleStep = sweepAngle / Math.max(kids.length, 1);
-      kids.forEach((kid, i) => {
-        const angle = startAngle + angleStep * i + angleStep/2 - sweepAngle/2;
-        const x = (positioned.get(parentId)?.x||0) + Math.cos(angle)*radius;
-        const y = (positioned.get(parentId)?.y||0) + Math.sin(angle)*radius;
-        positioned.set(kid.id, {x, y});
-        layoutLevel(kid.id, angle-sweepAngle/4, sweepAngle/2, radius*0.75);
-      });
-    };
-    layoutLevel('root', -Math.PI/2, Math.PI*2, 240);
-    setNodesWithHistory(ns => ns.map(n => positioned.has(n.id) ? {...n, ...positioned.get(n.id)} : n));
-  };
-
-  // ── AI expand: generate child nodes from a topic ──
-  const aiExpand = async (parentId, topic) => {
-    setAiLoading(true);
-    try {
-      const res = await fetch('/api/claude', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-5-20250514', max_tokens:600,
-          messages:[{role:'user', content:`Generate 5-7 key subtopics for a brain map node about "${topic}". These will be child nodes.
-Respond ONLY with JSON: {"nodes":[{"label":"short label","note":"one sentence description"},...]}
-Labels must be 1-4 words. No duplicates.`}]
-        })
-      });
-      const data = await res.json();
-      const txt = data.content?.find(b=>b.type==='text')?.text||'';
-      const parsed = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
-      const parent = nodes.find(n=>n.id===parentId);
-      if(!parent||!parsed.nodes) return;
-      const color = getBranchColor(parentId)||parent.color;
-      const newNodes = parsed.nodes.map((item,i) => {
-        const angle = (-Math.PI/2) + (i/parsed.nodes.length)*Math.PI*2;
-        const dist = parentId==='root' ? 260 : 180;
-        return {
-          id:`ai${Date.now()}${i}`, label:item.label, note:item.note||'',
-          x: parent.x + Math.cos(angle)*dist,
-          y: parent.y + Math.sin(angle)*dist,
-          color, parentId, deckIds:[]
-        };
-      });
-      setNodesWithHistory(ns => [...ns, ...newNodes]);
-      setShowAI(false); setAiTopic('');
-    } catch(e) { console.error('AI expand',e); }
-    setAiLoading(false);
-  };
-
   // ── Connection path (cubic bezier) ──
   const getPath = (parent, child) => {
     const mx = (parent.x + child.x) / 2;
@@ -5125,97 +4929,55 @@ Labels must be 1-4 words. No duplicates.`}]
 
   return (
     <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
-      {/* ── Toolbar ── */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:44, zIndex:50, display:"flex", alignItems:"center", gap:8, padding:"0 12px", background:"rgba(12,11,24,0.96)", borderBottom:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(10px)" }}>
-        <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:6, padding:"4px 10px", fontSize:11, cursor:"pointer", color:"rgba(255,255,255,0.4)", flexShrink:0 }}
-          onMouseEnter={e=>e.currentTarget.style.color="#fff"} onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.4)"}>← Maps</button>
-        <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)", flexShrink:0 }} />
-        {/* Map title */}
-        {editTitle
-          ? <input autoFocus value={mapTitle} onChange={e=>setMapTitle(e.target.value)} onBlur={()=>setEditTitle(false)} onKeyDown={e=>{if(e.key==="Enter")setEditTitle(false);e.stopPropagation();}}
-              style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, padding:"4px 10px", fontSize:14, fontWeight:700, color:"#F7F6F2", outline:"none", minWidth:160, maxWidth:260 }} />
-          : <div onClick={()=>setEditTitle(true)} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", padding:"3px 7px", borderRadius:6, maxWidth:240 }}
-              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <span style={{ fontSize:14, fontWeight:800, color:"#F7F6F2", fontFamily:"'Playfair Display',serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mapTitle}</span>
-              <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", flexShrink:0 }}>✎</span>
-            </div>
-        }
-        {/* Right side tools */}
-        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
-          {/* AI Expand */}
-          <div style={{ position:"relative" }}>
-            <button onClick={()=>setShowAI(a=>!a)} title="AI Expand — generate subtopics with AI"
-              style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-              ✦ AI Expand
-            </button>
-            {showAI && (
-              <div style={{ position:"absolute", top:32, right:0, background:"rgba(12,10,28,0.99)", border:"1px solid rgba(155,127,255,0.2)", borderRadius:12, padding:14, width:280, zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.6)" }} onClick={e=>e.stopPropagation()}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#9B7FFF", marginBottom:8 }}>✦ AI Generate Subtopics</div>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginBottom:10 }}>{selectedId ? `Adding children to: ${nodes.find(n=>n.id===selectedId)?.label||'selected node'}` : 'Select a node first, then expand it'}</div>
-                <input value={aiTopic} onChange={e=>setAiTopic(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&selectedId&&aiTopic.trim())aiExpand(selectedId,aiTopic.trim());e.stopPropagation();}}
-                  placeholder="Topic to expand (or leave blank to use node label)"
-                  style={{ width:"100%", padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:7, fontSize:12, color:"#F7F6F2", outline:"none", marginBottom:10, boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif" }} />
-                <button onClick={()=>{ const n=nodes.find(x=>x.id===selectedId); const topic=aiTopic.trim()||n?.label||mapTitle; if(selectedId)aiExpand(selectedId,topic); }}
-                  disabled={!selectedId||aiLoading}
-                  style={{ width:"100%", padding:"8px", borderRadius:8, border:"none", background:selectedId?"#9B7FFF":"rgba(255,255,255,0.07)", fontSize:12, fontWeight:700, cursor:selectedId?"pointer":"default", color:selectedId?"#fff":"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                  {aiLoading ? <><span style={{ width:10,height:10,border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/> Generating…</> : "✦ Generate Subtopics"}
-                </button>
-              </div>
-            )}
+      {/* Title bar strip */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
+        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
+        {editTitle ? (
+          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
+        ) : (
+          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
           </div>
-          {/* Auto-layout */}
-          <button onClick={autoLayout} title="Auto-arrange all nodes in a radial tree layout"
-            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600 }}>
-            ⊞ Layout
+        )}
+        {/* Zoom + Undo */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
+            title="Undo (Ctrl+Z)"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
+            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
+            ↩ Undo
           </button>
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
-          {/* Undo/Redo */}
-          <button onClick={handleUndo} disabled={!historyRef.current.length} title="Undo (Ctrl+Z)"
-            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:historyRef.current.length?"pointer":"default", color:historyRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600 }}>↩</button>
-          <button onClick={handleRedo} disabled={!redoRef.current.length} title="Redo (Ctrl+Shift+Z)"
-            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:redoRef.current.length?"pointer":"default", color:redoRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:11, fontWeight:600 }}>↪</button>
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
-          {/* Zoom */}
-          <button onClick={()=>setZoom(z=>Math.min(z*1.18,3))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
-          <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", minWidth:36, textAlign:"center" }}>{Math.round(zoom*100)}%</span>
-          <button onClick={()=>setZoom(z=>Math.max(z*0.85,0.15))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
-          <button onClick={()=>{setPan({x:0,y:0});setZoom(0.85);}} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"3px 8px", cursor:"pointer", color:"rgba(255,255,255,0.35)", fontSize:10 }}>Fit</button>
-          {/* Minimap toggle */}
-          <button onClick={()=>setShowMinimap(m=>!m)} title="Toggle minimap"
-            style={{ background:showMinimap?"rgba(240,168,192,0.12)":"rgba(255,255,255,0.06)", border:`1px solid ${showMinimap?"rgba(240,168,192,0.3)":"rgba(255,255,255,0.09)"}`, borderRadius:5, width:26, height:26, cursor:"pointer", color:showMinimap?"#F0A8C0":"rgba(255,255,255,0.4)", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>⊡</button>
+          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
+          <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
         </div>
       </div>
 
-      {/* Keyboard shortcuts hint */}
-      <div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", zIndex:40, pointerEvents:"none" }}>
-        <div style={{ background:"rgba(12,11,24,0.8)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"4px 14px", fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:0.5, display:"flex", gap:12, whiteSpace:"nowrap" }}>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Tab</strong> add child</span>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Enter</strong> edit</span>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Del</strong> delete</span>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Ctrl+Z</strong> undo</span>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>+/−</strong> zoom</span>
-          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Scroll</strong> zoom</span>
-        </div>
-      </div>
-
-      {/* ── Canvas area ── */}
-      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab" }}
+      {/* ── Canvas area (starts below title bar at top: 44px) ── */}
+      <div ref={canvasRef} style={{ position: "absolute", top: 44, left: 0, right: 0, bottom: 0, cursor: dragRef.current?.type === "pan" ? "grabbing" : "grab" }}
         onMouseDown={onCanvasDown}>
 
         {/* Dot grid */}
-        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}>
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
           <defs>
-            <pattern id={`bmDots-${map.id}`} x={(pan.x%(28*zoom))} y={(pan.y%(28*zoom))} width={28*zoom} height={28*zoom} patternUnits="userSpaceOnUse">
-              <circle cx={14*zoom} cy={14*zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
+            <pattern id={`bmDots-${map.id}`} x={(pan.x % (28 * zoom))} y={(pan.y % (28 * zoom))} width={28 * zoom} height={28 * zoom} patternUnits="userSpaceOnUse">
+              <circle cx={14 * zoom} cy={14 * zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill={`url(#bmDots-${map.id})`} />
         </svg>
 
         {/* Connection + Node SVG layer */}
-        <svg style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", overflow:"visible" }}
-          onClick={()=>{ setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); setShowAI(false); }}>
-
+        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
+          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
           <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
 
             {/* Connections */}
@@ -5394,46 +5156,12 @@ Labels must be 1-4 words. No duplicates.`}]
           </div>
         )}
 
-        {/* ── Minimap ── */}
-        {showMinimap && nodes.length > 1 && (()=>{
-          const MM_W=160, MM_H=100, PAD=12;
-          const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
-          const minX=Math.min(...xs)-60, maxX=Math.max(...xs)+60;
-          const minY=Math.min(...ys)-40, maxY=Math.max(...ys)+40;
-          const rangeX=maxX-minX||1, rangeY=maxY-minY||1;
-          const scaleX=MM_W/rangeX, scaleY=MM_H/rangeY;
-          const sc=Math.min(scaleX,scaleY,1);
-          const offX=(MM_W-(rangeX*sc))/2, offY=(MM_H-(rangeY*sc))/2;
-          const toMM=(x,y)=>({ x:offX+(x-minX)*sc, y:offY+(y-minY)*sc });
-          return(
-            <div style={{ position:"absolute", bottom:20, right:16, zIndex:60, background:"rgba(10,9,22,0.92)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:10, overflow:"hidden", width:MM_W+PAD*2, height:MM_H+PAD*2, backdropFilter:"blur(8px)" }}>
-              <svg width={MM_W+PAD*2} height={MM_H+PAD*2}>
-                <g transform={`translate(${PAD},${PAD})`}>
-                  {nodes.filter(n=>n.parentId).map(n=>{
-                    const par=nodes.find(p=>p.id===n.parentId); if(!par)return null;
-                    const a=toMM(par.x,par.y), b=toMM(n.x,n.y);
-                    return <line key={`ml-${n.id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={n.color} strokeWidth={0.8} strokeOpacity={0.4}/>;
-                  })}
-                  {nodes.map(n=>{
-                    const pos=toMM(n.x,n.y);
-                    const isRoot=n.id==='root';
-                    return <circle key={`mm-${n.id}`} cx={pos.x} cy={pos.y} r={isRoot?4:2.5} fill={n.color} opacity={n.id===selectedId?1:0.7}/>;
-                  })}
-                  {/* Viewport indicator */}
-                  {(()=>{
-                    const vW=typeof window!=='undefined'?window.innerWidth:1440;
-                    const vH=typeof window!=='undefined'?window.innerHeight-100:800;
-                    const vpX=(-(pan.x)-minX-(vW/(2*zoom)))*sc+offX;
-                    const vpY=(-(pan.y)-minY-(vH/(2*zoom)))*sc+offY;
-                    const vpW=(vW/zoom)*sc, vpH=(vH/zoom)*sc;
-                    return <rect x={vpX} y={vpY} width={vpW} height={vpH} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
-                  })()}
-                </g>
-              </svg>
-            </div>
-          );
-        })()}
-
+        {/* ── Bottom hint ── */}
+        {!selectedNode && !studyNode && (
+          <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(10,9,22,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 18px", backdropFilter: "blur(10px)", pointerEvents: "none" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Click node to select · Double-click to rename · Drag to move · Scroll to zoom · 📇 = flash cards</span>
+          </div>
+        )}
       </div>
 
       {/* ── Flash Card Study Drawer ── */}
@@ -5585,7 +5313,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Teacher's Pet</div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
@@ -5649,6 +5377,14 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
       <nav className="bm-nav" style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button onClick={() => setSidebarOpen(o => !o)}
+              style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4.5, transition: "all 0.18s", flexShrink: 0 }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+              <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.7)", borderRadius: 1 }} />
+              <div style={{ width: 10, height: 1.5, background: "rgba(255,255,255,0.4)", borderRadius: 1, alignSelf: "flex-start", marginLeft: 2 }} />
+              <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.7)", borderRadius: 1 }} />
+            </button>
             <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
               onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Galaxy</button>
             <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)" }} />
@@ -6181,7 +5917,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>≋</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Ace It</span> Text Simplifier</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#2BAE7E" }}>Teacher's Pet</span> Text Simplifier</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -6683,7 +6419,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
     try {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
-        : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
+        : `You are the Teacher's Pet AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
       const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
@@ -6709,7 +6445,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
               {hasAvatar ? <AvatarHead avatar={avatar} size={34}/> : <span style={{fontSize:18}}>⊕</span>}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Ace It Assistant</div>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff", fontFamily:"'Playfair Display', serif" }}>Teacher's Pet Assistant</div>
               <div style={{ fontSize:10, color:`${PA_COLOR}cc`, fontWeight:600 }}>● Online · Always here</div>
             </div>
             <button onClick={() => onOpen()} style={{ background:"rgba(255,255,255,0.1)", border:"none", borderRadius:7, padding:"5px 10px", fontSize:11, color:"rgba(255,255,255,0.7)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Open Full ↗</button>
@@ -6768,7 +6504,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
         onMouseDown={onMouseDown}
         onClick={() => { if (!dragging) setExpanded(e => !e); }}
         style={{ width:btnSize, height:btnSize, borderRadius:"50%", cursor:"grab", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow:`0 6px 28px ${PA_GLOW}55, 0 2px 8px rgba(0,0,0,0.2)`, background: hasAvatar ? "#fff" : `linear-gradient(135deg,${PA_DARK},${PA_GLOW})`, border:`3px solid ${expanded?PA_COLOR:"rgba(255,255,255,0.3)"}`, transition:"border-color 0.2s, box-shadow 0.2s", position:"relative" }}
-        title="Ace It Assistant"
+        title="Teacher's Pet Assistant"
       >
         {hasAvatar
           ? <AvatarHead avatar={avatar} size={btnSize - 8} />
@@ -6835,7 +6571,7 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 15 }}>⊕</span>
             </div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Ace It Assistant</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>Teacher's Pet Assistant</span>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 5, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#90C8F8"; e.currentTarget.style.color = PA_GLOW; }}
@@ -7070,7 +6806,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
   useEffect(() => { setDraftAvatar(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); }, [avatar]);
 
-  const systemPrompt = aiContext || `You are Ace It Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
+  const systemPrompt = aiContext || `You are Teacher's Pet Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
   // Per-message intent detection — adds behavior block dynamically each call
   const buildSmartBehavior = (msg) => {
@@ -7158,7 +6894,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
           <span style={{ fontSize: 11 }}>⊕</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Assistant</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Teacher's Pet Assistant</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
           Hey {user?.name?.split(" ")[0] || "there"} 👋<br />
@@ -7382,7 +7118,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                       <div style={{ flex: 1, maxWidth: "calc(100% - 44px)" }}>
                         {/* Name + time */}
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Ace It Assistant"}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: m.role === "user" ? PA_GLOW : "#0A1628" }}>{m.role === "user" ? (user?.name || "You") : "Teacher's Pet Assistant"}</span>
                           <span style={{ fontSize: 10, color: "#C0CDD8" }}>{m.ts ? new Date(m.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : ""}</span>
                         </div>
 
@@ -7415,7 +7151,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 20, animation: "pa-fadein 0.2s ease both" }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>⊕</div>
                     <div style={{ paddingTop: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Ace It Assistant</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0A1628", marginBottom: 6 }}>Teacher's Pet Assistant</div>
                       <div style={{ padding: "12px 16px", borderRadius: "4px 18px 18px 18px", background: "#F4F8FF", border: "1.5px solid #E4EEF8", display: "flex", gap: 5, alignItems: "center" }}>
                         {[0, 0.18, 0.36].map((d, i) => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: PA_COLOR, animation: `pa-bounce 1.2s ${d}s infinite` }} />)}
                       </div>
@@ -7689,7 +7425,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Configuration</div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>Preferences</h2>
-        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Ace It.</p>
+        <p style={{ fontSize: 14, color: "#6A7888" }}>Control how the assistant behaves and appears across Teacher's Pet.</p>
       </div>
 
       {/* Floating assistant toggle */}
@@ -7698,7 +7434,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ width:44, height:44, borderRadius:12, background:`${PA_COLOR}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>⊕</div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>Floating Assistant Button</div>
-            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Ace It apps so you can get help from anywhere.</div>
+            <div style={{ fontSize:12, color:"#6A7888" }}>Show the AI assistant button across all Teacher's Pet apps so you can get help from anywhere.</div>
           </div>
           <div onClick={() => setShowFloating(s => !s)} style={{ width:48, height:26, borderRadius:13, background:showFloating?PA_GLOW:"#D8ECFF", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
             <div style={{ position:"absolute", top:3, left:showFloating?24:3, width:20, height:20, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
@@ -7792,7 +7528,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⊕</div>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#0A1628" }}>
-              <span style={{ color: PA_GLOW }}>Ace It</span> Personal Assistant
+              <span style={{ color: PA_GLOW }}>Teacher's Pet</span> Personal Assistant
             </span>
           </div>
         </div>
@@ -7962,12 +7698,12 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
           </div>
           <div style={{ marginBottom: 32 }}>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderTop: "2px solid #C8B8FF", borderRadius: 12, padding: "18px 20px", marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Ace It Flash Cards</div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Ace It Flash Cards</div>
+              <div style={{ fontSize: 10, color: "rgba(200,184,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Teacher's Pet Flash Cards</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>Teacher's Pet Flash Cards</div>
               <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: "100%", width: "65%", background: "#C8B8FF", borderRadius: 2 }} /></div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Ace It</div>
+          <div style={{ fontSize: 11, color: "rgba(247,246,242,0.2)", letterSpacing: 1 }}>© 2026 Teacher's Pet</div>
         </div>
 
         {/* RIGHT */}
@@ -8074,7 +7810,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   );
 }
 
-// ─── Ace It Notes ─────────────────────────────────────────────────────────
+// ─── Teacher's Pet Notes ─────────────────────────────────────────────────────────
 
 const EN_COLOR  = "#D4A830";
 const EN_LIGHT  = "#F0D080";
@@ -8396,7 +8132,7 @@ function NotesApp({ onBack, user, openAuth }) {
         <div style={{ padding:"18px 18px",borderBottom:`1px solid ${NL}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
             <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>📝</div>
-            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Ace It Notes</span>
+            <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Teacher's Pet Notes</span>
           </div>
           <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
         </div>
@@ -8475,7 +8211,7 @@ function NotesApp({ onBack, user, openAuth }) {
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
             <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>📝</div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
-              <span style={{ color:NC }}>Ace It</span> Notes
+              <span style={{ color:NC }}>Teacher's Pet</span> Notes
             </span>
           </div>
         </div>
@@ -9431,7 +9167,7 @@ function TrackerApp({ onBack, user, openAuth }) {
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${TR},${TRD})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>◷</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
-              <span style={{ color:TR }}>Ace It</span> Tracker
+              <span style={{ color:TR }}>Teacher's Pet</span> Tracker
             </span>
           </div>
         </div>
@@ -9709,7 +9445,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   );
 }
 
-// ─── Ace It Journal ──────────────────────────────────────────────────────────
+// ─── Teacher's Pet Journal ──────────────────────────────────────────────────────────
 
 const J_COLOR   = "#B060D0";
 const J_LIGHT   = "#E8C4F0";
@@ -9835,7 +9571,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
           max_tokens: 500,
-          system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
+          system: `You are a warm, empathetic journal companion inside the Teacher's Pet Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
 - Gently notice any patterns, emotions, or themes they may not have explicitly named
 - Ask ONE thoughtful follow-up question that might help them go deeper
@@ -9910,7 +9646,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         <div style={{ padding:"18px 20px", borderBottom:`1px solid ${J_LIGHT}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✍</div>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Ace It Journal</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Teacher's Pet Journal</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#8C6A9A", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
@@ -10030,7 +9766,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#1A1814" }}>
-              <span style={{ color:J_COLOR }}>Ace It</span> Journal
+              <span style={{ color:J_COLOR }}>Teacher's Pet</span> Journal
             </span>
           </div>
         </div>
@@ -10390,7 +10126,7 @@ function PrivacyPolicyPage({ onBack }) {
           </button>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:18 }}>🍎</span>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Ace It</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
           </div>
         </div>
         <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Privacy Policy</span>
@@ -10409,7 +10145,7 @@ function PrivacyPolicyPage({ onBack }) {
         {[
           {
             title: "1. Who We Are",
-            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
+            body: `Teacher's Pet ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
           },
           {
             title: "2. Information We Collect",
@@ -10427,7 +10163,7 @@ Device Information: We may collect basic information about your browser and devi
             title: "3. How We Use Your Information",
             body: `We use your information solely to:
 
-• Provide and improve the Ace It platform and its features
+• Provide and improve the Teacher's Pet platform and its features
 • Sync your study data across devices when you are logged in
 • Power AI features (your content is sent to Anthropic's Claude API to generate flashcards, summaries, and study plans)
 • Send important account-related communications (not marketing, unless you opt in)
@@ -10437,7 +10173,7 @@ We do not sell your data. We do not use your data for advertising. We do not sha
           },
           {
             title: "4. Third-Party Services",
-            body: `Ace It uses the following third-party services to operate:
+            body: `Teacher's Pet uses the following third-party services to operate:
 
 Firebase (Google): We use Firebase Authentication for login and Firestore database for storing your study data. Your data is stored on Google's servers subject to Google's Privacy Policy.
 
@@ -10465,7 +10201,7 @@ For students ages 13-17, we encourage parental awareness of their use of the pla
             title: "7. Your Rights and Choices",
             body: `You have the following rights regarding your data:
 
-Access: You can view all your study data within the Ace It platform at any time.
+Access: You can view all your study data within the Teacher's Pet platform at any time.
 
 Deletion: You can delete individual notes, decks, or other content at any time within the app. To delete your entire account and all associated data, contact us at the email below.
 
@@ -10481,14 +10217,14 @@ EU/UK Residents (GDPR): You have the right to access, rectify, erase, restrict, 
           },
           {
             title: "9. Changes to This Policy",
-            body: `We may update this Privacy Policy from time to time. When we make significant changes, we will update the "Last updated" date at the top of this page. Continued use of Ace It after changes constitutes your acceptance of the updated policy.`
+            body: `We may update this Privacy Policy from time to time. When we make significant changes, we will update the "Last updated" date at the top of this page. Continued use of Teacher's Pet after changes constitutes your acceptance of the updated policy.`
           },
           {
             title: "10. Contact Us",
             body: `If you have any questions about this Privacy Policy or wish to exercise your privacy rights, please contact us at:
 
-Ace It
-Email: privacy@aceitgalaxy.com
+Teacher's Pet
+Email: privacy@teacherspet.app
 
 We aim to respond to all privacy inquiries within 30 days.`
           },
@@ -10502,15 +10238,15 @@ We aim to respond to all privacy inquiries within 30 days.`
         <div style={{ background:"rgba(245,200,66,0.06)", border:"1px solid rgba(245,200,66,0.15)", borderRadius:12, padding:"24px 28px", marginTop:40 }}>
           <div style={{ fontSize:13, fontWeight:700, color:"#F5C842", marginBottom:8 }}>Questions or Concerns?</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>
-            We built Ace It with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@aceitgalaxy.com</span> — we're a small team and we read every message.
+            We built Teacher's Pet with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@teacherspet.app</span> — we're a small team and we read every message.
           </div>
         </div>
       </div>
 
       {/* Footer */}
       <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All rights reserved</span>
-        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Ace It</button>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
       </footer>
     </div>
   );
@@ -10534,7 +10270,7 @@ function TermsOfServicePage({ onBack }) {
           </button>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:18 }}>🍎</span>
-            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Ace It</span>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#F7F6F2" }}>Teacher's Pet</span>
           </div>
         </div>
         <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>Terms of Service</span>
@@ -10553,13 +10289,13 @@ function TermsOfServicePage({ onBack }) {
         {[
           {
             title: "1. Acceptance of Terms",
-            body: `By accessing or using Ace It ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
+            body: `By accessing or using Teacher's Pet ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
 
-These Terms apply to all users of Ace It, including students, educators, and casual learners. By creating an account or using any features of the Platform, you confirm that you are at least 13 years of age, or that you have obtained parental consent if you are between 13 and 18 years of age.`
+These Terms apply to all users of Teacher's Pet, including students, educators, and casual learners. By creating an account or using any features of the Platform, you confirm that you are at least 13 years of age, or that you have obtained parental consent if you are between 13 and 18 years of age.`
           },
           {
             title: "2. Description of Service",
-            body: `Ace It is an AI-powered educational platform that provides tools including but not limited to: AI-generated flashcards, note-taking, brain mapping, study planning, a personal journal, and a learning tracker. Features are subject to change as the platform evolves.
+            body: `Teacher's Pet is an AI-powered educational platform that provides tools including but not limited to: AI-generated flashcards, note-taking, brain mapping, study planning, a personal journal, and a learning tracker. Features are subject to change as the platform evolves.
 
 Some features require an account. We offer a free tier and may introduce paid tiers in the future. We will provide advance notice of any changes to paid features.`
           },
@@ -10576,9 +10312,9 @@ We reserve the right to suspend or terminate accounts that violate these Terms o
           },
           {
             title: "4. Your Content",
-            body: `You retain full ownership of all content you create on Ace It — including your notes, flashcard decks, journal entries, and brain maps ("Your Content").
+            body: `You retain full ownership of all content you create on Teacher's Pet — including your notes, flashcard decks, journal entries, and brain maps ("Your Content").
 
-By using the Platform, you grant Ace It a limited, non-exclusive license to store, display, and process Your Content solely for the purpose of providing the service to you.
+By using the Platform, you grant Teacher's Pet a limited, non-exclusive license to store, display, and process Your Content solely for the purpose of providing the service to you.
 
 You are responsible for ensuring that Your Content does not violate any laws or third-party rights. You agree not to upload content that is illegal, harmful, or that infringes on the intellectual property of others.
 
@@ -10586,25 +10322,25 @@ When you delete your content or your account, we will remove Your Content from o
           },
           {
             title: "5. AI-Generated Content",
-            body: `Ace It uses artificial intelligence (powered by Anthropic's Claude API) to help generate flashcards, summaries, study plans, and other learning materials based on content you provide.
+            body: `Teacher's Pet uses artificial intelligence (powered by Anthropic's Claude API) to help generate flashcards, summaries, study plans, and other learning materials based on content you provide.
 
 You acknowledge that:
 
 • AI-generated content may contain errors, inaccuracies, or omissions
 • AI-generated content should be reviewed and verified before relying on it for academic, professional, or other important purposes
-• Ace It does not guarantee the accuracy, completeness, or suitability of any AI-generated content
+• Teacher's Pet does not guarantee the accuracy, completeness, or suitability of any AI-generated content
 • You are responsible for how you use AI-generated content
 
-Ace It is not liable for any consequences arising from reliance on AI-generated content.`
+Teacher's Pet is not liable for any consequences arising from reliance on AI-generated content.`
           },
           {
             title: "6. Acceptable Use",
-            body: `You agree to use Ace It only for lawful, educational purposes. You agree not to:
+            body: `You agree to use Teacher's Pet only for lawful, educational purposes. You agree not to:
 
 • Use the Platform to generate, store, or distribute harmful, hateful, or illegal content
 • Attempt to reverse-engineer, hack, or disrupt the Platform or its infrastructure
 • Use automated tools or bots to access the Platform in ways that overload our systems
-• Impersonate other users or Ace It staff
+• Impersonate other users or Teacher's Pet staff
 • Use the Platform to violate academic integrity policies (e.g., submitting AI-generated content as your own work without disclosure)
 • Attempt to extract or scrape data from the Platform at scale
 
@@ -10612,13 +10348,13 @@ We reserve the right to suspend or terminate any account that violates these gui
           },
           {
             title: "7. Intellectual Property",
-            body: `The Ace It platform, including its design, code, branding, and original content, is owned by Ace It and protected by copyright and other intellectual property laws. You may not copy, reproduce, distribute, or create derivative works from the Platform without our express written permission.
+            body: `The Teacher's Pet platform, including its design, code, branding, and original content, is owned by Teacher's Pet and protected by copyright and other intellectual property laws. You may not copy, reproduce, distribute, or create derivative works from the Platform without our express written permission.
 
-The Ace It name, logo, and apple icon are trademarks of Ace It. All rights reserved.`
+The Teacher's Pet name, logo, and apple icon are trademarks of Teacher's Pet. All rights reserved.`
           },
           {
             title: "8. Disclaimer of Warranties",
-            body: `Ace It is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:
+            body: `Teacher's Pet is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:
 
 • The Platform will be uninterrupted, error-free, or completely secure
 • The results obtained from using the Platform will be accurate or reliable
@@ -10628,7 +10364,7 @@ To the fullest extent permitted by law, we disclaim all warranties including imp
           },
           {
             title: "9. Limitation of Liability",
-            body: `To the fullest extent permitted by applicable law, Ace It and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, academic outcomes, or business opportunities, even if we have been advised of the possibility of such damages.
+            body: `To the fullest extent permitted by applicable law, Teacher's Pet and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, academic outcomes, or business opportunities, even if we have been advised of the possibility of such damages.
 
 Our total liability for any claims arising from your use of the Platform shall not exceed the amount you paid us in the twelve months prior to the claim (or $0 if you used a free plan).`
           },
@@ -10636,11 +10372,11 @@ Our total liability for any claims arising from your use of the Platform shall n
             title: "10. Changes to Terms",
             body: `We may update these Terms of Service from time to time. When we make material changes, we will update the "Last updated" date and notify registered users via email or an in-app notice.
 
-Continued use of Ace It after changes to these Terms constitutes your acceptance of the updated Terms. If you do not agree with the updated Terms, you should discontinue use of the Platform.`
+Continued use of Teacher's Pet after changes to these Terms constitutes your acceptance of the updated Terms. If you do not agree with the updated Terms, you should discontinue use of the Platform.`
           },
           {
             title: "11. Termination",
-            body: `You may stop using Ace It at any time. You may delete your account by contacting us at the email below.
+            body: `You may stop using Teacher's Pet at any time. You may delete your account by contacting us at the email below.
 
 We reserve the right to suspend or terminate your access to the Platform at our discretion if you violate these Terms, with or without notice. Upon termination, your right to use the Platform ceases immediately.`
           },
@@ -10652,8 +10388,8 @@ We reserve the right to suspend or terminate your access to the Platform at our 
             title: "13. Contact Us",
             body: `If you have any questions about these Terms of Service, please contact us at:
 
-Ace It
-Email: legal@aceitgalaxy.com
+Teacher's Pet
+Email: legal@teacherspet.app
 
 We aim to respond to all inquiries within 30 days.`
           },
@@ -10674,8 +10410,8 @@ We aim to respond to all inquiries within 30 days.`
 
       {/* Footer */}
       <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"24px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All rights reserved</span>
-        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Ace It</button>
+        <span style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All rights reserved</span>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:12, color:"rgba(255,255,255,0.3)", cursor:"pointer" }}>← Back to Teacher's Pet</button>
       </footer>
     </div>
   );
@@ -10765,7 +10501,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
       <nav className="lp-nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Ace It</span>
+          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Teacher's Pet</span>
         </div>
         <div className="lp-nav-links" style={{ display:"flex", gap:32, alignItems:"center" }}>
           {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
@@ -10805,7 +10541,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </h1>
 
         <p className="lp-fade" style={{ animationDelay:"0.18s", fontSize:"clamp(16px,2vw,19px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.8, maxWidth:580, marginBottom:40 }}>
-          Ace It is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
+          Teacher's Pet is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
         </p>
 
         {/* Social proof */}
@@ -10870,7 +10606,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           </div>
           <div className="lp-how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
             {[
-              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Ace It reads it all." },
+              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Teacher's Pet reads it all." },
               { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
               { step:"03", icon:"🎓", color:"#6ED9B8", glow:"#2BAE7E", title:"Study & Master It", desc:"Use flashcards, quizzes, brain maps, and your AI tutor to drill the material until it sticks. Chat with your notes anytime." },
             ].map(s => (
@@ -11012,7 +10748,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
             <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Ace It vs everything else.</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Teacher's Pet vs everything else.</h2>
           <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
         </div>
         <div className="lp-compare" style={{ overflowX:"auto" }}>
@@ -11020,7 +10756,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
             <thead>
               <tr>
                 <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
-                {[{ name:"Ace It 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
+                {[{ name:"Teacher's Pet 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
                   <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", minWidth:110 }}>
                     {col.highlight && <div style={{ fontSize:10, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase", marginBottom:4 }}>★ Best</div>}
                     {col.name}
@@ -11058,7 +10794,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
         <div style={{ textAlign:"center", marginTop:36 }}>
           <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"14px 34px", fontSize:15, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-            Switch to Ace It — Free While It Lasts →
+            Switch to Teacher's Pet — Free While It Lasts →
           </button>
         </div>
       </section>
@@ -11076,7 +10812,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
             Be the teacher's pet.<br/>Ace everything.
           </h2>
           <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:520, margin:"0 auto 44px" }}>
-            Ace It is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
+            Teacher's Pet is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
           </p>
           <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
             <div style={{ position:"relative" }}>
@@ -11099,13 +10835,13 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
       <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Ace It</span>
+          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Teacher's Pet</span>
         </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All learning, one platform.</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
+              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@teacherspet.app"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
           ))}
@@ -11154,7 +10890,7 @@ class AppErrorBoundary extends Component {
           <div style={{ fontSize:48, marginBottom:20 }}>🍎</div>
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#F7F6F2", marginBottom:10 }}>Something went wrong</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.4)", marginBottom:28, maxWidth:360, lineHeight:1.7 }}>
-            Ace It hit an unexpected error. Your data is safe — try refreshing the page.
+            Teacher's Pet hit an unexpected error. Your data is safe — try refreshing the page.
           </div>
           <button onClick={()=>window.location.reload()} style={{ background:"#F5C842", border:"none", borderRadius:10, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#1A1814", marginBottom:20 }}>
             Refresh Page
@@ -11170,1246 +10906,6 @@ class AppErrorBoundary extends Component {
     }
     return this.props.children;
   }
-}
-
-// ─── Study Buddy App ─────────────────────────────────────────────────────────
-function StudyBuddyApp({ onBack, user, openAuth }) {
-  const SB = '#FFA8D0';
-  // Views & rooms
-  const [view,           setView]           = useState('lobby');
-  const [rooms,          setRooms]          = useState([]);
-  const [searchQ,        setSearchQ]        = useState('');
-  const [showCreate,     setShowCreate]     = useState(false);
-  const [createForm,     setCreateForm]     = useState({ title:'', subject:'', isPublic:true, maxParticipants:10 });
-  const [showJoin,       setShowJoin]       = useState(false);
-  const [joinInput,      setJoinInput]      = useState('');
-  const [joining,        setJoining]        = useState(false);
-  const [activeRoom,     setActiveRoom]     = useState(null);
-  const [roomCode,       setRoomCode]       = useState('');
-  const [participants,   setParticipants]   = useState({});
-  const [errMsg,         setErrMsg]         = useState('');
-  // Chat
-  const [messages,       setMessages]       = useState([]);
-  const [newMsg,         setNewMsg]         = useState('');
-  const [pinnedMsg,      setPinnedMsg]      = useState(null);
-  const [showChat,       setShowChat]       = useState(true);
-  // Timer
-  const [timerSecs,      setTimerSecs]      = useState(25*60);
-  const [timerOn,        setTimerOn]        = useState(false);
-  const [timerMode,      setTimerMode]      = useState('focus');
-  // Media
-  const [localStream,    setLocalStream]    = useState(null);
-  const [remoteStreams,  setRemoteStreams]   = useState({});
-  const [videoOn,        setVideoOn]        = useState(true);
-  const [audioOn,        setAudioOn]        = useState(true);
-  const [mediaError,     setMediaError]     = useState(null);
-  const [screenSharing,  setScreenSharing]  = useState(false);
-  // Whiteboard
-  const [showBoard,      setShowBoard]      = useState(false);
-  const [boardTool,      setBoardTool]      = useState('pen');
-  const [boardColor,     setBoardColor]     = useState('#FFA8D0');
-  const [boardSize,      setBoardSize]      = useState(3);
-  const [isDrawing,      setIsDrawing]      = useState(false);
-  // Room settings
-  const [showSettings,   setShowSettings]   = useState(false);
-  const [roomLocked,     setRoomLocked]     = useState(false);
-  // User profile
-  const [showProfile,    setShowProfile]    = useState(false);
-  const [userSubjects,   setUserSubjects]   = useState([]);
-  const [subjectInput,   setSubjectInput]   = useState('');
-
-  const localVidRef     = useRef(null);
-  const remoteVidRefs   = useRef({});
-  const peerConns       = useRef({});
-  const localStreamRef  = useRef(null);
-  const screenStreamRef = useRef(null);
-  const activeRoomRef   = useRef(null);
-  const unsubRooms      = useRef(null);
-  const unsubRoom       = useRef(null);
-  const unsubMsgs       = useRef(null);
-  const unsubSigs       = useRef(null);
-  const timerRef        = useRef(null);
-  const msgEndRef       = useRef(null);
-  const boardRef        = useRef(null);
-  const boardCtx        = useRef(null);
-  const lastPos         = useRef(null);
-  const processedSigs   = useRef(new Set());
-
-  const ICE_CONFIG = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'turn:openrelay.metered.ca:80',              username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443',             username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-    ]
-  };
-
-  // Load user subjects from localStorage
-  useEffect(()=>{ try{ const s=localStorage.getItem('sb_subjects'); if(s) setUserSubjects(JSON.parse(s)); }catch{} },[]);
-  const saveSubjects = (arr) => { setUserSubjects(arr); try{ localStorage.setItem('sb_subjects',JSON.stringify(arr)); }catch{} };
-
-  // Load rooms with stale cleanup
-  useEffect(()=>{
-    try{
-      const q = query(collection(db,'studyRooms'), orderBy('createdAt','desc'), limit(50));
-      unsubRooms.current = onSnapshot(q, async snap=>{
-        const now = Date.now(), fresh = [], staleIds = [];
-        snap.docs.forEach(d=>{
-          const data=d.data(), parts=Object.keys(data.participants||{}).length;
-          const created=data.createdAt?.toDate?.() || new Date();
-          const ageMs=now-created.getTime();
-          if(parts===0 && ageMs>2*60*60*1000) staleIds.push(d.id);
-          else fresh.push({id:d.id,...data});
-        });
-        setRooms(fresh);
-        staleIds.forEach(async id=>{ try{ await deleteDoc(doc(db,'studyRooms',id)); }catch{} });
-      }, ()=>{});
-    }catch{}
-    return ()=>{ unsubRooms.current?.(); };
-  },[]);
-
-  useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
-  useEffect(()=>{ if(localVidRef.current && localStream) localVidRef.current.srcObject=localStream; },[localStream]);
-  useEffect(()=>{
-    // Always re-attach remote streams to video elements when streams change
-    Object.entries(remoteStreams).forEach(([uid,stream])=>{
-      const el=remoteVidRefs.current[uid];
-      if(el){
-        if(el.srcObject!==stream){
-          el.srcObject=stream;
-          el.play().catch(()=>{});
-        }
-      }
-    });
-  },[remoteStreams]);
-  useEffect(()=>{
-    if(timerOn){ timerRef.current=setInterval(()=>{ setTimerSecs(s=>{ if(s<=1){ clearInterval(timerRef.current); setTimerOn(false); const next=timerMode==='focus'?'break':'focus'; setTimerMode(next); return next==='focus'?25*60:5*60; } return s-1; }); },1000); }
-    else clearInterval(timerRef.current);
-    return ()=>clearInterval(timerRef.current);
-  },[timerOn,timerMode]);
-  useEffect(()=>()=>{ doLeave(true); unsubRooms.current?.(); },[]);
-
-  // Whiteboard setup
-  useEffect(()=>{
-    if(!showBoard || !boardRef.current) return;
-    const canvas=boardRef.current;
-    canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight;
-    boardCtx.current=canvas.getContext('2d');
-    boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,canvas.width,canvas.height);
-  },[showBoard]);
-
-  // WebRTC — Deterministic Role Assignment (collision-free, works on all browsers)
-  // RULE: The user with the LOWER uid always sends the offer. Higher uid always answers.
-  // This means for any pair of users, exactly ONE side initiates. Zero collisions.
-
-  // Queued ICE candidates waiting for remote description to be set
-  const iceCandidateQueue = useRef({});
-
-  const makePC=(roomId,targetUid)=>{
-    // Clean up existing connection
-    if(peerConns.current[targetUid]){
-      try{ peerConns.current[targetUid].close(); }catch{}
-    }
-    const pc=new RTCPeerConnection(ICE_CONFIG);
-    peerConns.current[targetUid]=pc;
-
-    // Add all local tracks
-    localStreamRef.current?.getTracks().forEach(t=>{
-      try{ pc.addTrack(t, localStreamRef.current); }catch{}
-    });
-
-    // Receive remote tracks — build a stable MediaStream per remote peer
-    let remoteStream = new MediaStream();
-    pc.ontrack=e=>{
-      const track = e.track;
-      // Remove any existing track of same kind to avoid duplicates
-      remoteStream.getTracks()
-        .filter(t=>t.kind===track.kind)
-        .forEach(t=>remoteStream.removeTrack(t));
-      remoteStream.addTrack(track);
-      // Force React to re-render with the updated stream reference
-      setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));
-      track.onunmute=()=>setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));
-    };
-
-    // ICE candidates
-    pc.onicecandidate=async e=>{
-      if(!e.candidate) return;
-      try{ await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-        from:user.uid, to:targetUid, type:'ice-candidate',
-        data:JSON.stringify(e.candidate), ts:serverTimestamp()
-      }); }catch{}
-    };
-
-    pc.onconnectionstatechange=()=>{
-      const s=pc.connectionState;
-      console.log(`[WebRTC] ${targetUid.slice(-4)} → ${s}`);
-      if(s==='failed'){ pc.restartIce(); }
-      if(s==='closed'){
-        setRemoteStreams(prev=>{const n={...prev};delete n[targetUid];return n;});
-        if(peerConns.current[targetUid]===pc) delete peerConns.current[targetUid];
-      }
-    };
-
-    pc.onnegotiationneeded=async()=>{
-      // Only the lower-UID side should re-negotiate
-      if(user.uid > targetUid) return;
-      try{
-        const offer=await pc.createOffer();
-        if(pc.signalingState!=='stable') return;
-        await pc.setLocalDescription(offer);
-        await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-          from:user.uid, to:targetUid, type:'offer',
-          data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
-        });
-      }catch(e){ console.error('renegotiate',e); }
-    };
-
-    return pc;
-  };
-
-  // Send offer — only called by the LOWER uid
-  const sendOffer=async(roomId,targetUid)=>{
-    // Collision prevention: only lower UID initiates
-    if(user.uid > targetUid) return;
-
-    const existing=peerConns.current[targetUid];
-    if(existing){
-      const cs=existing.connectionState;
-      if(cs==='connected'||cs==='connecting') return;
-      try{ existing.close(); }catch{}
-      delete peerConns.current[targetUid];
-    }
-
-    const pc=makePC(roomId,targetUid);
-    try{
-      const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
-      await pc.setLocalDescription(offer);
-      await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-        from:user.uid, to:targetUid, type:'offer',
-        data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
-      });
-    }catch(e){ console.error('sendOffer',e); }
-  };
-
-  // Connect to a peer regardless of UID order (called from room snapshot)
-  const connectToPeer=async(roomId,targetUid)=>{
-    // Lower UID sends offer; higher UID waits for incoming offer
-    if(user.uid < targetUid){
-      await sendOffer(roomId,targetUid);
-    } else {
-      // Higher UID: just make sure the PC exists to receive the offer
-      if(!peerConns.current[targetUid]) makePC(roomId,targetUid);
-    }
-  };
-
-  const handleSignal=async(roomId,sig,sigId)=>{
-    if(sigId && processedSigs.current.has(sigId)) return;
-    if(sigId) processedSigs.current.add(sigId);
-    const{from,type,data}=sig;
-    if(from===user.uid) return;
-
-    // Ensure PC exists
-    let pc=peerConns.current[from];
-    if(!pc) pc=makePC(roomId,from);
-
-    try{
-      if(type==='offer'){
-        // We're the higher UID receiving an offer from the lower UID
-        await pc.setRemoteDescription(JSON.parse(data));
-        // Flush any queued ICE candidates
-        const queued=iceCandidateQueue.current[from]||[];
-        for(const c of queued){ try{ await pc.addIceCandidate(c); }catch{} }
-        iceCandidateQueue.current[from]=[];
-        // Send answer using explicit createAnswer (works on all browsers)
-        const answer=await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-          from:user.uid, to:from, type:'answer',
-          data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
-        });
-      }
-      else if(type==='answer'){
-        if(pc.signalingState==='have-local-offer'){
-          await pc.setRemoteDescription(JSON.parse(data));
-          // Flush queued ICE candidates
-          const queued=iceCandidateQueue.current[from]||[];
-          for(const c of queued){ try{ await pc.addIceCandidate(c); }catch{} }
-          iceCandidateQueue.current[from]=[];
-        }
-      }
-      else if(type==='ice-candidate'){
-        const candidate=new RTCIceCandidate(JSON.parse(data));
-        if(pc.remoteDescription){
-          try{ await pc.addIceCandidate(candidate); }catch{}
-        } else {
-          // Queue candidate until remote description is ready
-          if(!iceCandidateQueue.current[from]) iceCandidateQueue.current[from]=[];
-          iceCandidateQueue.current[from].push(candidate);
-        }
-      }
-    }catch(e){ console.error('handleSignal',type,from.slice(-4),e.message); }
-  };
-
-  const startMedia=async()=>{
-    setMediaError(null);
-    // Try progressively simpler constraints until something works
-    const attempts=[
-      // 1. HD video + audio
-      {video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'}, audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
-      // 2. Any video + audio (no resolution constraint — fixes some mobile/tablet issues)
-      {video:true, audio:true},
-      // 3. Audio only (camera blocked or unavailable)
-      {video:false, audio:true},
-    ];
-    for(let i=0;i<attempts.length;i++){
-      try{
-        const s=await navigator.mediaDevices.getUserMedia(attempts[i]);
-        localStreamRef.current=s; setLocalStream(s);
-        if(i===2) setMediaError('Camera unavailable — using audio only. Check browser camera permissions.');
-        return s;
-      }catch(e){
-        console.warn(`getUserMedia attempt ${i+1} failed:`, e.name, e.message);
-        if(i===attempts.length-1){
-          const msg = e.name==='NotAllowedError'
-            ? 'Camera & mic blocked. Tap the 🔒 or camera icon in your address bar → Allow → then rejoin.'
-            : e.name==='NotFoundError'
-            ? 'No camera/mic found on this device.'
-            : `Could not access camera: ${e.message}`;
-          setMediaError(msg);
-          return null;
-        }
-      }
-    }
-    return null;
-  };
-
-  // Screen sharing
-  const toggleScreenShare=async()=>{
-    if(screenSharing){
-      screenStreamRef.current?.getTracks().forEach(t=>t.stop());
-      screenStreamRef.current=null; setScreenSharing(false);
-      // Switch back to camera
-      const camTrack=localStreamRef.current?.getVideoTracks()[0];
-      if(camTrack){ Object.values(peerConns.current).forEach(pc=>{ const sender=pc.getSenders().find(s=>s.track?.kind==='video'); if(sender)sender.replaceTrack(camTrack); }); }
-    } else {
-      try{
-        const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
-        screenStreamRef.current=screen; setScreenSharing(true);
-        const screenTrack=screen.getVideoTracks()[0];
-        // Replace video track in all peer connections
-        Object.values(peerConns.current).forEach(pc=>{ const sender=pc.getSenders().find(s=>s.track?.kind==='video'); if(sender)sender.replaceTrack(screenTrack); });
-        // Also show locally
-        if(localVidRef.current){ const mixed=new MediaStream([screenTrack,...(localStreamRef.current?.getAudioTracks()||[])]); localVidRef.current.srcObject=mixed; }
-        screenTrack.onended=()=>toggleScreenShare();
-      }catch(e){ console.error('screen share error',e); }
-    }
-  };
-
-  const enterRoom=async(room)=>{
-    if(!user){openAuth('login');return;}
-    if(room.isLocked && room.host!==user.uid){ setErrMsg('This room is locked by the host.'); return; }
-    const partCount=Object.keys(room.participants||{}).length;
-    if(room.maxParticipants && partCount>=room.maxParticipants){ setErrMsg(`Room is full (max ${room.maxParticipants} people).`); return; }
-    setJoining(true);setErrMsg('');
-    try{
-      const updatePromise=updateDoc(doc(db,'studyRooms',room.id),{
-        [`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||user.name?.[0]||'?',uid:user.uid,joinedAt:new Date().toISOString(),subjects:userSubjects}
-      });
-      await Promise.race([updatePromise, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
-      setActiveRoom(room); activeRoomRef.current=room;
-      setRoomLocked(room.isLocked||false);
-      setView('room'); setJoining(false);
-      await startMedia();
-      try{ unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{
-        if(!snap.exists()){doLeave(true);return;}
-        const d=snap.data(); const parts=d.participants||{};
-        setParticipants(parts); setRoomLocked(d.isLocked||false);
-        if(d.timerOn!==undefined)setTimerOn(d.timerOn);
-        if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);
-        if(d.timerMode!==undefined)setTimerMode(d.timerMode);
-        if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-        Object.keys(parts).forEach(uid=>{ if(uid!==user.uid&&localStreamRef.current) connectToPeer(room.id,uid); });
-      },()=>{}); }catch{}
-      try{ const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc')); unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{}); }catch{}
-      try{ const sq=collection(db,'studyRooms',room.id,'signals'); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{}); }catch{}
-      try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid) connectToPeer(room.id,uid);}); }catch{}
-    }catch(e){ console.error('enterRoom',e); setErrMsg(e.message||'Failed to join.'); setJoining(false); }
-  };
-
-  const createRoom=async()=>{
-    if(!user){openAuth('login');return;}
-    if(!createForm.title.trim()||!createForm.subject.trim())return;
-    setJoining(true);setErrMsg('');
-    try{
-      const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
-      const addPromise=addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,maxParticipants:createForm.maxParticipants||10,isLocked:false,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus',pinnedMsg:null});
-      const ref=await Promise.race([addPromise, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firestore timed out.')),8000))]);
-      const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{},isLocked:false};
-      setShowCreate(false); if(!createForm.isPublic) setRoomCode(code);
-      setCreateForm({title:'',subject:'',isPublic:true,maxParticipants:10});
-      await enterRoom(room);
-    }catch(e){ console.error('createRoom',e); setErrMsg(e.message||'Failed to create room.'); setJoining(false); }
-  };
-
-  const joinByCode=async()=>{
-    if(!user){openAuth('login');return;} if(joinInput.length<6)return; setErrMsg('');
-    try{
-      const q=query(collection(db,'studyRooms'),where('code','==',joinInput.trim().toUpperCase()));
-      const snap=await getDocs(q);
-      if(snap.empty){setErrMsg('Room not found.');return;}
-      setShowJoin(false);setJoinInput('');
-      await enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});
-    }catch{ setErrMsg('Could not find that room.'); }
-  };
-
-  const doLeave=async(silent=false)=>{
-    localStreamRef.current?.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; setLocalStream(null);
-    screenStreamRef.current?.getTracks().forEach(t=>t.stop()); screenStreamRef.current=null; setScreenSharing(false);
-    Object.values(peerConns.current).forEach(pc=>pc.close()); peerConns.current={}; setRemoteStreams({});
-    unsubRoom.current?.(); unsubMsgs.current?.(); unsubSigs.current?.(); clearInterval(timerRef.current);
-    processedSigs.current.clear();
-    if(!silent&&activeRoomRef.current&&user){
-      try{
-        await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});
-        const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));
-        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0) await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));
-      }catch{}
-    }
-    setActiveRoom(null); activeRoomRef.current=null; setMessages([]); setParticipants({});
-    setTimerSecs(25*60); setTimerOn(false); setTimerMode('focus'); setRoomCode(''); setView('lobby'); setPinnedMsg(null);
-  };
-
-  // Host controls
-  const kickUser=async(uid)=>{
-    if(!activeRoom||activeRoom.host!==user.uid)return;
-    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`participants.${uid}`]:deleteField()}); }catch{}
-  };
-  const toggleLock=async()=>{
-    if(!activeRoom||activeRoom.host!==user.uid)return;
-    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{isLocked:!roomLocked}); setRoomLocked(!roomLocked); }catch{}
-  };
-
-  const sendMsg=async()=>{
-    if(!newMsg.trim()||!activeRoom)return;
-    const t=newMsg.trim(); setNewMsg('');
-    try{ await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}}); }catch{}
-  };
-
-  const addReaction=async(msgId,emoji)=>{
-    if(!activeRoom)return;
-    try{
-      const msgRef=doc(db,'studyRooms',activeRoom.id,'messages',msgId);
-      const snap=await getDoc(msgRef);
-      if(!snap.exists())return;
-      const reactions=snap.data().reactions||{};
-      const users=reactions[emoji]||[];
-      const updated=users.includes(user.uid)?users.filter(u=>u!==user.uid):[...users,user.uid];
-      await updateDoc(msgRef,{[`reactions.${emoji}`]:updated});
-    }catch{}
-  };
-
-  const pinMessage=async(msg)=>{
-    if(!activeRoom||activeRoom.host!==user.uid)return;
-    try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),{pinnedMsg:msg.id===pinnedMsg?.id?null:{id:msg.id,text:msg.text,userName:msg.userName}}); }catch{}
-  };
-
-  const syncTimer=async(u)=>{ if(!activeRoom)return; try{ await updateDoc(doc(db,'studyRooms',activeRoom.id),u); }catch{} };
-  const toggleVideo=()=>{ const t=localStreamRef.current?.getVideoTracks()[0]; if(t){t.enabled=!videoOn;setVideoOn(!videoOn);} };
-  const toggleAudio=()=>{ const t=localStreamRef.current?.getAudioTracks()[0]; if(t){t.enabled=!audioOn;setAudioOn(!audioOn);} };
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-
-  // Whiteboard drawing
-  const getCanvasPos=(e)=>{
-    const r=boardRef.current.getBoundingClientRect();
-    const touch=e.touches?.[0]||e;
-    return{x:touch.clientX-r.left, y:touch.clientY-r.top};
-  };
-  const startDraw=(e)=>{
-    if(!boardCtx.current)return; e.preventDefault();
-    const pos=getCanvasPos(e); lastPos.current=pos; setIsDrawing(true);
-    if(boardTool==='eraser'){ boardCtx.current.globalCompositeOperation='destination-out'; boardCtx.current.lineWidth=20; }
-    else{ boardCtx.current.globalCompositeOperation='source-over'; boardCtx.current.strokeStyle=boardColor; boardCtx.current.lineWidth=boardSize; }
-    boardCtx.current.lineCap='round'; boardCtx.current.lineJoin='round';
-    boardCtx.current.beginPath(); boardCtx.current.arc(pos.x,pos.y,1,0,Math.PI*2); boardCtx.current.fill();
-  };
-  const draw=(e)=>{
-    if(!isDrawing||!boardCtx.current||!lastPos.current)return; e.preventDefault();
-    const pos=getCanvasPos(e);
-    boardCtx.current.beginPath(); boardCtx.current.moveTo(lastPos.current.x,lastPos.current.y);
-    boardCtx.current.lineTo(pos.x,pos.y); boardCtx.current.stroke();
-    lastPos.current=pos;
-  };
-  const stopDraw=()=>{ setIsDrawing(false); lastPos.current=null; };
-  const clearBoard=()=>{ if(!boardCtx.current||!boardRef.current)return; boardCtx.current.globalCompositeOperation='source-over'; boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,boardRef.current.width,boardRef.current.height); };
-
-  const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
-  const partList=Object.values(participants);
-  const otherStreams=Object.entries(remoteStreams);
-  const isHost=activeRoom&&user&&activeRoom.host===user.uid;
-  const REACTIONS=['👍','❤️','😂','🔥','💯','🤔'];
-
-  // ── ROOM VIEW ──
-  if(view==='room'&&activeRoom) return(
-    <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
-      {/* Private code banner */}
-      {roomCode&&isHost&&(<div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}><span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong> — share with your study group</span><button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button></div>)}
-      {/* Top bar */}
-      <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 12px',gap:8,flexShrink:0,flexWrap:'nowrap',overflow:'hidden'}}>
-        <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)',flexShrink:0}}>← Leave</button>
-        <div style={{width:1,height:18,background:'rgba(255,255,255,0.08)',flexShrink:0}}/>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:800,fontSize:13,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div>
-          <div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying {roomLocked&&'· 🔒 Locked'}</div>
-        </div>
-        {/* Timer */}
-        <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'5px 10px',flexShrink:0}}>
-          <div style={{fontSize:9,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
-          <div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:46}}>{fmt(timerSecs)}</div>
-          <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:5,padding:'2px 8px',fontSize:10,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
-          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.2)'}}>↺</button>
-        </div>
-        {/* Toolbar buttons */}
-        {[
-          {label:'💬', active:showChat, onClick:()=>setShowChat(c=>!c), title:'Chat'},
-          {label:'✏️', active:showBoard, onClick:()=>setShowBoard(b=>!b), title:'Whiteboard'},
-          ...(isHost?[{label:'⚙️', active:showSettings, onClick:()=>setShowSettings(s=>!s), title:'Room Settings'}]:[]),
-        ].map(btn=>(
-          <button key={btn.label} onClick={btn.onClick} title={btn.title}
-            style={{background:btn.active?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${btn.active?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 10px',fontSize:14,cursor:'pointer',color:btn.active?SB:'rgba(255,255,255,0.4)',flexShrink:0}}>
-            {btn.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
-        {/* Main area */}
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative',minHeight:0}}>
-          {/* Pinned message */}
-          {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span style={{fontSize:12}}>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
-          {/* Video grid — Zoom-style, fills available height equally */}
-          {!showBoard&&(()=>{
-            const allParts = partList.filter(p=>p.uid!==user?.uid);
-            const total = 1 + allParts.length; // include self
-            // Calculate optimal cols/rows to fill space
-            const cols = total===1?1 : total===2?2 : total<=4?2 : total<=6?3 : 3;
-            const rows = Math.ceil(total/cols);
-            // Tile component — reused for all participants
-            const Tile=({children,border,label,sublabel,isYou,camOff,muted})=>(
-              <div style={{position:'relative',background:'#111020',borderRadius:10,overflow:'hidden',border:`2px solid ${border||'rgba(255,255,255,0.08)'}`,display:'flex',alignItems:'center',justifyContent:'center',minHeight:0,minWidth:0}}>
-                {children}
-                {camOff&&<div style={{position:'absolute',inset:0,background:'#0D0B1E',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
-                  <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{sublabel||'?'}</div>
-                </div>}
-                {/* Name bar */}
-                <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.75))',padding:'20px 10px 7px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <span style={{fontSize:11,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'70%'}}>{label}</span>
-                  <div style={{display:'flex',gap:3,flexShrink:0}}>
-                    {muted&&<span style={{background:'rgba(232,93,63,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>🔇</span>}
-                    {camOff&&<span style={{background:'rgba(60,60,80,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>CAM OFF</span>}
-                  </div>
-                </div>
-              </div>
-            );
-            return(
-              <div style={{
-                flex:1, display:'grid', gap:5, padding:8,
-                gridTemplateColumns:`repeat(${cols}, 1fr)`,
-                gridTemplateRows:`repeat(${rows}, 1fr)`,
-                overflow:'hidden', // critical — forces tiles to fill height
-                boxSizing:'border-box',
-              }}>
-                {/* Self tile */}
-                <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${screenSharing?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn&&!screenSharing} muted={!audioOn}>
-                  {localStream
-                    ?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:screenSharing?'none':'scaleX(-1)'}}/>
-                    :<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                      <div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||user?.name?.[0]||'?'}</div>
-                      <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting…'}</span>
-                    </div>
-                  }
-                </Tile>
-                {/* Remote streams with active video */}
-                {otherStreams.map(([uid,stream])=>{
-                  const p=participants[uid];
-                  return(
-                    <Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}>
-                      <video ref={el=>{
-                        if(el&&el.srcObject!==stream){
-                          remoteVidRefs.current[uid]=el;
-                          el.srcObject=stream;
-                          el.play().catch(()=>{});
-                        }
-                      }} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
-                    </Tile>
-                  );
-                })}
-                {/* Participants still connecting */}
-                {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(
-                  <Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
-                      <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div>
-                      <button onClick={()=>connectToPeer(activeRoom.id,p.uid)}
-                        style={{background:'rgba(255,165,208,0.12)',border:`1px solid ${SB}40`,borderRadius:6,padding:'4px 12px',fontSize:10,fontWeight:700,cursor:'pointer',color:SB}}>
-                        ↺ Reconnect
-                      </button>
-                    </div>
-                  </Tile>
-                ))}
-              </div>
-            );
-          })()}
-
-          {/* Whiteboard */}
-          {showBoard&&(
-            <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-              <div style={{padding:'6px 12px',background:'rgba(6,4,18,0.9)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                {['pen','eraser'].map(t=>(<button key={t} onClick={()=>setBoardTool(t)} style={{padding:'4px 10px',borderRadius:6,border:`1px solid ${boardTool===t?SB:'rgba(255,255,255,0.1)'}`,background:boardTool===t?`${SB}20`:'transparent',fontSize:11,fontWeight:600,cursor:'pointer',color:boardTool===t?SB:'rgba(255,255,255,0.4)'}}>{t==='pen'?'✏️ Pen':'⬜ Eraser'}</button>))}
-                <div style={{display:'flex',gap:4,alignItems:'center'}}>
-                  {['#FFA8D0','#C8B8FF','#6ED9B8','#F5C842','#fff','#E85D3F'].map(col=>(<button key={col} onClick={()=>setBoardColor(col)} style={{width:18,height:18,borderRadius:'50%',background:col,border:`2px solid ${boardColor===col?'#fff':'transparent'}`,cursor:'pointer'}}/>))}
-                </div>
-                <input type="range" min={1} max={16} value={boardSize} onChange={e=>setBoardSize(+e.target.value)} style={{width:60,accentColor:SB}}/>
-                <span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{boardSize}px</span>
-                <button onClick={clearBoard} style={{marginLeft:'auto',padding:'4px 10px',borderRadius:6,border:'1px solid rgba(232,93,63,0.3)',background:'transparent',fontSize:11,cursor:'pointer',color:'rgba(232,93,63,0.7)'}}>🗑 Clear</button>
-              </div>
-              <canvas ref={boardRef} onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw} onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
-                style={{flex:1,cursor:boardTool==='eraser'?'cell':'crosshair',touchAction:'none'}}/>
-            </div>
-          )}
-
-          {mediaError&&<div style={{padding:'8px 14px',background:'rgba(232,93,63,0.1)',borderTop:'1px solid rgba(232,93,63,0.2)',fontSize:11,color:'#E85D3F',display:'flex',gap:6,alignItems:'center',flexShrink:0}}><span>⚠️</span><span>{mediaError}</span></div>}
-
-          {/* Media controls */}
-          <div style={{height:52,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexShrink:0}}>
-            <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:40,height:40,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-            <button onClick={toggleVideo} title={videoOn?'Camera off':'Camera on'} style={{width:40,height:40,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
-            <button onClick={toggleScreenShare} title={screenSharing?'Stop sharing':'Share screen'} style={{width:40,height:40,borderRadius:'50%',background:screenSharing?`${SB}25`:'rgba(255,255,255,0.08)',border:`1px solid ${screenSharing?SB:'rgba(255,255,255,0.12)'}`,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>🖥️</button>
-            <button onClick={()=>doLeave()} style={{padding:'8px 20px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:12,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave</button>
-          </div>
-        </div>
-
-        {/* Chat sidebar */}
-        {showChat&&(<div style={{width:280,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
-          {/* Participants */}
-          <div style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-            <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:7}}>In this room ({partList.length})</div>
-            <div style={{display:'flex',flexDirection:'column',gap:5}}>
-              {partList.map(p=>(
-                <div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 6px',borderRadius:7,background:'rgba(255,255,255,0.03)'}}>
-                  <div style={{width:22,height:22,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{p.avatar||p.name?.[0]||'?'}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:11,color:'rgba(255,255,255,0.75)',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</div>
-                    {p.subjects?.length>0&&<div style={{fontSize:9,color:'rgba(255,255,255,0.3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.subjects.join(', ')}</div>}
-                  </div>
-                  {isHost&&p.uid!==user.uid&&(<button onClick={()=>kickUser(p.uid)} title="Kick user" style={{background:'none',border:'none',cursor:'pointer',color:'rgba(232,93,63,0.4)',fontSize:12,flexShrink:0,padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(232,93,63,0.4)'}>✕</button>)}
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Messages */}
-          <div style={{flex:1,overflowY:'auto',padding:'10px 12px',display:'flex',flexDirection:'column',gap:8}}>
-            {messages.length===0&&<div style={{textAlign:'center',padding:'20px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet 👋</div>}
-            {messages.map(m=>{
-              const reactionEntries=Object.entries(m.reactions||{}).filter(([,users])=>users.length>0);
-              return(
-                <div key={m.id} style={{display:'flex',gap:7,alignItems:'flex-start',group:'msg'}}>
-                  <div style={{width:24,height:24,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                      <span style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)'}}>{m.userId===user?.uid?'You':m.userName}</span>
-                      {isHost&&<button onClick={()=>pinMessage(m)} title="Pin message" style={{background:'none',border:'none',cursor:'pointer',fontSize:9,color:pinnedMsg?.id===m.id?'#F5C842':'rgba(255,255,255,0.15)',padding:0}}>📌</button>}
-                    </div>
-                    <div style={{fontSize:12,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div>
-                    {/* Reactions */}
-                    <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:4}}>
-                      {reactionEntries.map(([emoji,users])=>(
-                        <button key={emoji} onClick={()=>addReaction(m.id,emoji)}
-                          style={{background:users.includes(user?.uid)?`${SB}25`:'rgba(255,255,255,0.05)',border:`1px solid ${users.includes(user?.uid)?SB+'40':'rgba(255,255,255,0.08)'}`,borderRadius:10,padding:'1px 6px',fontSize:10,cursor:'pointer',color:'rgba(255,255,255,0.7)',display:'flex',alignItems:'center',gap:3}}>
-                          {emoji} <span style={{fontSize:9}}>{users.length}</span>
-                        </button>
-                      ))}
-                      <div style={{position:'relative',display:'inline-block'}}>
-                        <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:'1px 5px',fontSize:9,cursor:'pointer',color:'rgba(255,255,255,0.25)'}}>+😊
-                          <select onChange={e=>{if(e.target.value){addReaction(m.id,e.target.value);e.target.value=''}}} style={{position:'absolute',inset:0,opacity:0,cursor:'pointer',width:'100%'}}>
-                            <option value="">React</option>
-                            {REACTIONS.map(r=><option key={r} value={r}>{r}</option>)}
-                          </select>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={msgEndRef}/>
-          </div>
-          {/* Input */}
-          <div style={{padding:8,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:6}}>
-            <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…"
-              style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'7px 10px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
-            <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:32,cursor:'pointer',fontSize:14,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
-          </div>
-        </div>)}
-
-        {/* Room settings panel (host only) */}
-        {showSettings&&isHost&&(<div style={{width:240,borderLeft:'1px solid rgba(255,255,255,0.07)',background:'rgba(5,3,14,0.99)',padding:16,flexShrink:0,overflowY:'auto'}}>
-          <div style={{fontSize:12,fontWeight:800,color:'#F7F6F2',marginBottom:16}}>⚙️ Room Settings</div>
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Room Access</div>
-            <button onClick={toggleLock} style={{width:'100%',padding:'9px',borderRadius:8,border:`1px solid ${roomLocked?'rgba(232,93,63,0.4)':'rgba(255,255,255,0.1)'}`,background:roomLocked?'rgba(232,93,63,0.1)':'rgba(255,255,255,0.04)',fontSize:12,fontWeight:600,cursor:'pointer',color:roomLocked?'#E85D3F':'rgba(255,255,255,0.5)',textAlign:'left'}}>
-              {roomLocked?'🔒 Room Locked — click to unlock':'🔓 Room Open — click to lock'}
-            </button>
-            <div style={{fontSize:10,color:'rgba(255,255,255,0.2)',marginTop:5,lineHeight:1.5}}>Locking prevents new users from joining.</div>
-          </div>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Participants ({partList.length})</div>
-            {partList.filter(p=>p.uid!==user.uid).map(p=>(
-              <div key={p.uid} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{p.name}</span>
-                <button onClick={()=>kickUser(p.uid)} style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.3)',borderRadius:5,padding:'3px 8px',fontSize:10,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Kick</button>
-              </div>
-            ))}
-            {partList.filter(p=>p.uid!==user.uid).length===0&&<div style={{fontSize:11,color:'rgba(255,255,255,0.2)'}}>You're the only one here.</div>}
-          </div>
-        </div>)}
-      </div>
-    </div>
-  );
-
-  // ── LOBBY VIEW ──
-  return(
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#060412',minHeight:'100vh',color:'#F7F6F2'}}>
-      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
-        <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:28,height:28,borderRadius:7,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
-        <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center'}}>
-          {user&&<button onClick={()=>setShowProfile(p=>!p)} style={{background:showProfile?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showProfile?SB+'40':'rgba(255,255,255,0.1)'}`,borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:showProfile?SB:'rgba(255,255,255,0.5)'}}>👤 My Subjects</button>}
-          {user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}
-        </div>
-      </nav>
-
-      {/* User profile / subjects panel */}
-      {showProfile&&user&&(
-        <div style={{background:'rgba(10,8,24,0.98)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:12,margin:'12px 20px',padding:'16px 20px',animation:'sb-fade 0.2s ease'}}>
-          <div style={{fontSize:13,fontWeight:800,color:'#F7F6F2',marginBottom:4}}>Your Study Subjects</div>
-          <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:12}}>These show on your profile in rooms so study partners know what you're studying.</div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
-            {userSubjects.map(s=>(<div key={s} style={{display:'flex',alignItems:'center',gap:5,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'3px 10px',fontSize:11,fontWeight:600,color:SB}}>
-              {s}<button onClick={()=>saveSubjects(userSubjects.filter(x=>x!==s))} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:12,padding:0,lineHeight:1}}>✕</button>
-            </div>))}
-            {userSubjects.length===0&&<span style={{fontSize:11,color:'rgba(255,255,255,0.25)'}}>No subjects added yet</span>}
-          </div>
-          <div style={{display:'flex',gap:8}}>
-            <input value={subjectInput} onChange={e=>setSubjectInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&subjectInput.trim()){saveSubjects([...new Set([...userSubjects,subjectInput.trim()])]);setSubjectInput('');}e.stopPropagation();}} placeholder="Add a subject e.g. Biology"
-              style={{flex:1,padding:'8px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:8,fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
-            <button onClick={()=>{if(subjectInput.trim()){saveSubjects([...new Set([...userSubjects,subjectInput.trim()])]);setSubjectInput('');}}} style={{background:SB,border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Add</button>
-          </div>
-        </div>
-      )}
-
-      <div style={{maxWidth:1000,margin:'0 auto',padding:'32px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:16}}>❋ Virtual Study Rooms</div>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,48px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:12,letterSpacing:-1}}>Find your study crew</h1>
-          <p style={{fontSize:15,color:'rgba(247,246,242,0.4)',maxWidth:440,margin:'0 auto 28px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like the library, but from anywhere.</p>
-          <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowCreate(true);}} style={{background:SB,border:'none',borderRadius:9,padding:'11px 24px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Room</button>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowJoin(true);}} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'11px 20px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
-          </div>
-        </div>
-        {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
-        <div style={{position:'relative',marginBottom:24}}>
-          <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:13,opacity:0.3,pointerEvents:'none'}}>🔍</span>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…"
-            style={{width:'100%',padding:'11px 16px 11px 40px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:13,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/>
-        </div>
-        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'50px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:44,marginBottom:14}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:7}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:13,maxWidth:300,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>)
-        :(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14}}>
-          {filteredRooms.map(r=>{
-            const count=Object.keys(r.participants||{}).length;
-            const full=r.maxParticipants&&count>=r.maxParticipants;
-            return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${full?'rgba(232,93,63,0.5)':SB}`,borderRadius:14,padding:'18px',transition:'all 0.2s'}}
-              onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:7}}>
-                <div style={{fontSize:15,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div>
-                <div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0}}>
-                  {r.isLocked&&<span title="Locked" style={{fontSize:11}}>🔒</span>}
-                  <div style={{display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'2px 7px'}}>
-                    <span style={{width:5,height:5,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/>
-                    <span style={{fontSize:10,color:'rgba(255,255,255,0.45)'}}>{count}{r.maxParticipants?`/${r.maxParticipants}`:''}</span>
-                  </div>
-                </div>
-              </div>
-              <div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'2px 9px',fontSize:10,fontWeight:700,color:SB,marginBottom:10}}>{r.subject}</div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginBottom:12}}>Host: {r.hostName||'Anonymous'}</div>
-              <button onClick={()=>enterRoom(r)} disabled={joining||full||r.isLocked} style={{width:'100%',padding:'8px',borderRadius:8,border:'none',background:full?'rgba(255,255,255,0.06)':r.isLocked?'rgba(255,255,255,0.06)':SB,fontSize:12,fontWeight:700,cursor:joining||full||r.isLocked?'default':'pointer',color:full||r.isLocked?'rgba(255,255,255,0.25)':'#1A1814',opacity:joining?0.5:1}}>
-                {joining?'Joining…':full?'Room Full':r.isLocked?'🔒 Locked':'Join Room →'}
-              </button>
-            </div>);
-          })}
-        </div>)}
-      </div>
-
-      {/* Create modal */}
-      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}>
-        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'32px',width:420,animation:'sb-fade 0.22s ease',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-          <div style={{fontSize:26,marginBottom:12}}>❋</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#F7F6F2',marginBottom:5}}>Create a Study Room</h3>
-          <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:20,lineHeight:1.6}}>Name your room and subject so others can find you.</p>
-          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:11,color:'#E85D3F',marginBottom:12,wordBreak:'break-word'}}>{errMsg}</div>}
-          <input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep"
-            style={{width:'100%',padding:'11px 13px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:13,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:10,boxSizing:'border-box'}}/>
-          <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish"
-            style={{width:'100%',padding:'11px 13px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:13,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/>
-          <div style={{display:'flex',gap:6,marginBottom:12}}>
-            {[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'9px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:12,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}
-          </div>
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:11,color:'rgba(255,255,255,0.35)',display:'block',marginBottom:6}}>Max participants: <strong style={{color:'rgba(255,255,255,0.6)'}}>{createForm.maxParticipants}</strong></label>
-            <input type="range" min={2} max={20} value={createForm.maxParticipants} onChange={e=>setCreateForm(f=>({...f,maxParticipants:+e.target.value}))} style={{width:'100%',accentColor:SB}}/>
-          </div>
-          <div style={{display:'flex',gap:8}}>
-            <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:12,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-            <button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'10px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:12,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button>
-          </div>
-        </div>
-      </div>)}
-
-      {/* Join private modal */}
-      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}>
-        <div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'32px',width:360,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}>
-          <div style={{fontSize:26,marginBottom:12}}>🔒</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#F7F6F2',marginBottom:5}}>Join Private Room</h3>
-          <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:20}}>Enter the 6-character room code.</p>
-          {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:11,color:'#E85D3F',marginBottom:12}}>{errMsg}</div>}
-          <input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6}
-            style={{width:'100%',padding:'13px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:20,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:14}}/>
-          <div style={{display:'flex',gap:8}}>
-            <button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'10px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:12,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button>
-            <button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'10px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:12,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button>
-          </div>
-        </div>
-      </div>)}
-    </div>
-  );
-}
-
-// ─── Course Hub App ────────────────────────────────────────────────────────────
-function CourseHubApp({ onBack, user, openAuth, launchApp }) {
-  const CH = '#6ED9B8';
-  const PALETTE = ['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#E85D3F'];
-
-  const [courses,     setCourses]     = useState(()=>{ try{return JSON.parse(localStorage.getItem('tp_courses')||'[]');}catch{return[];} });
-  const [view,        setView]        = useState('home'); // home | course | create
-  const [active,      setActive]      = useState(null);
-  const [showAddDoc,  setShowAddDoc]  = useState(false);
-  const [docName,     setDocName]     = useState('');
-  const [docText,     setDocText]     = useState('');
-  const [generating,  setGenerating]  = useState(null); // null|'cards'|'map'
-  const [genProgress, setGenProgress] = useState('');
-  const [genResult,   setGenResult]   = useState(null);
-  const [createForm,  setCreateForm]  = useState({name:'',subject:'',color:CH,description:''});
-  const [showCreate,  setShowCreate]  = useState(false);
-  const [errMsg,      setErrMsg]      = useState('');
-
-  useEffect(()=>{ localStorage.setItem('tp_courses', JSON.stringify(courses)); },[courses]);
-
-  const saveCourse = (c) => setCourses(cs=>[...cs,c]);
-  const updateCourse = (id,changes) => {
-    setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));
-    setActive(a=>a?.id===id?{...a,...changes}:a);
-  };
-  const deleteCourse = (id) => { setCourses(cs=>cs.filter(c=>c.id!==id)); setView('home'); setActive(null); };
-
-  const createCourse = () => {
-    if(!createForm.name.trim()) return;
-    const c = { id:`course_${Date.now()}`, ...createForm, name:createForm.name.trim(), documents:[], flashDeckIds:[], brainMapIds:[], createdAt:new Date().toISOString() };
-    saveCourse(c); setActive(c); setView('course'); setShowCreate(false); setCreateForm({name:'',subject:'',color:CH,description:''});
-  };
-
-  const addDocument = () => {
-    if(!docText.trim()) return;
-    const doc = { id:`doc_${Date.now()}`, name:docName.trim()||`Document ${(active.documents?.length||0)+1}`, content:docText.trim(), addedAt:new Date().toISOString() };
-    updateCourse(active.id, {documents:[...(active.documents||[]),doc]});
-    setDocName(''); setDocText(''); setShowAddDoc(false);
-  };
-
-  const removeDocument = (docId) => updateCourse(active.id, {documents:(active.documents||[]).filter(d=>d.id!==docId)});
-
-  // ── Generate Flash Cards ──
-  const generateFlashCards = async () => {
-    if(!active?.documents?.length){ setErrMsg('Add at least one document first.'); return; }
-    if(!user){ openAuth('login'); return; }
-    setGenerating('cards'); setGenResult(null); setErrMsg('');
-    const allText = active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
-    try{
-      setGenProgress('Analyzing course structure…');
-      // Step 1: identify sections
-      const sRes = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:500,
-          messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material for organizing flashcard decks. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
-      const sData = await sRes.json();
-      const sTxt = sData.content?.find(b=>b.type==='text')?.text||'';
-      let sections = ['General'];
-      try{ sections = JSON.parse(sTxt.replace(/```json|```/g,'').trim()).sections||['General']; }catch{}
-
-      // Step 2: generate cards per section
-      const newDecks = [];
-      for(let i=0;i<sections.length;i++){
-        const section = sections[i];
-        setGenProgress(`Generating cards for "${section}" (${i+1}/${sections.length})…`);
-        const res = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:4000,
-            messages:[{role:'user',content:`Create comprehensive flashcards for the "${section}" topic from this course: ${active.name}.
-Extract EVERY key term, definition, concept, fact, process, formula, and principle.
-Respond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional short hint"},...]}
-
-Material:\n${allText.slice(0,5000)}`}]})});
-        const data = await res.json();
-        const txt = data.content?.find(b=>b.type==='text')?.text||'';
-        try{
-          const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
-          if(parsed.cards?.length>0){
-            newDecks.push({
-              id:`deck_${Date.now()}_${i}`,
-              title:`${active.name} — ${section}`,
-              subject:active.subject||'',
-              color:active.color,
-              description:`Generated from ${active.name}`,
-              tags:[active.name.toLowerCase().replace(/\s+/g,'-'),section.toLowerCase().replace(/\s+/g,'-')],
-              courseId:active.id,
-              cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),
-              cardCount:parsed.cards.length,
-              mastery:0, isPublic:false,
-              author:user?.name||'You',
-              createdAt:new Date().toISOString(),
-            });
-          }
-        }catch{}
-      }
-      if(newDecks.length>0){
-        // Save to Flash Cards app localStorage
-        const existing = JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');
-        localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,...newDecks]));
-        const deckIds = newDecks.map(d=>d.id);
-        updateCourse(active.id,{flashDeckIds:[...(active.flashDeckIds||[]),...deckIds]});
-        setGenResult({type:'cards',count:newDecks.length,total:newDecks.reduce((a,d)=>a+d.cardCount,0),deckIds});
-        setGenProgress('');
-      } else { setErrMsg('Could not generate cards. Try adding more content.'); }
-    }catch(e){ console.error(e); setErrMsg('Generation failed. Please try again.'); }
-    setGenerating(null);
-  };
-
-  // ── Generate Brain Map ──
-  const generateBrainMap = async () => {
-    if(!active?.documents?.length){ setErrMsg('Add at least one document first.'); return; }
-    if(!user){ openAuth('login'); return; }
-    setGenerating('map'); setGenResult(null); setErrMsg('');
-    const allText = active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
-    try{
-      setGenProgress('Building brain map structure…');
-      const res = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:2000,
-          messages:[{role:'user',content:`Create a hierarchical brain map for this course: "${active.name}".
-Root = course name. 4-7 main branches (major topics/chapters). Each branch has 3-5 child nodes (subtopics).
-Respond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"one sentence"},...]},...]}
-
-Material:\n${allText.slice(0,4000)}`}]})});
-      const data = await res.json();
-      const txt = data.content?.find(b=>b.type==='text')?.text||'';
-      const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
-
-      const bmPalette = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
-      const nodes = [{id:'root',label:parsed.root||active.name,x:0,y:0,color:active.color,parentId:null,deckIds:[],note:''}];
-
-      (parsed.branches||[]).forEach((branch,bi)=>{
-        const bColor = bmPalette[bi%bmPalette.length];
-        const bAngle = (bi/(parsed.branches.length))*Math.PI*2-Math.PI/2;
-        const bx = Math.cos(bAngle)*260, by = Math.sin(bAngle)*260;
-        const bid = `b${bi}`;
-        nodes.push({id:bid,label:branch.label,x:bx,y:by,color:bColor,parentId:'root',deckIds:[],note:''});
-        (branch.children||[]).forEach((child,ci)=>{
-          const cAngle = bAngle+(ci-(branch.children.length-1)/2)*0.55;
-          nodes.push({id:`${bid}c${ci}`,label:child.label,x:bx+Math.cos(cAngle)*190,y:by+Math.sin(cAngle)*190,color:bColor,parentId:bid,deckIds:[],note:child.note||''});
-        });
-      });
-
-      const newMap = {id:`map_${Date.now()}`,title:active.name,color:active.color,courseId:active.id,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
-      const existing = JSON.parse(localStorage.getItem('tp_bm_maps')||'[]');
-      localStorage.setItem('tp_bm_maps',JSON.stringify([...existing,newMap]));
-      updateCourse(active.id,{brainMapIds:[...(active.brainMapIds||[]),newMap.id]});
-      setGenResult({type:'map',mapId:newMap.id,nodeCount:nodes.length});
-      setGenProgress('');
-    }catch(e){ console.error(e); setErrMsg('Generation failed. Please try again.'); }
-    setGenerating(null);
-  };
-
-  const CH_SUBJECTS = ['Biology','Chemistry','Physics','Math','History','English','Computer Science','Economics','Psychology','Other'];
-
-  // ── COURSE DETAIL VIEW ──
-  if(view==='course'&&active) return(
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
-      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
-      {/* Nav */}
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
-        <button onClick={()=>{setView('home');setActive(null);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← All Courses</button>
-        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
-        <div style={{width:4,height:4,borderRadius:'50%',background:active.color}}/>
-        <span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:'#1A1814'}}>{active.name}</span>
-        <span style={{fontSize:12,color:'#8C8880'}}>{active.subject}</span>
-      </nav>
-
-      <div style={{maxWidth:900,margin:'0 auto',padding:'32px 24px 80px',animation:'ch-fade 0.3s ease'}}>
-        {/* Header */}
-        <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${active.color}`,borderRadius:16,padding:'28px 28px 24px',marginBottom:24}}>
-          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16}}>
-            <div>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:active.color,marginBottom:6}}>{active.subject||'Course'}</div>
-              <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:'#1A1814',marginBottom:8}}>{active.name}</h1>
-              {active.description&&<p style={{fontSize:14,color:'#6B6860',lineHeight:1.6}}>{active.description}</p>}
-              <div style={{display:'flex',gap:16,marginTop:12,fontSize:13,color:'#8C8880'}}>
-                <span>📄 {(active.documents||[]).length} documents</span>
-                <span>📇 {(active.flashDeckIds||[]).length} flash decks</span>
-                <span>✺ {(active.brainMapIds||[]).length} brain maps</span>
-              </div>
-            </div>
-            <button onClick={()=>deleteCourse(active.id)} style={{background:'none',border:'1px solid rgba(232,93,63,0.2)',borderRadius:7,padding:'6px 12px',fontSize:11,cursor:'pointer',color:'rgba(232,93,63,0.6)'}}>Delete Course</button>
-          </div>
-        </div>
-
-        {errMsg&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20}}>{errMsg}<button onClick={()=>setErrMsg('')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#E85D3F'}}>✕</button></div>}
-
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-          {/* Documents */}
-          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',gridColumn:'1/-1'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-              <div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>📄 Course Documents</div><div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Paste notes, textbook chapters, syllabi, or any course material</div></div>
-              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
-            </div>
-            {(active.documents||[]).length===0
-              ?<div style={{textAlign:'center',padding:'32px 0',color:'#A8A59E'}}>
-                <div style={{fontSize:36,marginBottom:10}}>📄</div>
-                <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>No documents yet</div>
-                <p style={{fontSize:12,maxWidth:280,margin:'0 auto'}}>Add your notes, textbook chapters, or any course material to get started.</p>
-              </div>
-              :<div style={{display:'flex',flexDirection:'column',gap:8}}>
-                {(active.documents||[]).map(doc=>(
-                  <div key={doc.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2',borderRadius:10,border:'1px solid #ECEAE4'}}>
-                    <div style={{width:36,height:36,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📄</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc.name}</div>
-                      <div style={{fontSize:11,color:'#8C8880'}}>{doc.content.split(/\s+/).length} words · added {new Date(doc.addedAt).toLocaleDateString()}</div>
-                    </div>
-                    <button onClick={()=>removeDocument(doc.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#D8D5CE',fontSize:14}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
-                  </div>
-                ))}
-              </div>
-            }
-            {/* Add document form */}
-            {showAddDoc&&(
-              <div style={{marginTop:16,padding:'16px',background:'#F7F6F2',borderRadius:12,border:'1.5px solid #ECEAE4'}}>
-                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (e.g. Chapter 3 Notes)"
-                  style={{width:'100%',padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}
-                  onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-                <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapter, lecture slides, or any course material here…"
-                  style={{width:'100%',minHeight:160,padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',lineHeight:1.6,fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box',marginBottom:10}}
-                  onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-                <div style={{display:'flex',gap:8}}>
-                  <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');}} style={{flex:1,padding:'10px',borderRadius:8,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button>
-                  <button onClick={addDocument} disabled={!docText.trim()} style={{flex:2,padding:'10px',borderRadius:8,border:'none',background:docText.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:docText.trim()?'pointer':'default',color:docText.trim()?'#F7F6F2':'#A8A59E'}}>Add Document →</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Generate Flash Cards */}
-          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:`4px solid ${active.color}`,borderRadius:14,padding:'20px'}}>
-            <div style={{fontSize:20,marginBottom:10}}>📇</div>
-            <div style={{fontSize:15,fontWeight:800,color:'#1A1814',marginBottom:6}}>Flash Card Decks</div>
-            <p style={{fontSize:12,color:'#6B6860',lineHeight:1.6,marginBottom:16}}>AI reads your documents and creates organized flash card decks — one deck per chapter or major topic.</p>
-            {(active.flashDeckIds||[]).length>0&&(
-              <div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>
-                ✓ {(active.flashDeckIds||[]).length} deck{(active.flashDeckIds||[]).length!==1?'s':''} already generated
-                <button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button>
-              </div>
-            )}
-            {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards total!<button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
-            <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length}
-              style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              {generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✦ Generate Flash Cards'}
-            </button>
-          </div>
-
-          {/* Generate Brain Map */}
-          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:'4px solid #F0A8C0',borderRadius:14,padding:'20px'}}>
-            <div style={{fontSize:20,marginBottom:10}}>✺</div>
-            <div style={{fontSize:15,fontWeight:800,color:'#1A1814',marginBottom:6}}>Brain Map</div>
-            <p style={{fontSize:12,color:'#6B6860',lineHeight:1.6,marginBottom:16}}>AI builds a visual brain map showing how all the topics in your course connect to each other.</p>
-            {(active.brainMapIds||[]).length>0&&(
-              <div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#9B1446'}}>
-                ✓ {(active.brainMapIds||[]).length} map{(active.brainMapIds||[]).length!==1?'s':''} already generated
-                <button onClick={()=>launchApp('brainmap')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button>
-              </div>
-            )}
-            {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#9B1446'}}>✓ Map created with {genResult.nodeCount} nodes!<button onClick={()=>launchApp('brainmap')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
-            <button onClick={generateBrainMap} disabled={generating==='map'||!(active.documents||[]).length}
-              style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?'#F0A8C0':'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              {generating==='map'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✺ Generate Brain Map'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ── HOME VIEW ──
-  return(
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
-      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
-        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:28,height:28,borderRadius:7,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div>
-          <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}><span style={{color:CH}}>Ace It</span> Course Hub</span>
-        </div>
-        <div style={{marginLeft:'auto'}}>
-          {!user&&<button onClick={()=>openAuth('login')} style={{background:CH,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In</button>}
-        </div>
-      </nav>
-
-      <div style={{maxWidth:900,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:CH+'20',border:`1px solid ${CH}40`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'#166534',marginBottom:16}}>◎ Course Hub</div>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,44px)',fontWeight:900,color:'#1A1814',lineHeight:1.1,marginBottom:12,letterSpacing:-1}}>Your coursework, connected</h1>
-          <p style={{fontSize:15,color:'#6B6860',maxWidth:480,margin:'0 auto 28px',lineHeight:1.7}}>Upload your course materials once. Get flash card decks, brain maps, and study tools — all organized and ready to use across every app.</p>
-          <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Create a Course</button>
-        </div>
-
-        {/* How it works */}
-        {courses.length===0&&(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>
-            {[['1','Upload','Paste your notes, syllabus, or textbook chapters into a course.','📄'],
-              ['2','Generate','AI creates organized flash card decks and brain maps from your content.','✦'],
-              ['3','Study','Use your generated content across Flash Cards, Brain Map, and more.','🚀']
-            ].map(([n,title,desc,icon])=>(
-              <div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}>
-                <div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div>
-                <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:CH,marginBottom:6}}>Step {n}</div>
-                <div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div>
-                <div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Courses grid */}
-        {courses.length>0&&(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:16}}>
-            {courses.map(c=>(
-              <div key={c.id} onClick={()=>{setActive(c);setView('course');}} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${c.color}`,borderRadius:14,padding:'20px',cursor:'pointer',transition:'all 0.2s'}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=c.color;e.currentTarget.style.boxShadow=`0 4px 20px ${c.color}20`;}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.boxShadow='none';}}>
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                  <div style={{width:40,height:40,borderRadius:10,background:c.color+'25',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>◎</div>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:800,color:'#1A1814'}}>{c.name}</div>
-                    <div style={{fontSize:11,color:c.color,fontWeight:600}}>{c.subject||'Course'}</div>
-                  </div>
-                </div>
-                {c.description&&<p style={{fontSize:12,color:'#6B6860',lineHeight:1.5,marginBottom:12}}>{c.description}</p>}
-                <div style={{display:'flex',gap:12,fontSize:11,color:'#8C8880'}}>
-                  <span>📄 {(c.documents||[]).length} docs</span>
-                  <span>📇 {(c.flashDeckIds||[]).length} decks</span>
-                  <span>✺ {(c.brainMapIds||[]).length} maps</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Create course modal */}
-      {showCreate&&(
-        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}>
-          <div style={{background:'#fff',borderRadius:18,padding:'36px',width:440,maxWidth:'94vw',animation:'ch-fade 0.2s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:28,marginBottom:14}}>◎</div>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814',marginBottom:6}}>Create a Course</h3>
-            <p style={{fontSize:13,color:'#8C8880',marginBottom:24,lineHeight:1.6}}>Give your course a name. You'll add documents after.</p>
-            <input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createCourse();e.stopPropagation();}} placeholder="Course name e.g. Biology 101, AP History"
-              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}}
-              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology, Math, History"
-              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}}
-              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <textarea value={createForm.description} onChange={e=>setCreateForm(f=>({...f,description:e.target.value}))} placeholder="Description (optional)"
-              style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'none',minHeight:72,marginBottom:16,boxSizing:'border-box'}}
-              onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            {/* Color */}
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#8C8880',marginBottom:8}}>Color</div>
-              <div style={{display:'flex',gap:8}}>{PALETTE.map(col=>(<button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>))}</div>
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button>
-              <button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
-  const canvasRef=useRef(null),labelsRef=useRef(null),animRef=useRef(null);
-  const stateRef=useRef({hov:null,T:0,last:0,searchQ:'',speedMult:1,planets:PLANETS.map((p,i)=>({...p,angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2}))});
-  const [selectedApp,setSelectedApp]=useState(null);
-  const [searchQ,setSearchQ]=useState('');
-  const [speedMult,setSpeedMult]=useState(1);
-  const [isMobile,setIsMobile]=useState(()=>typeof window!=='undefined'&&window.innerWidth<520);
-  useEffect(()=>{stateRef.current.searchQ=searchQ;},[searchQ]);
-  useEffect(()=>{stateRef.current.speedMult=speedMult;},[speedMult]);
-  useEffect(()=>{
-    const canvas=canvasRef.current,labelWrap=labelsRef.current;
-    if(!canvas||!labelWrap)return;
-    const ctx=canvas.getContext('2d'),state=stateRef.current,labelEls={};
-    state.planets.forEach(p=>{const el=document.createElement('div');el.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';el.textContent=p.name;labelWrap.appendChild(el);labelEls[p.appId]=el;});
-    function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;setIsMobile(canvas.width<520);}
-    resize();window.addEventListener('resize',resize);
-    const CX=()=>canvas.width/2,CY=()=>canvas.height*0.48,RX=()=>canvas.width*0.40,RY=()=>canvas.height*0.21,BASE_R=26,SPD=0.0014;
-    function smooth(x){return x*x*(3-2*x);}
-    function getPos(p){const sinA=Math.sin(p.angle),depth=smooth((sinA+1)*0.5),scale=0.85+depth*0.30;return{x:CX()+RX()*Math.cos(p.angle),y:CY()+RY()*sinA,scale,depth,sinA,r:BASE_R*scale};}
-    function drawCenter(){const x=CX(),y=CY(),T=state.T;ctx.textAlign='center';ctx.textBaseline='middle';for(let i=0;i<3;i++){const pr=52+i*24+4*Math.sin(T*1.1+i*1.2);ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(245,200,66,${0.07-i*0.018})`;ctx.lineWidth=0.9;ctx.stroke();}ctx.beginPath();ctx.moveTo(x-90,y);ctx.lineTo(x-58,y);ctx.moveTo(x+58,y);ctx.lineTo(x+90,y);ctx.strokeStyle='rgba(245,200,66,0.18)';ctx.lineWidth=1;ctx.stroke();[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{const bx=x+sx*60,by=y+sy*28;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+sx*12,by);ctx.lineTo(bx+sx*12,by+sy*7);ctx.strokeStyle='rgba(245,200,66,0.15)';ctx.lineWidth=1;ctx.stroke();});ctx.font='14px sans-serif';ctx.fillStyle='rgba(245,200,66,0.3)';ctx.fillText('✦',x,y-38);ctx.font='900 54px sans-serif';ctx.fillStyle='#F5C842';ctx.fillText('ACE IT',x,y+2);ctx.font='600 11px sans-serif';ctx.fillStyle='rgba(245,200,66,0.32)';ctx.fillText('G  A  L  A  X  Y',x,y+30);ctx.textAlign='left';ctx.textBaseline='alphabetic';}
-    function drawPlanet(p){const pos=getPos(p),isH=state.hov===p,r=pos.r*(isH?1.12:1),hasSearch=state.searchQ.length>0,matches=hasSearch&&p.name.toLowerCase().includes(state.searchQ),bodyAlpha=hasSearch?(matches?1:0.2):1,T=state.T;if(matches&&hasSearch){const pulse=0.55+0.45*Math.sin(T*3);ctx.globalAlpha=pulse*0.65;ctx.beginPath();ctx.arc(pos.x,pos.y,r+18,0,Math.PI*2);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}if(isH){ctx.beginPath();ctx.arc(pos.x,pos.y,r+16,0,Math.PI*2);ctx.strokeStyle=p.color+'40';ctx.lineWidth=1.2;ctx.stroke();for(let i=0;i<6;i++){const ang=i*Math.PI/3+T*0.6;ctx.beginPath();ctx.moveTo(pos.x+Math.cos(ang)*(r+10),pos.y+Math.sin(ang)*(r+10));ctx.lineTo(pos.x+Math.cos(ang)*(r+16),pos.y+Math.sin(ang)*(r+16));ctx.strokeStyle=p.color+'90';ctx.lineWidth=1.5;ctx.stroke();}}ctx.globalAlpha=bodyAlpha;ctx.beginPath();ctx.arc(pos.x,pos.y,r+5,0,Math.PI*2);ctx.fillStyle=p.color+'18';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();ctx.beginPath();ctx.arc(pos.x-r*0.25,pos.y-r*0.28,r*0.27,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.38,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.28)';ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.1,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fill();ctx.globalAlpha=1;}
-    function frame(ts){const dt=state.last?Math.min((ts-state.last)/16.67,2):1;state.last=ts;state.T+=0.016*dt;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);drawCenter();sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);if(state.hov)drawPlanet(state.hov);state.planets.forEach(p=>{const el=labelEls[p.appId];if(!el)return;const pos=getPos(p);el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;el.style.opacity='1';el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';el.style.zIndex=state.hov===p?'10':'1';});animRef.current=requestAnimationFrame(frame);}
-    animRef.current=requestAnimationFrame(frame);
-    function onMouseMove(e){const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;let found=null;for(const p of state.planets){const pos=getPos(p);if(Math.hypot(mx-pos.x,my-pos.y)<pos.r+10){found=p;break;}}state.hov=found;canvas.style.cursor=found?'pointer':'default';}
-    function onMouseLeave(){state.hov=null;canvas.style.cursor='default';}
-    function onClick(){if(state.hov)setSelectedApp({...state.hov});}
-    canvas.addEventListener('mousemove',onMouseMove);canvas.addEventListener('mouseleave',onMouseLeave);canvas.addEventListener('click',onClick);
-    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());};
-  },[]);
-  const navBtn={borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",whiteSpace:'nowrap'};
-  return(
-    <div style={{position:'fixed',inset:0,background:'#04020C',overflow:'hidden',fontFamily:"'DM Sans',sans-serif"}}>
-      {!isMobile&&<canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>}
-      {!isMobile&&<div ref={labelsRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:2}}/>}
-      {isMobile&&(<div style={{position:'absolute',top:58,left:0,right:0,bottom:0,overflowY:'auto',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,alignContent:'start'}}>{PLANETS.map(app=>(<div key={app.appId} onClick={()=>setSelectedApp({...app})} style={{background:'rgba(255,255,255,0.04)',border:`1px solid ${app.color}28`,borderRadius:13,padding:'14px 12px',cursor:'pointer'}}><div style={{fontSize:22,marginBottom:7}}>{app.symbol}</div><div style={{fontSize:11,fontWeight:700,color:app.color,marginBottom:3}}>{app.name}</div><div style={{fontSize:9.5,color:'rgba(247,246,242,0.32)',lineHeight:1.4}}>{app.desc}</div></div>))}</div>)}
-      <nav style={{position:'absolute',top:0,left:0,right:0,height:56,display:'flex',alignItems:'center',padding:'0 12px',gap:8,zIndex:20,background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)'}}>
-        <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
-        {!isMobile&&(<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…" style={{width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/></div>)}
-        <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',background:'rgba(4,2,12,0.75)',padding:'4px 4px 4px 8px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',flexShrink:0}}>
-          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div><div style={{fontSize:10,color:'rgba(245,200,66,0.6)',letterSpacing:0.5,fontWeight:600}}>Free Plan</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'🍎 Get Started Free'}</button></>)}
-        </div>
-      </nav>
-      <div style={{position:'absolute',bottom:20,left:0,right:0,textAlign:'center',pointerEvents:'none',zIndex:5}}><p style={{fontSize:9,color:'rgba(255,255,255,0.18)',letterSpacing:2.8,textTransform:'uppercase',fontWeight:600}}>The future of learning is yours</p></div>
-      {!isMobile&&(<div style={{position:'absolute',bottom:20,right:16,zIndex:20,display:'flex',alignItems:'center',gap:7}}><label style={{fontSize:8.5,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'rgba(255,255,255,0.25)'}}>Speed</label><input type="range" min="0.2" max="3" step="0.1" value={speedMult} onChange={e=>{const v=parseFloat(e.target.value);setSpeedMult(v);stateRef.current.speedMult=v;}} style={{width:65,accentColor:'#F5C842',cursor:'pointer'}}/><span style={{fontSize:9,fontWeight:700,color:'rgba(245,200,66,0.6)',minWidth:24}}>{speedMult.toFixed(1)}×</span></div>)}
-      {selectedApp&&(<div onClick={e=>{if(e.target===e.currentTarget)setSelectedApp(null);}} style={{position:'absolute',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(4,2,12,0.78)'}}><div style={{position:'relative',background:'rgba(7,4,20,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'0 28px 26px',width:isMobile?'86vw':250,maxWidth:300,textAlign:'center'}}><div style={{height:3,background:selectedApp.color,borderRadius:'17px 17px 0 0',margin:'0 -28px 24px'}}/><button onClick={()=>setSelectedApp(null)} style={{position:'absolute',top:12,right:14,background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:16,cursor:'pointer'}}>✕</button><div style={{fontSize:36,marginBottom:12}}>{selectedApp.symbol}</div><div style={{fontSize:17,fontWeight:800,color:selectedApp.color,marginBottom:6}}>{selectedApp.name}</div><div style={{fontSize:12,color:'rgba(247,246,242,0.4)',lineHeight:1.65,marginBottom:20}}>{selectedApp.desc}</div><button onClick={()=>{launchApp(selectedApp.appId);setSelectedApp(null);}} style={{width:'100%',padding:12,borderRadius:10,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",background:selectedApp.color,color:'#fff'}}>Launch →</button></div></div>)}
-    </div>
-  );
 }
 
 export default function AceItGalaxy() {
@@ -12447,7 +10943,7 @@ function AceItGalaxyInner() {
     try { return !localStorage.getItem("tp_user"); } catch { return true; }
   });
 
-  // ── Ace It AI Engine ─────────────────────────────────────────────────────────
+  // ── Teacher's Pet AI Engine ─────────────────────────────────────────────────────────
   // Central intelligence layer — reads all live user data and powers every AI
   // call across the platform. Level 2 ready: DB queries would replace localStorage
   // reads below (marked with // L2: replace with db.query(...))
@@ -12483,19 +10979,17 @@ function AceItGalaxyInner() {
 
   // ── Live data readers — these give the AI real-time knowledge of user's content
   const readLiveDecks = () => {
+    // L2: replace with await db.getDecks(userId)
     try { const s = localStorage.getItem("tp_fc_decks"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveMaps = () => {
+    // L2: replace with await db.getMaps(userId)
     try { const s = localStorage.getItem("tp_bm_maps"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   const readLiveFolders = () => {
     try { const s = localStorage.getItem("tp_fc_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
-  };
-
-  const readLiveCourses = () => {
-    try { const s = localStorage.getItem("tp_courses"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
 
   // ── Profile update trackers ───────────────────────────────────────────────────
@@ -12628,7 +11122,6 @@ Help them see connections ACROSS their apps. For example:
     const decks   = readLiveDecks();
     const maps    = readLiveMaps();
     const folders = readLiveFolders();
-    const courses = readLiveCourses();
     const prof    = userProfile;
     const name    = user?.name || "the user";
     const intent  = intentOverride || detectIntent(userMessage, prof);
@@ -12643,7 +11136,7 @@ Help them see connections ACROSS their apps. For example:
 
     // ── Always-on platform context ────────────────────────────────────────────
     const platformContext = `
-You are the Ace It AI — an intelligent, deeply personalized assistant built into the Ace It learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
+You are the Teacher's Pet AI — an intelligent, deeply personalized assistant built into the Teacher's Pet learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
 
 ═══ USER IDENTITY ═══
 Name: ${name}
@@ -12661,13 +11154,6 @@ ${decks.length > 10 ? `  ...and ${decks.length - 10} more` : ""}` : "No flashcar
 ${maps.length ? `BRAIN MAPS (${maps.length} total):
 ${maps.slice(0, 6).map(m => `  • "${m.title}" — ${m.nodes?.length || 0} nodes`).join("\n")}` : "No brain maps yet"}
 
-${courses.length ? `COURSES IN COURSE HUB (${courses.length} total):
-${courses.map(co => {
-  const coDecks = decks.filter(d => (co.linkedDeckIds||[]).includes(d.id));
-  const coMaps  = maps.filter(m  => (co.linkedMapIds||[]).includes(m.id));
-  return `  • "${co.name}"${co.subject?` (${co.subject})`:''}${co.semester?` — ${co.semester}`:''}: ${co.materials?.length||0} materials, ${coDecks.length} decks (${coDecks.reduce((a,d)=>a+(d.cards?.length||0),0)} cards), ${coMaps.length} maps`;
-}).join("\n")}` : "No courses in Course Hub yet"}
-
 ${prof.goals?.length ? `ACTIVE GOALS:
 ${prof.goals.map(g => `  ${g.done ? "✅" : "○"} [${g.priority}] ${g.text}`).join("\n")}` : "No goals set yet"}
 
@@ -12675,17 +11161,20 @@ ${prof.recentTopics.length ? `RECENT TOPICS: ${prof.recentTopics.join(", ")}` : 
 ${prof.weakSubjects?.length ? `STRUGGLING WITH: ${prof.weakSubjects.join(", ")}` : ""}
 ${prof.strongSubjects?.length ? `MASTERED: ${prof.strongSubjects.join(", ")}` : ""}
 
-═══ THE ACE IT APPS YOU CAN HELP WITH ═══
-Course Hub — upload coursework once, AI generates flash cards + brain maps per course
+═══ THE 13 TEACHER'S PET APPS YOU CAN HELP WITH ═══
 Flash Cards — build decks, study with spaced repetition, Quick Build from text
 Notes — record lectures, auto-transcribe, generate study material
 Brain Map — visual mind maps connected to flashcard decks
 Text Simplifier — simplify text or summarize YouTube videos
+Ace Academy — full AI school, adaptive courses
 Studio — real-world skills (music, mechanics, trading, etc.)
+Universe of Information — verified AI encyclopedia
+Earth's Record — global historical archive
+Career Compass — career planning, skill gaps, certifications
 Personal Assistant — this app — chat, goals, planner
-Study Buddy — virtual study rooms with video/audio, real-time collaboration
-Journal — private daily journaling with AI reflection
-Tracker — tasks, calendar, deadlines pulled from your courses
+Mental Health — mood tracking, mindfulness, burnout support
+Flow — focus optimization, learning style detection
+Study Buddy — real-time AI quiz partner
 
 ═══ HOW TO BEHAVE ═══
 - Use ${name}'s name naturally but not every message
@@ -12841,7 +11330,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   // Show splash while Firebase resolves auth state
   if (authLoading) return (
     <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Ace It ✦</div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Teacher's Pet ✦</div>
     </div>
   );
 
@@ -12882,18 +11371,275 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floating(true)}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floating(true)}</>;
-  if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
-  if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
-  if (currentApp === 'studybuddy') return <StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} />;
-  if (currentApp === 'coursehub')  return <CourseHubApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />;
-  if (currentApp) { const planet = PLANETS.find(p => p.appId === currentApp); if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>; }
+  if (currentApp === 'notes')   return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'tracker') return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp) {
+    const planet = PLANETS.find(p => p.appId === currentApp);
+    if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>;
+  }
 
   return (
-    <>
-      <GalaxyHomepage user={user} openAuth={openAuth} launchApp={launchApp} setSidebarOpen={setSidebarOpen} syncStatus={syncStatus} />
+    <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes gx-glow { 0%,100%{opacity:0.5} 50%{opacity:0.9} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        @media (max-width: 640px) { .auth-left-panel { display: none !important; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .gx-card { transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s !important; cursor: pointer; }
+        .gx-card:hover { transform: translateY(-5px) !important; }
+        .gx-stat:hover { border-color: rgba(245,200,66,0.3) !important; background: rgba(245,200,66,0.04) !important; }
+        .gx-stat { transition: all 0.2s; }
+        @media (max-width: 768px) {
+          .gx-nav-search { display: none !important; }
+          .gx-nav { padding: 0 16px !important; }
+          .gx-main { padding: 28px 16px 80px !important; }
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .gx-cats-grid { grid-template-columns: 1fr !important; }
+          .gx-recent { flex-wrap: wrap !important; }
+          .gx-welcome h1 { font-size: 26px !important; }
+          .gx-cta { padding: 32px 24px !important; }
+          .gx-cta-btns { flex-direction: column !important; }
+          .gx-cta-btns button { width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+          .gx-stats-grid { grid-template-columns: 1fr 1fr !important; }
+          .gx-nav-brand span { display: none !important; }
+        }
+      `}</style>
+
+      {/* Background atmosphere */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 80% 60% at 15% 20%, rgba(107,94,228,0.07) 0%, transparent 70%)" }} />
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background:"radial-gradient(ellipse 60% 50% at 85% 80%, rgba(245,200,66,0.05) 0%, transparent 70%)" }} />
+
+      {/* ── NAV ── */}
+      <nav className="gx-nav" style={{ position:"sticky", top:0, zIndex:200, height:62, background:"rgba(6,4,14,0.92)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 32px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, width:36, height:36, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(245,200,66,0.4)";e.currentTarget.style.background="rgba(245,200,66,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="none";}}>
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+            <div style={{ width:10,height:1.5,background:"rgba(255,255,255,0.3)",borderRadius:1 }} />
+            <div style={{ width:14,height:1.5,background:"rgba(255,255,255,0.6)",borderRadius:1 }} />
+          </button>
+          <div style={{ width:1,height:20,background:"rgba(255,255,255,0.08)" }} />
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#F5D96A,#E8A82A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>🍎</div>
+            <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:800, color:"#F7F6F2", letterSpacing:0.3 }}>Teacher's Pet</span>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="gx-nav-search" style={{ position:"relative", width:260 }}>
+          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"rgba(255,255,255,0.25)",pointerEvents:"none" }}>🔍</span>
+          <input placeholder="Search apps…"
+            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
+            style={{ width:"100%",padding:"9px 14px 9px 36px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",fontSize:13,color:"#F7F6F2",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.18s" }}
+            onFocus={e=>{e.target.style.borderColor="rgba(245,200,66,0.5)";e.target.style.background="rgba(255,255,255,0.07)";}}
+            onBlur={e=>{e.target.style.borderColor="rgba(255,255,255,0.1)";e.target.style.background="rgba(255,255,255,0.05)";}} />
+        </div>
+
+        {/* Auth */}
+        {user ? (
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            {/* Sync status indicator */}
+            {syncStatus !== "idle" && (
+              <div style={{ display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:600,transition:"all 0.3s",
+                color:syncStatus==="saved"?"#2BAE7E":syncStatus==="error"?"#E85D3F":"rgba(245,200,66,0.8)" }}>
+                {syncStatus==="saving" && <span style={{ width:8,height:8,borderRadius:"50%",border:"2px solid rgba(245,200,66,0.8)",borderTopColor:"transparent",animation:"qbSpin 0.7s linear infinite",display:"inline-block" }} />}
+                {syncStatus==="saved"  && <span>☁ Saved</span>}
+                {syncStatus==="error"  && <span>⚠ Sync failed</span>}
+                {syncStatus==="saving" && <span>Saving…</span>}
+              </div>
+            )}
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{user.name}</div>
+              <div style={{ fontSize:10,color:"rgba(245,200,66,0.6)",letterSpacing:0.5,fontWeight:600 }}>Free Plan</div>
+            </div>
+            <div onClick={()=>setSidebarOpen(true)} style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#9B7FFF,#F5D96A)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#1A1814",cursor:"pointer",border:"2px solid rgba(255,255,255,0.12)",boxShadow:"0 0 20px rgba(155,127,255,0.3)" }}>
+              {user.avatar}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:"flex",gap:8 }}>
+            <button onClick={()=>openAuth("login")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>Log In</button>
+            <button onClick={()=>openAuth("signup")} style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:800,cursor:"pointer",color:"#1A1814",boxShadow:"0 4px 16px rgba(245,200,66,0.35)",transition:"all 0.18s" }}>Get Started Free</button>
+          </div>
+        )}
+      </nav>
+
+      {/* ── MAIN ── */}
+      <div className="gx-main" style={{ maxWidth:1180,margin:"0 auto",padding:"48px 32px 100px",position:"relative",zIndex:1 }}>
+
+        {/* Welcome */}
+        <div className="gx-welcome" style={{ marginBottom:44, animation:"fadeUp 0.5s ease both", textAlign:"center" }}>
+          <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(245,200,66,0.08)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:20,padding:"5px 14px",marginBottom:16 }}>
+            <span style={{ width:6,height:6,borderRadius:"50%",background:"#F5C842",animation:"gx-glow 2s infinite",display:"inline-block" }} />
+            <span style={{ fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#F5C842" }}>{user ? "Your Dashboard" : "Welcome"}</span>
+          </div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,3.5vw,46px)", fontWeight:900, color:"#F7F6F2", marginBottom:10, letterSpacing:-1, lineHeight:1.1 }}>
+            {user ? `Good to see you, ${user.name?.split(" ")[0]}.` : "The smarter way to study."}
+          </h1>
+          <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,maxWidth:480,fontWeight:300,textAlign:"center",margin:"0 auto" }}>
+            {user ? "Your apps, your notes, your progress — all in one place." : "Sign up free and unlock AI-powered notes, flashcards, brain maps, and more."}
+          </p>
+        </div>
+
+        {/* Stats row */}
+        {user && (
+          <div className="gx-stats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:44,animation:"fadeUp 0.5s 0.06s ease both" }}>
+            {[
+              { icon:"📇", label:"Decks",   value:(() => { try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })(), color:"#C8B8FF" },
+              { icon:"🧠", label:"Maps",    value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_bm_maps")||"[]").length; } catch { return 0; } })(), color:"#F0A8C0" },
+              { icon:"📝", label:"Notes",   value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_notess")||"[]").length; } catch { return 0; } })(), color:"#F0D080" },
+              { icon:"📖", label:"Journal", value:(() => { try { return JSON.parse(localStorage.getItem("aceIt_journal")||"[]").length; } catch { return 0; } })(), color:"#6ED9B8" },
+            ].map(s => (
+              <div key={s.label} className="gx-stat" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"22px 22px", position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg, transparent, ${s.color}88, transparent)` }} />
+                <div style={{ fontSize:20,marginBottom:12 }}>{s.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:s.color,marginBottom:4,lineHeight:1 }}>{s.value}</div>
+                <div style={{ fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:1.5 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent apps */}
+        {recentApps.length > 0 && (
+          <div style={{ marginBottom:44,animation:"fadeUp 0.5s 0.1s ease both" }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:"rgba(255,255,255,0.3)",marginBottom:14 }}>Continue where you left off</div>
+            <div className="gx-recent" style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+              {recentApps.map(appId => {
+                const p = PLANETS.find(x=>x.appId===appId);
+                if (!p) return null;
+                return (
+                  <button key={appId} onClick={()=>launchApp(appId)}
+                    style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderRadius:12,border:`1px solid ${p.color}30`,background:`rgba(255,255,255,0.03)`,cursor:"pointer",transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif",backdropFilter:"blur(10px)" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=p.color;e.currentTarget.style.background=`${p.color}12`;e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${p.color}22`;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=`${p.color}30`;e.currentTarget.style.background="rgba(255,255,255,0.03)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                    <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${p.color}33,${p.glow}18)`,border:`1px solid ${p.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>{p.symbol}</div>
+                    <span style={{ fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.85)" }}>{p.name}</span>
+                    <span style={{ fontSize:11,color:p.color }}>↗</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* App categories */}
+        {[
+          { label:"Study Tools",       emoji:"📚", color:"#9B7FFF", ids:["flashcards","notes","brainmap","simplifier","tracker"] },
+          { label:"AI Assistants",     emoji:"🤖", color:"#4898E8", ids:["assistant","studybuddy"] },
+          { label:"Personal Growth",   emoji:"🌱", color:"#2BAE7E", ids:["journal","mentalhealth","flow","careercompass"] },
+          { label:"Knowledge",         emoji:"🌍", color:"#D4A830", ids:["academy","studio","universe","earthrecord"] },
+        ].map((cat,ci) => {
+          const catPlanets = PLANETS.filter(p=>cat.ids.includes(p.appId));
+          if (!catPlanets.length) return null;
+          return (
+            <div key={cat.label} style={{ marginBottom:48,animation:`fadeUp 0.5s ${0.12+ci*0.06}s ease both` }}>
+              {/* Category header */}
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
+                <span style={{ fontSize:16 }}>{cat.emoji}</span>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2.5,textTransform:"uppercase",color:cat.color }}>{cat.label}</div>
+                <div style={{ flex:1,height:1,background:`linear-gradient(90deg,${cat.color}30,transparent)`,marginLeft:4 }} />
+              </div>
+
+              {/* Cards */}
+              <div className="gx-cats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14 }}>
+                {catPlanets.map(p => (
+                  <div key={p.id} className="gx-card" onClick={()=>launchApp(p.appId)}
+                    style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${p.color}22`, borderRadius:18, padding:"24px 22px 20px", position:"relative", overflow:"hidden", boxShadow:`0 4px 24px rgba(0,0,0,0.2)` }}>
+                    {/* Top glow line */}
+                    <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:"60%",height:1,background:`linear-gradient(90deg,transparent,${p.color}88,transparent)` }} />
+                    {/* Subtle bg glow */}
+                    <div style={{ position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:`radial-gradient(circle,${p.color}0D 0%,transparent 70%)`,pointerEvents:"none" }} />
+
+                    {/* Icon + name */}
+                    <div style={{ display:"flex",alignItems:"flex-start",gap:14,marginBottom:14,position:"relative" }}>
+                      <div style={{ width:46,height:46,borderRadius:13,background:`linear-gradient(135deg,${p.color}22,${p.glow}11)`,border:`1.5px solid ${p.color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,boxShadow:`0 4px 16px ${p.color}22` }}>
+                        {p.symbol}
+                      </div>
+                      <div style={{ flex:1,paddingTop:2 }}>
+                        <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#F7F6F2",lineHeight:1.2,marginBottom:4 }}>{p.name}</div>
+                        <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:`${p.color}15`,border:`1px solid ${p.color}30`,borderRadius:20,padding:"2px 9px" }}>
+                          <div style={{ width:5,height:5,borderRadius:"50%",background:p.color,animation:"gx-glow 2s infinite" }} />
+                          <span style={{ fontSize:9,fontWeight:700,color:p.color,letterSpacing:1,textTransform:"uppercase" }}>Ready</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p style={{ fontSize:12,color:"rgba(247,246,242,0.4)",lineHeight:1.7,margin:"0 0 16px",position:"relative" }}>{p.desc}</p>
+
+                    {/* Footer */}
+                    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative" }}>
+                      <div style={{ fontSize:11,fontWeight:700,color:p.color,display:"flex",alignItems:"center",gap:5 }}>
+                        Launch <span style={{ fontSize:14 }}>→</span>
+                      </div>
+                      {recentApps.includes(p.appId) && (
+                        <div style={{ fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"2px 8px",letterSpacing:1,textTransform:"uppercase" }}>Recent</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Guest CTA */}
+        {!user && (
+          <div style={{ position:"relative",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(245,200,66,0.2)",borderRadius:24,padding:"48px 48px",textAlign:"center",overflow:"hidden",marginTop:20,animation:"fadeUp 0.5s 0.4s ease both" }}>
+            <div style={{ position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(245,200,66,0.06) 0%,transparent 70%)",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:200,height:1,background:"linear-gradient(90deg,transparent,rgba(245,200,66,0.5),transparent)" }} />
+            <div style={{ fontSize:52,marginBottom:16,position:"relative" }}>🍎</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,34px)",fontWeight:900,color:"#F7F6F2",marginBottom:10,position:"relative" }}>Sign up free — 30 seconds.</h2>
+            <p style={{ fontSize:15,color:"rgba(247,246,242,0.4)",lineHeight:1.75,marginBottom:32,maxWidth:420,margin:"0 auto 32px",position:"relative" }}>Save your notes, decks, and progress. Access from any device. Free while we launch.</p>
+            <div className="gx-cta-btns" style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative" }}>
+              <div style={{ position:"relative" }}>
+                <div style={{ position:"absolute",inset:-3,borderRadius:12,background:"linear-gradient(135deg,#F5C842,#E8A82A)",opacity:0.3,filter:"blur(8px)" }} />
+                <button onClick={()=>openAuth("signup")} style={{ position:"relative",background:"linear-gradient(135deg,#F5C842,#E8A82A)",border:"none",borderRadius:10,padding:"14px 32px",fontSize:15,fontWeight:800,cursor:"pointer",color:"#1A1814",fontFamily:"'Montserrat',sans-serif",boxShadow:"0 6px 28px rgba(245,200,66,0.4)" }}>
+                  🍎 Create Free Account →
+                </button>
+              </div>
+              <button onClick={()=>openAuth("login")} style={{ background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px 24px",fontSize:14,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.6)",transition:"all 0.18s" }}
+                onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
+                onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.12)";}}>
+                Log In
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
-    </>
+
+      {/* Galaxy footer */}
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.05)", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10, background:"rgba(6,4,14,0.6)" }}>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.18)" }}>© 2026 Teacher's Pet · All learning, one platform.</div>
+        <div style={{ display:"flex", gap:20 }}>
+          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([label,key])=>(
+            <span key={key} style={{ fontSize:11, color:"rgba(255,255,255,0.22)", cursor:"pointer", transition:"color 0.15s" }}
+              onClick={()=>{
+                if(key==="contact") window.location.href="mailto:hello@teacherspet.app";
+                else { setLegalPage(key); window.history.pushState({screen:`legal-${key}`},"",`/${key}`); }
+              }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.22)"}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </footer>
+
+    </div>
   );
 }
