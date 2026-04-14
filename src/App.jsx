@@ -1948,6 +1948,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [subject, setSubject]   = useState(initialDeck?.subject || "");
   const [color, setColor]       = useState(initialDeck?.color || "#4F6EF7");
   const [isPublic, setIsPublic] = useState(initialDeck?.isPublic || false);
+  const [tags, setTags]         = useState(initialDeck?.tags || []);
   const isEditing = !!initialDeck;
   // Quick Build
   const [qbText, setQbText]         = useState("");
@@ -2402,7 +2403,7 @@ Rules:
             const folderKey = selectedCustom
               ? selectedCustom
               : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
-            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic });
+            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic, tags });
           }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -2961,6 +2962,13 @@ Rules:
                       style={{ width: "100%", minHeight: 120, padding: "12px 0", fontSize: 16, fontWeight: 400, fontFamily: "'DM Sans', sans-serif", color: "#3A3830", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7 }} />
                   </div>
 
+                  {/* Hint */}
+                  <div style={{ padding: "12px 24px", borderTop: "1px solid #F7F6F2" }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", display: "block", marginBottom: 6 }}>Hint <span style={{ fontWeight:400, textTransform:"none", color:"#C8C5BE" }}>(optional — shown on demand during study)</span></label>
+                    <input value={c.hint||""} onChange={e => updateCard(c.id, "hint", e.target.value)} placeholder="e.g. Think about the first letter… or relates to Chapter 4"
+                      style={{ width: "100%", padding: "8px 0", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#6B6860", border: "none", borderBottom: "1px dashed #ECEAE4", outline: "none", background: "transparent", fontStyle: "italic" }} />
+                  </div>
+
                   {/* Card image */}
                   {c.image && (
                     <div style={{ padding:"0 24px 12px", display:"flex", alignItems:"center", gap:10 }}>
@@ -3044,6 +3052,27 @@ Rules:
                     <button key={c} onClick={() => setColor(c)}
                       style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: `3px solid ${color === c ? "#1A1814" : "transparent"}`, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2, cursor: "pointer", transition: "all 0.15s" }} />
                   ))}
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Tags <span style={{ fontWeight:400, textTransform:"none", color:"#A8A59E" }}>(optional)</span></label>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:8 }}>
+                  {(tags||[]).map(t=>(
+                    <div key={t} style={{ display:"flex", alignItems:"center", gap:4, background:"#F0EDE8", borderRadius:20, padding:"4px 10px", fontSize:12, fontWeight:600, color:"#5A5752" }}>
+                      #{t}
+                      <button onClick={()=>setTags(ts=>ts.filter(x=>x!==t))} style={{ background:"none", border:"none", cursor:"pointer", color:"#A8A59E", fontSize:11, padding:0, lineHeight:1 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <input id="tag-input" placeholder="Add a tag e.g. midterm, chapter3…"
+                    style={{ flex:1, padding:"8px 12px", border:"1.5px solid #ECEAE4", borderRadius:8, fontSize:13, color:"#1A1814", fontFamily:"'DM Sans',sans-serif", outline:"none" }}
+                    onFocus={e=>e.target.style.borderColor="#1A1814"} onBlur={e=>e.target.style.borderColor="#ECEAE4"}
+                    onKeyDown={e=>{ if(e.key==="Enter"||e.key===","){ e.preventDefault(); const v=e.target.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){ setTags(ts=>[...(ts||[]),v]); } e.target.value=""; }}} />
+                  <button onClick={()=>{ const el=document.getElementById("tag-input"); const v=el.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){ setTags(ts=>[...(ts||[]),v]); el.value=""; }}}
+                    style={{ padding:"8px 14px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Add</button>
                 </div>
               </div>
 
@@ -3381,7 +3410,13 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   const allHere = currentDecks;
 
   const searchResults = searchQuery.trim()
-    ? allDecks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || (d.subject||"").toLowerCase().includes(searchQuery.toLowerCase()))
+    ? allDecks.filter(d => {
+        const q = searchQuery.toLowerCase();
+        return d.title.toLowerCase().includes(q)
+          || (d.subject||"").toLowerCase().includes(q)
+          || (d.tags||[]).some(t=>t.toLowerCase().includes(q))
+          || (d.cards||[]).some(c=>c.term?.toLowerCase().includes(q)||c.definition?.toLowerCase().includes(q));
+      })
     : [];
 
   const enterFolder  = (id) => setFolderPath(p => [...p, id]);
@@ -3942,6 +3977,14 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
             <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#8C8880", fontWeight: deck.mastery === 100 ? 600 : 400 }}>{deck.mastery || 0}% mastered</span>
             {deck.author && <><span>·</span><span>by {deck.author}</span></>}
           </div>
+          {/* Tags */}
+          {deck.tags?.length > 0 && (
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+              {deck.tags.map(t=>(
+                <span key={t} style={{ background:"#F0EDE8", borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:600, color:"#6B6860" }}>#{t}</span>
+              ))}
+            </div>
+          )}
 
           {/* Star rating */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:10 }}>
@@ -4039,6 +4082,15 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
           onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
           {improving ? <><span style={{ width:12,height:12,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }} /> Improving…</> : "✨ Improve with AI"}
+        </button>
+        <button onClick={()=>{
+          const csv=["Term,Definition,Hint",...deck.cards.map(c=>`"${(c.term||"").replace(/"/g,'""')}","${(c.definition||"").replace(/"/g,'""')}","${(c.hint||"").replace(/"/g,'""')}"`)] .join("\n");
+          const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`${deck.title.replace(/\s+/g,"-")}.csv`; a.click();
+        }}
+          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          ⬇ Export CSV
         </button>
         <button onClick={handlePrint}
           style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
@@ -4189,6 +4241,7 @@ function FCStudySetup({ deck, onBack, onStart }) {
     { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
     { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
     { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
+    { id:"timed",       icon:"⏱",  label:"Timed",             desc:"Beat the clock — 10 seconds per card, race to the end" },
     { id:"all",         icon:"▦",  label:"Full Deck",         desc:"Go through every card in order" },
     { id:"quiz",        icon:"◈",  label:"Multiple Choice",   desc:"Multiple choice answers — test your knowledge" },
     { id:"rapid",       icon:"⚡", label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
@@ -4369,6 +4422,13 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
   const [matchError, setMatchError]         = useState(null);
   const [matchComplete, setMatchComplete]   = useState(false);
   const [matchRound, setMatchRound]         = useState(0);
+  // Timed mode
+  const [timedSecs, setTimedSecs]           = useState(10);
+  const [timedExpired, setTimedExpired]     = useState(false);
+  const [totalTime, setTotalTime]           = useState(0);
+  const timedRef = useRef(null);
+  // Hints
+  const [showHint, setShowHint]             = useState(false);
 
   const workingCards = mode==="progressive" ? cards.slice(0,activeCount) : cards;
   const card = workingCards[index];
@@ -4377,6 +4437,28 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     if (mode==="matching") initMatchRound(0);
     if (mode==="truefalse") generateTF();
   }, []);
+
+  // Timed mode countdown
+  useEffect(() => {
+    if (mode!=="timed") return;
+    setTimedSecs(10); setTimedExpired(false); setShowHint(false);
+    clearInterval(timedRef.current);
+    timedRef.current = setInterval(() => {
+      setTimedSecs(s => {
+        setTotalTime(t => t+1);
+        if (s <= 1) {
+          clearInterval(timedRef.current);
+          setTimedExpired(true);
+          setWrong(p => { const n=new Set(p); n.add(card?.id); return n; });
+          setTimeout(() => advance(), 1200);
+          return 0;
+        }
+        return s-1;
+      });
+    }, 1000);
+    return () => clearInterval(timedRef.current);
+  }, [mode, index]);
+
 
   const initMatchRound = (rnd) => {
     const batch = cards.slice(rnd*6, rnd*6+6);
@@ -4679,6 +4761,18 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
       {/* FLIP MODES */}
       {!["matching","truefalse","written"].includes(mode) && card && (
         <div>
+          {/* Timed mode countdown bar */}
+          {mode==="timed" && (
+            <div style={{ marginBottom:12 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:"#8C8880", textTransform:"uppercase" }}>Time Remaining</span>
+                <span style={{ fontFamily:"monospace", fontSize:22, fontWeight:900, color:timedExpired?"#E85D3F":timedSecs<=3?"#F5A623":"#2BAE7E" }}>{timedExpired?"⏰":timedSecs+"s"}</span>
+              </div>
+              <div style={{ height:6, background:"#ECEAE4", borderRadius:3, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${timedSecs*10}%`, background:timedSecs<=3?"#E85D3F":timedSecs<=6?"#F5A623":"#2BAE7E", borderRadius:3, transition:"width 1s linear" }}/>
+              </div>
+            </div>
+          )}
           <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
             <button onClick={()=>{setIndex(i=>(i-1+workingCards.length)%workingCards.length);setFlipped(false);}}
               style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
@@ -4690,6 +4784,15 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#A8A59E",marginBottom:20 }}>Term · click to flip</div>
                   <div style={{ fontFamily:"'Playfair Display',serif",fontSize:mode==="focus"?32:26,fontWeight:900,color:"#1A1814",lineHeight:1.4,maxWidth:480 }}>{card.term}</div>
                   {card.image&&<img src={card.image} alt="" style={{ maxHeight:100,maxWidth:"80%",marginTop:16,borderRadius:8,objectFit:"contain" }} />}
+                  {/* Hint button */}
+                  {card.hint && !flipped && (
+                    <div style={{ marginTop:20 }}>
+                      {showHint
+                        ? <div style={{ fontSize:13,color:"#6B6860",fontStyle:"italic",background:"#F7F6F2",borderRadius:8,padding:"8px 14px",maxWidth:400 }}>💡 {card.hint}</div>
+                        : <button onClick={e=>{e.stopPropagation();setShowHint(true);}} style={{ background:"transparent",border:"1px solid #ECEAE4",borderRadius:7,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#A8A59E",fontWeight:600 }}>💡 Show Hint</button>
+                      }
+                    </div>
+                  )}
                 </div>
                 <div className="fc-flip-face fc-flip-back">
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:deck.color,marginBottom:20 }}>Definition</div>
