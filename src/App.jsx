@@ -11024,31 +11024,41 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     boardCtx.current.fillStyle='#0A0818'; boardCtx.current.fillRect(0,0,canvas.width,canvas.height);
   },[showBoard]);
 
-  // WebRTC — Perfect Negotiation Pattern (RFC 8827)
-  // Prevents offer collision when multiple users join simultaneously
-  const makePCRef = useRef(null);
+  // WebRTC — Deterministic Role Assignment (collision-free, works on all browsers)
+  // RULE: The user with the LOWER uid always sends the offer. Higher uid always answers.
+  // This means for any pair of users, exactly ONE side initiates. Zero collisions.
+
+  // Queued ICE candidates waiting for remote description to be set
+  const iceCandidateQueue = useRef({});
 
   const makePC=(roomId,targetUid)=>{
+    // Clean up existing connection
     if(peerConns.current[targetUid]){
-      peerConns.current[targetUid].close();
+      try{ peerConns.current[targetUid].close(); }catch{}
     }
     const pc=new RTCPeerConnection(ICE_CONFIG);
     peerConns.current[targetUid]=pc;
-    // Add all local tracks upfront
+
+    // Add all local tracks
     localStreamRef.current?.getTracks().forEach(t=>{
       try{ pc.addTrack(t, localStreamRef.current); }catch{}
     });
-    // Receive remote tracks
-    const remoteStream = new MediaStream();
+
+    // Receive remote tracks — build a stable MediaStream per remote peer
+    let remoteStream = new MediaStream();
     pc.ontrack=e=>{
-      e.streams[0]?.getTracks().forEach(track=>{
-        if(!remoteStream.getTracks().find(t=>t.id===track.id)){
-          remoteStream.addTrack(track);
-        }
-      });
+      const track = e.track;
+      // Remove any existing track of same kind to avoid duplicates
+      remoteStream.getTracks()
+        .filter(t=>t.kind===track.kind)
+        .forEach(t=>remoteStream.removeTrack(t));
+      remoteStream.addTrack(track);
+      // Force React to re-render with the updated stream reference
       setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));
+      track.onunmute=()=>setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));
     };
-    // Send ICE candidates
+
+    // ICE candidates
     pc.onicecandidate=async e=>{
       if(!e.candidate) return;
       try{ await addDoc(collection(db,'studyRooms',roomId,'signals'),{
@@ -11056,47 +11066,67 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         data:JSON.stringify(e.candidate), ts:serverTimestamp()
       }); }catch{}
     };
-    // Handle connection state
+
     pc.onconnectionstatechange=()=>{
-      if(pc.connectionState==='failed') pc.restartIce();
-      if(pc.connectionState==='closed'){
+      const s=pc.connectionState;
+      console.log(`[WebRTC] ${targetUid.slice(-4)} → ${s}`);
+      if(s==='failed'){ pc.restartIce(); }
+      if(s==='closed'){
         setRemoteStreams(prev=>{const n={...prev};delete n[targetUid];return n;});
         if(peerConns.current[targetUid]===pc) delete peerConns.current[targetUid];
       }
     };
+
+    pc.onnegotiationneeded=async()=>{
+      // Only the lower-UID side should re-negotiate
+      if(user.uid > targetUid) return;
+      try{
+        const offer=await pc.createOffer();
+        if(pc.signalingState!=='stable') return;
+        await pc.setLocalDescription(offer);
+        await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+          from:user.uid, to:targetUid, type:'offer',
+          data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
+        });
+      }catch(e){ console.error('renegotiate',e); }
+    };
+
     return pc;
   };
 
-  // Perfect negotiation: lower UID is "polite" (will rollback on collision)
-  const isPolite=(remoteUid)=> user.uid < remoteUid;
+  // Send offer — only called by the LOWER uid
+  const sendOffer=async(roomId,targetUid)=>{
+    // Collision prevention: only lower UID initiates
+    if(user.uid > targetUid) return;
 
-  const makingOfferRef = useRef({});
+    const existing=peerConns.current[targetUid];
+    if(existing){
+      const cs=existing.connectionState;
+      if(cs==='connected'||cs==='connecting') return;
+      try{ existing.close(); }catch{}
+      delete peerConns.current[targetUid];
+    }
 
-  const negotiate=async(roomId,targetUid)=>{
-    const pc = peerConns.current[targetUid] || makePC(roomId,targetUid);
+    const pc=makePC(roomId,targetUid);
     try{
-      makingOfferRef.current[targetUid]=true;
-      await pc.setLocalDescription(); // browser auto-generates offer
+      const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
+      await pc.setLocalDescription(offer);
       await addDoc(collection(db,'studyRooms',roomId,'signals'),{
         from:user.uid, to:targetUid, type:'offer',
         data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
       });
-    }catch(e){ console.error('negotiate',e); }
-    finally{ makingOfferRef.current[targetUid]=false; }
+    }catch(e){ console.error('sendOffer',e); }
   };
 
-  const sendOffer=async(roomId,targetUid)=>{
-    // Skip if already properly connected
-    const existing=peerConns.current[targetUid];
-    if(existing){
-      const cs=existing.connectionState;
-      if(cs==='connected') return;
-      if(cs==='connecting'||cs==='new') return;
-      existing.close();
-      delete peerConns.current[targetUid];
+  // Connect to a peer regardless of UID order (called from room snapshot)
+  const connectToPeer=async(roomId,targetUid)=>{
+    // Lower UID sends offer; higher UID waits for incoming offer
+    if(user.uid < targetUid){
+      await sendOffer(roomId,targetUid);
+    } else {
+      // Higher UID: just make sure the PC exists to receive the offer
+      if(!peerConns.current[targetUid]) makePC(roomId,targetUid);
     }
-    makePC(roomId,targetUid);
-    await negotiate(roomId,targetUid);
   };
 
   const handleSignal=async(roomId,sig,sigId)=>{
@@ -11105,56 +11135,79 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     const{from,type,data}=sig;
     if(from===user.uid) return;
 
-    // Get or create peer connection for this remote user
+    // Ensure PC exists
     let pc=peerConns.current[from];
     if(!pc) pc=makePC(roomId,from);
 
     try{
       if(type==='offer'){
-        const parsedDesc=JSON.parse(data);
-        const offerCollision=(parsedDesc.type==='offer')&&(makingOfferRef.current[from]||pc.signalingState!=='stable');
-        const impolite=!isPolite(from);
-        if(offerCollision && impolite) return; // impolite peer ignores colliding offer
-        if(offerCollision){
-          // Polite peer: rollback own offer and accept theirs
-          await Promise.all([
-            pc.setLocalDescription({type:'rollback'}),
-            pc.setRemoteDescription(parsedDesc)
-          ]);
-        } else {
-          await pc.setRemoteDescription(parsedDesc);
-        }
-        if(parsedDesc.type==='offer'){
-          await pc.setLocalDescription();
-          await addDoc(collection(db,'studyRooms',roomId,'signals'),{
-            from:user.uid, to:from, type:'answer',
-            data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
-          });
-        }
+        // We're the higher UID receiving an offer from the lower UID
+        await pc.setRemoteDescription(JSON.parse(data));
+        // Flush any queued ICE candidates
+        const queued=iceCandidateQueue.current[from]||[];
+        for(const c of queued){ try{ await pc.addIceCandidate(c); }catch{} }
+        iceCandidateQueue.current[from]=[];
+        // Send answer using explicit createAnswer (works on all browsers)
+        const answer=await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await addDoc(collection(db,'studyRooms',roomId,'signals'),{
+          from:user.uid, to:from, type:'answer',
+          data:JSON.stringify(pc.localDescription), ts:serverTimestamp()
+        });
       }
       else if(type==='answer'){
-        // Ignore if we're not expecting an answer
-        if(pc.signalingState==='have-local-offer'||pc.signalingState==='have-local-pranswer'){
+        if(pc.signalingState==='have-local-offer'){
           await pc.setRemoteDescription(JSON.parse(data));
+          // Flush queued ICE candidates
+          const queued=iceCandidateQueue.current[from]||[];
+          for(const c of queued){ try{ await pc.addIceCandidate(c); }catch{} }
+          iceCandidateQueue.current[from]=[];
         }
       }
       else if(type==='ice-candidate'){
-        const candidate=JSON.parse(data);
-        try{ await pc.addIceCandidate(candidate); }catch(e){
-          // Queue candidates if remote description not set yet
-          if(pc.remoteDescription) throw e;
+        const candidate=new RTCIceCandidate(JSON.parse(data));
+        if(pc.remoteDescription){
+          try{ await pc.addIceCandidate(candidate); }catch{}
+        } else {
+          // Queue candidate until remote description is ready
+          if(!iceCandidateQueue.current[from]) iceCandidateQueue.current[from]=[];
+          iceCandidateQueue.current[from].push(candidate);
         }
       }
-    }catch(e){ console.error('handleSignal',type,e); }
+    }catch(e){ console.error('handleSignal',type,from.slice(-4),e.message); }
   };
 
   const startMedia=async()=>{
     setMediaError(null);
-    try{ const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); localStreamRef.current=s; setLocalStream(s); return s; }
-    catch(e){
-      try{ const s=await navigator.mediaDevices.getUserMedia({video:false,audio:true}); localStreamRef.current=s; setLocalStream(s); setMediaError('Camera blocked — audio only. Click 🔒 in address bar → allow camera → refresh.'); return s; }
-      catch(e2){ setMediaError('Camera & mic blocked. Click 🔒 in address bar → allow → refresh.'); return null; }
+    // Try progressively simpler constraints until something works
+    const attempts=[
+      // 1. HD video + audio
+      {video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'}, audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
+      // 2. Any video + audio (no resolution constraint — fixes some mobile/tablet issues)
+      {video:true, audio:true},
+      // 3. Audio only (camera blocked or unavailable)
+      {video:false, audio:true},
+    ];
+    for(let i=0;i<attempts.length;i++){
+      try{
+        const s=await navigator.mediaDevices.getUserMedia(attempts[i]);
+        localStreamRef.current=s; setLocalStream(s);
+        if(i===2) setMediaError('Camera unavailable — using audio only. Check browser camera permissions.');
+        return s;
+      }catch(e){
+        console.warn(`getUserMedia attempt ${i+1} failed:`, e.name, e.message);
+        if(i===attempts.length-1){
+          const msg = e.name==='NotAllowedError'
+            ? 'Camera & mic blocked. Tap the 🔒 or camera icon in your address bar → Allow → then rejoin.'
+            : e.name==='NotFoundError'
+            ? 'No camera/mic found on this device.'
+            : `Could not access camera: ${e.message}`;
+          setMediaError(msg);
+          return null;
+        }
+      }
     }
+    return null;
   };
 
   // Screen sharing
@@ -11202,11 +11255,11 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);
         if(d.timerMode!==undefined)setTimerMode(d.timerMode);
         if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-        Object.keys(parts).forEach(uid=>{ if(uid!==user.uid&&!peerConns.current[uid]&&localStreamRef.current) sendOffer(room.id,uid); });
+        Object.keys(parts).forEach(uid=>{ if(uid!==user.uid&&localStreamRef.current) connectToPeer(room.id,uid); });
       },()=>{}); }catch{}
       try{ const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc')); unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{}); }catch{}
       try{ const sq=collection(db,'studyRooms',room.id,'signals'); unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{}); }catch{}
-      try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)sendOffer(room.id,uid);}); }catch{}
+      try{ const snap2=await getDoc(doc(db,'studyRooms',room.id)); Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid) connectToPeer(room.id,uid);}); }catch{}
     }catch(e){ console.error('enterRoom',e); setErrMsg(e.message||'Failed to join.'); setJoining(false); }
   };
 
@@ -11420,9 +11473,13 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
                 {/* Participants still connecting */}
                 {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(
                   <Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
                       <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div>
                       <div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div>
+                      <button onClick={()=>connectToPeer(activeRoom.id,p.uid)}
+                        style={{background:'rgba(255,165,208,0.12)',border:`1px solid ${SB}40`,borderRadius:6,padding:'4px 12px',fontSize:10,fontWeight:700,cursor:'pointer',color:SB}}>
+                        ↺ Reconnect
+                      </button>
                     </div>
                   </Tile>
                 ))}
