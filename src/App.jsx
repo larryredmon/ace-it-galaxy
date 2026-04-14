@@ -5312,7 +5312,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 268, zIndex: 151, background: "linear-gradient(160deg, rgba(12,10,28,0.99) 0%, rgba(6,4,18,0.99) 100%)", borderRight: "1px solid rgba(255,255,255,0.06)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Teacher's Pet Brain Map</div>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Teacher's Pet</div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
@@ -5376,9 +5376,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
       {/* Nav */}
       <nav className="bm-nav" style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Hamburger */}
             <button onClick={() => setSidebarOpen(o => !o)}
-              style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4.5, transition: "all 0.18s", flexShrink: 0 }}
+              style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4.5, flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
               onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
               <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.7)", borderRadius: 1 }} />
@@ -5402,7 +5403,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#F7F6F2" }}>{user.name}</span>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer" }}>{user.avatar}</div>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer" }} onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
               </div>
             ) : (
               <>
@@ -5414,6 +5415,46 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         </div>
       </nav>
 
+      {/* Sidebar overlay + panel — shared across home/maps views */}
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 150, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />}
+      <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 268, zIndex: 151, background: "linear-gradient(160deg, rgba(12,10,28,0.99) 0%, rgba(6,4,18,0.99) 100%)", borderRight: "1px solid rgba(255,255,255,0.06)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F0A8C0" }}>Ace It Brain Map</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 3, textTransform: "uppercase", marginTop: 1 }}>Ace It</div>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        </div>
+        {!user ? (
+          <div style={{ padding: "16px", display: "flex", gap: 8 }}>
+            <button onClick={() => { openAuth("login"); setSidebarOpen(false); }} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: "1.5px solid rgba(255,255,255,0.13)", background: "transparent", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#F7F6F2" }}>Log In</button>
+            <button onClick={() => { openAuth("signup"); setSidebarOpen(false); }} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: "none", background: "#F0A8C0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>Sign Up</button>
+          </div>
+        ) : (
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#F0A8C0,#9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>{user.avatar}</div>
+            <div><div style={{ fontSize: 12, fontWeight: 700, color: "#F7F6F2" }}>{user.name}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{user.email}</div></div>
+          </div>
+        )}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.2)", marginBottom: 8, paddingLeft: 6 }}>My Maps</div>
+          {maps.map(m => (
+            <div key={m.id} onClick={() => { openMap(m); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 9px", borderRadius: 8, cursor: "pointer", marginBottom: 3, background: m.id === activeMap?.id ? "rgba(255,255,255,0.07)" : "transparent", transition: "background 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+              onMouseLeave={e => e.currentTarget.style.background = m.id === activeMap?.id ? "rgba(255,255,255,0.07)" : "transparent"}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto", flexShrink: 0 }}>{m.nodes?.length || 0}</span>
+            </div>
+          ))}
+          <button onClick={() => { setShowNewMap(true); setSidebarOpen(false); }} style={{ width: "100%", marginTop: 6, padding: "8px 0", borderRadius: 8, border: "1.5px dashed rgba(255,255,255,0.1)", background: "none", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.3)", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(240,168,192,0.4)"; e.currentTarget.style.color = "#F0A8C0"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}>
+            + New Map
+          </button>
+        </div>
+      </div>
+
       {/* ── HOME view ── */}
       {view === "home" && (
         <div>
@@ -5424,7 +5465,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               ✺ Visual Mind Mapping
             </div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, color: "#F7F6F2", lineHeight: 1.08, marginBottom: 20, letterSpacing: -1.5 }}>
-              <span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</h1>
+              <span style={{ color: "#F0A8C0" }}>Teacher's Pet</span> Brain Map</h1>
             <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.45)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 40px" }}>
               Build beautiful mind maps and attach flash card decks directly to topics — so studying and understanding happen in the same place.
             </p>
