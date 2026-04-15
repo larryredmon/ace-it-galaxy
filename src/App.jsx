@@ -3901,9 +3901,7 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:4000,
-          messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.
-Respond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}
-Cards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
+          messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.\nRespond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}\nCards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
       const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
@@ -4453,9 +4451,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
       const sample = cards.slice(0,Math.min(10,cards.length));
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:1200,
-          messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.
-Respond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}
-Cards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
+          messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.\nRespond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}\nCards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
       const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
@@ -4494,8 +4490,7 @@ Cards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:200,
-          messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".
-Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
+          messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".\nRespond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
       const r = JSON.parse(txt.replace(/```json|```/g,"").trim());
@@ -11385,7 +11380,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
                 <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${false?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn} muted={!audioOn}>
                   {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:'scaleX(-1)'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting…'}</span></div>}
                 </Tile>
-                {otherStreams.map(([uid,stream])=>{const p=participants[uid];return(<Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}><video ref={el=>{if(el&&el.srcObject!==stream){remoteVidRefs.current[uid]=el;el.srcObject=stream;el.play().catch(()=>{});}} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/></Tile>);})}
+                {otherStreams.map(([uid,stream])=>{const p=participants[uid];return(<Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}><video ref={el=>{if(el&&el.srcObject!==stream){remoteVidRefs.current[uid]=el;el.srcObject=stream;el.play().catch(()=>{});}}  autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/></Tile>);})}
                 {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(<Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div><button onClick={()=>connectToPeer(activeRoom.id,p.uid)} style={{background:`rgba(255,165,208,0.12)`,border:`1px solid ${SB}40`,borderRadius:6,padding:'4px 12px',fontSize:10,fontWeight:700,cursor:'pointer',color:SB}}>↺ Reconnect</button></div></Tile>))}
               </div>
             );
@@ -11485,25 +11480,16 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     if(!active?.documents?.length){setErrMsg('Add at least one document first.');return;}
     if(!user){openAuth('login');return;}
     setGenerating('cards');setGenResult(null);setErrMsg('');
-    const allText=active.documents.map(d=>`[${d.name}]
-${d.content}`).join('
-
-');
+    const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
     try{
       setGenProgress('Analyzing course structure…');
-      const sRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:500,messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}
-
-Material:
-${allText.slice(0,2000)}`}]})});
+      const sRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:500,messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
       const sData=await sRes.json();const sTxt=sData.content?.find(b=>b.type==='text')?.text||'';
       let sections=['General'];try{sections=JSON.parse(sTxt.replace(/\`\`\`json|\`\`\`/g,'').trim()).sections||['General'];}catch{}
       const newDecks=[];
       for(let i=0;i<sections.length;i++){
         const section=sections[i];setGenProgress(`Generating cards for "${section}" (${i+1}/${sections.length})…`);
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:4000,messages:[{role:'user',content:`Create comprehensive flashcards for "${section}" from course: ${active.name}. Extract EVERY key term, definition, concept, fact, formula.
-Respond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional hint"},...]}.
-Material:
-${allText.slice(0,5000)}`}]})});
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:4000,messages:[{role:'user',content:`Create comprehensive flashcards for "${section}" from course: ${active.name}. Extract EVERY key term, definition, concept, fact, formula.\nRespond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional hint"},...]}.\nMaterial:\n${allText.slice(0,5000)}`}]})});
         const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
         try{const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());if(parsed.cards?.length>0){newDecks.push({id:`deck_${Date.now()}_${i}`,title:`${active.name} — ${section}`,subject:active.subject||'',color:active.color,description:`Generated from ${active.name}`,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}}catch{}
       }
@@ -11523,16 +11509,10 @@ ${allText.slice(0,5000)}`}]})});
     if(!active?.documents?.length){setErrMsg('Add at least one document first.');return;}
     if(!user){openAuth('login');return;}
     setGenerating('map');setGenResult(null);setErrMsg('');
-    const allText=active.documents.map(d=>`[${d.name}]
-${d.content}`).join('
-
-');
+    const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
     try{
       setGenProgress('Building brain map structure…');
-      const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.
-Respond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.
-Material:
-${allText.slice(0,4000)}`}]})});
+      const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.\nRespond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.\nMaterial:\n${allText.slice(0,4000)}`}]})});
       const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
       const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
       const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
