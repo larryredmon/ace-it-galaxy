@@ -11287,8 +11287,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const unsubSigs      = useRef(null);
   const timerRef       = useRef(null);
   const msgEndRef      = useRef(null);
-  const processedSigs  = useRef(new Set());
+  const processedSigs    = useRef(new Set());
   const iceCandidateQueue = useRef({});
+  const joinedAt          = useRef(0);
+  const healthRef         = useRef(null);
 
   const ICE_CONFIG = {
     iceServers: [
@@ -11379,7 +11381,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     try{
       const up=updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||'?',uid:user.uid,joinedAt:new Date().toISOString()}});
       await Promise.race([up,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
-      setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);setView('room');setJoining(false);
+      setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);
+      joinedAt.current = Date.now();setView('room');setJoining(false);
       await startMedia();
       try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
@@ -11411,7 +11414,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const doLeave=async(silent=false)=>{
     localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
     Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
-    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);processedSigs.current.clear();
+    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
     if(!silent&&activeRoomRef.current&&user){try{await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));}catch{}}
     setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);
   };
