@@ -11226,7 +11226,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         const now=Date.now(), fresh=[], stale=[];
         snap.docs.forEach(d=>{
           const data=d.data(), parts=Object.keys(data.participants||{}).length;
-          const created=data.createdAt?.toDate?..()||new Date();
+          const created=data.createdAt?.toDate?.()||new Date();
           if(parts===0&&(now-created.getTime())>2*60*60*1000) stale.push(d.id);
           else fresh.push({id:d.id,...data});
         });
