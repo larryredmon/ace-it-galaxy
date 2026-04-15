@@ -11773,6 +11773,15 @@ function AceItGalaxyInner() {
   const readLiveFolders = () => {
     try { const s = localStorage.getItem("tp_fc_folders"); return s ? JSON.parse(s) : []; } catch { return []; }
   };
+  const readLiveNotes = () => {
+    try { const s = localStorage.getItem("tp_notes"); return s ? JSON.parse(s) : []; } catch { return []; }
+  };
+  const readLiveCourses = () => {
+    try { const s = localStorage.getItem("tp_courses"); return s ? JSON.parse(s) : []; } catch { return []; }
+  };
+  const readLiveTasks = () => {
+    try { const s = localStorage.getItem("tp_tracker_tasks"); return s ? JSON.parse(s) : []; } catch { return []; }
+  };
 
   // ── Profile update trackers ───────────────────────────────────────────────────
   const trackDeckCreated = (deck) => {
