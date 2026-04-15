@@ -4117,6 +4117,26 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           onMouseLeave={e=>{if(!shareUrl){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
           {shareCopied?"✓ Link Copied!":"🔗 Share Deck"}
         </button>
+        {launchApp && <button onClick={()=>{
+          const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
+          const nodes=[{id:"root",label:deck.title,x:0,y:0,color:deck.color,parentId:null,deckIds:[deck.id],note:""}];
+          const groups={};
+          deck.cards.forEach(card=>{const k=card.topic||"General";if(!groups[k])groups[k]=[];groups[k].push(card);});
+          Object.entries(groups).forEach(([topic,cards],gi)=>{
+            const angle=(gi/Math.max(Object.keys(groups).length,1))*Math.PI*2-Math.PI/2;
+            const col=bmPalette[gi%bmPalette.length];
+            const bx=Math.cos(angle)*240,by=Math.sin(angle)*240,bid="b"+gi;
+            nodes.push({id:bid,label:topic,x:bx,y:by,color:col,parentId:"root",deckIds:[deck.id],note:""});
+            cards.slice(0,5).forEach((card,ci)=>{const ca=angle+(ci-(Math.min(cards.length,5)-1)/2)*0.5;nodes.push({id:bid+"c"+ci,label:card.term.slice(0,28),x:bx+Math.cos(ca)*175,y:by+Math.sin(ca)*175,color:col,parentId:bid,deckIds:[],note:card.definition?.slice(0,100)||""});});
+          });
+          const m={id:"map_"+Date.now(),title:deck.title,color:deck.color,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
+          try{const ex=JSON.parse(localStorage.getItem("tp_bm_maps")||"[]");localStorage.setItem("tp_bm_maps",JSON.stringify([...ex,m]));}catch{}
+          launchApp("brainmap");
+        }} style={{padding:"9px 16px",borderRadius:8,border:"1.5px solid #F0A8C0",background:"#FFF5F7",fontSize:12,fontWeight:700,cursor:"pointer",color:"#9B1446",display:"flex",alignItems:"center",gap:6,transition:"all 0.15s"}}
+        onMouseEnter={e=>{e.currentTarget.style.background="#F0A8C0";e.currentTarget.style.color="#fff";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="#FFF5F7";e.currentTarget.style.color="#9B1446";}}>
+          ✺ Send to Brain Map
+        </button>}
       </div>
 
       {/* Share URL box */}
@@ -8867,6 +8887,43 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
                 ✏️ Edit
               </button>
+              {launchApp && <>
+                <button id="note-fc-btn" onClick={async()=>{
+                  if(!user){openAuth("login");return;}
+                  const btn=document.getElementById("note-fc-btn");
+                  if(btn){btn.textContent="Generating…";btn.disabled=true;}
+                  try{
+                    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:3000,messages:[{role:"user",content:"Create flashcards from these notes: \""+activeNote.title+"\". Extract every key term, definition, concept, fact.\nRespond ONLY with JSON: {\"cards\":[{\"term\":\"...\",\"definition\":\"...\",\"hint\":\"optional\"},...]}\n\nNotes:\n"+(activeNote.content?.slice(0,4000)||"")}]})});
+                    const data=await res.json();
+                    const txt=data.content?.find(b=>b.type==="text")?.text||"";
+                    const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
+                    if(parsed.cards?.length>0){
+                      const deck={id:"deck_"+Date.now(),title:activeNote.title,subject:activeNote.subject||"Notes",color:"#C8B8FF",description:"Generated from note: "+activeNote.title,tags:["from-notes"],cards:parsed.cards.map((card,i)=>({id:i+1,...card,mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||"You",createdAt:new Date().toISOString()};
+                      const ex=JSON.parse(localStorage.getItem("tp_fc_decks")||"[]");
+                      localStorage.setItem("tp_fc_decks",JSON.stringify([...ex,deck]));
+                      launchApp("flashcards");
+                    }
+                  }catch(e){console.error(e);}
+                  if(btn){btn.textContent="✦ → Flash Cards";btn.disabled=false;}
+                }} style={{padding:"8px 16px",borderRadius:8,border:"1.5px solid #C8B8FF",background:"#F5F3FF",fontSize:13,fontWeight:600,cursor:"pointer",color:"#6B3FA0",transition:"all 0.15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.background="#C8B8FF";e.currentTarget.style.color="#fff";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="#F5F3FF";e.currentTarget.style.color="#6B3FA0";}}>
+                  ✦ → Flash Cards
+                </button>
+                <button onClick={()=>{
+                  const lines=(activeNote.content||"").split("\n").filter(l=>l.trim().startsWith("#")||l.trim().length>60).slice(0,8);
+                  const pal=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2","#F0A8C0"];
+                  const nodes=[{id:"root",label:(activeNote.title||"Note").slice(0,30),x:0,y:0,color:"#F0D080",parentId:null,deckIds:[],note:""}];
+                  lines.forEach((line,i)=>{const angle=(i/Math.max(lines.length,1))*Math.PI*2-Math.PI/2;nodes.push({id:"n"+i,label:line.replace(/^#+\s*/,"").slice(0,30),x:Math.cos(angle)*220,y:Math.sin(angle)*220,color:pal[i%pal.length],parentId:"root",deckIds:[],note:line.slice(0,100)});});
+                  const m={id:"map_"+Date.now(),title:activeNote.title||"Note Map",color:"#F0D080",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
+                  try{const ex=JSON.parse(localStorage.getItem("tp_bm_maps")||"[]");localStorage.setItem("tp_bm_maps",JSON.stringify([...ex,m]));}catch{}
+                  launchApp("brainmap");
+                }} style={{padding:"8px 16px",borderRadius:8,border:"1.5px solid #F0A8C0",background:"#FFF5F7",fontSize:13,fontWeight:600,cursor:"pointer",color:"#9B1446",transition:"all 0.15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.background="#F0A8C0";e.currentTarget.style.color="#fff";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="#FFF5F7";e.currentTarget.style.color="#9B1446";}}>
+                  ✺ → Brain Map
+                </button>
+              </>}
               <button onClick={()=>{ if(window.confirm("Delete this note?")) deleteNote(activeNote.id); }}
                 style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>
                 🗑
