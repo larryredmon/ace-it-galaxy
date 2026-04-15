@@ -1949,6 +1949,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [subject, setSubject]   = useState(initialDeck?.subject || "");
   const [color, setColor]       = useState(initialDeck?.color || "#4F6EF7");
   const [isPublic, setIsPublic] = useState(initialDeck?.isPublic || false);
+  const [tags, setTags]         = useState(initialDeck?.tags || []);
   const isEditing = !!initialDeck;
   // Quick Build
   const [qbText, setQbText]         = useState("");
@@ -2403,7 +2404,7 @@ Rules:
             const folderKey = selectedCustom
               ? selectedCustom
               : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
-            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic });
+            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic, tags });
           }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -2961,6 +2962,12 @@ Rules:
                     <textarea value={c.definition} onChange={e => updateCard(c.id, "definition", e.target.value)} placeholder="Enter the definition or answer…"
                       style={{ width: "100%", minHeight: 120, padding: "12px 0", fontSize: 16, fontWeight: 400, fontFamily: "'DM Sans', sans-serif", color: "#3A3830", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7 }} />
                   </div>
+                  {/* Hint */}
+                  <div style={{ padding: "10px 24px", borderTop: "1px solid #F7F6F2" }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", display: "block", marginBottom: 5 }}>Hint <span style={{ fontWeight:400, textTransform:"none", color:"#C8C5BE" }}>(optional — shown on demand during study)</span></label>
+                    <input value={c.hint||""} onChange={e => updateCard(c.id, "hint", e.target.value)} placeholder="e.g. Think about Chapter 4, or starts with the letter P…"
+                      style={{ width:"100%", padding:"7px 0", fontSize:13, fontFamily:"'DM Sans',sans-serif", color:"#6B6860", border:"none", borderBottom:"1px dashed #ECEAE4", outline:"none", background:"transparent", fontStyle:"italic" }} />
+                  </div>
 
                   {/* Card image */}
                   {c.image && (
@@ -3045,6 +3052,22 @@ Rules:
                     <button key={c} onClick={() => setColor(c)}
                       style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: `3px solid ${color === c ? "#1A1814" : "transparent"}`, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2, cursor: "pointer", transition: "all 0.15s" }} />
                   ))}
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Tags <span style={{ fontWeight:400, textTransform:"none", color:"#A8A59E" }}>(optional)</span></label>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:8 }}>
+                  {(tags||[]).map(t=>(<div key={t} style={{ display:"flex", alignItems:"center", gap:4, background:"#F0EDE8", borderRadius:20, padding:"4px 10px", fontSize:12, fontWeight:600, color:"#5A5752" }}>#{t}<button onClick={()=>setTags(ts=>ts.filter(x=>x!==t))} style={{ background:"none", border:"none", cursor:"pointer", color:"#A8A59E", fontSize:11, padding:0 }}>✕</button></div>))}
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <input id="tag-input" placeholder="Add a tag e.g. midterm, chapter3…"
+                    style={{ flex:1, padding:"8px 12px", border:"1.5px solid #ECEAE4", borderRadius:8, fontSize:13, color:"#1A1814", fontFamily:"'DM Sans',sans-serif", outline:"none" }}
+                    onFocus={e=>e.target.style.borderColor="#1A1814"} onBlur={e=>e.target.style.borderColor="#ECEAE4"}
+                    onKeyDown={e=>{ if(e.key==="Enter"||e.key===","){ e.preventDefault(); const v=e.target.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){setTags(ts=>[...(ts||[]),v]);} e.target.value=""; }}} />
+                  <button onClick={()=>{ const el=document.getElementById("tag-input"); const v=el.value.trim().replace(/^#/,""); if(v&&!(tags||[]).includes(v)){setTags(ts=>[...(ts||[]),v]);el.value="";}}}
+                    style={{ padding:"8px 14px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Add</button>
                 </div>
               </div>
 
@@ -3382,7 +3405,13 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
   const allHere = currentDecks;
 
   const searchResults = searchQuery.trim()
-    ? allDecks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || (d.subject||"").toLowerCase().includes(searchQuery.toLowerCase()))
+    ? allDecks.filter(d => {
+        const q = searchQuery.toLowerCase();
+        return d.title.toLowerCase().includes(q)
+          || (d.subject||"").toLowerCase().includes(q)
+          || (d.tags||[]).some(t=>t.toLowerCase().includes(q))
+          || (d.cards||[]).some(c=>c.term?.toLowerCase().includes(q)||c.definition?.toLowerCase().includes(q));
+      })
     : [];
 
   const enterFolder  = (id) => setFolderPath(p => [...p, id]);
@@ -4041,6 +4070,14 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
           {improving ? <><span style={{ width:12,height:12,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }} /> Improving…</> : "✨ Improve with AI"}
         </button>
+        <button onClick={()=>{
+          const csv=["Term,Definition,Hint",...deck.cards.map(c=>`"${(c.term||"").replace(/"/g,'""')}","${(c.definition||"").replace(/"/g,'""')}","${(c.hint||"").replace(/"/g,'""')}"`)] .join("\n");
+          const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`${deck.title.replace(/\s+/g,"-")}.csv`; a.click();
+        }} style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          ⬇ Export CSV
+        </button>
         <button onClick={handlePrint}
           style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
           onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
@@ -4190,6 +4227,7 @@ function FCStudySetup({ deck, onBack, onStart }) {
     { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
     { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
     { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
+    { id:"timed",       icon:"⏱",  label:"Timed",             desc:"Beat the clock — 10 seconds per card" },
     { id:"all",         icon:"▦",  label:"Full Deck",         desc:"Go through every card in order" },
     { id:"quiz",        icon:"◈",  label:"Multiple Choice",   desc:"Multiple choice answers — test your knowledge" },
     { id:"rapid",       icon:"⚡", label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
@@ -4351,6 +4389,10 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
   const [cards, setCards]     = useState(configCards);
   const [index, setIndex]     = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [timedSecs, setTimedSecs]   = useState(10);
+  const [timedExpired, setTimedExpired] = useState(false);
+  const [showHint, setShowHint]     = useState(false);
+  const timedRef = useRef(null);
   const [known, setKnown]     = useState(new Set());
   const [wrong, setWrong]     = useState(new Set());
   const [round, setRound]     = useState(1);
@@ -4378,6 +4420,24 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     if (mode==="matching") initMatchRound(0);
     if (mode==="truefalse") generateTF();
   }, []);
+
+  useEffect(() => {
+    if (mode !== "timed") return;
+    setTimedSecs(10); setTimedExpired(false); setShowHint(false);
+    clearInterval(timedRef.current);
+    timedRef.current = setInterval(() => {
+      setTimedSecs(s => {
+        if (s <= 1) {
+          clearInterval(timedRef.current);
+          setTimedExpired(true);
+          setTimeout(() => advance(), 1200);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timedRef.current);
+  }, [mode, index]);
 
   const initMatchRound = (rnd) => {
     const batch = cards.slice(rnd*6, rnd*6+6);
@@ -4680,17 +4740,37 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
       {/* FLIP MODES */}
       {!["matching","truefalse","written"].includes(mode) && card && (
         <div>
+          {/* Timed mode countdown */}
+          {mode==="timed" && (
+            <div style={{ marginBottom:14 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                <span style={{ fontSize:11,fontWeight:700,letterSpacing:1,color:"#8C8880",textTransform:"uppercase" }}>Time</span>
+                <span style={{ fontFamily:"monospace",fontSize:22,fontWeight:900,color:timedExpired?"#E85D3F":timedSecs<=3?"#F5A623":"#2BAE7E" }}>{timedExpired?"⏰":timedSecs+"s"}</span>
+              </div>
+              <div style={{ height:6,background:"#ECEAE4",borderRadius:3,overflow:"hidden" }}>
+                <div style={{ height:"100%",width:`${timedSecs*10}%`,background:timedSecs<=3?"#E85D3F":timedSecs<=6?"#F5A623":"#2BAE7E",borderRadius:3,transition:"width 1s linear" }}/>
+              </div>
+            </div>
+          )}
           <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
-            <button onClick={()=>{setIndex(i=>(i-1+workingCards.length)%workingCards.length);setFlipped(false);}}
+            <button onClick={()=>{setIndex(i=>(i-1+workingCards.length)%workingCards.length);setFlipped(false);setShowHint(false);}}
               style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>‹</button>
-            <div className="fc-flip-scene" style={{ flex:1, minHeight:280 }} onClick={()=>setFlipped(f=>!f)}>
+            <div className="fc-flip-scene" style={{ flex:1, minHeight:280 }} onClick={()=>{setFlipped(f=>!f);setShowHint(false);}}>
               <div className={`fc-flip-card${flipped?" is-flipped":""}`}>
                 <div className="fc-flip-face fc-flip-front">
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#A8A59E",marginBottom:20 }}>Term · click to flip</div>
                   <div style={{ fontFamily:"'Playfair Display',serif",fontSize:mode==="focus"?32:26,fontWeight:900,color:"#1A1814",lineHeight:1.4,maxWidth:480 }}>{card.term}</div>
                   {card.image&&<img src={card.image} alt="" style={{ maxHeight:100,maxWidth:"80%",marginTop:16,borderRadius:8,objectFit:"contain" }} />}
+                  {card.hint && !flipped && (
+                    <div style={{ marginTop:18 }}>
+                      {showHint
+                        ? <div style={{ fontSize:13,color:"#6B6860",fontStyle:"italic",background:"#F7F6F2",borderRadius:8,padding:"8px 14px",maxWidth:380 }}>💡 {card.hint}</div>
+                        : <button onClick={e=>{e.stopPropagation();setShowHint(true);}} style={{ background:"transparent",border:"1px solid #ECEAE4",borderRadius:7,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#A8A59E",fontWeight:600 }}>💡 Show Hint</button>
+                      }
+                    </div>
+                  )}
                 </div>
                 <div className="fc-flip-face fc-flip-back">
                   <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:deck.color,marginBottom:20 }}>Definition</div>
@@ -4699,7 +4779,7 @@ Respond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short
                 </div>
               </div>
             </div>
-            <button onClick={()=>advance()}
+            <button onClick={()=>{advance();setShowHint(false);}}
               style={{ flexShrink:0,width:44,height:44,borderRadius:"50%",border:"1.5px solid #ECEAE4",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#8C8880",transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>›</button>
@@ -4775,18 +4855,24 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const [studyFlipped,  setStudyFlipped]  = useState(false);
   const [showNodeMenu,  setShowNodeMenu]  = useState(false);
 
-  // Undo history
+  // Undo/Redo history
   const historyRef = useRef([]);
-  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; };
+  const redoRef    = useRef([]);
+  const pushHistory = (prevNodes) => { historyRef.current = [...historyRef.current.slice(-29), prevNodes]; redoRef.current = []; };
   const handleUndo = () => {
-    if (historyRef.current.length === 0) return;
+    if (!historyRef.current.length) return;
     const prev = historyRef.current[historyRef.current.length - 1];
+    redoRef.current = [...redoRef.current, nodes];
     historyRef.current = historyRef.current.slice(0, -1);
-    setNodes(prev);
-    setSelectedId(null);
+    setNodes(prev); setSelectedId(null);
   };
-
-  // Wrapped setNodes that auto-pushes undo history for meaningful operations
+  const handleRedo = () => {
+    if (!redoRef.current.length) return;
+    const next = redoRef.current[redoRef.current.length - 1];
+    historyRef.current = [...historyRef.current, nodes];
+    redoRef.current = redoRef.current.slice(0, -1);
+    setNodes(next); setSelectedId(null);
+  };
   const setNodesWithHistory = (updater) => {
     setNodes(prev => {
       const next = typeof updater === "function" ? updater(prev) : updater;
@@ -4795,7 +4881,14 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     });
   };
 
-  const dragRef  = useRef(null); // { type: "node"|"pan", id?, startX, startY, origX, origY, origPanX, origPanY }
+  // AI expansion state
+  const [showAI,      setShowAI]      = useState(false);
+  const [aiTopic,     setAiTopic]     = useState('');
+  const [aiLoading,   setAiLoading]   = useState(false);
+  // Minimap
+  const [showMinimap, setShowMinimap] = useState(true);
+
+  const dragRef  = useRef(null);
   const canvasRef= useRef(null);
 
   const selectedNode = nodes.find(n => n.id === selectedId);
@@ -4817,7 +4910,17 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       }
     };
     const onUp = () => { dragRef.current = null; };
-    const onKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); handleUndo(); } };
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault(); handleRedo(); return; }
+      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); handleUndo(); return; }
+      if (editingId || e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
+      if (e.key==='Tab' && selectedId) { e.preventDefault(); addChild(selectedId); return; }
+      if (e.key==='Enter' && selectedId) { e.preventDefault(); const n=nodes.find(x=>x.id===selectedId); if(n) startEditing(n.id,n.label); return; }
+      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') { e.preventDefault(); deleteNode(selectedId); return; }
+      if (e.key==='Escape') { setSelectedId(null); setShowAI(false); return; }
+      if (e.key==='+'||e.key==='=') { setZoom(z=>Math.min(z*1.15,3)); return; }
+      if (e.key==='-') { setZoom(z=>Math.max(z*0.87,0.15)); return; }
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
@@ -4906,6 +5009,55 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     else if (studyDeckIdx > 0) { setStudyDeckIdx(i => i - 1); setStudyCardIdx(0); setStudyFlipped(false); }
   };
 
+  // ── Auto-layout: radial tree ──
+  const autoLayout = () => {
+    const root = nodes.find(n=>n.id==='root');
+    if(!root) return;
+    const children = (pid) => nodes.filter(n=>n.parentId===pid);
+    const positioned = new Map();
+    positioned.set('root', {x:0, y:0});
+    const layoutLevel = (parentId, startAngle, sweepAngle, radius) => {
+      const kids = children(parentId);
+      if(!kids.length) return;
+      const angleStep = sweepAngle / Math.max(kids.length,1);
+      kids.forEach((kid,i) => {
+        const angle = startAngle + angleStep*i + angleStep/2 - sweepAngle/2;
+        const px = positioned.get(parentId)?.x||0, py = positioned.get(parentId)?.y||0;
+        positioned.set(kid.id, {x: px+Math.cos(angle)*radius, y: py+Math.sin(angle)*radius});
+        layoutLevel(kid.id, angle-sweepAngle/4, sweepAngle/2, radius*0.75);
+      });
+    };
+    layoutLevel('root', -Math.PI/2, Math.PI*2, 240);
+    setNodesWithHistory(ns => ns.map(n => positioned.has(n.id) ? {...n,...positioned.get(n.id)} : n));
+  };
+
+  // ── AI expand: generate child nodes ──
+  const aiExpand = async (parentId, topic) => {
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/claude', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'claude-sonnet-4-5-20250514', max_tokens:600,
+          messages:[{role:'user', content:`Generate 5-7 key subtopics for a brain map node about "${topic}". Respond ONLY with JSON: {"nodes":[{"label":"short 1-4 word label","note":"one sentence"},...]}. No duplicates.`}]
+        })
+      });
+      const data = await res.json();
+      const txt = data.content?.find(b=>b.type==='text')?.text||'';
+      const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+      const parent = nodes.find(n=>n.id===parentId);
+      if(!parent||!parsed.nodes) return;
+      const color = getBranchColor(parentId)||parent.color;
+      const newNodes = parsed.nodes.map((item,i) => {
+        const angle = (-Math.PI/2)+(i/parsed.nodes.length)*Math.PI*2;
+        const dist = parentId==='root'?260:180;
+        return { id:`ai${Date.now()}${i}`, label:item.label, note:item.note||'', x:parent.x+Math.cos(angle)*dist, y:parent.y+Math.sin(angle)*dist, color, parentId, deckIds:[] };
+      });
+      setNodesWithHistory(ns=>[...ns,...newNodes]);
+      setShowAI(false); setAiTopic('');
+    } catch(e) { console.error('AI expand',e); }
+    setAiLoading(false);
+  };
+
   // ── Connection path (cubic bezier) ──
   const getPath = (parent, child) => {
     const mx = (parent.x + child.x) / 2;
@@ -4927,56 +5079,95 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   return (
     <div style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 0, background: "#0C0B18", overflow: "hidden" }}>
-      {/* Title bar strip */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 44, zIndex: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "rgba(12,11,24,0.94)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)" }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Maps</button>
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
-        {editTitle ? (
-          <input autoFocus value={mapTitle} onChange={e => setMapTitle(e.target.value)} onBlur={() => setEditTitle(false)} onKeyDown={e => e.key === "Enter" && setEditTitle(false)}
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#F7F6F2", outline: "none", minWidth: 200 }} />
-        ) : (
-          <div onClick={() => setEditTitle(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "3px 7px", borderRadius: 6 }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#F7F6F2", fontFamily: "'Playfair Display', serif" }}>{mapTitle}</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>✎</span>
+      {/* ── Toolbar ── */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:44, zIndex:50, display:"flex", alignItems:"center", gap:8, padding:"0 12px", background:"rgba(12,11,24,0.96)", borderBottom:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(10px)" }}>
+        <button onClick={onBack} style={{ background:"none", border:"1px solid rgba(255,255,255,0.1)", borderRadius:6, padding:"4px 10px", fontSize:11, cursor:"pointer", color:"rgba(255,255,255,0.4)", flexShrink:0 }}
+          onMouseEnter={e=>e.currentTarget.style.color="#fff"} onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.4)"}>← Maps</button>
+        <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)", flexShrink:0 }} />
+        {editTitle
+          ? <input autoFocus value={mapTitle} onChange={e=>setMapTitle(e.target.value)} onBlur={()=>setEditTitle(false)} onKeyDown={e=>{if(e.key==="Enter")setEditTitle(false);e.stopPropagation();}}
+              style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, padding:"4px 10px", fontSize:14, fontWeight:700, color:"#F7F6F2", outline:"none", minWidth:160, maxWidth:260 }} />
+          : <div onClick={()=>setEditTitle(true)} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", padding:"3px 7px", borderRadius:6, maxWidth:260 }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <span style={{ fontSize:14, fontWeight:800, color:"#F7F6F2", fontFamily:"'Playfair Display',serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mapTitle}</span>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", flexShrink:0 }}>✎</span>
+            </div>
+        }
+        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
+          {/* AI Expand */}
+          <div style={{ position:"relative" }}>
+            <button onClick={()=>setShowAI(a=>!a)} title="AI Expand"
+              style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+              ✦ AI Expand
+            </button>
+            {showAI && (
+              <div style={{ position:"absolute", top:32, right:0, background:"rgba(12,10,28,0.99)", border:"1px solid rgba(155,127,255,0.2)", borderRadius:12, padding:14, width:280, zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.6)" }} onClick={e=>e.stopPropagation()}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#9B7FFF", marginBottom:6 }}>✦ AI Generate Subtopics</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginBottom:10 }}>{selectedId?`Expanding: ${nodes.find(n=>n.id===selectedId)?.label||'selected node'}`:'Select a node first'}</div>
+                <input value={aiTopic} onChange={e=>setAiTopic(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&selectedId){const n=nodes.find(x=>x.id===selectedId);aiExpand(selectedId,aiTopic.trim()||n?.label||mapTitle);}e.stopPropagation();}}
+                  placeholder="Topic (or leave blank to use node label)"
+                  style={{ width:"100%", padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:7, fontSize:12, color:"#F7F6F2", outline:"none", marginBottom:10, boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif" }} />
+                <button onClick={()=>{ const n=nodes.find(x=>x.id===selectedId); if(selectedId) aiExpand(selectedId, aiTopic.trim()||n?.label||mapTitle); }}
+                  disabled={!selectedId||aiLoading}
+                  style={{ width:"100%", padding:"8px", borderRadius:8, border:"none", background:selectedId?"#9B7FFF":"rgba(255,255,255,0.07)", fontSize:12, fontWeight:700, cursor:selectedId?"pointer":"default", color:selectedId?"#fff":"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                  {aiLoading?<><span style={{ width:10,height:10,border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/> Generating…</>:"✦ Generate Subtopics"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
-        {/* Zoom + Undo */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={handleUndo} disabled={historyRef.current.length === 0}
-            title="Undo (Ctrl+Z)"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "0 10px", height: 26, cursor: historyRef.current.length === 0 ? "default" : "pointer", color: historyRef.current.length === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, transition: "all 0.15s" }}
-            onMouseEnter={e => { if (historyRef.current.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}>
-            ↩ Undo
+          {/* Auto-layout */}
+          <button onClick={autoLayout} title="Auto-arrange nodes"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600 }}>
+            ⊞ Layout
           </button>
-          <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
-          <button onClick={() => setZoom(z => Math.min(z * 1.18, 3))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", minWidth: 38, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.max(z * 0.85, 0.15))} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, width: 26, height: 26, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(0.85); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 5, padding: "3px 9px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>Reset</button>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
+          {/* Undo / Redo */}
+          <button onClick={handleUndo} disabled={!historyRef.current.length} title="Undo (Ctrl+Z)"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:historyRef.current.length?"pointer":"default", color:historyRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:13 }}>↩</button>
+          <button onClick={handleRedo} disabled={!redoRef.current.length} title="Redo (Ctrl+Shift+Z)"
+            style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"0 9px", height:26, cursor:redoRef.current.length?"pointer":"default", color:redoRef.current.length?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.18)", fontSize:13 }}>↪</button>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.08)" }} />
+          {/* Zoom */}
+          <button onClick={()=>setZoom(z=>Math.min(z*1.18,3))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+          <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", minWidth:36, textAlign:"center" }}>{Math.round(zoom*100)}%</span>
+          <button onClick={()=>setZoom(z=>Math.max(z*0.85,0.15))} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, width:26, height:26, cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+          <button onClick={()=>{setPan({x:0,y:0});setZoom(0.85);}} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:5, padding:"3px 8px", cursor:"pointer", color:"rgba(255,255,255,0.35)", fontSize:10 }}>Fit</button>
+          {/* Minimap toggle */}
+          <button onClick={()=>setShowMinimap(m=>!m)} title="Toggle minimap"
+            style={{ background:showMinimap?"rgba(240,168,192,0.12)":"rgba(255,255,255,0.06)", border:`1px solid ${showMinimap?"rgba(240,168,192,0.3)":"rgba(255,255,255,0.09)"}`, borderRadius:5, width:26, height:26, cursor:"pointer", color:showMinimap?"#F0A8C0":"rgba(255,255,255,0.4)", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>⊡</button>
         </div>
       </div>
 
-      {/* ── Canvas area (starts below title bar at top: 44px) ── */}
-      <div ref={canvasRef} style={{ position: "absolute", top: 44, left: 0, right: 0, bottom: 0, cursor: dragRef.current?.type === "pan" ? "grabbing" : "grab" }}
+      {/* Keyboard shortcuts hint */}
+      <div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", zIndex:40, pointerEvents:"none" }}>
+        <div style={{ background:"rgba(12,11,24,0.8)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"4px 14px", fontSize:9, color:"rgba(255,255,255,0.25)", display:"flex", gap:12, whiteSpace:"nowrap" }}>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Tab</strong> add child</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Enter</strong> edit</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Del</strong> delete</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>Ctrl+Z</strong> undo</span>
+          <span><strong style={{color:"rgba(255,255,255,0.4)"}}>+/−</strong> zoom</span>
+        </div>
+      </div>
+
+      {/* ── Canvas area ── */}
+      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab" }}
         onMouseDown={onCanvasDown}>
 
         {/* Dot grid */}
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}>
           <defs>
-            <pattern id={`bmDots-${map.id}`} x={(pan.x % (28 * zoom))} y={(pan.y % (28 * zoom))} width={28 * zoom} height={28 * zoom} patternUnits="userSpaceOnUse">
-              <circle cx={14 * zoom} cy={14 * zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
+            <pattern id={`bmDots-${map.id}`} x={(pan.x%(28*zoom))} y={(pan.y%(28*zoom))} width={28*zoom} height={28*zoom} patternUnits="userSpaceOnUse">
+              <circle cx={14*zoom} cy={14*zoom} r={0.7} fill="rgba(255,255,255,0.09)" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill={`url(#bmDots-${map.id})`} />
         </svg>
 
         {/* Connection + Node SVG layer */}
-        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
-          onClick={() => { setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); }}>
+        <svg style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", overflow:"visible" }}
+          onClick={()=>{ setSelectedId(null); setShowDeckPicker(false); setShowNodeMenu(false); setShowAI(false); }}>
           <g transform={`translate(${cx}, ${cy - 22}) scale(${zoom})`}>
+
 
             {/* Connections */}
             {nodes.filter(n => n.parentId).map(n => {
@@ -5154,12 +5345,38 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
           </div>
         )}
 
-        {/* ── Bottom hint ── */}
-        {!selectedNode && !studyNode && (
-          <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(10,9,22,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 18px", backdropFilter: "blur(10px)", pointerEvents: "none" }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Click node to select · Double-click to rename · Drag to move · Scroll to zoom · 📇 = flash cards</span>
-          </div>
-        )}
+        {/* ── Minimap ── */}
+        {showMinimap && nodes.length > 1 && (()=>{
+          const MM_W=160, MM_H=100, PAD=12;
+          const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+          const minX=Math.min(...xs)-60, maxX=Math.max(...xs)+60;
+          const minY=Math.min(...ys)-40, maxY=Math.max(...ys)+40;
+          const rangeX=maxX-minX||1, rangeY=maxY-minY||1;
+          const sc=Math.min(MM_W/rangeX, MM_H/rangeY, 1);
+          const offX=(MM_W-(rangeX*sc))/2, offY=(MM_H-(rangeY*sc))/2;
+          const toMM=(x,y)=>({ x:offX+(x-minX)*sc, y:offY+(y-minY)*sc });
+          return(
+            <div style={{ position:"absolute", bottom:20, right:16, zIndex:60, background:"rgba(10,9,22,0.92)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:10, overflow:"hidden", width:MM_W+PAD*2, height:MM_H+PAD*2, backdropFilter:"blur(8px)" }}>
+              <svg width={MM_W+PAD*2} height={MM_H+PAD*2}>
+                <g transform={`translate(${PAD},${PAD})`}>
+                  {nodes.filter(n=>n.parentId).map(n=>{
+                    const par=nodes.find(p=>p.id===n.parentId); if(!par) return null;
+                    const a=toMM(par.x,par.y), b=toMM(n.x,n.y);
+                    return <line key={`ml-${n.id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={n.color} strokeWidth={0.8} strokeOpacity={0.4}/>;
+                  })}
+                  {nodes.map(n=>{ const pos=toMM(n.x,n.y); return <circle key={`mm-${n.id}`} cx={pos.x} cy={pos.y} r={n.id==='root'?4:2.5} fill={n.color} opacity={n.id===selectedId?1:0.7}/>; })}
+                  {(()=>{
+                    const vW=typeof window!=='undefined'?window.innerWidth:1440;
+                    const vH=typeof window!=='undefined'?window.innerHeight-100:800;
+                    const vpX=(-(pan.x)-minX-(vW/(2*zoom)))*sc+offX;
+                    const vpY=(-(pan.y)-minY-(vH/(2*zoom)))*sc+offY;
+                    return <rect x={vpX} y={vpY} width={(vW/zoom)*sc} height={(vH/zoom)*sc} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
+                  })()}
+                </g>
+              </svg>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Flash Card Study Drawer ── */}
