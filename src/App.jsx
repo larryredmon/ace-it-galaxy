@@ -9485,7 +9485,7 @@ function TrackerApp({ onBack, user, openAuth }) {
         <div style={{width:1,height:16,background:TRL}}/>
         <div style={{display:"flex",alignItems:"center",gap:7}}><div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,${TR},${TRD})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>◷</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814"}}><span style={{color:TR}}>Ace It</span> Tracker</span></div>
       </div>
-      <div className="tr-tabs" style={{display:"flex",background:"#F0FFF9",borderRadius:9,padding:3,gap:2}}>
+      <div className="tr-tabs" style={{display:"flex",background:"#F0FFF9",borderRadius:9,padding:3,gap:2,overflowX:"auto",flexShrink:1}}>
         {[["📅","today","Today"],["✅","todo","All"],["🗓","calendar","Calendar"],["📊","progress","Progress"]].map(([icon,t,label])=>(
           <button key={t} onClick={()=>setTab(t)} style={{padding:"6px 12px",borderRadius:7,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:tab===t?TR:"transparent",color:tab===t?"#fff":"#3A8A6A",whiteSpace:"nowrap"}}>{icon} {label}</button>
         ))}
@@ -11421,7 +11421,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
 
   return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#060412',minHeight:'100vh',color:'#F7F6F2'}}>
-      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
+      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}@media(max-width:768px){.sb-nav{padding:0 12px!important}.sb-lobby{padding:16px 12px!important}.sb-rooms{grid-template-columns:1fr!important}}`}</style>
       <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
         <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
         <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
@@ -11540,7 +11540,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
 
   if(view==='course'&&active) return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
-      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@media(max-width:768px){.ch-nav{padding:0 12px!important}.ch-main{padding:16px 12px 60px!important}.ch-tabs{gap:2px!important}.ch-tabs button{padding:5px 8px!important;font-size:11px!important}.ch-grid{grid-template-columns:1fr!important}}`}</style>
       <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
         <button onClick={()=>{setView('home');setActive(null);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← All Courses</button>
         <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
@@ -11670,6 +11670,14 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
 export default function AceItGalaxy() {
   return <AppErrorBoundary><AceItGalaxyInner /></AppErrorBoundary>;
 }
+
+const _mobileStyle = (() => {
+  if (typeof document === "undefined" || document.getElementById("ace-mobile-global")) return;
+  const s = document.createElement("style");
+  s.id = "ace-mobile-global";
+  s.textContent = `@media(max-width:768px){body{overflow-x:hidden}input,button,select{min-height:40px}.ch-grid{grid-template-columns:1fr!important}.sb-rooms{grid-template-columns:1fr!important}}@media(max-width:480px){.tr-tabs button{padding:4px 5px!important;font-size:9px!important}}`;
+  document.head.appendChild(s);
+})();
 
 function AceItGalaxyInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
