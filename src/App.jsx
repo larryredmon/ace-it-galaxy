@@ -11330,48 +11330,122 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   },[timerOn,timerMode]);
   useEffect(()=>()=>{doLeave(true);unsubRooms.current?.();},[]);
 
-  const makePC=(roomId,targetUid)=>{
-    if(peerConns.current[targetUid])try{peerConns.current[targetUid].close();}catch{}
-    const pc=new RTCPeerConnection(ICE_CONFIG);
-    peerConns.current[targetUid]=pc;
-    localStreamRef.current?.getTracks().forEach(t=>{try{pc.addTrack(t,localStreamRef.current);}catch{}});
-    let remoteStream=new MediaStream();
-    pc.ontrack=e=>{const track=e.track;remoteStream.getTracks().filter(t=>t.kind===track.kind).forEach(t=>remoteStream.removeTrack(t));remoteStream.addTrack(track);setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));track.onunmute=()=>setRemoteStreams(prev=>({...prev,[targetUid]:remoteStream}));};
-    pc.onicecandidate=async e=>{if(!e.candidate)return;try{await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()});}catch{}};
-    pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed')pc.restartIce();if(pc.connectionState==='closed'){setRemoteStreams(prev=>{const n={...prev};delete n[targetUid];return n;});if(peerConns.current[targetUid]===pc)delete peerConns.current[targetUid];}};
+  const makePC = (roomId, targetUid) => {
+    const old = peerConns.current[targetUid];
+    if (old) { try { old.close(); } catch {} }
+    const pc = new RTCPeerConnection(ICE_CONFIG);
+    peerConns.current[targetUid] = pc;
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => { try { pc.addTrack(t, localStreamRef.current); } catch {} });
+    }
+    const remoteStream = new MediaStream();
+    pc.ontrack = e => {
+      const track = e.track;
+      remoteStream.getTracks().filter(t => t.kind === track.kind).forEach(t => remoteStream.removeTrack(t));
+      remoteStream.addTrack(track);
+      setRemoteStreams(prev => ({ ...prev, [targetUid]: remoteStream }));
+      track.onunmute = () => setRemoteStreams(prev => ({ ...prev, [targetUid]: remoteStream }));
+    };
+    pc.onicecandidate = async e => {
+      if (!e.candidate) return;
+      try { await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); } catch {}
+    };
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      if (s === 'failed') {
+        pc.restartIce();
+        setTimeout(() => { if (peerConns.current[targetUid]===pc && pc.connectionState==='failed') connectToPeer(roomId,targetUid); }, 4000);
+      }
+      if (s === 'disconnected') {
+        setTimeout(() => { if (peerConns.current[targetUid]===pc && (pc.connectionState==='disconnected'||pc.connectionState==='failed')) connectToPeer(roomId,targetUid); }, 8000);
+      }
+      if (s === 'closed') {
+        setRemoteStreams(prev => { const n={...prev}; delete n[targetUid]; return n; });
+        if (peerConns.current[targetUid]===pc) delete peerConns.current[targetUid];
+      }
+    };
     return pc;
   };
 
-  const sendOffer=async(roomId,targetUid)=>{
-    if(user.uid>targetUid)return;
-    const ex=peerConns.current[targetUid];
-    if(ex){const cs=ex.connectionState;if(cs==='connected'||cs==='connecting')return;try{ex.close();}catch{}delete peerConns.current[targetUid];}
-    const pc=makePC(roomId,targetUid);
-    try{const o=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});await pc.setLocalDescription(o);await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(pc.localDescription),ts:serverTimestamp()});}catch(e){console.error('sendOffer',e);}
+  const sendOffer = async (roomId, targetUid) => {
+    if (user.uid > targetUid) return;
+    const existing = peerConns.current[targetUid];
+    if (existing) {
+      const cs = existing.connectionState;
+      if (cs==='connected'||cs==='connecting') return;
+      try { existing.close(); } catch {}
+      delete peerConns.current[targetUid];
+    }
+    const pc = makePC(roomId, targetUid);
+    try {
+      const offer = await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
+      await pc.setLocalDescription(offer);
+      await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(pc.localDescription),ts:serverTimestamp()});
+    } catch(e) { console.error('[WebRTC] sendOffer:',e.message); }
   };
 
-  const connectToPeer=async(roomId,targetUid)=>{if(user.uid<targetUid)await sendOffer(roomId,targetUid);else if(!peerConns.current[targetUid])makePC(roomId,targetUid);};
+  const connectToPeer = async (roomId, targetUid) => {
+    if (user.uid < targetUid) {
+      await sendOffer(roomId, targetUid);
+    } else {
+      const existing = peerConns.current[targetUid];
+      if (!existing || existing.connectionState==='failed' || existing.connectionState==='closed') {
+        makePC(roomId, targetUid);
+      }
+    }
+  };
 
-  const handleSignal=async(roomId,sig,sigId)=>{
-    if(sigId&&processedSigs.current.has(sigId))return;
-    if(sigId)processedSigs.current.add(sigId);
-    const{from,type,data}=sig;if(from===user.uid)return;
-    let pc=peerConns.current[from];if(!pc)pc=makePC(roomId,from);
-    try{
-      if(type==='offer'){
-        await pc.setRemoteDescription(JSON.parse(data));
-        const queued=iceCandidateQueue.current[from]||[];for(const c of queued)try{await pc.addIceCandidate(c);}catch{}iceCandidateQueue.current[from]=[];
-        const a=await pc.createAnswer();await pc.setLocalDescription(a);
+  const handleSignal = async (roomId, sig, sigId) => {
+    if (sigId && processedSigs.current.has(sigId)) return;
+    if (sigId) processedSigs.current.add(sigId);
+    const { from, type, data } = sig;
+    if (from === user.uid) return;
+    const sigTime = sig.ts?.toMillis?.() || (sig.ts?.seconds ? sig.ts.seconds*1000 : 0);
+    if (sigTime > 0 && sigTime < joinedAt.current - 5000) return;
+    let pc = peerConns.current[from];
+    if (!pc || pc.connectionState==='closed') pc = makePC(roomId, from);
+    try {
+      if (type==='offer') {
+        await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data)));
+        const queued = iceCandidateQueue.current[from]||[];
+        for (const cand of queued) { try { await pc.addIceCandidate(cand); } catch {} }
+        iceCandidateQueue.current[from] = [];
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
         await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(pc.localDescription),ts:serverTimestamp()});
-      }else if(type==='answer'){if(pc.signalingState==='have-local-offer')await pc.setRemoteDescription(JSON.parse(data));}
-      else if(type==='ice-candidate'){const candidate=new RTCIceCandidate(JSON.parse(data));if(pc.remoteDescription)try{await pc.addIceCandidate(candidate);}catch{}else{if(!iceCandidateQueue.current[from])iceCandidateQueue.current[from]=[];iceCandidateQueue.current[from].push(candidate);}}
-    }catch(e){console.error('handleSignal',type,e.message);}
+      } else if (type==='answer') {
+        if (pc.signalingState==='have-local-offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data)));
+          const queued = iceCandidateQueue.current[from]||[];
+          for (const cand of queued) { try { await pc.addIceCandidate(cand); } catch {} }
+          iceCandidateQueue.current[from] = [];
+        }
+      } else if (type==='ice-candidate') {
+        const candidate = new RTCIceCandidate(JSON.parse(data));
+        if (pc.remoteDescription) { try { await pc.addIceCandidate(candidate); } catch {} }
+        else { if (!iceCandidateQueue.current[from]) iceCandidateQueue.current[from]=[]; iceCandidateQueue.current[from].push(candidate); }
+      }
+    } catch(e) { console.error('[WebRTC] handleSignal:',type,from.slice(-4),e.message); }
   };
 
-  const startMedia=async()=>{
+  const startMedia = async () => {
     setMediaError(null);
-    const attempts=[{video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},{video:true,audio:true},{video:false,audio:true}];
-    for(let i=0;i<attempts.length;i++){try{const s=await navigator.mediaDevices.getUserMedia(attempts[i]);localStreamRef.current=s;setLocalStream(s);if(i===2)setMediaError('Camera unavailable — audio only.');return s;}catch(e){if(i===attempts.length-1)setMediaError(e.name==='NotAllowedError'?'Camera & mic blocked. Tap 🔒 in address bar → Allow → rejoin.':'Could not access camera.');}}return null;
+    const attempts = [
+      {video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},
+      {video:true,audio:true},
+      {video:false,audio:true},
+    ];
+    for (let i=0; i<attempts.length; i++) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia(attempts[i]);
+        localStreamRef.current=s; setLocalStream(s);
+        if (i===2) setMediaError('Camera unavailable — audio only.');
+        return s;
+      } catch(e) {
+        if (i===attempts.length-1) setMediaError(e.name==='NotAllowedError' ? 'Camera & mic blocked. Tap 🔒 in address bar → Allow → rejoin.' : 'Could not access camera.');
+      }
+    }
+    return null;
   };
 
   const enterRoom=async(room)=>{
