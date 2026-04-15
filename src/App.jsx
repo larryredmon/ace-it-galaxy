@@ -1483,7 +1483,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
 }
 
 // ── Root wrapper — receives onBack from Galaxy ────────────────────────────────
-function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
+function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launchApp }) {
   const [view, setView]             = useState("home");
   const [activeDeck, setActiveDeck] = useState(null);
   const [searchQuery, setSearchQuery]   = useState("");
@@ -1687,7 +1687,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated }) {
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
@@ -3903,7 +3903,7 @@ function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
 }
 
 // ── Deck View (overview + card list) ─────────────────────────────────────────
-function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, onImprove, user, userFolders = [] }) {
+function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, onImprove, user, userFolders = [], launchApp }) {
   const [previewCard, setPreviewCard]   = useState(null);
   const [flipped, setFlipped]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -8106,7 +8106,7 @@ const EN_FORMATS = [
   { id:"ol",    label:"Ordered",icon:"1." },
 ];
 
-function NotesApp({ onBack, user, openAuth }) {
+function NotesApp({ onBack, user, openAuth, launchApp }) {
   const NC = "#D4A830";
   const NL = "#F0D080";
   const ND = "#8B6914";
@@ -12113,12 +12113,12 @@ Help them see connections ACROSS their apps. For example:
   const aiContext = (() => { try { return buildAIContext(); } catch { return ""; } })();
   const floating = (show) => show && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
 
-  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} />}{floating(true)}</>;
+  if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} launchApp={launchApp} />}{floating(true)}</>;
   if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floating(true)}</>;
   if (currentApp === 'brainmap')   return <>{<BrainMapApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onMapCreated={trackMapCreated} />}{floating(true)}</>;
   if (currentApp === 'assistant')  return <PersonalAssistantApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} avatar={avatar} setAvatar={setAvatar} showFloating={showFloating} setShowFloating={setShowFloating} aiContext={aiContext} userProfile={userProfile} onGoalsChange={trackGoals} />;
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floating(true)}</>;
-  if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
+  if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />}{floating(true)}</>;
   if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
   if (currentApp === 'studybuddy') return <StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} />;
   if (currentApp === 'coursehub')  return <CourseHubApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />;
