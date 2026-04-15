@@ -11698,6 +11698,9 @@ function AceItGalaxyInner() {
   const [recentApps, setRecentApps] = useState([]);
   const [avatar, setAvatar]         = useState(null);
   const [showFloating, setShowFloating] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem("tp_onboarded"); } catch { return true; }
+  });
   const [showHome, setShowHome]     = useState(() => {
     try { return !localStorage.getItem("tp_user"); } catch { return true; }
   });
@@ -12107,6 +12110,38 @@ Help them see connections ACROSS their apps. For example:
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}
+      {showOnboarding && (
+        <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(10,8,6,0.85)",backdropFilter:"blur(12px)",padding:"20px"}}>
+          <div style={{background:"#1A1814",border:"1px solid rgba(245,200,66,0.2)",borderRadius:24,padding:"40px 36px",maxWidth:520,width:"100%",position:"relative",boxShadow:"0 32px 80px rgba(0,0,0,0.6)"}}>
+            <style>{`@keyframes obFadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes obPulse{0%,100%{opacity:0.4}50%{opacity:0.9}}`}</style>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <div style={{width:64,height:64,borderRadius:18,background:"linear-gradient(135deg,#F5C842,#E89040)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,margin:"0 auto 16px",boxShadow:"0 8px 32px rgba(245,200,66,0.3)"}}>⭐</div>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#F5C842",margin:0,letterSpacing:-0.5}}>Welcome to Ace It</h2>
+              <p style={{fontSize:14,color:"rgba(255,255,255,0.6)",marginTop:8,lineHeight:1.6,margin:"8px 0 0"}}>Your AI-powered study galaxy. Here's how to get started:</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+              {[{color:"#4F6EF7",icon:"📚",title:"Upload your courses",desc:"Course Hub → add syllabus → AI generates flash cards and brain maps instantly",app:"coursehub"},{color:"#F5C842",icon:"🃏",title:"Study with Flash Cards",desc:"Create decks manually or from your notes. Timed mode, hints, and AI improvements included",app:"flashcards"},{color:"#2BAE7E",icon:"👥",title:"Study with friends",desc:"Study Buddy → create a room → share the code. Video, chat, and focus timer built in",app:"studybuddy"}].map(s=>(
+                <div key={s.app} onClick={()=>{localStorage.setItem("tp_onboarded","1");setShowOnboarding(false);launchApp(s.app);}}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"13px 15px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:13,cursor:"pointer",transition:"all 0.18s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.09)";e.currentTarget.style.borderColor=s.color+"55";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:s.color+"20",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{s.icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#F7F6F2",marginBottom:2}}>{s.title}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>{s.desc}</div>
+                  </div>
+                  <div style={{fontSize:16,color:"rgba(255,255,255,0.2)"}}>→</div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:9}}>
+              <button onClick={()=>{localStorage.setItem("tp_onboarded","1");setShowOnboarding(false);launchApp("coursehub");}} style={{flex:2,padding:"12px",borderRadius:11,border:"none",background:"linear-gradient(135deg,#F5C842,#E89040)",fontSize:14,fontWeight:800,cursor:"pointer",color:"#1A1814",fontFamily:"'DM Sans',sans-serif"}}>🚀 Start with Course Hub</button>
+              <button onClick={()=>{localStorage.setItem("tp_onboarded","1");setShowOnboarding(false);}} style={{flex:1,padding:"12px",borderRadius:11,border:"1px solid rgba(255,255,255,0.12)",background:"transparent",fontSize:13,fontWeight:600,cursor:"pointer",color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif"}} onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.8)"} onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.5)"}>Explore first</button>
+            </div>
+            {!user&&<p style={{textAlign:"center",fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:14,marginBottom:0}}><span style={{cursor:"pointer",color:"rgba(245,200,66,0.7)",fontWeight:600}} onClick={()=>{localStorage.setItem("tp_onboarded","1");setShowOnboarding(false);openAuth("signup");}}>Create a free account</span> to save your progress across devices</p>}
+          </div>
+        </div>
+      )}
     </>
   );
 }
