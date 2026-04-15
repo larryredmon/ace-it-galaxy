@@ -77,6 +77,34 @@ async function fsWrite(uid, fsKey, field, data) {
   }
 }
 
+// Migrate guest (localStorage-only) data into Firebase on first login/signup
+async function fsMigrateGuestData(uid) {
+  if (!uid || !db) return;
+  const mapping = [
+    ["tp_fc_decks","flashcards","decks"],["tp_fc_folders","flashcards","folders"],
+    ["tp_notes","notes","notes"],["tp_note_folders","notes","folders"],
+    ["tp_bm_maps","brainmaps","maps"],["tp_tracker_tasks","tracker","tasks"],
+    ["tp_journal","journal","entries"],["tp_courses","courses","courses"],
+  ];
+  for (const [lsKey, fsKey, field] of mapping) {
+    try {
+      const localRaw=localStorage.getItem(lsKey); if(!localRaw) continue;
+      const localData=JSON.parse(localRaw);
+      if(!Array.isArray(localData)||localData.length===0) continue;
+      const ref=doc(db,"users",uid,"appdata",fsKey);
+      const snap=await getDoc(ref);
+      if(snap.exists()){
+        const existing=snap.data()[field];
+        if(Array.isArray(existing)&&existing.length>0){
+          const existingIds=new Set(existing.map(x=>x.id));
+          const newItems=localData.filter(x=>!existingIds.has(x.id));
+          if(newItems.length>0){const merged=[...existing,...newItems];await setDoc(ref,{[field]:stripImages(merged),updatedAt:serverTimestamp()},{merge:true});localStorage.setItem(lsKey,JSON.stringify(merged));}
+        } else { await setDoc(ref,{[field]:stripImages(localData),updatedAt:serverTimestamp()},{merge:true}); }
+      } else { await setDoc(ref,{[field]:stripImages(localData),updatedAt:serverTimestamp()},{merge:true}); }
+    } catch(e){console.warn("[migrate]",lsKey,e?.message);}
+  }
+}
+
 // Load all app data from Firestore → populate localStorage
 async function fsLoadAll(uid) {
   if (!uid || !db) return;
@@ -11952,7 +11980,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
     window.history.pushState({ screen: "galaxy" }, "", "/");
     // Load Firestore data on auth (non-blocking)
     if (userData.uid) {
-      fsLoadAll(userData.uid).catch(() => {});
+      fsMigrateGuestData(userData.uid).then(()=>fsLoadAll(userData.uid)).catch(()=>{});
     }
   };
   const handleLogout = async () => {
