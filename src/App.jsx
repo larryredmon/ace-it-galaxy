@@ -154,7 +154,6 @@ const PLANETS = [
   { id: 16, appId: "tracker",      name: "Tracker",           symbol: "◷", color: "#6ED9B8", glow: "#2BAE7E", size: 36, orbitRadius: 290, speed: 38, desc: "Your all-in-one planner, calendar, to-do list, and reminder system." },
   { id: 3,  appId: "brainmap",     name: "Brain Map",         symbol: "✺", color: "#F0A8C0", glow: "#D4607A", size: 46, orbitRadius: 195, speed: 38, desc: "Visualize ideas and connect concepts." },
   { id: 4,  appId: "simplifier",   name: "Text Simplifier",   symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
-  { id: 6,  appId: "studio",       name: "Studio",            symbol: "◈", color: "#F8C898", glow: "#E89040", size: 40, orbitRadius: 320, speed: 70, desc: "Create, design, and build study content." },
   { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
   { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
   { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
@@ -575,7 +574,7 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
             { label:"Study Tools",       emoji:"📚", ids:["flashcards","notes","brainmap","simplifier"] },
             { label:"AI Assistants",     emoji:"🤖", ids:["assistant","studybuddy"] },
             { label:"Personal Growth",   emoji:"🌱", ids:["journal","mentalhealth","flow","careercompass"] },
-            { label:"Knowledge",         emoji:"🌍", ids:["academy","studio","universe","earthrecord"] },
+            { label:"Knowledge",         emoji:"🌍", ids:["academy","universe","earthrecord"] },
             { label:"Settings",          emoji:"⚙️", ids:["settings"] },
           ].map(cat => {
             const catPlanets = planets.filter(p => cat.ids.includes(p.appId));
