@@ -7354,6 +7354,12 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
               title={chatSidebarOpen ? "Hide history" : "Show history"}>
               {chatSidebarOpen ? "◀" : "▶"}
             </button>
+            <button onClick={onBack}
+              style={{ background: "none", border: "1px solid #D8ECFF", borderRadius: 7, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#8A9AAC", transition: "all 0.15s", flexShrink: 0, whiteSpace: "nowrap" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.color = "#8A9AAC"; }}>
+              ← Galaxy
+            </button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#0A1628", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {messages.length === 0 ? "New Chat" : activeConvo.title}
