@@ -106,7 +106,8 @@ async function fsLoadAll(uid) {
       try {
         // Only overwrite if Firestore has data AND it's newer than local
         // (simple strategy: Firestore wins on login)
-        localStorage.setItem(lsKey, JSON.stringify(value));
+        const isNonEmpty = Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0;
+        if (isNonEmpty) { localStorage.setItem(lsKey, JSON.stringify(value)); }
       } catch {}
     }
   }
@@ -11957,10 +11958,7 @@ ${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` :
   const handleLogout = async () => {
     try { await signOut(auth); } catch {}
     try { localStorage.removeItem("tp_user"); } catch {}
-    // Clear app data from localStorage on logout
-    ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses"].forEach(k => {
-      try { localStorage.removeItem(k); } catch {}
-    });
+    // Data intentionally kept in localStorage on logout so users never lose work
     setUser(null); setShowHome(true); setCurrentApp(null);
     window.history.pushState({ app: null }, "", "/");
   };
