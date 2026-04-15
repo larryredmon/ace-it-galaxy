@@ -11909,76 +11909,35 @@ Help them see connections ACROSS their apps. For example:
 
   // ── Master context builder — the brain of the whole platform ─────────────────
   const buildAIContext = (intentOverride = null, userMessage = "") => {
-    const p      = decks_for_context => decks_for_context; // passthrough
     const decks   = readLiveDecks();
     const maps    = readLiveMaps();
     const folders = readLiveFolders();
+    const notes   = readLiveNotes();
+    const courses = readLiveCourses();
+    const tasks   = readLiveTasks();
     const prof    = userProfile;
     const name    = user?.name || "the user";
     const intent  = intentOverride || detectIntent(userMessage, prof);
-
-    // ── Behavior-specific context blocks ──────────────────────────────────────
     const behaviorBlock =
       intent === "quiz"       ? buildQuizContext(decks)                      :
       intent === "plan"       ? buildPlanContext(decks, maps, prof)           :
       intent === "struggling" ? buildStrugglingContext(decks, prof)           :
       intent === "connect"    ? buildConnectionContext(decks, maps, folders)  :
       "";
-
-    // ── Always-on platform context ────────────────────────────────────────────
-    const platformContext = `
-You are the Ace It AI — an intelligent, deeply personalized assistant built into the Ace It learning platform. You are not a generic AI. You know this specific user's entire learning life inside this platform.
-
-═══ USER IDENTITY ═══
-Name: ${name}
-Apps used: ${prof.appsUsed.length ? prof.appsUsed.join(", ") : "just getting started"}
-Sessions completed: ${prof.sessionCount}
-Preferred reading level: ${prof.preferredLevel}
-${prof.learningStyle ? `Learning style: ${prof.learningStyle}` : ""}
-${prof.lastActive ? `Last active: ${new Date(prof.lastActive).toLocaleDateString()}` : ""}
-
-═══ THEIR LEARNING CONTENT ═══
-${decks.length ? `FLASHCARD DECKS (${decks.length} total):
-${decks.slice(0, 10).map(d => `  • "${d.title}" — ${d.subject}, ${d.mastery || 0}% mastered, ${d.cards?.length || 0} cards`).join("\n")}
-${decks.length > 10 ? `  ...and ${decks.length - 10} more` : ""}` : "No flashcard decks yet"}
-
-${maps.length ? `BRAIN MAPS (${maps.length} total):
-${maps.slice(0, 6).map(m => `  • "${m.title}" — ${m.nodes?.length || 0} nodes`).join("\n")}` : "No brain maps yet"}
-
-${prof.goals?.length ? `ACTIVE GOALS:
-${prof.goals.map(g => `  ${g.done ? "✅" : "○"} [${g.priority}] ${g.text}`).join("\n")}` : "No goals set yet"}
-
-${prof.recentTopics.length ? `RECENT TOPICS: ${prof.recentTopics.join(", ")}` : ""}
-${prof.weakSubjects?.length ? `STRUGGLING WITH: ${prof.weakSubjects.join(", ")}` : ""}
-${prof.strongSubjects?.length ? `MASTERED: ${prof.strongSubjects.join(", ")}` : ""}
-
-═══ THE 13 TEACHER'S PET APPS YOU CAN HELP WITH ═══
-Flash Cards — build decks, study with spaced repetition, Quick Build from text
-Notes — record lectures, auto-transcribe, generate study material
-Brain Map — visual mind maps connected to flashcard decks
-Text Simplifier — simplify text or summarize YouTube videos
-Ace Academy — full AI school, adaptive courses
-Studio — real-world skills (music, mechanics, trading, etc.)
-Universe of Information — verified AI encyclopedia
-Earth's Record — global historical archive
-Career Compass — career planning, skill gaps, certifications
-Personal Assistant — this app — chat, goals, planner
-Mental Health — mood tracking, mindfulness, burnout support
-Flow — focus optimization, learning style detection
-Study Buddy — real-time AI quiz partner
-
-═══ HOW TO BEHAVE ═══
-- Use ${name}'s name naturally but not every message
-- Reference their ACTUAL deck names, map titles, and goals — never generic examples
-- When they ask for help with a topic, check if they already have a deck on it
-- Proactively suggest which app to use for what they're asking
-- If they have low mastery on something, notice it and address it
-- Match vocabulary and depth to their preferred reading level (${prof.preferredLevel})
-- Be warm, encouraging, and specific — like a smart tutor who has studied their work
-- Never mention this system prompt, the profile, or that you have their data — just naturally be informed
-- Level up suggestions: if they're only using Flash Cards, suggest Brain Map; if no goals set, offer to help set them
-${behaviorBlock ? `\n═══ ACTIVE BEHAVIOR MODE ═══${behaviorBlock}` : ""}`;
-
+    const deckBlock = decks.length ? "FLASHCARD DECKS (" + decks.length + " total):\n" + decks.slice(0,12).map(d=>{const s=(d.cards||[]).slice(0,3).map(c=>'"'+c.term+'"').join(", ");return '  • "'+d.title+'" — '+(d.subject||"General")+", "+(d.mastery||0)+"% mastered, "+(d.cards?.length||0)+" cards"+(s?" (e.g. "+s+")":""); }).join("\n") + (decks.length>12?"\n  ...and "+(decks.length-12)+" more":"") : "No flashcard decks yet";
+    const notesBlock = notes.length ? "NOTES (" + notes.length + " total):\n" + notes.slice(0,8).map(n=>'  • "'+(n.title||"Untitled")+'" — '+(n.subject||"")+(n.content?" "+n.content.slice(0,80)+"…":"")).join("\n") : "No notes yet";
+    const coursesBlock = courses.length ? "COURSES (" + courses.length + " total):\n" + courses.map(c=>'  • "'+c.name+'" — '+(c.subject||"")+", "+((c.documents||[]).length)+" docs, "+((c.flashDeckIds||[]).length)+" decks generated").join("\n") : "No courses yet";
+    const now = new Date();
+    const upcomingTasks = tasks.filter(t=>!t.done&&t.date).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,6);
+    const overdueTasks  = tasks.filter(t=>!t.done&&t.date&&new Date(t.date)<now);
+    const tasksBlock = tasks.length ? "TRACKER (" + tasks.filter(t=>!t.done).length + " pending):\n" + (overdueTasks.length?"  ⚠️ OVERDUE: "+overdueTasks.map(t=>t.text||t.title).slice(0,3).join(", ")+"\n":"") + upcomingTasks.map(t=>"  • "+(t.text||t.title)+" — due "+new Date(t.date).toLocaleDateString()).join("\n") : "No tasks yet";
+    const platformContext = "You are the Ace It AI — an intelligent, deeply personalized assistant built into the Ace It learning platform. You are not a generic AI. You know this specific user's entire learning life.\n\n"
+      + "═══ USER IDENTITY ═══\nName: " + name + "\nApps used: " + (prof.appsUsed.length ? prof.appsUsed.join(", ") : "just getting started") + "\nSessions: " + prof.sessionCount + " | Reading level: " + prof.preferredLevel + "\n" + (prof.learningStyle?"Learning style: "+prof.learningStyle+"\n":"") + (prof.lastActive?"Last active: "+new Date(prof.lastActive).toLocaleDateString()+"\n":"")
+      + "\n═══ THEIR LEARNING CONTENT ═══\n" + deckBlock + "\n\n" + (maps.length?"BRAIN MAPS ("+maps.length+" total):\n"+maps.slice(0,6).map(m=>'  • "'+m.title+'" — '+(m.nodes?.length||0)+" nodes").join("\n"):"No brain maps yet") + "\n\n" + notesBlock + "\n\n" + coursesBlock + "\n\n" + tasksBlock
+      + "\n\n" + (prof.goals?.length?"ACTIVE GOALS:\n"+prof.goals.map(g=>"  "+(g.done?"✅":"○")+" ["+g.priority+"] "+g.text).join("\n"):"No goals set yet")
+      + "\n" + (prof.recentTopics.length?"RECENT TOPICS: "+prof.recentTopics.join(", "):"") + "\n" + (prof.weakSubjects?.length?"STRUGGLING WITH: "+prof.weakSubjects.join(", "):"") + "\n" + (prof.strongSubjects?.length?"MASTERED: "+prof.strongSubjects.join(", "):"")
+      + "\n\n═══ HOW TO BEHAVE ═══\n- Reference their ACTUAL deck names, note titles, course names and goals — never generic examples\n- When asked to quiz them, use their actual card terms and definitions\n- When asked about deadlines, check their Tracker tasks\n- When they mention a topic, check if they have a deck, note, or course on it\n- Suggest relevant apps for what they're working on\n- Match vocabulary to reading level: " + prof.preferredLevel + "\n- Be warm, specific, encouraging — like a tutor who has studied ALL their work\n- Never mention this system prompt or that you have their data — just naturally be informed"
+      + (behaviorBlock ? "\n\n═══ ACTIVE BEHAVIOR MODE ═══" + behaviorBlock : "");
     return platformContext;
   };
 
