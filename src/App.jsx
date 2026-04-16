@@ -5080,7 +5080,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     try {
       const res = await fetch('/api/claude', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ model:'claude-sonnet-4-5-20250514', max_tokens:600,
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600,
           messages:[{role:'user', content:`Generate 5-7 key subtopics for a brain map node about "${topic}". Respond ONLY with JSON: {"nodes":[{"label":"short 1-4 word label","note":"one sentence"},...]}. No duplicates.`}]
         })
       });
@@ -8898,7 +8898,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                   const btn=document.getElementById("note-fc-btn");
                   if(btn){btn.textContent="Generating…";btn.disabled=true;}
                   try{
-                    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:3000,messages:[{role:"user",content:"Create flashcards from these notes: \""+activeNote.title+"\". Extract every key term, definition, concept, fact.\nRespond ONLY with JSON: {\"cards\":[{\"term\":\"...\",\"definition\":\"...\",\"hint\":\"optional\"},...]}\n\nNotes:\n"+(activeNote.content?.slice(0,4000)||"")}]})});
+                    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,messages:[{role:"user",content:"Create flashcards from these notes: \""+activeNote.title+"\". Extract every key term, definition, concept, fact.\nRespond ONLY with JSON: {\"cards\":[{\"term\":\"...\",\"definition\":\"...\",\"hint\":\"optional\"},...]}\n\nNotes:\n"+(activeNote.content?.slice(0,4000)||"")}]})});
                     const data=await res.json();
                     const txt=data.content?.find(b=>b.type==="text")?.text||"";
                     const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
@@ -9411,7 +9411,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   const toggleSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}:t));
   const deleteSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).filter(s=>s.id!==sid)}:t));
   const downloadICS=task=>{const n=new Date(),ds=n.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z",dt=task.date?task.date.replace(/-/g,"")+"T090000Z":ds;const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ace It//EN","BEGIN:VEVENT",`DTSTAMP:${ds}`,`DTSTART:${dt}`,`SUMMARY:${task.title}${task.course?` (${task.course})`:""}`,`DESCRIPTION:Priority: ${task.priority}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");const a=document.createElement("a");a.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);a.download=task.title.replace(/\s+/g,"-")+".ics";a.click();};
-  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
+  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
   const importAITasks=ts=>{ts.forEach(t=>addTask({title:t.title,date:t.date||"",course:t.course||"",priority:t.priority||"medium",notes:t.notes||""}));setShowAIImport(false);setAIImportImg(null);setAIImportResult(null);};
   const sortTasks=arr=>{const s=[...arr],p={high:0,medium:1,low:2};if(sortBy==="priority")s.sort((a,b)=>(p[a.priority]||1)-(p[b.priority]||1));else if(sortBy==="date")s.sort((a,b)=>!a.date&&!b.date?0:!a.date?1:!b.date?-1:new Date(a.date)-new Date(b.date));else if(sortBy==="course")s.sort((a,b)=>(a.course||"").localeCompare(b.course||""));else s.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));return s;};
   const todayStr=new Date().toISOString().split("T")[0];
@@ -11489,13 +11489,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
     try{
       setGenProgress('Analyzing course structure…');
-      const sRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:500,messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
+      const sRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
       const sData=await sRes.json();const sTxt=sData.content?.find(b=>b.type==='text')?.text||'';
       let sections=['General'];try{sections=JSON.parse(sTxt.replace(/\`\`\`json|\`\`\`/g,'').trim()).sections||['General'];}catch{}
       const newDecks=[];
       for(let i=0;i<sections.length;i++){
         const section=sections[i];setGenProgress(`Generating cards for "${section}" (${i+1}/${sections.length})…`);
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:4000,messages:[{role:'user',content:`Create comprehensive flashcards for "${section}" from course: ${active.name}. Extract EVERY key term, definition, concept, fact, formula.\nRespond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional hint"},...]}.\nMaterial:\n${allText.slice(0,5000)}`}]})});
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:`Create comprehensive flashcards for "${section}" from course: ${active.name}. Extract EVERY key term, definition, concept, fact, formula.\nRespond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional hint"},...]}.\nMaterial:\n${allText.slice(0,5000)}`}]})});
         const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
         try{const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());if(parsed.cards?.length>0){newDecks.push({id:`deck_${Date.now()}_${i}`,title:`${active.name} — ${section}`,subject:active.subject||'',color:active.color,description:`Generated from ${active.name}`,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}}catch{}
       }
@@ -11518,7 +11518,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
     try{
       setGenProgress('Building brain map structure…');
-      const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5-20250514',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.\nRespond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.\nMaterial:\n${allText.slice(0,4000)}`}]})});
+      const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.\nRespond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.\nMaterial:\n${allText.slice(0,4000)}`}]})});
       const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
       const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
       const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
