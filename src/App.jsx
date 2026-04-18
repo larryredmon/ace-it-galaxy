@@ -11460,6 +11460,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [generating, setGenerating] = useState(null);
   const [genProgress,setGenProgress]= useState('');
   const [genResult,  setGenResult]  = useState(null);
+  const [expandedDoc,setExpandedDoc]= useState(null);
   const [createForm, setCreateForm] = useState({name:'',subject:'',color:CH,description:''});
   const [showCreate, setShowCreate] = useState(false);
   const [errMsg,     setErrMsg]     = useState('');
@@ -11570,14 +11571,47 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
               <div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>📄 Course Documents</div><div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Paste notes, textbook chapters, syllabi, or any course material</div></div>
               <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
             </div>
-            {(active.documents||[]).length===0?(<div style={{textAlign:'center',padding:'32px 0',color:'#A8A59E'}}><div style={{fontSize:36,marginBottom:10}}>📄</div><div style={{fontSize:14,fontWeight:600,marginBottom:6}}>No documents yet</div><p style={{fontSize:12,maxWidth:280,margin:'0 auto'}}>Add your notes, textbook chapters, or any course material to get started.</p></div>):(<div style={{display:'flex',flexDirection:'column',gap:8}}>{(active.documents||[]).map(d=>(<div key={d.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2',borderRadius:10,border:'1px solid #ECEAE4'}}><div style={{width:36,height:36,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📄</div><div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div><div style={{fontSize:11,color:'#8C8880'}}>{d.content.split(/\s+/).length} words</div></div><button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})} style={{background:'none',border:'none',cursor:'pointer',color:'#D8D5CE',fontSize:14}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button></div>))}</div>)}
-            {showAddDoc&&(<div style={{marginTop:16,padding:'16px',background:'#F7F6F2',borderRadius:12,border:'1.5px solid #ECEAE4'}}><input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (e.g. Chapter 3 Notes)" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapter, lecture slides, or any course material here…" style={{width:'100%',minHeight:160,padding:'10px 12px',border:'1.5px solid #ECEAE4',borderRadius:8,fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',lineHeight:1.6,fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box',marginBottom:10}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><div style={{display:'flex',gap:8}}><button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');}} style={{flex:1,padding:'10px',borderRadius:8,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button><button onClick={addDocument} disabled={!docText.trim()} style={{flex:2,padding:'10px',borderRadius:8,border:'none',background:docText.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:docText.trim()?'pointer':'default',color:docText.trim()?'#F7F6F2':'#A8A59E'}}>Add Document →</button></div></div>)}
-          </div>
-          <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderLeft:`4px solid ${active.color}`,borderRadius:14,padding:'20px'}}>
-            <div style={{fontSize:20,marginBottom:10}}>📇</div>
-            <div style={{fontSize:15,fontWeight:800,color:'#1A1814',marginBottom:6}}>Flash Card Decks</div>
-            <p style={{fontSize:12,color:'#6B6860',lineHeight:1.6,marginBottom:16}}>AI reads your documents and creates organized flash card decks — one deck per chapter or major topic.</p>
-            {(active.flashDeckIds||[]).length>0&&(<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>✓ {(active.flashDeckIds||[]).length} deck{(active.flashDeckIds||[]).length!==1?'s':''} generated<button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>)}
+            {(active.documents||[]).length===0?(
+              <div style={{textAlign:'center',padding:'32px 0',color:'#A8A59E'}}>
+                <div style={{fontSize:36,marginBottom:10}}>📄</div>
+                <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>No documents yet</div>
+                <p style={{fontSize:12,maxWidth:280,margin:'0 auto'}}>Add your notes, textbook chapters, or any course material to get started.</p>
+              </div>
+            ):(
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {(active.documents||[]).map(d=>(
+                  <div key={d.id} style={{borderRadius:10,border:'1px solid #ECEAE4',overflow:'hidden'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2'}}>
+                      <div style={{width:36,height:36,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📄</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div>
+                        <div style={{fontSize:11,color:'#8C8880'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
+                      </div>
+                      <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)}
+                        style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',marginRight:4}}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>
+                        {expandedDoc===d.id?'▲ Hide':'▼ View / Edit'}
+                      </button>
+                      <button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})}
+                        style={{background:'none',border:'none',cursor:'pointer',color:'#D8D5CE',fontSize:14}}
+                        onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'}
+                        onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                    </div>
+                    {expandedDoc===d.id&&(
+                      <div style={{padding:'12px 14px',background:'#fff',borderTop:'1px solid #ECEAE4'}}>
+                        <textarea value={d.content||''} onChange={e=>{const updated=(active.documents||[]).map(x=>x.id===d.id?{...x,content:e.target.value}:x);updateCourse(active.id,{documents:updated});}}
+                          onKeyDown={e=>e.stopPropagation()}
+                          style={{width:'100%',minHeight:220,padding:'10px 12px',border:'1px solid #ECEAE4',borderRadius:8,fontSize:12,color:'#1A1814',resize:'vertical',outline:'none',lineHeight:1.6,boxSizing:'border-box'}}
+                          onFocus={e=>e.target.style.borderColor=active.color}
+                          onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                        <div style={{fontSize:11,color:'#8C8880',marginTop:6,textAlign:'right'}}>Changes save automatically</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards!<button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
             <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>{generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✦ Generate Flash Cards'}</button>
           </div>
