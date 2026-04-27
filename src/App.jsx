@@ -6023,7 +6023,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const [activeTool, setActiveTool]   = useState("simplify");
   const [level, setLevel]             = useState("adult");
   const [mode, setMode]               = useState("standard");
-  const [history, setHistory]         = useState([]);
+  const [history, setHistory]         = useState(()=>{try{return JSON.parse(localStorage.getItem("tp_simplifier_history")||"[]");}catch{return [];}});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [speaking, setSpeaking]       = useState(false);
   const [copied, setCopied]           = useState(false);
@@ -6033,6 +6033,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const [outputExpanded, setOutputExpanded] = useState(false);
   const wordCount = inputText.trim().split(/\s+/).filter(Boolean).length;
   const outputRef = useRef(null);
+  useEffect(()=>{try{localStorage.setItem("tp_simplifier_history",JSON.stringify(history));}catch{}},[history]);
 
   const ytId = getYoutubeId(ytUrl);
   const isValidYt = !!ytId;
@@ -6063,7 +6064,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
       setOutputText(result);
-      setHistory(h => [{ tool: activeTool, level, input: inputText.slice(0, 80) + (inputText.length > 80 ? "…" : ""), output: result, ts: new Date(), type: "text" }, ...h.slice(0, 9)]);
+      setHistory(h => [{id:Date.now(),tool:activeTool,level,input:inputText,inputPreview:inputText.slice(0,80)+(inputText.length>80?"…":""),output:result,ts:new Date().toISOString(),type:"text"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -6096,7 +6097,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
       setOutputText(result);
-      setHistory(h => [{ tool: cfg.label, level: "video", input: ytUrl, output: result, ts: new Date(), type: "youtube" }, ...h.slice(0, 9)]);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:ytUrl,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -6558,26 +6559,45 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       {historyOpen && (
         <>
           <div onClick={() => setHistoryOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200 }} />
-          <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: 360, background: "#fff", zIndex: 201, borderLeft: "1px solid #ECEAE4", display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.08)" }}>
+          <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: 400, background: "#fff", zIndex: 201, borderLeft: "1px solid #ECEAE4", display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.08)" }}>
             <div style={{ padding: "20px 22px 16px", borderBottom: "1px solid #ECEAE4", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, margin: 0 }}>Recent History</h3>
-              <button onClick={() => setHistoryOpen(false)} style={{ background: "#F7F6F2", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880" }}>✕</button>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, margin: 0 }}>Saved History</h3>
+              <div style={{display:"flex",gap:8}}>
+                {history.length>0&&<button onClick={()=>{ if(window.confirm("Clear all history?")) setHistory([]); }} style={{background:"none",border:"1px solid #FECACA",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#E85D3F"}}>Clear All</button>}
+                <button onClick={() => setHistoryOpen(false)} style={{ background: "#F7F6F2", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880" }}>✕</button>
+              </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
               {history.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#A8A59E", fontSize: 13, marginTop: 40 }}>No history yet</div>
+                <div style={{ textAlign: "center", color: "#A8A59E", fontSize: 13, marginTop: 40 }}>
+                  <div style={{fontSize:32,marginBottom:12}}>🕐</div>
+                  <div>No saved history yet.</div>
+                  <div style={{marginTop:6,fontSize:12}}>Simplify some text to get started.</div>
+                </div>
               ) : history.map((h, i) => (
-                <div key={i} onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input.replace("…", "")); setActiveTool(h.tool); } setOutputText(h.output); setHistoryOpen(false); }}
-                  style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #ECEAE4", marginBottom: 10, cursor: "pointer", transition: "all 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = accentColor} onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {h.type === "youtube" && <span style={{ fontSize: 11, background: "#FF000015", color: "#CC0000", fontWeight: 700, padding: "1px 6px", borderRadius: 4 }}>▶ YT</span>}
-                      <span style={{ fontSize: 11, fontWeight: 700, color: accentColor, textTransform: "uppercase", letterSpacing: 1 }}>{h.tool} · {h.level}</span>
+                <div key={h.id||i} style={{ borderRadius: 12, border: "1.5px solid #ECEAE4", marginBottom: 12, overflow:"hidden" }}>
+                  <div style={{padding:"12px 14px",background:"#F7F6F2",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
+                    onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input); setActiveTool(h.tool); } setOutputText(h.output); setHistoryOpen(false); }}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                        {h.type==="youtube"&&<span style={{fontSize:10,background:"#FF000015",color:"#CC0000",fontWeight:700,padding:"1px 6px",borderRadius:4}}>▶ YT</span>}
+                        <span style={{fontSize:11,fontWeight:700,color:accentColor,textTransform:"uppercase",letterSpacing:0.8}}>{h.tool}</span>
+                        <span style={{fontSize:10,color:"#A8A59E"}}>· {h.level}</span>
+                      </div>
+                      <div style={{fontSize:12,color:"#5A5752",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.inputPreview||h.input?.slice(0,60)}</div>
                     </div>
-                    <span style={{ fontSize: 10, color: "#A8A59E" }}>{h.ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,marginLeft:10}}>
+                      <span style={{fontSize:10,color:"#A8A59E"}}>{new Date(h.ts).toLocaleDateString([],{month:"short",day:"numeric"})}</span>
+                      <button onClick={e=>{e.stopPropagation();setHistory(prev=>prev.filter((_,j)=>j!==i));}} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#D8D5CE"}} onMouseEnter={e=>e.currentTarget.style.color="#E85D3F"} onMouseLeave={e=>e.currentTarget.style.color="#D8D5CE"}>✕</button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.5, wordBreak: "break-all" }}>{h.input.length > 60 ? h.input.slice(0, 60) + "…" : h.input}</div>
+                  <div style={{padding:"12px 14px",fontSize:12,color:"#3A3530",lineHeight:1.6,maxHeight:120,overflowY:"auto",borderTop:"1px solid #ECEAE4",background:"#fff"}}>
+                    {h.output?.slice(0,300)}{h.output?.length>300?"…":""}
+                  </div>
+                  <div style={{padding:"8px 14px",borderTop:"1px solid #F0EDE8",display:"flex",gap:8,background:"#FAFAFA"}}>
+                    <button onClick={()=>{ if(h.type==="youtube"){setInputMode("youtube");setYtUrl(h.input);}else{setInputMode("text");setInputText(h.input);setActiveTool(h.tool);}setOutputText(h.output);setHistoryOpen(false);}} style={{flex:1,padding:"6px 0",borderRadius:7,border:"none",background:accentColor,fontSize:11,fontWeight:700,cursor:"pointer",color:"#fff"}}>↩ Restore</button>
+                    <button onClick={()=>navigator.clipboard.writeText(h.output||"")} style={{flex:1,padding:"6px 0",borderRadius:7,border:"1px solid #ECEAE4",background:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",color:"#5A5752"}}>📋 Copy</button>
+                  </div>
                 </div>
               ))}
             </div>
