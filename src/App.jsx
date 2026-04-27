@@ -1629,24 +1629,6 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
-      {tsMenuOpen&&<div onClick={()=>setTsMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:150,background:"rgba(0,0,0,0.3)",backdropFilter:"blur(4px)"}}/>}
-      <div style={{position:"fixed",left:0,top:0,bottom:0,width:256,zIndex:151,background:"#fff",borderRight:"1px solid #ECEAE4",transform:tsMenuOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.3s cubic-bezier(0.16,1,0.3,1)",padding:"20px 16px",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,paddingBottom:12,borderBottom:"1px solid #ECEAE4"}}>
-          <span style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:800,color:"#2BAE7E"}}>Text Simplifier</span>
-          <button onClick={()=>setTsMenuOpen(false)} style={{background:"none",border:"1px solid #ECEAE4",borderRadius:5,width:26,height:26,cursor:"pointer",fontSize:12,color:"#8C8880",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-        </div>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#A8A59E",marginBottom:8}}>Tools</div>
-        {[{id:"simplify",label:"✂ Simplify Text"},{id:"explain",label:"💡 Explain Text"},{id:"summarize",label:"📋 Summarize"}].map(t=>(
-          <button key={t.id} onClick={()=>{setActiveTool(t.id);setOutputText("");setTsMenuOpen(false);}} style={{display:"block",width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${activeTool===t.id?"#2BAE7E":"#ECEAE4"}`,background:activeTool===t.id?"#F0FDF9":"#fff",fontSize:13,fontWeight:700,cursor:"pointer",color:activeTool===t.id?"#166534":"#3A3530",textAlign:"left",marginBottom:5}}>{t.label}</button>
-        ))}
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#A8A59E",margin:"14px 0 8px"}}>Input Mode</div>
-        {[{id:"text",label:"📝 Paste Text"},{id:"youtube",label:"▶ YouTube URL"}].map(m=>(
-          <button key={m.id} onClick={()=>{setInputMode(m.id);setOutputText("");setError("");setYtError("");setTsMenuOpen(false);}} style={{display:"block",width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${inputMode===m.id?"#2BAE7E":"#ECEAE4"}`,background:inputMode===m.id?"#F0FDF9":"#fff",fontSize:13,fontWeight:700,cursor:"pointer",color:inputMode===m.id?"#166534":"#3A3530",textAlign:"left",marginBottom:5}}>{m.label}</button>
-        ))}
-        <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid #ECEAE4"}}>
-          <button onClick={()=>{setHistoryOpen(o=>!o);setTsMenuOpen(false);}} style={{display:"block",width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ECEAE4",background:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",color:"#3A3530",textAlign:"left"}}>🕐 History {history.length>0&&`(${history.length})`}</button>
-        </div>
-      </div>
       <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {/* Hamburger + Back + Logo */}
