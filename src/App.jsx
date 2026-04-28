@@ -11514,27 +11514,71 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     if(!user){openAuth('login');return;}
     setGenerating('cards');setGenResult(null);setErrMsg('');
     const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
+    const totalChars=allText.length;
     try{
-      setGenProgress('Analyzing course structure…');
-      const sRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:`Identify 3-7 main chapters/sections/topics in this course material. Respond ONLY with JSON: {"sections":["Section 1","Section 2",...]}\n\nMaterial:\n${allText.slice(0,2000)}`}]})});
-      const sData=await sRes.json();const sTxt=sData.content?.find(b=>b.type==='text')?.text||'';
-      let sections=['General'];try{sections=JSON.parse(sTxt.replace(/\`\`\`json|\`\`\`/g,'').trim()).sections||['General'];}catch{}
-      const newDecks=[];
-      for(let i=0;i<sections.length;i++){
-        const section=sections[i];setGenProgress(`Generating cards for "${section}" (${i+1}/${sections.length})…`);
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:`Create comprehensive flashcards for "${section}" from course: ${active.name}. Extract EVERY key term, definition, concept, fact, formula.\nRespond ONLY with JSON: {"cards":[{"term":"...","definition":"...","hint":"optional hint"},...]}.\nMaterial:\n${allText.slice(0,5000)}`}]})});
-        const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
-        try{const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());if(parsed.cards?.length>0){newDecks.push({id:`deck_${Date.now()}_${i}`,title:`${active.name} — ${section}`,subject:active.subject||'',color:active.color,description:`Generated from ${active.name}`,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}}catch{}
+      setGenProgress('📖 Reading your document and planning study structure…');
+      const blueprintRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
+          messages:[{role:'user',content:'You are an expert study material organizer. Analyze this course document and create a complete study blueprint.\n\nYour job: identify ALL sections, chapters, topics, or units — whatever structure exists. Plan how to organize flashcard decks like a smart student would (one deck per chapter/topic/section).\n\nIf the document has a clear hierarchy (e.g. Unit > Chapter > Section), reflect that with folders. If no clear hierarchy, create flat decks grouped by topic.\n\nRules:\n- Include EVERY topic that has testable content\n- Name decks exactly as they appear in the document\n- Be thorough — do not skip sections\n- Folders are optional — only create them if the content clearly has a multi-level structure\n\nRespond ONLY with JSON (no markdown):\n{\n  "courseName": "exact course name",\n  "hasHierarchy": true or false,\n  "folders": [{"id":"f1","name":"Level 01 — Introduction","parentId":null,"decks":[{"id":"d1","name":"Chapter 1: Basics","topics":["topic1","topic2"]}]}],\n  "flatDecks": [{"id":"d1","name":"Topic Name","topics":["topic1"]}]\n}\n\nUse folders if hasHierarchy true, flatDecks if false.\n\nDocument:\n'+allText.slice(0,8000)}]})});
+      const bpData=await blueprintRes.json();
+      const bpTxt=bpData.content?.find(b=>b.type==='text')?.text||'';
+      let blueprint;
+      try{blueprint=JSON.parse(bpTxt.replace(/```json|```/g,'').trim());}
+      catch{setErrMsg('Could not parse document structure. Try adding clearer content.');setGenerating(null);return;}
+
+      const allDecks=[],allFolders=[];
+      const deckList=blueprint.hasHierarchy
+        ?( blueprint.folders?.flatMap(f=>f.decks.map(d=>({...d,folderName:f.name,folderId:f.id})))||[] )
+        :(blueprint.flatDecks||[]);
+      const totalDecks=deckList.length;
+
+      if(blueprint.hasHierarchy&&blueprint.folders?.length){
+        const rootId='uf-ch-'+Date.now();
+        allFolders.push({id:rootId,name:active.name,parentId:null});
+        const folderIdMap={};
+        blueprint.folders.forEach((f,fi)=>{
+          const fid='uf-ch-'+(Date.now()+fi+1);
+          folderIdMap[f.id]=fid;
+          allFolders.push({id:fid,name:f.name,parentId:rootId});
+        });
+        deckList.forEach(d=>{d._realFolderId=folderIdMap[d.folderId]||null;});
       }
-      if(newDecks.length>0){
-        const existing=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');
-        localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,...newDecks]));
-        const deckIds=newDecks.map(d=>d.id);
-        updateCourse(active.id,{flashDeckIds:[...(active.flashDeckIds||[]),...deckIds]});
-        setGenResult({type:'cards',count:newDecks.length,total:newDecks.reduce((a,d)=>a+d.cardCount,0)});
+
+      for(let i=0;i<totalDecks;i++){
+        const dp=deckList[i];
+        setGenProgress('✦ Generating cards for "'+dp.name+'" ('+( i+1)+'/'+totalDecks+')…');
+        const topicHints=(dp.topics||[]).join(', ');
+        let relevantText=allText;
+        const nameIdx=allText.toLowerCase().indexOf((dp.name||'').toLowerCase().slice(0,30));
+        if(nameIdx>-1){const s=Math.max(0,nameIdx-200);relevantText=allText.slice(s,s+6000);}
+        else{const chunk=Math.floor(totalChars/Math.max(totalDecks,1));relevantText=allText.slice(i*chunk,i*chunk+6000);}
+        const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,
+            messages:[{role:'user',content:'Create comprehensive flashcards for: "'+dp.name+'"\nCourse: '+active.name+'\nKey topics: '+topicHints+'\n\nRules:\n- Include EVERY testable fact, definition, concept, formula, key term\n- Each card tests ONE specific thing\n- Do NOT skip anything that could appear on a test\n\nRespond ONLY with JSON:\n{"cards":[{"term":"...","definition":"...","hint":"optional"},...]}'+'\n\nContent:\n'+relevantText}]})});
+        const cardData=await cardRes.json();
+        const cardTxt=cardData.content?.find(b=>b.type==='text')?.text||'';
+        try{
+          const parsed=JSON.parse(cardTxt.replace(/```json|```/g,'').trim());
+          if(parsed.cards?.length>0){allDecks.push({id:'deck_'+Date.now()+'_'+i,title:dp.name,subject:active.subject||active.name,color:active.color,description:'Generated from '+active.name,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,folderKey:dp._realFolderId||null,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}
+        }catch{}
+        if(i<totalDecks-1)await new Promise(r=>setTimeout(r,300));
+      }
+
+      if(allDecks.length>0){
+        setGenProgress('💾 Saving decks and folder structure…');
+        if(allFolders.length>0){
+          const ef=JSON.parse(localStorage.getItem('tp_fc_folders')||'[]');
+          localStorage.setItem('tp_fc_folders',JSON.stringify([...ef,...allFolders]));
+          tpSync('tp_fc_folders',[...ef,...allFolders]);
+        }
+        const ed=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');
+        localStorage.setItem('tp_fc_decks',JSON.stringify([...ed,...allDecks]));
+        tpSync('tp_fc_decks',[...ed,...allDecks]);
+        updateCourse(active.id,{flashDeckIds:[...(active.flashDeckIds||[]),...allDecks.map(d=>d.id)]});
+        setGenResult({type:'cards',count:allDecks.length,total:allDecks.reduce((a,d)=>a+d.cardCount,0),folders:allFolders.length});
         setGenProgress('');
-      }else{setErrMsg('Could not generate cards. Try adding more content.');}
-    }catch(e){console.error(e);setErrMsg('Generation failed. Please try again.');}
+      }else{setErrMsg('Could not generate cards. Try adding more content to your documents.');}
+    }catch(e){console.error(e);setErrMsg('Generation failed: '+e.message);}
     setGenerating(null);
   };
 
