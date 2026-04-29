@@ -11507,7 +11507,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const addDocument=(overrideName=null,overrideContent=null)=>{
     const name=(overrideName||docName).trim()||`Document ${(active.documents?.length||0)+1}`;
     const content=(overrideContent||docText).trim();
-    if(!content)return;
+    if(!content&&!name)return;
     const d={id:`doc_${Date.now()}`,name,content,addedAt:new Date().toISOString()};
     updateCourse(active.id,{documents:[...(active.documents||[]),d]});
     setDocName('');setDocText('');setShowAddDoc(false);setFileUploading(false);setFileUploaded(false);
@@ -11527,6 +11527,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         return;
       }
       // PDF or image — send to Claude to extract content
+      setFileUploaded(true);
       const reader=new FileReader();
       reader.onload=async ev=>{
         try{
@@ -11558,10 +11559,12 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             setDocText(extracted);
             setFileUploaded(true);
           } else {
-            setErrMsg('Could not extract text from this file. Try copying and pasting the text instead.');
+            setFileUploaded(true);
+            setErrMsg('Could not auto-extract text. Please paste your content in the box below.');
           }
         }catch(e){
-          setErrMsg('File processing failed: '+e.message);
+          setFileUploaded(true);
+          setErrMsg('File upload error: '+e.message+'. Please paste your content below.');
         }
         setFileUploading(false);
       };
@@ -11723,7 +11726,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                       onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
                     <div style={{display:'flex',gap:10}}>
                       <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);}} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
-                      <button onClick={()=>addDocument()} disabled={fileUploading||(!docText.trim()&&!fileUploaded)}
+                      <button onClick={()=>addDocument()} disabled={fileUploading||(!docText.trim()&&!fileUploaded&&!docName.trim())}
                         style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:(docText.trim()||fileUploaded)?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(!fileUploading&&(docText.trim()||fileUploaded))?'pointer':'default',color:(docText.trim()||fileUploaded)?'#1A1814':'#A8A59E'}}>
                         {fileUploading?'Processing file…':'Save Document'}
                       </button>
