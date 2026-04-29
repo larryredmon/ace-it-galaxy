@@ -11483,6 +11483,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [docName,    setDocName]    = useState('');
   const [docText,    setDocText]    = useState('');
+  const [fileUploading, setFileUploading] = useState(false);
   const [generating, setGenerating] = useState(null);
   const [genProgress,setGenProgress]= useState('');
   const [genResult,  setGenResult]  = useState(null);
@@ -11502,11 +11503,52 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setCourses(cs=>[...cs,c]);setActive(c);setView('course');setShowCreate(false);setCreateForm({name:'',subject:'',color:CH,description:''});
   };
 
-  const addDocument=()=>{
-    if(!docText.trim())return;
-    const d={id:`doc_${Date.now()}`,name:docName.trim()||`Document ${(active.documents?.length||0)+1}`,content:docText.trim(),addedAt:new Date().toISOString()};
+  const addDocument=(overrideName=null,overrideContent=null)=>{
+    const name=(overrideName||docName).trim()||`Document ${(active.documents?.length||0)+1}`;
+    const content=(overrideContent||docText).trim();
+    if(!content)return;
+    const d={id:`doc_${Date.now()}`,name,content,addedAt:new Date().toISOString()};
     updateCourse(active.id,{documents:[...(active.documents||[]),d]});
-    setDocName('');setDocText('');setShowAddDoc(false);
+    setDocName('');setDocText('');setShowAddDoc(false);setFileUploading(false);
+  };
+
+  const handleFileUpload=async(file)=>{
+    if(!file)return;
+    setFileUploading(true);
+    const name=file.name.replace(/\.[^.]+$/,'');
+    setDocName(name);
+    try{
+      const isText=file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md');
+      if(isText){
+        const text=await file.text();
+        setDocText(text);
+        setFileUploading(false);
+        return;
+      }
+      // PDF or image — send to Claude to extract content
+      const reader=new FileReader();
+      reader.onload=async ev=>{
+        const base64=ev.target.result.split(',')[1];
+        const isPDF=file.type==='application/pdf'||file.name.endsWith('.pdf');
+        const contentBlock=isPDF
+          ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}}
+          :{type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}};
+        try{
+          const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,
+              messages:[{role:'user',content:[
+                contentBlock,
+                {type:'text',text:'Extract ALL text content from this document. Return the complete text exactly as it appears, preserving headings, structure, and all content. Do not summarize — return everything word for word.'}
+              ]}]})});
+          const data=await res.json();
+          const extracted=data.content?.find(b=>b.type==='text')?.text||'';
+          if(extracted){setDocText(extracted);}
+          else{setErrMsg('Could not extract text from this file. Try a different format.');}
+        }catch(e){setErrMsg('File processing failed: '+e.message);}
+        setFileUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }catch(e){setErrMsg('Could not read file: '+e.message);setFileUploading(false);}
   };
 
   const generateFlashCards=async()=>{
@@ -11640,6 +11682,36 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>📄 Course Documents</div><div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Paste notes, textbook chapters, syllabi, or any course material</div></div>
               <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
+              {showAddDoc&&(
+                <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);}}>
+                  <div style={{background:'#fff',borderRadius:18,padding:'32px',width:520,maxWidth:'94vw',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+                    <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:6}}>Add Course Material</h3>
+                    <p style={{fontSize:13,color:'#8C8880',marginBottom:20}}>Upload a file or paste your content directly.</p>
+                    <label style={{display:'block',border:`2px dashed ${active.color}`,borderRadius:12,padding:'20px',textAlign:'center',cursor:'pointer',background:active.color+'08',marginBottom:16,transition:'all 0.2s'}}
+                      onMouseEnter={e=>{e.currentTarget.style.background=active.color+'15';}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=active.color+'08';}}>
+                      <input type="file" accept=".pdf,.txt,.md,image/*" style={{display:'none'}} onChange={e=>{const file=e.target.files?.[0];if(file)handleFileUpload(file);e.target.value='';}}/>
+                      {fileUploading?<><div style={{width:28,height:28,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 8px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading your file…</div></>
+                      :<><div style={{fontSize:32,marginBottom:6}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Upload PDF, image, or text file</div><div style={{fontSize:11,color:'#8C8880',marginTop:3}}>PDF, PNG, JPG, TXT, MD supported</div></>}
+                    </label>
+                    <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'8px 0'}}>— or paste text below —</div>
+                    <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)"
+                      style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}
+                      onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                    <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…"
+                      onKeyDown={e=>e.stopPropagation()}
+                      style={{width:'100%',minHeight:160,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}}
+                      onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                    <div style={{display:'flex',gap:10}}>
+                      <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);}} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+                      <button onClick={()=>addDocument()} disabled={!docText.trim()&&!fileUploading}
+                        style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:docText.trim()?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:docText.trim()?'pointer':'default',color:docText.trim()?'#1A1814':'#A8A59E'}}>
+                        Save Document
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             {(active.documents||[]).length===0?(
               <div style={{textAlign:'center',padding:'32px 0',color:'#A8A59E'}}>
