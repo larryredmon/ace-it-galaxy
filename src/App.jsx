@@ -11493,11 +11493,35 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [createForm, setCreateForm] = useState({name:'',subject:'',color:CH,description:''});
   const [showCreate, setShowCreate] = useState(false);
   const [errMsg,     setErrMsg]     = useState('');
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [folderForm,  setFolderForm]  = useState({name:'',parentId:null});
+  const [expandedFolders, setExpandedFolders] = useState({});
+  const [dragDocId,   setDragDocId]   = useState(null);
+  const [assignDocId, setAssignDocId] = useState(null); // doc being assigned to folder
 
   useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
   const deleteCourse=(id)=>{setCourses(cs=>cs.filter(c=>c.id!==id));setView('home');setActive(null);};
+
+  const addFolder=(courseId,name,parentId=null)=>{
+    if(!name.trim())return;
+    const folder={id:`folder_${Date.now()}`,name:name.trim(),parentId,createdAt:new Date().toISOString()};
+    updateCourse(courseId,{folders:[...(active?.folders||[]),folder]});
+    return folder.id;
+  };
+  const deleteFolder=(courseId,folderId)=>{
+    // Move docs in this folder to uncategorized
+    const updatedDocs=(active?.documents||[]).map(d=>d.folderId===folderId?{...d,folderId:null}:d);
+    // Also remove subfolders
+    const updatedFolders=(active?.folders||[]).filter(f=>f.id!==folderId&&f.parentId!==folderId);
+    updateCourse(courseId,{folders:updatedFolders,documents:updatedDocs});
+  };
+  const assignDocToFolder=(courseId,docId,folderId)=>{
+    const updatedDocs=(active?.documents||[]).map(d=>d.id===docId?{...d,folderId}:d);
+    updateCourse(courseId,{documents:updatedDocs});
+    setAssignDocId(null);
+  };
 
   const createCourse=()=>{
     if(!createForm.name.trim())return;
@@ -11727,7 +11751,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',gridColumn:'1/-1'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>📄 Course Documents</div><div style={{fontSize:11,color:'#8C8880',marginTop:2}}>Paste notes, textbook chapters, syllabi, or any course material</div></div>
-              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>{setFolderForm({name:'',parentId:null});setShowFolderModal(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#1A1814';e.currentTarget.style.color='#1A1814';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>📁 New Folder</button>
+                <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Add Document</button>
+              </div>
               {showAddDoc&&(
                 <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);}}>
                   <div style={{background:'#fff',borderRadius:18,padding:'32px',width:520,maxWidth:'94vw',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
@@ -11769,13 +11796,23 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
               <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {(active.documents||[]).map(d=>(
                   <div key={d.id} style={{borderRadius:10,border:'1px solid #ECEAE4',overflow:'hidden'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'#F7F6F2'}} draggable onDragStart={()=>setDragDocId(d.id)} onDragEnd={()=>setDragDocId(null)}>
                       <div style={{width:36,height:36,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📄</div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div>
-                        <div style={{fontSize:11,color:'#8C8880'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
+                        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                        <span style={{fontSize:11,color:'#8C8880'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</span>
+                        {d.folderId&&<span style={{fontSize:10,fontWeight:600,color:'#fff',background:active.color,borderRadius:8,padding:'1px 7px'}}>📁 {(active.folders||[]).find(f=>f.id===d.folderId)?.name||'Folder'}</span>}
                       </div>
-                      <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)}
+                      </div>
+                      <button onClick={()=>setAssignDocId(assignDocId===d.id?null:d.id)}
+                        title="Move to folder"
+                        style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',marginRight:4}}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>
+                        📁
+                      </button>
+                    <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)}
                         style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',marginRight:4}}
                         onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}}
                         onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>
@@ -11800,6 +11837,100 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 ))}
               </div>
             )}
+            {/* Assign to folder dropdown */}
+            {assignDocId&&(
+              <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.4)',backdropFilter:'blur(6px)'}} onClick={()=>setAssignDocId(null)}>
+                <div style={{background:'#fff',borderRadius:16,padding:'24px',width:320,maxWidth:'94vw'}} onClick={e=>e.stopPropagation()}>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,color:'#1A1814',marginBottom:14}}>Move to Folder</div>
+                  <button onClick={()=>assignDocToFolder(active.id,assignDocId,null)}
+                    style={{display:'block',width:'100%',padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860',textAlign:'left',marginBottom:6}}>
+                    📄 Uncategorized (remove from folder)
+                  </button>
+                  {(active.folders||[]).filter(f=>!f.parentId).map(folder=>(
+                    <div key={folder.id}>
+                      <button onClick={()=>assignDocToFolder(active.id,assignDocId,folder.id)}
+                        style={{display:'block',width:'100%',padding:'10px 12px',borderRadius:9,border:`1.5px solid ${active.color}`,background:active.color+'10',fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814',textAlign:'left',marginBottom:4}}>
+                        📁 {folder.name}
+                      </button>
+                      {(active.folders||[]).filter(sf=>sf.parentId===folder.id).map(sub=>(
+                        <button key={sub.id} onClick={()=>assignDocToFolder(active.id,assignDocId,sub.id)}
+                          style={{display:'block',width:'100%',padding:'8px 12px 8px 28px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#F7F6F2',fontSize:12,fontWeight:600,cursor:'pointer',color:'#1A1814',textAlign:'left',marginBottom:4}}>
+                          📁 {sub.name}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                  {(active.folders||[]).length===0&&<p style={{fontSize:12,color:'#A8A59E',textAlign:'center',margin:'10px 0'}}>No folders yet. Create one first.</p>}
+                  <button onClick={()=>setAssignDocId(null)} style={{width:'100%',marginTop:10,padding:'9px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {/* New Folder Modal */}
+            {showFolderModal&&(
+              <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.4)',backdropFilter:'blur(6px)'}} onClick={()=>setShowFolderModal(false)}>
+                <div style={{background:'#fff',borderRadius:16,padding:'24px',width:360,maxWidth:'94vw'}} onClick={e=>e.stopPropagation()}>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:800,color:'#1A1814',marginBottom:14}}>New Folder</div>
+                  <input value={folderForm.name} onChange={e=>setFolderForm(f=>({...f,name:e.target.value}))}
+                    placeholder="Folder name (e.g. Level 01, Week 1)" autoFocus
+                    onKeyDown={e=>{if(e.key==='Enter'&&folderForm.name.trim()){addFolder(active.id,folderForm.name,folderForm.parentId);setShowFolderModal(false);}e.stopPropagation();}}
+                    style={{width:'100%',padding:'10px 12px',borderRadius:9,border:`1.5px solid ${active.color}`,fontSize:14,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+                  {(active.folders||[]).filter(f=>!f.parentId).length>0&&(
+                    <>
+                      <div style={{fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:6}}>Create inside (optional):</div>
+                      <select value={folderForm.parentId||''} onChange={e=>setFolderForm(f=>({...f,parentId:e.target.value||null}))}
+                        style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,fontFamily:"'DM Sans',sans-serif"}}>
+                        <option value=''>Top level folder</option>
+                        {(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>📁 {f.name}</option>)}
+                      </select>
+                    </>
+                  )}
+                  <div style={{display:'flex',gap:10}}>
+                    <button onClick={()=>setShowFolderModal(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+                    <button onClick={()=>{if(folderForm.name.trim()){addFolder(active.id,folderForm.name,folderForm.parentId);setShowFolderModal(false);}}}
+                      disabled={!folderForm.name.trim()}
+                      style={{flex:2,padding:'10px',borderRadius:9,border:'none',background:folderForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:folderForm.name.trim()?'pointer':'default',color:folderForm.name.trim()?'#fff':'#A8A59E'}}>
+                      Create Folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Folder view inside course */}
+            {(active.folders||[]).length>0&&(
+              <div style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'16px 18px',marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:12}}>📁 Folders</div>
+                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                  {(active.folders||[]).filter(f=>!f.parentId).map(folder=>(
+                    <div key={folder.id}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:'#F7F6F2',borderRadius:10,border:'1px solid #ECEAE4'}}
+                        onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor=active.color;}}
+                        onDragLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}
+                        onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor='#ECEAE4';if(dragDocId)assignDocToFolder(active.id,dragDocId,folder.id);setDragDocId(null);}}>
+                        <span style={{fontSize:16}}>📁</span>
+                        <span style={{flex:1,fontSize:13,fontWeight:700,color:'#1A1814'}}>{folder.name}</span>
+                        <span style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===folder.id).length} docs</span>
+                        <button onClick={()=>{setFolderForm({name:'',parentId:folder.id});setShowFolderModal(true);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:'2px 6px'}} title="Add subfolder">+ sub</button>
+                        <button onClick={()=>deleteFolder(active.id,folder.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                      </div>
+                      {(active.folders||[]).filter(sf=>sf.parentId===folder.id).map(sub=>(
+                        <div key={sub.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px 8px 28px',background:'#FAFAFA',borderRadius:8,border:'1px solid #F0EDE8',marginTop:4,marginLeft:16}}
+                          onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor=active.color;}}
+                          onDragLeave={e=>e.currentTarget.style.borderColor='#F0EDE8'}
+                          onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor='#F0EDE8';if(dragDocId)assignDocToFolder(active.id,dragDocId,sub.id);setDragDocId(null);}}>
+                          <span style={{fontSize:14}}>📁</span>
+                          <span style={{flex:1,fontSize:12,fontWeight:600,color:'#3A3530'}}>{sub.name}</span>
+                          <span style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===sub.id).length} docs</span>
+                          <button onClick={()=>deleteFolder(active.id,sub.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'10px 12px',marginBottom:12,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards!<button onClick={()=>launchApp('flashcards')} style={{marginLeft:8,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
             <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>{generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:'✦ Generate Flash Cards'}</button>
           </div>
@@ -11833,20 +11964,43 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:6}}>My Courses</div>
           {courses.map(course=>(
             <div key={course.id} style={{marginBottom:4}}>
-              <button onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}
+              <button onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);setExpandedFolders(ef=>({...ef,[course.id]:!ef[course.id]}));}}
                 style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${active?.id===course.id?course.color:'#ECEAE4'}`,background:active?.id===course.id?course.color+'15':'#fff',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814',textAlign:'left',transition:'all 0.15s'}}>
                 <div style={{width:10,height:10,borderRadius:'50%',background:course.color,flexShrink:0}}/>
                 <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{course.name}</span>
-                <span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{(course.documents||[]).length} docs</span>
+                <span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{expandedFolders[course.id]?'▲':'▼'}</span>
               </button>
-              {active?.id===course.id&&(course.documents||[]).length>0&&(
-                <div style={{marginLeft:22,marginTop:3}}>
-                  {(course.documents||[]).map(doc=>(
-                    <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'4px 8px',borderRadius:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}
-                      onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
-                      📄 {doc.name}
+              {expandedFolders[course.id]&&(
+                <div style={{marginLeft:14,marginTop:3,borderLeft:'2px solid #ECEAE4',paddingLeft:10}}>
+                  {(course.folders||[]).filter(f=>!f.parentId).map(folder=>(
+                    <div key={folder.id}>
+                      <div style={{fontSize:11,fontWeight:700,color:'#3A3530',padding:'4px 6px',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',gap:5}}
+                        onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
+                        📁 {folder.name}
+                      </div>
+                      {(course.folders||[]).filter(sf=>sf.parentId===folder.id).map(sub=>(
+                        <div key={sub.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px 3px 18px',cursor:'pointer'}}
+                          onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
+                          📁 {sub.name}
+                        </div>
+                      ))}
+                      {(course.documents||[]).filter(d=>d.folderId===folder.id).map(doc=>(
+                        <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px 3px 18px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          📄 {doc.name}
+                        </div>
+                      ))}
                     </div>
                   ))}
+                  {(course.documents||[]).filter(d=>!d.folderId).length>0&&(
+                    <div>
+                      <div style={{fontSize:10,color:'#A8A59E',padding:'4px 6px',fontWeight:600}}>Uncategorized</div>
+                      {(course.documents||[]).filter(d=>!d.folderId).map(doc=>(
+                        <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          📄 {doc.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
