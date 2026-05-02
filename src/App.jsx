@@ -11479,6 +11479,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const PALETTE = ['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#E85D3F'];
   const [courses,    setCourses]    = useState(()=>{try{return JSON.parse(localStorage.getItem('tp_courses')||'[]');}catch{return [];}});
   const [view,       setView]       = useState('home');
+  const [chMenuOpen, setChMenuOpen] = useState(false);
   const [active,     setActive]     = useState(null);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [docName,    setDocName]    = useState('');
@@ -11696,11 +11697,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   if(view==='course'&&active) return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
       <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@media(max-width:768px){.ch-nav{padding:0 12px!important}.ch-main{padding:16px 12px 60px!important}.ch-tabs{gap:2px!important}.ch-tabs button{padding:5px 8px!important;font-size:11px!important}.ch-grid{grid-template-columns:1fr!important}}`}</style>
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
-        <button onClick={()=>{setView('home');setActive(null);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← All Courses</button>
-        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
-        <div style={{width:4,height:4,borderRadius:'50%',background:active.color}}/>
-        <span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:'#1A1814'}}>{active.name}</span>
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 16px',gap:10}} className='ch-nav'>
+        <button onClick={()=>setChMenuOpen(o=>!o)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,width:34,height:34,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.borderColor=active.color} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>
+          <div style={{width:13,height:1.5,background:'#6B6860',borderRadius:1}}/><div style={{width:9,height:1.5,background:'#6B6860',borderRadius:1,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:13,height:1.5,background:'#6B6860',borderRadius:1}}/>
+        </button>
+        <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880',whiteSpace:'nowrap'}}>← Galaxy</button>
+        <div style={{width:1,height:16,background:'#ECEAE4',flexShrink:0}}/>
+        <div style={{width:8,height:8,borderRadius:'50%',background:active.color,flexShrink:0}}/>
+        <span style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{active.name}</span>
       </nav>
       <div style={{maxWidth:900,margin:'0 auto',padding:'32px 24px 80px',animation:'ch-fade 0.3s ease'}}>
         <div style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${active.color}`,borderRadius:16,padding:'28px',marginBottom:24}}>
@@ -11815,9 +11819,53 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814'}}>
       <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 20px',gap:12}}>
+      {chMenuOpen&&<div onClick={()=>setChMenuOpen(false)} style={{position:'fixed',inset:0,zIndex:150,background:'rgba(0,0,0,0.3)',backdropFilter:'blur(4px)'}}/>}
+      <div style={{position:'fixed',left:0,top:0,bottom:0,width:264,zIndex:151,background:'#fff',borderRight:'1px solid #ECEAE4',transform:chMenuOpen?'translateX(0)':'translateX(-100%)',transition:'transform 0.3s cubic-bezier(0.16,1,0.3,1)',padding:'18px 14px',overflowY:'auto'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,paddingBottom:10,borderBottom:'1px solid #ECEAE4'}}>
+          <span style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:'#166534'}}>Course Hub</span>
+          <button onClick={()=>setChMenuOpen(false)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:5,width:26,height:26,cursor:'pointer',fontSize:12,color:'#8C8880',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+        </div>
+        <button onClick={()=>{setView('home');setActive(null);setChMenuOpen(false);}}
+          style={{display:'block',width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${view==='home'?CH:'#ECEAE4'}`,background:view==='home'?CH+'20':'#fff',fontSize:13,fontWeight:700,cursor:'pointer',color:'#166534',textAlign:'left',marginBottom:10}}>
+          ◎ All Courses {courses.length>0&&`(${courses.length})`}
+        </button>
+        {courses.length>0&&(<>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:6}}>My Courses</div>
+          {courses.map(course=>(
+            <div key={course.id} style={{marginBottom:4}}>
+              <button onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}
+                style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${active?.id===course.id?course.color:'#ECEAE4'}`,background:active?.id===course.id?course.color+'15':'#fff',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814',textAlign:'left',transition:'all 0.15s'}}>
+                <div style={{width:10,height:10,borderRadius:'50%',background:course.color,flexShrink:0}}/>
+                <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{course.name}</span>
+                <span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{(course.documents||[]).length} docs</span>
+              </button>
+              {active?.id===course.id&&(course.documents||[]).length>0&&(
+                <div style={{marginLeft:22,marginTop:3}}>
+                  {(course.documents||[]).map(doc=>(
+                    <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'4px 8px',borderRadius:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}
+                      onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
+                      📄 {doc.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>)}
+        <div style={{marginTop:14,paddingTop:14,borderTop:'1px solid #ECEAE4'}}>
+          <button onClick={()=>{setShowCreate(true);setChMenuOpen(false);}}
+            style={{display:'block',width:'100%',padding:'9px 12px',borderRadius:9,border:'none',background:'#1A1814',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',textAlign:'center'}}>
+            + New Course
+          </button>
+        </div>
+      </div>
+      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'#fff',borderBottom:'1px solid #ECEAE4',display:'flex',alignItems:'center',padding:'0 16px',gap:10}}>
+        <button onClick={()=>setChMenuOpen(o=>!o)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,width:34,height:34,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.borderColor=CH} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>
+          <div style={{width:13,height:1.5,background:'#6B6860',borderRadius:1}}/><div style={{width:9,height:1.5,background:'#6B6860',borderRadius:1,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:13,height:1.5,background:'#6B6860',borderRadius:1}}/>
+        </button>
         <button onClick={onBack} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:8}}><div style={{width:28,height:28,borderRadius:7,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}><span style={{color:'#166534'}}>Ace It</span> Course Hub</span></div>
+        <div style={{width:1,height:16,background:'#ECEAE4',flexShrink:0}}/>
+        <div style={{display:'flex',alignItems:'center',gap:8}}><div style={{width:28,height:28,borderRadius:7,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:'#1A1814'}}><span style={{color:'#166534'}}>Ace It</span> Course Hub</span></div>
         <div style={{marginLeft:'auto'}}>{!user&&<button onClick={()=>openAuth('login')} style={{background:CH,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In</button>}</div>
       </nav>
       <div style={{maxWidth:900,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
