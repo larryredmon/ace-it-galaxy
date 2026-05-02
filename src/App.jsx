@@ -11520,36 +11520,77 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setErrMsg('');
     const name=file.name.replace(/\.[^.]+$/,'');
     setDocName(name);
-
     try{
-      // Text files — read directly
-      if(file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md')){
+      const isText=file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md');
+      const isPDF=file.name.toLowerCase().endsWith('.pdf')||file.type==='application/pdf';
+      const isImage=file.type.startsWith('image/');
+
+      if(isText){
         const text=await file.text();
         setDocText(text);
         setFileUploaded(true);
         setFileUploading(false);
         return;
       }
-      // PDF or image — send via FormData to dedicated upload endpoint
-      const formData=new FormData();
-      formData.append('file',file);
-      const res=await fetch('/api/upload',{method:'POST',body:formData});
-      const data=await res.json();
-      if(!res.ok){throw new Error(data.error||'Upload failed');}
-      const extracted=data.text||'';
-      if(extracted&&extracted.length>10){
-        setDocText(extracted);
-        setFileUploaded(true);
-      } else {
-        setFileUploaded(true);
-        setErrMsg('Could not extract text from this PDF. Please copy and paste the content instead.');
+
+      if(isPDF){
+        // Extract text client-side using PDF.js — avoids server size limits entirely
+        const arrayBuffer=await file.arrayBuffer();
+        // Dynamically import pdfjs
+        const pdfjsLib=await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs');
+        pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs';
+        const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+        const totalPages=pdf.numPages;
+        let fullText='';
+        for(let i=1;i<=totalPages;i++){
+          setGenProgress&&setGenProgress(`Reading page ${i}/${totalPages}…`);
+          const page=await pdf.getPage(i);
+          const content=await page.getTextContent();
+          const pageText=content.items.map(item=>item.str).join(' ');
+          fullText+=pageText+'\n';
+        }
+        if(fullText.trim().length>10){
+          setDocText(fullText.trim());
+          setFileUploaded(true);
+        } else {
+          setFileUploaded(true);
+          setErrMsg('Could not extract text from this PDF. It may be a scanned image. Please paste the text content manually.');
+        }
+        setFileUploading(false);
+        return;
       }
+
+      if(isImage){
+        // Images still go through the API (they're smaller)
+        const arrayBuffer=await file.arrayBuffer();
+        const uint8=new Uint8Array(arrayBuffer);
+        let binary='';
+        for(let i=0;i<uint8.length;i++){binary+=String.fromCharCode(uint8[i]);}
+        const base64=btoa(binary);
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
+            messages:[{role:'user',content:[
+              {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
+              {type:'text',text:'Extract ALL text from this image. Return everything you can read.'}
+            ]}]})});
+        const data=await res.json();
+        const extracted=data.content?.find(b=>b.type==='text')?.text||'';
+        if(extracted.length>10){setDocText(extracted);setFileUploaded(true);}
+        else{setFileUploaded(true);setErrMsg('Could not read text from image. Please paste content manually.');}
+        setFileUploading(false);
+        return;
+      }
+
+      setErrMsg('Unsupported file type. Please use PDF, PNG, JPG, or text files.');
+      setFileUploaded(false);
+      setFileUploading(false);
+
     }catch(e){
       console.error('File upload error:',e);
       setFileUploaded(true);
-      setErrMsg('File upload error: '+e.message+'. Please paste your content below.');
+      setErrMsg('Could not process file: '+e.message+'. Please paste your content below.');
+      setFileUploading(false);
     }
-    setFileUploading(false);
   };
 
     const generateFlashCards=async()=>{
