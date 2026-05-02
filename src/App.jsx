@@ -11531,8 +11531,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       const reader=new FileReader();
       reader.onload=async ev=>{
         try{
-          const dataUrl=ev.target.result;
-          const base64=dataUrl.substring(dataUrl.indexOf(',')+1);
+          const dataUrl=ev.target.result||'';
+          const commaIdx=dataUrl.indexOf(',');
+          const base64=commaIdx>-1?dataUrl.slice(commaIdx+1):'';
+          if(!base64){setErrMsg('Could not read file data. Please paste your content below.');setFileUploading(false);return;}
           const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
           const isImage=file.type.startsWith('image/');
           let contentBlock;
