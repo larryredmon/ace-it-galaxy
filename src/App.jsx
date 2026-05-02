@@ -11516,66 +11516,61 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const handleFileUpload=async(file)=>{
     if(!file)return;
     setFileUploading(true);
+    setFileUploaded(false);
+    setErrMsg('');
     const name=file.name.replace(/\.[^.]+$/,'');
     setDocName(name);
     try{
-      const isText=file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md');
-      if(isText){
+      // Text files — read directly
+      if(file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md')){
         const text=await file.text();
         setDocText(text);
+        setFileUploaded(true);
         setFileUploading(false);
         return;
       }
-      // PDF or image — send to Claude to extract content
+      // PDF or image — convert to base64 and send to Claude
+      const arrayBuffer=await file.arrayBuffer();
+      const uint8=new Uint8Array(arrayBuffer);
+      let binary='';
+      for(let i=0;i<uint8.length;i++){binary+=String.fromCharCode(uint8[i]);}
+      const base64=btoa(binary);
+      const isPDF=file.name.toLowerCase().endsWith('.pdf')||file.type==='application/pdf';
+      const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
+      const contentBlock=isPDF
+        ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}}
+        :{type:'image',source:{type:'base64',media_type:mediaType,data:base64}};
+      const res=await fetch('/api/claude',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6',
+          max_tokens:8000,
+          messages:[{role:'user',content:[
+            contentBlock,
+            {type:'text',text:'Extract ALL text content from this document. Return the complete text preserving all headings, chapters, and structure. Do not summarize.'}
+          ]}]
+        })
+      });
+      const data=await res.json();
+      if(data.error){throw new Error(JSON.stringify(data.error));}
+      const extracted=data.content?.find(b=>b.type==='text')?.text||'';
+      if(extracted&&extracted.length>10){
+        setDocText(extracted);
+        setFileUploaded(true);
+      } else {
+        setFileUploaded(true);
+        setErrMsg('Could not extract text from this PDF. Please copy and paste the content instead.');
+      }
+    }catch(e){
+      console.error('File upload error:',e);
       setFileUploaded(true);
-      const reader=new FileReader();
-      reader.onload=async ev=>{
-        try{
-          const dataUrl=ev.target.result||'';
-          const commaIdx=dataUrl.indexOf(',');
-          const base64=commaIdx>-1?dataUrl.slice(commaIdx+1):'';
-          if(!base64){setErrMsg('Could not read file data. Please paste your content below.');setFileUploading(false);return;}
-          const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
-          const isImage=file.type.startsWith('image/');
-          let contentBlock;
-          if(isPDF){
-            contentBlock={type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}};
-          } else if(isImage){
-            const mtype=file.type||'image/jpeg';
-            contentBlock={type:'image',source:{type:'base64',media_type:mtype,data:base64}};
-          } else {
-            setErrMsg('Unsupported file type. Please use PDF, PNG, JPG, or text files.');
-            setFileUploading(false);
-            return;
-          }
-          const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,
-              messages:[{role:'user',content:[
-                contentBlock,
-                {type:'text',text:'Extract ALL text content from this document. Return the complete text exactly as it appears, preserving all headings, chapters, sections, and content. Do not summarize or skip anything.'}
-              ]}]})});
-          if(!res.ok){const err=await res.json();throw new Error(err?.error?.error?.message||'API error');}
-          const data=await res.json();
-          const extracted=data.content?.find(b=>b.type==='text')?.text||'';
-          if(extracted&&extracted.length>10){
-            setDocText(extracted);
-            setFileUploaded(true);
-          } else {
-            setFileUploaded(true);
-            setErrMsg('Could not auto-extract text. Please paste your content in the box below.');
-          }
-        }catch(e){
-          setFileUploaded(true);
-          setErrMsg('File upload error: '+e.message+'. Please paste your content below.');
-        }
-        setFileUploading(false);
-      };
-      reader.onerror=()=>{setErrMsg('Could not read file.');setFileUploading(false);};
-      reader.readAsDataURL(file);
-    }catch(e){setErrMsg('Could not read file: '+e.message);setFileUploading(false);}
+      setErrMsg('File upload error: '+e.message+'. Please paste your content below.');
+    }
+    setFileUploading(false);
   };
 
-  const generateFlashCards=async()=>{
+    const generateFlashCards=async()=>{
     if(!active?.documents?.length){setErrMsg('Add at least one document first.');return;}
     if(!user){openAuth('login');return;}
     setGenerating('cards');setGenResult(null);setErrMsg('');
