@@ -11520,14 +11520,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setErrMsg('');
     const name=file.name.replace(/\.[^.]+$/,'');
     setDocName(name);
-    // Check file size — Vercel has 4.5MB limit, base64 adds ~33% overhead
-    const maxMB=3;
-    if(file.size>maxMB*1024*1024){
-      setFileUploading(false);
-      setFileUploaded(false);
-      setErrMsg(`This PDF is too large to upload directly (${(file.size/1024/1024).toFixed(1)}MB). For large documents, please copy and paste the text content instead. Open your PDF, select all text (Cmd+A), copy (Cmd+C), then paste below.`);
-      return;
-    }
+
     try{
       // Text files — read directly
       if(file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md')){
@@ -11537,32 +11530,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         setFileUploading(false);
         return;
       }
-      // PDF or image — convert to base64 and send to Claude
-      const arrayBuffer=await file.arrayBuffer();
-      const uint8=new Uint8Array(arrayBuffer);
-      let binary='';
-      for(let i=0;i<uint8.length;i++){binary+=String.fromCharCode(uint8[i]);}
-      const base64=btoa(binary);
-      const isPDF=file.name.toLowerCase().endsWith('.pdf')||file.type==='application/pdf';
-      const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
-      const contentBlock=isPDF
-        ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}}
-        :{type:'image',source:{type:'base64',media_type:mediaType,data:base64}};
-      const res=await fetch('/api/claude',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-6',
-          max_tokens:8000,
-          messages:[{role:'user',content:[
-            contentBlock,
-            {type:'text',text:'Extract ALL text content from this document. Return the complete text preserving all headings, chapters, and structure. Do not summarize.'}
-          ]}]
-        })
-      });
+      // PDF or image — send via FormData to dedicated upload endpoint
+      const formData=new FormData();
+      formData.append('file',file);
+      const res=await fetch('/api/upload',{method:'POST',body:formData});
       const data=await res.json();
-      if(data.error){throw new Error(JSON.stringify(data.error));}
-      const extracted=data.content?.find(b=>b.type==='text')?.text||'';
+      if(!res.ok){throw new Error(data.error||'Upload failed');}
+      const extracted=data.text||'';
       if(extracted&&extracted.length>10){
         setDocText(extracted);
         setFileUploaded(true);

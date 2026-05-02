@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
     "firebase": "^12.11.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
@@ -23,6 +24,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "sharp": "^0.34.5",
     "vite": "^8.0.0"
   }
 }
