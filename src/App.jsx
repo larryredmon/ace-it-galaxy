@@ -11866,7 +11866,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                   <input value={folderForm.name} onChange={e=>setFolderForm(f=>({...f,name:e.target.value}))}
                     placeholder="Folder name (e.g. Level 01, Week 1)" autoFocus
                     onKeyDown={e=>{if(e.key==='Enter'&&folderForm.name.trim()){addFolder(active.id,folderForm.name,folderForm.parentId);setShowFolderModal(false);}e.stopPropagation();}}
-                    style={{width:'100%',padding:'10px 12px',borderRadius:9,border:`1.5px solid ${active.color}`,fontSize:14,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+                    style={{width:'100%',padding:'10px 12px',borderRadius:9,border:`1.5px solid ${active.color}`,fontSize:14,color:'#1A1814',background:'#fff',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
                   {(active.folders||[]).filter(f=>!f.parentId).length>0&&(
                     <>
                       <div style={{fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:6}}>Create inside (optional):</div>
