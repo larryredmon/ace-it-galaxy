@@ -7219,9 +7219,6 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
           <span style={{ fontSize: 11 }}>⊕</span>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <button onClick={onBack} style={{background:"none",border:"1px solid #D8ECFF",borderRadius:7,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8A9AAC",transition:"all 0.15s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=PA_GLOW;e.currentTarget.style.color=PA_GLOW;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8ECFF";e.currentTarget.style.color="#8A9AAC";}}>← Galaxy</button>
-          </div>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Assistant</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
@@ -7377,17 +7374,8 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
           {/* Chat top bar */}
           <div style={{ padding: "12px 20px", borderBottom: "1px solid #E4EEF8", display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: "#fff" }}>
-            <button onClick={() => setChatSidebarOpen(o => !o)}
-              style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 7, width: 32, height: 32, cursor: "pointer", fontSize: 13, color: chatSidebarOpen ? PA_GLOW : "#8A9AAC", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", flexShrink: 0 }}
-              title={chatSidebarOpen ? "Hide history" : "Show history"}>
-              {chatSidebarOpen ? "◀" : "▶"}
-            </button>
-            <button onClick={onBack}
-              style={{ background: "none", border: "1px solid #D8ECFF", borderRadius: 7, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#8A9AAC", transition: "all 0.15s", flexShrink: 0, whiteSpace: "nowrap" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#D8ECFF"; e.currentTarget.style.color = "#8A9AAC"; }}>
-              ← Galaxy
-            </button>
+
+
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#0A1628", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {messages.length === 0 ? "New Chat" : activeConvo.title}
@@ -7858,6 +7846,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "1px solid #E4EEF8", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "#5A6878", fontSize: 16, transition: "all 0.15s", lineHeight: 1 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "#E4EEF8"; e.currentTarget.style.color = "#5A6878"; }}>☰</button>
+          <button onClick={onBack} style={{background:"none",border:"1px solid #D8ECFF",borderRadius:7,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8A9AAC",whiteSpace:"nowrap"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=PA_GLOW;e.currentTarget.style.color=PA_GLOW;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8ECFF";e.currentTarget.style.color="#8A9AAC";}}>← Galaxy</button>
           <div style={{ width: 1, height: 20, background: "#E4EEF8" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⊕</div>
