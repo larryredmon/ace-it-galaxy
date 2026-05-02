@@ -7219,6 +7219,9 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${PA_COLOR}18`, border: `1px solid ${PA_COLOR}44`, borderRadius: 20, padding: "4px 14px", marginBottom: 18 }}>
           <span style={{ fontSize: 11 }}>⊕</span>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+            <button onClick={onBack} style={{background:"none",border:"1px solid #D8ECFF",borderRadius:7,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8A9AAC",transition:"all 0.15s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=PA_GLOW;e.currentTarget.style.color=PA_GLOW;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8ECFF";e.currentTarget.style.color="#8A9AAC";}}>← Galaxy</button>
+          </div>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace It Assistant</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#0A1628", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
