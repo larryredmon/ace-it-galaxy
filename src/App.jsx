@@ -11494,6 +11494,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
+  const navigateTo=(course,v)=>{setActive(course);setView(v);setChMenuOpen(false);};
   const deleteCourse=(id)=>{setCourses(cs=>cs.filter(c=>c.id!==id));setView('home');setActive(null);};
 
   const addFolder=(courseId,name,parentId=null)=>{
@@ -11761,11 +11762,11 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                     </label>
                     <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'8px 0'}}>— or paste text below —</div>
                     <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)"
-                      style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}
+                      style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}
                       onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
                     <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…"
                       onKeyDown={e=>e.stopPropagation()}
-                      style={{width:'100%',minHeight:160,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}}
+                      style={{width:'100%',minHeight:160,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}}
                       onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
                     <div style={{display:'flex',gap:10}}>
                       <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);}} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
@@ -11948,7 +11949,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           <span style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:'#166534'}}>Course Hub</span>
           <button onClick={()=>setChMenuOpen(false)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:5,width:26,height:26,cursor:'pointer',fontSize:12,color:'#8C8880',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
         </div>
-        <button onClick={()=>{setView('home');setActive(null);setChMenuOpen(false);}}
+        <button onClick={()=>{setView('home');setActive(null);setChMenuOpen(false);setExpandedFolders({});}}
           style={{display:'block',width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${view==='home'?CH:'#ECEAE4'}`,background:view==='home'?CH+'20':'#fff',fontSize:13,fontWeight:700,cursor:'pointer',color:'#166534',textAlign:'left',marginBottom:10}}>
           ◎ All Courses {courses.length>0&&`(${courses.length})`}
         </button>
@@ -11967,12 +11968,12 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                   {(course.folders||[]).filter(f=>!f.parentId).map(folder=>(
                     <div key={folder.id}>
                       <div style={{fontSize:11,fontWeight:700,color:'#3A3530',padding:'4px 6px',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',gap:5}}
-                        onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
+                        onClick={()=>navigateTo(course,'course')}>
                         📁 {folder.name}
                       </div>
                       {(course.folders||[]).filter(sf=>sf.parentId===folder.id).map(sub=>(
                         <div key={sub.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px 3px 18px',cursor:'pointer'}}
-                          onClick={()=>{setActive(course);setView('course');setChMenuOpen(false);}}>
+                          onClick={()=>navigateTo(course,'course')}>
                           📁 {sub.name}
                         </div>
                       ))}
