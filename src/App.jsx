@@ -11520,6 +11520,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setErrMsg('');
     const name=file.name.replace(/\.[^.]+$/,'');
     setDocName(name);
+    // Check file size — Vercel has 4.5MB limit, base64 adds ~33% overhead
+    const maxMB=3;
+    if(file.size>maxMB*1024*1024){
+      setFileUploading(false);
+      setFileUploaded(false);
+      setErrMsg(`This PDF is too large to upload directly (${(file.size/1024/1024).toFixed(1)}MB). For large documents, please copy and paste the text content instead. Open your PDF, select all text (Cmd+A), copy (Cmd+C), then paste below.`);
+      return;
+    }
     try{
       // Text files — read directly
       if(file.type.startsWith('text/')||file.name.endsWith('.txt')||file.name.endsWith('.md')){
