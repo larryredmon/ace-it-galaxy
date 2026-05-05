@@ -5926,7 +5926,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             <div style={{ fontSize: 32, marginBottom: 16 }}>✺</div>
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#F7F6F2", marginBottom: 8 }}>New Brain Map</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 26 }}>Give your map a topic to start branching from.</p>
-            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && createMap()} placeholder="e.g. Biology — Chapter 4"
+            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && createMap()} placeholder="e.g. Biology — Chapter 4" autoComplete="off"
               style={{ width: "100%", padding: "13px 15px", border: "1.5px solid rgba(255,255,255,0.14)", borderRadius: 9, fontSize: 15, fontWeight: 600, color: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "rgba(255,255,255,0.05)", marginBottom: 20, transition: "border-color 0.18s" }}
               onFocus={e => e.target.style.borderColor = "#F0A8C0"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.14)"} />
             <div style={{ display: "flex", gap: 10 }}>
