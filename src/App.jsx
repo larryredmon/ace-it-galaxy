@@ -12015,13 +12015,70 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         <div style={{display:'flex',alignItems:'center',gap:8}}><div style={{width:28,height:28,borderRadius:7,background:CH,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>◎</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:'#1A1814'}}><span style={{color:'#166534'}}>Ace It</span> Course Hub</span></div>
         <div style={{marginLeft:'auto'}}>{!user&&<button onClick={()=>openAuth('login')} style={{background:CH,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In</button>}</div>
       </nav>
-      <div style={{maxWidth:900,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:CH+'20',border:`1px solid ${CH}40`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'#166534',marginBottom:16}}>◎ Course Hub</div>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,44px)',fontWeight:900,color:'#1A1814',lineHeight:1.1,marginBottom:12,letterSpacing:-1}}>Your coursework, connected</h1>
-          <p style={{fontSize:15,color:'#6B6860',maxWidth:480,margin:'0 auto 28px',lineHeight:1.7}}>Upload your course materials once. Get flash card decks, brain maps, and study tools — all organized and ready across every app.</p>
-          <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Create a Course</button>
+      {/* ── HERO ── */}
+      <div style={{background:'#1A1814',padding:'64px 24px 48px',textAlign:'center',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,opacity:0.04,backgroundImage:'radial-gradient(circle at 20% 50%, #6ED9B8 0%, transparent 50%), radial-gradient(circle at 80% 20%, #6ED9B8 0%, transparent 40%)'}}/>
+        <div style={{position:'relative',zIndex:1}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(110,217,184,0.15)',border:'1px solid rgba(110,217,184,0.3)',borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:CH,marginBottom:20}}>◎ ACE IT COURSE HUB</div>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(32px,5vw,52px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:16,letterSpacing:-1}}>
+            <span style={{color:CH}}>Ace It</span> Course Hub
+          </h1>
+          <p style={{fontSize:15,color:'#9A9690',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Upload your course materials once — get flash cards, brain maps, and study tools organized automatically.</p>
+          <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+            <button onClick={()=>setShowCreate(true)} style={{background:CH,border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Course</button>
+            {courses.length>0&&<button onClick={()=>{if(courses.length===1){setActive(courses[0]);setView('course');}else setChMenuOpen(true);}} style={{background:'none',border:'1px solid rgba(255,255,255,0.2)',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:600,cursor:'pointer',color:'#F7F6F2'}}>Browse My Courses</button>}
+          </div>
         </div>
+      </div>
+
+      {/* ── STATS BAR ── */}
+      <div style={{background:'#222',borderBottom:'1px solid #333',display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
+        {[['Courses',courses.length],['Documents',courses.reduce((a,c)=>a+(c.documents?.length||0),0)],['Flash Decks',courses.reduce((a,c)=>a+(c.flashDeckIds?.length||0),0)],['Brain Maps',courses.reduce((a,c)=>a+(c.brainMapIds?.length||0),0)]].map(([label,val])=>(
+          <div key={label} style={{padding:'18px 24px',textAlign:'center',borderRight:'1px solid #333'}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:'#F7F6F2'}}>{val}</div>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#6B6860',marginTop:2}}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── COURSES ── */}
+      <div style={{maxWidth:960,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
+        {courses.length===0?(
+          <div style={{textAlign:'center',padding:'60px 20px'}}>
+            <div style={{fontSize:52,marginBottom:16}}>📚</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,color:'#1A1814',marginBottom:8}}>No courses yet</h2>
+            <p style={{fontSize:14,color:'#8C8880',marginBottom:24,maxWidth:340,margin:'0 auto 24px',lineHeight:1.6}}>Create your first course to start organizing your study materials.</p>
+            <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Create a Course</button>
+          </div>
+        ):(
+          <>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814'}}>My Courses</h2>
+              <button onClick={()=>setShowCreate(true)} style={{background:CH,border:'none',borderRadius:8,padding:'8px 18px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ New Course</button>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
+              {courses.map(course=>(
+                <div key={course.id} onClick={()=>{setActive(course);setView('course');}}
+                  style={{background:'#fff',borderRadius:14,border:'1px solid #ECEAE4',borderTop:`4px solid ${course.color}`,cursor:'pointer',transition:'all 0.2s',padding:'20px 22px'}}
+                  onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';e.currentTarget.style.transform='translateY(-2px)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.boxShadow='none';e.currentTarget.style.transform='none';}}>
+                  <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:12}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:course.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📚</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:15,fontWeight:800,fontFamily:"'Playfair Display',serif",color:'#1A1814',lineHeight:1.3,marginBottom:2}}>{course.name}</div>
+                      {course.subject&&<div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:course.color}}>{course.subject}</div>}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:12,paddingTop:12,borderTop:'1px solid #F0EDE8'}}>
+                    <span style={{fontSize:12,color:'#8C8880'}}>📄 {(course.documents||[]).length} docs</span>
+                    <span style={{fontSize:12,color:'#8C8880'}}>🃏 {(course.flashDeckIds||[]).length} decks</span>
+                    <span style={{fontSize:12,color:'#8C8880'}}>🧠 {(course.brainMapIds||[]).length} maps</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         {courses.length===0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>{[['1','Upload','Paste notes, syllabus, or textbook chapters.','📄'],['2','Generate','AI creates flash cards and brain maps from your content.','✦'],['3','Study','Use your generated content across all apps.','🚀']].map(([n,title,desc,icon])=>(<div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}><div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div><div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#166534',marginBottom:6}}>Step {n}</div><div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div></div>))}</div>)}
         {courses.length>0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:16}}>{courses.map(c=>(<div key={c.id} onClick={()=>{setActive(c);setView('course');}} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderTop:`4px solid ${c.color}`,borderRadius:14,padding:'20px',cursor:'pointer',transition:'all 0.2s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=c.color;e.currentTarget.style.boxShadow=`0 4px 20px ${c.color}20`;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.boxShadow='none';}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}><div style={{width:40,height:40,borderRadius:10,background:c.color+'25',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>◎</div><div><div style={{fontSize:14,fontWeight:800,color:'#1A1814'}}>{c.name}</div><div style={{fontSize:11,color:c.color,fontWeight:600}}>{c.subject||'Course'}</div></div></div>{c.description&&<p style={{fontSize:12,color:'#6B6860',lineHeight:1.5,marginBottom:12}}>{c.description}</p>}<div style={{display:'flex',gap:12,fontSize:11,color:'#8C8880'}}><span>📄 {(c.documents||[]).length} docs</span><span>📇 {(c.flashDeckIds||[]).length} decks</span><span>✺ {(c.brainMapIds||[]).length} maps</span></div></div>))}</div>)}
       </div>
