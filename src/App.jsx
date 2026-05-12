@@ -11662,12 +11662,21 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       setGenProgress('📖 Reading your document and planning study structure…');
       const blueprintRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
-          messages:[{role:'user',content:'You are an expert study material organizer. Analyze this course document and create a complete study blueprint.\n\nYour job: identify ALL sections, chapters, topics, or units — whatever structure exists. Plan how to organize flashcard decks like a smart student would (one deck per chapter/topic/section).\n\nIf the document has a clear hierarchy (e.g. Unit > Chapter > Section), reflect that with folders. If no clear hierarchy, create flat decks grouped by topic.\n\nRules:\n- Include EVERY topic that has testable content\n- Name decks exactly as they appear in the document\n- Be thorough — do not skip sections\n- Folders are optional — only create them if the content clearly has a multi-level structure\n\nRespond ONLY with JSON (no markdown):\n{\n  "courseName": "exact course name",\n  "hasHierarchy": true or false,\n  "folders": [{"id":"f1","name":"Level 01 — Introduction","parentId":null,"decks":[{"id":"d1","name":"Chapter 1: Basics","topics":["topic1","topic2"]}]}],\n  "flatDecks": [{"id":"d1","name":"Topic Name","topics":["topic1"]}]\n}\n\nUse folders if hasHierarchy true, flatDecks if false.\n\nDocument:\n'+allText.slice(0,8000)}]})});
+          messages:[{role:'user',content:'You are a study material organizer. Analyze this content and return a JSON blueprint. CRITICAL: You MUST return valid JSON always, no matter what.\n\nLook for: levels, chapters, units, sections, numbered topics, or any headings. Create at minimum 3 decks.\n\nReturn ONLY this exact JSON format (no markdown, no backticks):\n{"courseName":"name from content","hasHierarchy":true,"folders":[{"id":"f1","name":"Section name","parentId":null,"decks":[{"id":"d1","name":"Topic name","topics":["concept"]}]}],"flatDecks":[]}\n\nIf no clear hierarchy use hasHierarchy:false and use flatDecks array instead of folders.\n\nDocument:\n'+allText.slice(0,10000)}]})});
       const bpData=await blueprintRes.json();
       const bpTxt=bpData.content?.find(b=>b.type==='text')?.text||'';
       let blueprint;
       try{blueprint=JSON.parse(bpTxt.replace(/```json|```/g,'').trim());}
-      catch{setErrMsg('Could not parse document structure. Try adding clearer content.');setGenerating(null);return;}
+      catch{
+        // Fallback: create basic structure so generation continues
+        blueprint={courseName:active.name,hasHierarchy:false,folders:[],
+          flatDecks:[
+            {id:'d1',name:active.name+' — Part 1',topics:['key concepts']},
+            {id:'d2',name:active.name+' — Part 2',topics:['core topics']},
+            {id:'d3',name:active.name+' — Part 3',topics:['important terms']},
+          ]
+        };
+      }
 
       const allDecks=[],allFolders=[];
       const deckList=blueprint.hasHierarchy
