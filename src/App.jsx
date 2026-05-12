@@ -11485,6 +11485,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [genProgress,setGenProgress]= useState('');
   const [genResult,  setGenResult]  = useState(null);
   const [expandedDoc,setExpandedDoc]= useState(null);
+  const [selectedDocId, setSelectedDocId] = useState(null);
+  const [showDocPicker, setShowDocPicker] = useState(null); // 'cards' | 'map'
   const [createForm, setCreateForm] = useState({name:'',subject:'',color:CH,description:''});
   const [showCreate, setShowCreate] = useState(false);
   const [errMsg,     setErrMsg]     = useState('');
