@@ -8561,28 +8561,31 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
 
       {/* ── HOME ── */}
       {view==="home" && (
-        <div className="notes-main" style={{ maxWidth:980,margin:"0 auto",padding:"40px 24px",animation:"notes-fade 0.4s ease both" }}>
-          <div style={{ marginBottom:32 }}>
-            <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:900,color:"#1A1814",lineHeight:1.15,marginBottom:8 }}>Your Notes <span style={{ color:NC }}>✦</span></h1>
-            <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,maxWidth:480 }}>Write, record, and organize your ideas. Upload any material and AI turns it into structured study notes.</p>
+        <div>
+          <div style={{ background:"#1A1814",padding:"64px 24px 48px",textAlign:"center",position:"relative",overflow:"hidden" }}>
+            <div style={{ position:"absolute",inset:0,opacity:0.05,backgroundImage:`radial-gradient(circle at 20% 50%, ${NC} 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${NC} 0%, transparent 40%)` }}/>
+            <div style={{ position:"relative",zIndex:1 }}>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(212,168,48,0.15)",border:"1px solid rgba(212,168,48,0.3)",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:NC,marginBottom:20 }}>📝 ACE IT NOTES</div>
+              <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(32px,5vw,52px)",fontWeight:900,color:"#F7F6F2",lineHeight:1.1,marginBottom:16,letterSpacing:-1 }}>
+                <span style={{ color:NC }}>Ace It</span> Notes
+              </h1>
+              <p style={{ fontSize:15,color:"#9A9690",maxWidth:480,margin:"0 auto 32px",lineHeight:1.7 }}>Write, record, and organize your ideas. Upload any material and AI turns it into structured study notes.</p>
+              <div style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap" }}>
+                <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:700,cursor:"pointer",color:"#1A1814" }}>✍ New Note</button>
+                <button onClick={()=>setView("upload")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.2)",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#F7F6F2" }}>🤖 AI Upload</button>
+                {notes.length>0&&<button onClick={()=>setView("library")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.2)",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#F7F6F2" }}>Browse All Notes</button>}
+              </div>
+            </div>
           </div>
-          <div className="notes-quick-grid" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:32 }}>
-            {[
-              { icon:"🤖",label:"AI from Upload",sub:"Upload content → AI builds notes",action:()=>setView("upload"),color:"#4F6EF7",highlight:true },
-              { icon:"✍",label:"New Note",sub:"Write or type freely",action:()=>newNote(),color:NC },
-              { icon:"🎙",label:"Record Audio",sub:"Transcribe speech to text",action:()=>{newNote();setTimeout(()=>toggleRecording(),300);},color:"#E85D3F" },
-              { icon:"📁",label:"New Folder",sub:"Organize your notes",action:()=>setView("folders"),color:"#2BAE7E" },
-            ].map(q=>(
-              <div key={q.label} onClick={q.action}
-                style={{ background:q.highlight?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#fff",border:q.highlight?"none":`1.5px solid ${NL}88`,borderRadius:14,padding:"20px 18px",cursor:"pointer",transition:"all 0.2s",boxShadow:q.highlight?"0 8px 28px #4F6EF744":"none" }}
-                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";if(!q.highlight){e.currentTarget.style.borderColor=q.color;e.currentTarget.style.boxShadow=`0 8px 24px ${q.color}18`;}}}
-                onMouseLeave={e=>{e.currentTarget.style.transform="none";if(!q.highlight){e.currentTarget.style.borderColor=`${NL}88`;e.currentTarget.style.boxShadow="none";}}}>
-                <div style={{ fontSize:28,marginBottom:10 }}>{q.icon}</div>
-                <div style={{ fontSize:14,fontWeight:700,color:q.highlight?"#fff":"#1A1814",marginBottom:3 }}>{q.label}</div>
-                <div style={{ fontSize:11,color:q.highlight?"rgba(255,255,255,0.7)":"#8C7A4A",lineHeight:1.5 }}>{q.sub}</div>
+          <div style={{ background:"#222",borderBottom:"1px solid #333",display:"grid",gridTemplateColumns:"repeat(4,1fr)" }}>
+            {[["Notes",notes.length],["Folders",folders.length],["AI Generated",notes.filter(n=>n.aiGenerated).length],["Words",notes.reduce((a,n)=>a+(n.wordCount||0),0).toLocaleString()]].map(([label,val])=>(
+              <div key={label} style={{ padding:"18px 24px",textAlign:"center",borderRight:"1px solid #333" }}>
+                <div style={{ fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:900,color:"#F7F6F2" }}>{val}</div>
+                <div style={{ fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#6B6860",marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
+          <div className="notes-main" style={{ maxWidth:980,margin:"0 auto",padding:"36px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ position:"relative",marginBottom:20 }}>
             <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}>🔍</span>
             <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search notes…"
@@ -8627,9 +8630,9 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               })}
             </div>
           )}
+          </div>
         </div>
       )}
-
       {/* ── LIBRARY VIEW ── */}
       {view==="library" && (
         <div style={{ display:"flex", height:"calc(100vh - 62px)", overflow:"hidden", animation:"notes-fade 0.4s ease both" }}>
