@@ -11710,7 +11710,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         const cardData=await cardRes.json();
         const cardTxt=cardData.content?.find(b=>b.type==='text')?.text||'';
         try{
-          const parsed=JSON.parse(cardTxt.replace(/```json|```/g,'').trim());
+          const parsed=JSON.parse(cardTxt.replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim());
           if(parsed.cards?.length>0){allDecks.push({id:'deck_'+Date.now()+'_'+i,title:dp.name,subject:active.subject||active.name,color:active.color,description:'Generated from '+active.name,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,folderKey:dp._realFolderId||null,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}
         }catch{}
         if(i<totalDecks-1)await new Promise(r=>setTimeout(r,300));
