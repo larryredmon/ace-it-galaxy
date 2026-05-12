@@ -11526,7 +11526,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       alert(`A course named "${createForm.name.trim()}" already exists. Please use a different name.`);
       return;
     }
-    const c={id:`course_${Date.now()}`,...createForm,name:createForm.name.trim(),documents:[],flashDeckIds:[],brainMapIds:[],createdAt:new Date().toISOString()};
+    const c={id:`course_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,...createForm,name:createForm.name.trim(),documents:[],flashDeckIds:[],brainMapIds:[],createdAt:new Date().toISOString()};
     setCourses(cs=>[...cs,c]);setActive(c);setView('course');setShowCreate(false);setCreateForm({name:'',subject:'',color:CH,description:''});
   };
 
