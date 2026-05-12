@@ -11799,6 +11799,60 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         </div>
       )}
 
+      {showEditCourse&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowEditCourse(false)}>
+          <div style={{background:'#fff',borderRadius:18,padding:'32px',width:460,maxWidth:'94vw'}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:20}}>Edit Course</h3>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:4}}>Course Name</label>
+            <input value={editCourseForm.name} onChange={e=>setEditCourseForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>e.stopPropagation()}
+              style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${active?.color||'#ECEAE4'}`,background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:4}}>Subject / Category</label>
+            <input value={editCourseForm.subject} onChange={e=>setEditCourseForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="e.g. Principles of Real Estate 1"
+              style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:8}}>Color</label>
+            <div style={{display:'flex',gap:8,marginBottom:20}}>
+              {['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#E85D3F'].map(col=>(
+                <div key={col} onClick={()=>setEditCourseForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,cursor:'pointer',border:`3px solid ${editCourseForm.color===col?'#1A1814':'transparent'}`,transition:'all 0.15s'}}/>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowEditCourse(false)} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+              <button onClick={()=>{if(editCourseForm.name.trim()){updateCourse(active.id,{name:editCourseForm.name.trim(),subject:editCourseForm.subject.trim(),color:editCourseForm.color});setShowEditCourse(false);}}}
+                style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:editCourseForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditCourse&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowEditCourse(false)}>
+          <div style={{background:'#fff',borderRadius:18,padding:'32px',width:460,maxWidth:'94vw'}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:20}}>Edit Course</h3>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:4}}>Course Name</label>
+            <input value={editCourseForm.name} onChange={e=>setEditCourseForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>e.stopPropagation()}
+              style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`1.5px solid ${active?.color||'#ECEAE4'}`,background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:4}}>Subject / Category</label>
+            <input value={editCourseForm.subject} onChange={e=>setEditCourseForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="e.g. Principles of Real Estate 1"
+              style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}}/>
+            <label style={{display:'block',fontSize:12,fontWeight:600,color:'#6B6860',marginBottom:8}}>Color</label>
+            <div style={{display:'flex',gap:8,marginBottom:20}}>
+              {['#6ED9B8','#C8B8FF','#F0A8C0','#F5C842','#90C8F8','#F8C898','#E85D3F'].map(col=>(
+                <div key={col} onClick={()=>setEditCourseForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,cursor:'pointer',border:`3px solid ${editCourseForm.color===col?'#1A1814':'transparent'}`,transition:'all 0.15s'}}/>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowEditCourse(false)} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+              <button onClick={()=>{if(editCourseForm.name.trim()){updateCourse(active.id,{name:editCourseForm.name.trim(),subject:editCourseForm.subject.trim(),color:editCourseForm.color});setShowEditCourse(false);}}}
+                style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:editCourseForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showFolderModal&&(
         <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.4)',backdropFilter:'blur(6px)'}} onClick={()=>setShowFolderModal(false)}>
           <div style={{background:'#fff',borderRadius:16,padding:'28px',width:360,maxWidth:'94vw'}} onClick={e=>e.stopPropagation()}>
@@ -11848,7 +11902,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:4}}>{active.subject||'Course'}</div>
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:14}}>
               <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,color:'#1A1814',margin:0}}>{active.name}</h2>
-              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap',flexShrink:0}}>+ Add Document</button>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
+                <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
+              </div>
             </div>
             <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
               {[['Documents',(active.documents||[]).length],['Folders',(active.folders||[]).length],['Flash Decks',(active.flashDeckIds||[]).length]].map(([label,val])=>(
@@ -11883,9 +11940,17 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'20px 16px',cursor:'pointer',transition:'all 0.15s',position:'relative',textAlign:'center'}}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
-                            <button onClick={e=>{e.stopPropagation();deleteFolder(active.id,folder.id);}} style={{position:'absolute',top:8,right:8,background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                            <div style={{position:'absolute',top:8,right:8,display:'flex',gap:4}}>
+                              <button onClick={e=>{e.stopPropagation();setEditingFolder(folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:2}} onMouseEnter={e=>e.currentTarget.style.color=active.color} onMouseLeave={e=>e.currentTarget.style.color='#A8A59E'}>✏️</button>
+                              <button onClick={e=>{e.stopPropagation();deleteFolder(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                            </div>
                             <div style={{fontSize:40,marginBottom:8}}>📁</div>
-                            <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:4,lineHeight:1.3}}>{folder.name}</div>
+                            {editingFolder===folder.id
+                              ?<input autoFocus value={editingFolder===folder.id?folder.name:''} defaultValue={folder.name}
+                                onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')renameFolder(active.id,folder.id,e.target.value);if(e.key==='Escape')setEditingFolder(null);}}
+                                onBlur={e=>renameFolder(active.id,folder.id,e.target.value)}
+                                style={{width:'100%',padding:'3px 6px',borderRadius:5,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:700,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box',marginBottom:4}}/>
+                              :<div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:4,lineHeight:1.3}} onDoubleClick={()=>setEditingFolder(folder.id)}>{folder.name}</div>}
                             <div style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===folder.id).length} docs</div>
                           </div>
                         ))}
@@ -11908,7 +11973,12 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                             <div style={{width:36,height:36,borderRadius:9,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div>
+                              {editingDoc===d.id
+                                ?<input autoFocus defaultValue={d.name}
+                                  onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')renameDoc(active.id,d.id,e.target.value);if(e.key==='Escape')setEditingDoc(null);}}
+                                  onBlur={e=>renameDoc(active.id,d.id,e.target.value)}
+                                  style={{width:'100%',padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
+                                :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} onDoubleClick={()=>setEditingDoc(d.id)}>{d.name}</div>}
                               <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                             </div>
                             {(active.folders||[]).length>0&&<select onChange={e=>{if(e.target.value)assignDocToFolder(active.id,d.id,e.target.value);}} defaultValue="" style={{padding:'4px 8px',borderRadius:6,border:'1px solid #ECEAE4',background:'#fff',fontSize:11,color:'#6B6860',cursor:'pointer'}}><option value="">Move to folder…</option>{(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>📁 {f.name}</option>)}</select>}
