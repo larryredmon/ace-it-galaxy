@@ -11498,6 +11498,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
+  const coursesRef=useRef(courses);
+  useEffect(()=>{coursesRef.current=courses;},[courses]);
   const navigateTo=(course,v)=>{setActive(course);setView(v);setChMenuOpen(false);window.history.pushState({ch:true,view:v,courseId:course?.id},'',window.location.pathname);};
 
   useEffect(()=>{
@@ -11508,7 +11510,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       if(s?.ch){
         if(s.view==='home'){setView('home');setActive(null);setActiveFolderId(null);}
         else if(s.view==='course'){
-          const course=courses.find(c=>c.id===s.courseId);
+          const course=coursesRef.current.find(c=>c.id===s.courseId);
           if(course){setView('course');setActive(course);setActiveFolderId(null);}
           else{setView('home');setActive(null);}
         }
