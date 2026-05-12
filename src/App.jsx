@@ -11498,7 +11498,34 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
-  const navigateTo=(course,v)=>{setActive(course);setView(v);setChMenuOpen(false);};
+  const navigateTo=(course,v)=>{setActive(course);setView(v);setChMenuOpen(false);window.history.pushState({ch:true,view:v,courseId:course?.id},'',window.location.pathname);};
+
+  useEffect(()=>{
+    // Push initial state when CourseHub mounts
+    window.history.pushState({ch:true,view:'home',courseId:null},'',window.location.pathname);
+    const onPop=(e)=>{
+      const s=e.state;
+      if(s?.ch){
+        if(s.view==='home'){setView('home');setActive(null);setActiveFolderId(null);}
+        else if(s.view==='course'){
+          const course=courses.find(c=>c.id===s.courseId);
+          if(course){setView('course');setActive(course);setActiveFolderId(null);}
+          else{setView('home');setActive(null);}
+        }
+      } else {
+        // No ch state = went back to galaxy
+        onBack();
+      }
+    };
+    window.addEventListener('popstate',onPop);
+    return()=>window.removeEventListener('popstate',onPop);
+  },[]);
+
+  // Push history when view changes via setView directly
+  useEffect(()=>{
+    if(view==='home') window.history.replaceState({ch:true,view:'home',courseId:null},'',window.location.pathname);
+    else if(view==='course'&&active) window.history.replaceState({ch:true,view:'course',courseId:active.id},'',window.location.pathname);
+  },[view,active]);
   const deleteCourse=(id)=>{setCourses(cs=>cs.filter(c=>c.id!==id));setView('home');setActive(null);};
 
   const addFolder=(courseId,name,parentId=null)=>{
