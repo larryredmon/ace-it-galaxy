@@ -11664,11 +11664,19 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       setGenProgress('📖 Reading your document and planning study structure…');
       const blueprintRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
-          messages:[{role:'user',content:'You are a study material organizer. Analyze this content and return a JSON blueprint. CRITICAL: You MUST return valid JSON always, no matter what.\n\nLook for: levels, chapters, units, sections, numbered topics, or any headings. Create at minimum 3 decks.\n\nReturn ONLY this exact JSON format (no markdown, no backticks):\n{"courseName":"name from content","hasHierarchy":true,"folders":[{"id":"f1","name":"Section name","parentId":null,"decks":[{"id":"d1","name":"Topic name","topics":["concept"]}]}],"flatDecks":[]}\n\nIf no clear hierarchy use hasHierarchy:false and use flatDecks array instead of folders.\n\nDocument:\n'+allText.slice(0,10000)}]})});
+          messages:[{role:'user',content:'Analyze this study material and list ALL chapters/levels/sections as flashcard decks. Return ONLY valid JSON like this example:\n{"courseName":"Course Name","hasHierarchy":true,"folders":[{"id":"f1","name":"Level 01 Introduction","parentId":null,"decks":[{"id":"d1","name":"Real Estate Basics","topics":["topic1"]},{"id":"d2","name":"Real Estate Law","topics":["topic2"]}]},{"id":"f2","name":"Level 02 Real Property","parentId":null,"decks":[{"id":"d3","name":"Land and Property","topics":["topic1"]}]}],"flatDecks":[]}\n\nIMPORTANT: Find ALL levels and ALL chapters. Create one deck per chapter. No markdown. No explanation. Only the JSON object.\n\nDocument:\n'+allText.slice(0,12000)}]})});
       const bpData=await blueprintRes.json();
       const bpTxt=bpData.content?.find(b=>b.type==='text')?.text||'';
       let blueprint;
-      try{blueprint=JSON.parse(bpTxt.replace(/```json|```/g,'').trim());}
+      console.log('Blueprint AI response:',bpTxt.slice(0,300));
+      try{
+        const bpClean=bpTxt.replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
+        const bpStart=bpClean.indexOf('{');
+        const bpEnd=bpClean.lastIndexOf('}');
+        const bpJson=bpStart>=0&&bpEnd>bpStart?bpClean.slice(bpStart,bpEnd+1):bpClean;
+        blueprint=JSON.parse(bpJson);
+        console.log('Parsed:',blueprint?.folders?.length,'folders',blueprint?.flatDecks?.length,'flatDecks');
+      }
       catch{
         // Fallback: create basic structure so generation continues
         blueprint={courseName:active.name,hasHierarchy:false,folders:[],
