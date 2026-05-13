@@ -11706,10 +11706,11 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         const nameIdx=allText.toLowerCase().indexOf((dp.name||'').toLowerCase().slice(0,30));
         if(nameIdx>-1){const s=Math.max(0,nameIdx-200);relevantText=allText.slice(s,s+6000);}
         else{const chunk=Math.floor(totalChars/Math.max(totalDecks,1));relevantText=allText.slice(i*chunk,i*chunk+6000);}
-        try{relevantText=relevantText.replace(/[^\x09\x0A\x0D\x20-\x7E\x80-\xFF]/g,' ').slice(0,5000);}catch{relevantText=relevantText.slice(0,5000);}
+        try{relevantText=relevantText.replace(/[\uD800-\uDFFF]/g,'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').slice(0,4000);}catch{relevantText=relevantText.slice(0,4000);}
         try{
                 const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,
+
             messages:[{role:'user',content:'Create comprehensive flashcards for: "'+dp.name+'"\nCourse: '+active.name+'\nKey topics: '+topicHints+'\n\nRules:\n- Include EVERY testable fact, definition, concept, formula, key term\n- Each card tests ONE specific thing\n- Do NOT skip anything that could appear on a test\n\nRespond ONLY with JSON:\n{"cards":[{"term":"...","definition":"...","hint":"optional"},...]}'+'\n\nContent:\n'+relevantText}]})});
         const cardData=await cardRes.json();
         const cardTxt=cardData.content?.find(b=>b.type==='text')?.text||'';
