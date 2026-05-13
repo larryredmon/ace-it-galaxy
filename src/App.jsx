@@ -11501,7 +11501,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [dragDocId,   setDragDocId]   = useState(null);
   const [assignDocId, setAssignDocId] = useState(null); // doc being assigned to folder
 
-  useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));},[courses]);
+  useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));tpSync('tp_courses',courses);},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
   const coursesRef=useRef(courses);
