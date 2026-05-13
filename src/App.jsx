@@ -11706,7 +11706,9 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         const nameIdx=allText.toLowerCase().indexOf((dp.name||'').toLowerCase().slice(0,30));
         if(nameIdx>-1){const s=Math.max(0,nameIdx-200);relevantText=allText.slice(s,s+6000);}
         else{const chunk=Math.floor(totalChars/Math.max(totalDecks,1));relevantText=allText.slice(i*chunk,i*chunk+6000);}
-        const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        relevantText=relevantText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,'').slice(0,5000);
+        try{
+                const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,
             messages:[{role:'user',content:'Create comprehensive flashcards for: "'+dp.name+'"\nCourse: '+active.name+'\nKey topics: '+topicHints+'\n\nRules:\n- Include EVERY testable fact, definition, concept, formula, key term\n- Each card tests ONE specific thing\n- Do NOT skip anything that could appear on a test\n\nRespond ONLY with JSON:\n{"cards":[{"term":"...","definition":"...","hint":"optional"},...]}'+'\n\nContent:\n'+relevantText}]})});
         const cardData=await cardRes.json();
@@ -11715,6 +11717,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           const parsed=JSON.parse(cardTxt.replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim());
           if(parsed.cards?.length>0){allDecks.push({id:'deck_'+Date.now()+'_'+i,title:dp.name,subject:active.subject||active.name,color:active.color,description:'Generated from '+active.name,tags:[active.name.toLowerCase().replace(/\s+/g,'-')],courseId:active.id,folderKey:dp._realFolderId||null,cards:parsed.cards.map((c,ci)=>({id:ci+1,term:c.term||'',definition:c.definition||'',hint:c.hint||'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()});}
         }catch{}
+        }catch(cardErr){console.warn('Card gen error for deck',dp.name,cardErr.message);}
         if(i<totalDecks-1)await new Promise(r=>setTimeout(r,300));
       }
 
