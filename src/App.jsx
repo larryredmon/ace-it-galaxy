@@ -11706,7 +11706,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         const nameIdx=allText.toLowerCase().indexOf((dp.name||'').toLowerCase().slice(0,30));
         if(nameIdx>-1){const s=Math.max(0,nameIdx-200);relevantText=allText.slice(s,s+6000);}
         else{const chunk=Math.floor(totalChars/Math.max(totalDecks,1));relevantText=allText.slice(i*chunk,i*chunk+6000);}
-        relevantText=relevantText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,'').slice(0,5000);
+        try{relevantText=relevantText.replace(/[^\x09\x0A\x0D\x20-\x7E\x80-\xFF]/g,' ').slice(0,5000);}catch{relevantText=relevantText.slice(0,5000);}
         try{
                 const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,
