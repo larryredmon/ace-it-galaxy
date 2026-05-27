@@ -11145,6 +11145,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const remoteVidRefs  = useRef({});
   const peerConns      = useRef({});
   const localStreamRef = useRef(null);
+  const participantsRef  = useRef({});
   const activeRoomRef  = useRef(null);
   const unsubRooms     = useRef(null);
   const unsubRoom      = useRef(null);
@@ -11322,8 +11323,19 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       await Promise.race([up,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
       setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);
       joinedAt.current = Date.now();setView('room');setJoining(false);
+      healthRef.current=setInterval(()=>{
+        const rId=activeRoomRef.current?.id;
+        if(!rId)return;
+        Object.entries(peerConns.current).forEach(([uid,pc])=>{
+          const s=pc.connectionState;
+          if(s==='failed'||s==='closed'||s==='disconnected'){console.log('[health] reconnect',uid.slice(-4));connectToPeer(rId,uid);}
+        });
+        Object.keys(participantsRef.current||{}).forEach(uid=>{
+          if(uid!==user.uid&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed')){console.log('[health] missing peer',uid.slice(-4));connectToPeer(rId,uid);}
+        });
+      },6000);
       await startMedia();
-      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
+      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
