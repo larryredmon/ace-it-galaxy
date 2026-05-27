@@ -8000,7 +8000,8 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: "90vw", maxWidth: 860, maxHeight: "90vh", display: "flex", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "min(90vw,860px)", maxHeight: "95vh", display: "flex", flexDirection: "row", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+        <style>{`@media(max-width:640px){.auth-left-panel{display:none!important}.auth-right-panel{border-radius:20px!important;width:100%!important}}`}</style>
         {/* LEFT */}
         <div style={{ width: 340, flexShrink: 0, background: "linear-gradient(160deg, #0D0B20 0%, #060412 100%)", padding: "52px 44px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", minWidth: 0 }} className="auth-left-panel">
           <div style={{ position: "absolute", top: -80, left: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(155,127,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
@@ -8010,7 +8011,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F5C842", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 900, color: "#1A1814" }}>A</span>
               </div>
-              <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>TEACHER'S PET</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2", letterSpacing: 1 }}>ACE IT</span>
             </div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 900, color: "#F7F6F2", lineHeight: 1.2, marginBottom: 16 }}>
               {mode === "login" ? "Welcome back." : "Start your journey."}
@@ -8030,7 +8031,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
         </div>
 
         {/* RIGHT */}
-        <div style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
+        <div className="auth-right-panel" style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
