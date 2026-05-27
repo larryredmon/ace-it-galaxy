@@ -11360,6 +11360,14 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const sendMsg=async()=>{if(!newMsg.trim()||!activeRoom)return;const t=newMsg.trim();setNewMsg('');try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}});}catch{}};
   const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
   const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
+
+  // Attach local stream to video element whenever stream changes
+  useEffect(()=>{
+    if(localVidRef.current && localStream){
+      localVidRef.current.srcObject=localStream;
+      localVidRef.current.play().catch(()=>{});
+    }
+  },[localStream]);
   const toggleAudio=()=>{const t=localStreamRef.current?.getAudioTracks()[0];if(t){t.enabled=!audioOn;setAudioOn(!audioOn);}};
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
@@ -11405,7 +11413,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
             return(
               <div style={{flex:1,display:'grid',gap:5,padding:8,gridTemplateColumns:`repeat(${cols},1fr)`,gridTemplateRows:`repeat(${rows},1fr)`,overflow:'hidden',boxSizing:'border-box'}}>
                 <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${false?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn} muted={!audioOn}>
-                  {localStream?<video ref={localVidRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:'scaleX(-1)'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting…'}</span></div>}
+                  {localStream?<video ref={el=>{localVidRef.current=el;if(el&&localStream&&el.srcObject!==localStream){el.srcObject=localStream;el.play().catch(()=>{});}}} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:'scaleX(-1)'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><span style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>{mediaError?'Camera blocked':'Starting…'}</span></div>}
                 </Tile>
                 {otherStreams.map(([uid,stream])=>{const p=participants[uid];const attachRef=(el)=>{if(el&&el.srcObject!==stream){remoteVidRefs.current[uid]=el;el.srcObject=stream;el.play().catch(()=>{});}};return(<Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}><video ref={attachRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/></Tile>);})}
                 {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(<Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div><button onClick={()=>connectToPeer(activeRoom.id,p.uid)} style={{background:`rgba(255,165,208,0.12)`,border:`1px solid ${SB}40`,borderRadius:6,padding:'4px 12px',fontSize:10,fontWeight:700,cursor:'pointer',color:SB}}>↺ Reconnect</button></div></Tile>))}
