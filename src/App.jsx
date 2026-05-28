@@ -11118,7 +11118,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const [rooms,        setRooms]        = useState([]);
   const [searchQ,      setSearchQ]      = useState('');
   const [showCreate,   setShowCreate]   = useState(false);
-  const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true, maxParticipants:10 });
+  const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true, maxParticipants:6 });
   const [showJoin,     setShowJoin]     = useState(false);
   const [joinInput,    setJoinInput]    = useState('');
   const [joining,      setJoining]      = useState(false);
@@ -11317,6 +11317,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const enterRoom=async(room)=>{
     if(!user){openAuth('login');return;}
     if(room.isLocked&&room.host!==user.uid){setErrMsg('This room is locked.');return;}
+    const currentCount=Object.keys(room.participants||{}).length;
+    if(room.maxParticipants&&currentCount>=room.maxParticipants&&room.host!==user.uid){setErrMsg(`This room is full (${currentCount}/${room.maxParticipants} people).`);return;}
     setJoining(true);setErrMsg('');
     try{
       const up=updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||'?',uid:user.uid,joinedAt:new Date().toISOString()}});
@@ -11348,10 +11350,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     setJoining(true);setErrMsg('');
     try{
       const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
-      const addP=addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,maxParticipants:createForm.maxParticipants||10,isLocked:false,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus',pinnedMsg:null});
+      const addP=addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,maxParticipants:Math.min(createForm.maxParticipants||6,6),isLocked:false,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus',pinnedMsg:null});
       const ref=await Promise.race([addP,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firestore timed out.')),8000))]);
       const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{},isLocked:false};
-      setShowCreate(false);if(!createForm.isPublic)setRoomCode(code);setCreateForm({title:'',subject:'',isPublic:true,maxParticipants:10});
+      setShowCreate(false);if(!createForm.isPublic)setRoomCode(code);setCreateForm({title:'',subject:'',isPublic:true,maxParticipants:6});
       await enterRoom(room);
     }catch(e){setErrMsg(e.message||'Failed to create room.');setJoining(false);}
   };
