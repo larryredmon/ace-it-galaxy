@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Component } from "react";
-import { auth, db, googleProvider } from "./firebase";
+import { auth, db, googleProvider, storage } from "./firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -11136,6 +11137,11 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const [videoOn,      setVideoOn]      = useState(true);
   const [audioOn,      setAudioOn]      = useState(true);
   const [mediaError,   setMediaError]   = useState(null);
+  const [studyView,    setStudyView]    = useState('video');
+  const [docPages,     setDocPages]     = useState([]);
+  const [docPage,      setDocPage]      = useState(0);
+  const [docName,      setDocName]      = useState('');
+  const [docUploading, setDocUploading] = useState(false);
   const [errMsg,       setErrMsg]       = useState('');
   const [roomLocked,   setRoomLocked]   = useState(false);
   const [pinnedMsg,    setPinnedMsg]    = useState(null);
@@ -11314,6 +11320,53 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     return null;
   };
 
+  const renderPDFDoc=async(file)=>{
+    setDocUploading(true);
+    try{
+      const arrayBuffer=await file.arrayBuffer();
+      const pdfjsLib=window['pdfjs-dist/build/pdf'];
+      if(!pdfjsLib){
+        // Load PDF.js dynamically
+        await new Promise((res,rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+          s.onload=res;s.onerror=rej;document.head.appendChild(s);
+        });
+        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      }
+      const lib=window['pdfjs-dist/build/pdf'];
+      lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      const pdf=await lib.getDocument({data:arrayBuffer}).promise;
+      const pages=[];
+      const maxPages=Math.min(pdf.numPages,30);
+      for(let p=1;p<=maxPages;p++){
+        const page=await pdf.getPage(p);
+        const viewport=page.getViewport({scale:1.5});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width;canvas.height=viewport.height;
+        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        pages.push(canvas.toDataURL('image/jpeg',0.75));
+      }
+      setDocPages(pages);setDocPage(0);setDocName(file.name);setStudyView('doc');
+      // Also upload to storage and share URL + pages with room
+      await uploadStudyDoc(file);
+    }catch(e){console.error('PDF render error:',e);}
+    setDocUploading(false);
+  };
+
+  const uploadStudyDoc=async(file)=>{
+    if(!file||!activeRoom)return;
+    setDocUploading(true);
+    try{
+      const storageRef=ref(storage,`studyRooms/${activeRoom.id}/studyDoc_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef,file);
+      const url=await getDownloadURL(storageRef);
+      await updateDoc(doc(db,'studyRooms',activeRoom.id),{studyDoc:{url,name:file.name,uploadedBy:user.uid,uploadedAt:Date.now()}});
+      setDocName(file.name);setDocPages([]);setDocPage(0);setStudyView('doc');
+    }catch(e){console.error('Upload error:',e.message);}
+    setDocUploading(false);
+  };
+
   const enterRoom=async(room)=>{
     if(!user){openAuth('login');return;}
     if(room.isLocked&&room.host!==user.uid){setErrMsg('This room is locked.');return;}
@@ -11337,7 +11390,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         });
       },6000);
       await startMedia();
-      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
+      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
+          if(d.studyDoc&&d.studyDoc.url){setDocName(d.studyDoc.name||'Document');if(docPages.length===0)setStudyView('video');}Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
@@ -11369,7 +11423,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
     unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
     if(!silent&&activeRoomRef.current&&user){try{await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));}catch{}}
-    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);
+    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');
   };
 
   const sendMsg=async()=>{if(!newMsg.trim()||!activeRoom)return;const t=newMsg.trim();setNewMsg('');try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}});}catch{}};
@@ -11404,8 +11458,45 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.2)'}}>↺</button>
         </div>
         <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬</button>
+        <div style={{display:'flex',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:7,padding:2,gap:2,flexShrink:0}}>
+          <button onClick={()=>setStudyView('video')} style={{background:studyView==='video'?SB:'transparent',border:'none',borderRadius:5,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:studyView==='video'?'#1A1814':'rgba(255,255,255,0.4)',transition:'all 0.15s'}}>📹 Video</button>
+          <button onClick={()=>setStudyView('doc')} style={{background:studyView==='doc'?SB:'transparent',border:'none',borderRadius:5,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:studyView==='doc'?'#1A1814':'rgba(255,255,255,0.4)',transition:'all 0.15s'}}>📄 Doc</button>
+        </div>
       </div>
       <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
+        {studyView==='doc'&&(
+          <div style={{flex:1,background:'#0D0B1A',display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
+            {/* Doc view toolbar */}
+            <div style={{height:44,background:'rgba(255,255,255,0.04)',borderBottom:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',padding:'0 16px',gap:10,flexShrink:0}}>
+              <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{docName||'No document shared'}</span>
+              {docPages.length>0&&<>
+                <button onClick={()=>setDocPage(p=>Math.max(0,p-1))} disabled={docPage===0} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===0?0.3:1}}>‹</button>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>{docPage+1}/{docPages.length}</span>
+                <button onClick={()=>setDocPage(p=>Math.min(docPages.length-1,p+1))} disabled={docPage===docPages.length-1} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===docPages.length-1?0.3:1}}>›</button>
+              </>}
+              <label style={{background:SB,border:'none',borderRadius:7,padding:'5px 12px',fontSize:11,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1,display:'flex',alignItems:'center',gap:5}}>
+                {docUploading?'Uploading…':'📎 Upload'}
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,image/*,application/pdf" style={{display:'none'}} disabled={docUploading} onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){await renderPDFDoc(f);}else{await uploadStudyDoc(f);}}e.target.value='';}}/>
+              </label>
+            </div>
+            {/* Doc content */}
+            <div style={{flex:1,overflow:'auto',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:16}}>
+              {docPages.length>0
+                ?<img src={docPages[docPage]} alt={`Page ${docPage+1}`} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',borderRadius:8,boxShadow:'0 4px 32px rgba(0,0,0,0.5)'}}/>
+                :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16,color:'rgba(255,255,255,0.25)'}}>
+                  <div style={{fontSize:52}}>📄</div>
+                  <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.4)'}}>No document yet</div>
+                  <p style={{fontSize:13,textAlign:'center',maxWidth:280,lineHeight:1.6}}>Upload a PDF or image to share with your study group.</p>
+                  <label style={{background:SB,border:'none',borderRadius:9,padding:'10px 24px',fontSize:13,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1}}>
+                    {docUploading?'Uploading…':'📎 Upload Document'}
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,image/*,application/pdf" style={{display:'none'}} disabled={docUploading} onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){await renderPDFDoc(f);}else{await uploadStudyDoc(f);}}e.target.value='';}}/>
+                  </label>
+                </div>
+              }
+            </div>
+          </div>
+        )}
+        {studyView==='video'&&(
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative',minHeight:0}}>
           {(()=>{
             const allParts=partList.filter(p=>p.uid!==user?.uid);
@@ -11444,6 +11535,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
             <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
           </div>
         </div>
+        )}
         {showChat&&(<div style={{width:290,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
           <div style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
             <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:7}}>In this room ({partList.length})</div>
