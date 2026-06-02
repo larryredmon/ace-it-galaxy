@@ -11142,6 +11142,9 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const [docPage,      setDocPage]      = useState(0);
   const [docName,      setDocName]      = useState('');
   const [docUploading, setDocUploading] = useState(false);
+  const [sharedDocs,   setSharedDocs]   = useState({}); // {uid: {url,name,isPDF,uploaderName}}
+  const [activeDocUid, setActiveDocUid] = useState(null); // whose doc is being viewed
+  const [viewingPages, setViewingPages] = useState([]); // rendered pages of active doc
   const [errMsg,       setErrMsg]       = useState('');
   const [roomLocked,   setRoomLocked]   = useState(false);
   const [pinnedMsg,    setPinnedMsg]    = useState(null);
@@ -11384,9 +11387,10 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       const storageRef=ref(storage,`studyRooms/${activeRoom.id}/studyDoc_${Date.now()}_${file.name}`);
       await uploadBytes(storageRef,file);
       const url=await getDownloadURL(storageRef);
-      await updateDoc(doc(db,'studyRooms',activeRoom.id),{studyDoc:{url,name:file.name,isPDF:file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'),uploadedBy:user.uid,uploadedAt:Date.now()}});
-      setDocName(file.name);
-      // Only set docPages to URL if not already populated by PDF renderer
+      const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+      await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`studyDocs.${user.uid}`]:{url,name:file.name,isPDF,uploadedBy:user.uid,uploaderName:user.name||'Someone',uploadedAt:Date.now()}});
+      setSharedDocs(prev=>({...prev,[user.uid]:{url,name:file.name,isPDF,uploadedBy:user.uid,uploaderName:user.name||'Someone'}}));
+      setActiveDocUid(user.uid);
       setDocPages(existing=>existing.length>1?existing:[url]);
       setDocPage(0);setStudyView('doc');
     }catch(e){console.error('Upload error:',e.message);}
@@ -11417,18 +11421,18 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       },6000);
       await startMedia();
       try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-          if(d.studyDoc&&d.studyDoc.url){
-            setDocName(d.studyDoc.name||'Document');
-            if(d.studyDoc.isPDF){
-              setDocPages(p=>{
-                if(p.length===0){
-                  renderPDFFromUrl(d.studyDoc.url);
+          if(d.studyDocs){
+            setSharedDocs(prev=>{
+              const incoming=d.studyDocs||{};
+              // Load pages for newly added docs
+              Object.entries(incoming).forEach(([uid,docInfo])=>{
+                if(!prev[uid]&&docInfo.url&&uid!==user.uid){
+                  // New doc from another user - auto-switch to it if no doc selected
+                  setActiveDocUid(aid=>aid||uid);
                 }
-                return p;
               });
-            } else {
-              setDocPages(p=>p.length===0?[d.studyDoc.url]:p);
-            }
+              return incoming;
+            });
           }Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed'||peerConns.current[uid].connectionState==='closed'))connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
@@ -11461,12 +11465,21 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
     unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
     if(!silent&&activeRoomRef.current&&user){try{await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));}catch{}}
-    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');
+    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');setSharedDocs({});setActiveDocUid(null);setViewingPages([]);
   };
 
   const sendMsg=async()=>{if(!newMsg.trim()||!activeRoom)return;const t=newMsg.trim();setNewMsg('');try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}});}catch{}};
   const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
   const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
+
+  // Load pages when active doc tab changes
+  useEffect(()=>{
+    if(!activeDocUid||!sharedDocs[activeDocUid])return;
+    const docInfo=sharedDocs[activeDocUid];
+    setDocPages([]);setDocPage(0);
+    if(docInfo.isPDF){renderPDFFromUrl(docInfo.url);}
+    else{setDocPages([docInfo.url]);}
+  },[activeDocUid]);
 
   // Attach local stream to video element whenever stream changes
   useEffect(()=>{
@@ -11504,18 +11517,25 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
         {studyView==='doc'&&(
           <div style={{flex:1,background:'#0D0B1A',display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
-            {/* Doc view toolbar */}
-            <div style={{height:44,background:'rgba(255,255,255,0.04)',borderBottom:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',padding:'0 16px',gap:10,flexShrink:0}}>
-              <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{docName||'No document shared'}</span>
-              {docPages.length>0&&<>
-                <button onClick={()=>setDocPage(p=>Math.max(0,p-1))} disabled={docPage===0} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===0?0.3:1}}>‹</button>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>{docPage+1}/{docPages.length}</span>
-                <button onClick={()=>setDocPage(p=>Math.min(docPages.length-1,p+1))} disabled={docPage===docPages.length-1} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===docPages.length-1?0.3:1}}>›</button>
-              </>}
-              <label style={{background:SB,border:'none',borderRadius:7,padding:'5px 12px',fontSize:11,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1,display:'flex',alignItems:'center',gap:5}}>
+            {/* Tabs bar */}
+            <div style={{background:'rgba(255,255,255,0.03)',borderBottom:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',padding:'0 8px',gap:4,flexShrink:0,overflowX:'auto',minHeight:44}}>
+              {Object.entries(sharedDocs).map(([uid,docInfo])=>(
+                <div key={uid} onClick={()=>{setActiveDocUid(uid);setDocPage(0);setDocPages([]);}}
+                  style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:7,cursor:'pointer',background:activeDocUid===uid?SB+'25':'transparent',border:`1px solid ${activeDocUid===uid?SB+'60':'transparent'}`,flexShrink:0,maxWidth:180,transition:'all 0.15s'}}>
+                  <div style={{width:20,height:20,borderRadius:'50%',background:SB+'40',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB,flexShrink:0}}>{docInfo.uploaderName?.[0]||'?'}</div>
+                  <span style={{fontSize:11,fontWeight:600,color:activeDocUid===uid?SB:'rgba(255,255,255,0.5)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{docInfo.name}</span>
+                  {uid===user.uid&&<button onClick={async e=>{e.stopPropagation();try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`studyDocs.${user.uid}`]:deleteField()});setSharedDocs(prev=>{const n={...prev};delete n[user.uid];return n;});if(activeDocUid===user.uid){setActiveDocUid(null);setDocPages([]);}}catch(err){console.error(err);}}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:12,padding:'0 2px',flexShrink:0,lineHeight:1}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'}>✕</button>}
+                </div>
+              ))}
+              <label style={{background:SB,border:'none',borderRadius:7,padding:'5px 12px',fontSize:11,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1,display:'flex',alignItems:'center',gap:5,flexShrink:0,marginLeft:'auto'}}>
                 {docUploading?'Uploading…':'📎 Upload'}
                 <input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,image/*,application/pdf" style={{display:'none'}} disabled={docUploading} onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){await renderPDFDoc(f);}else{await uploadStudyDoc(f);}}e.target.value='';}}/>
               </label>
+              {(()=>{const activeDoc=sharedDocs[activeDocUid];if(!activeDoc||!docPages.length)return null;return(<div style={{display:'flex',alignItems:'center',gap:6,padding:'0 8px',flexShrink:0}}>
+                <button onClick={()=>setDocPage(p=>Math.max(0,p-1))} disabled={docPage===0} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===0?0.3:1}}>‹</button>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>{docPage+1}/{docPages.length}</span>
+                <button onClick={()=>setDocPage(p=>Math.min(docPages.length-1,p+1))} disabled={docPage===docPages.length-1} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===docPages.length-1?0.3:1}}>›</button>
+              </div>);})()}
             </div>
             {/* Doc content */}
             <div style={{flex:1,overflow:'auto',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:16}}>
