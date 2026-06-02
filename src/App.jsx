@@ -11320,6 +11320,29 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     return null;
   };
 
+  const renderPDFFromUrl=async(url)=>{
+    try{
+      const res=await fetch(url);
+      const arrayBuffer=await res.arrayBuffer();
+      if(!window['pdfjs-dist/build/pdf']){
+        await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+      }
+      const lib=window['pdfjs-dist/build/pdf'];
+      lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      const pdf=await lib.getDocument({data:arrayBuffer}).promise;
+      const pages=[];
+      for(let p=1;p<=Math.min(pdf.numPages,30);p++){
+        const page=await pdf.getPage(p);
+        const viewport=page.getViewport({scale:1.5});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width;canvas.height=viewport.height;
+        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        pages.push(canvas.toDataURL('image/jpeg',0.75));
+      }
+      setDocPages(pages);setDocPage(0);
+    }catch(e){console.error('PDF URL render error:',e);}
+  };
+
   const renderPDFDoc=async(file)=>{
     setDocUploading(true);
     try{
@@ -11361,8 +11384,11 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       const storageRef=ref(storage,`studyRooms/${activeRoom.id}/studyDoc_${Date.now()}_${file.name}`);
       await uploadBytes(storageRef,file);
       const url=await getDownloadURL(storageRef);
-      await updateDoc(doc(db,'studyRooms',activeRoom.id),{studyDoc:{url,name:file.name,uploadedBy:user.uid,uploadedAt:Date.now()}});
-      setDocName(file.name);setDocPages([url]);setDocPage(0);setStudyView('doc');
+      await updateDoc(doc(db,'studyRooms',activeRoom.id),{studyDoc:{url,name:file.name,isPDF:file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'),uploadedBy:user.uid,uploadedAt:Date.now()}});
+      setDocName(file.name);
+      // Only set docPages to URL if not already populated by PDF renderer
+      setDocPages(existing=>existing.length>1?existing:[url]);
+      setDocPage(0);setStudyView('doc');
     }catch(e){console.error('Upload error:',e.message);}
     setDocUploading(false);
   };
@@ -11391,7 +11417,19 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       },6000);
       await startMedia();
       try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-          if(d.studyDoc&&d.studyDoc.url){setDocName(d.studyDoc.name||'Document');setDocPages(p=>p.length===0?[d.studyDoc.url]:p);}Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
+          if(d.studyDoc&&d.studyDoc.url){
+            setDocName(d.studyDoc.name||'Document');
+            if(d.studyDoc.isPDF){
+              setDocPages(p=>{
+                if(p.length===0){
+                  renderPDFFromUrl(d.studyDoc.url);
+                }
+                return p;
+              });
+            } else {
+              setDocPages(p=>p.length===0?[d.studyDoc.url]:p);
+            }
+          }Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
