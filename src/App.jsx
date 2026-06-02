@@ -11429,7 +11429,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
             } else {
               setDocPages(p=>p.length===0?[d.studyDoc.url]:p);
             }
-          }Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
+          }Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed'||peerConns.current[uid].connectionState==='closed'))connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
