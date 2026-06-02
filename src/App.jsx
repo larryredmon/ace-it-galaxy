@@ -11362,7 +11362,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       await uploadBytes(storageRef,file);
       const url=await getDownloadURL(storageRef);
       await updateDoc(doc(db,'studyRooms',activeRoom.id),{studyDoc:{url,name:file.name,uploadedBy:user.uid,uploadedAt:Date.now()}});
-      setDocName(file.name);setDocPages([]);setDocPage(0);setStudyView('doc');
+      setDocName(file.name);setDocPages([url]);setDocPage(0);setStudyView('doc');
     }catch(e){console.error('Upload error:',e.message);}
     setDocUploading(false);
   };
@@ -11391,7 +11391,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       },6000);
       await startMedia();
       try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-          if(d.studyDoc&&d.studyDoc.url){setDocName(d.studyDoc.name||'Document');if(docPages.length===0)setStudyView('video');}Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
+          if(d.studyDoc&&d.studyDoc.url){setDocName(d.studyDoc.name||'Document');setDocPages(p=>p.length===0?[d.studyDoc.url]:p);}Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current)connectToPeer(room.id,uid);});},()=>{});}catch{}
       try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
       try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
       try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
