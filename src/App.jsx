@@ -11472,14 +11472,22 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
   const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
 
-  // Load pages when active doc tab changes
+  // Load pages when active doc changes or when doc data arrives
   useEffect(()=>{
     if(!activeDocUid||!sharedDocs[activeDocUid])return;
     const docInfo=sharedDocs[activeDocUid];
-    setDocPages([]);setDocPage(0);
-    if(docInfo.isPDF){renderPDFFromUrl(docInfo.url);}
-    else{setDocPages([docInfo.url]);}
-  },[activeDocUid]);
+    if(!docInfo.url)return;
+    // Only reload if pages are empty (avoid re-rendering on unrelated sharedDocs changes)
+    setDocPages(existing=>{
+      if(existing.length>0)return existing;
+      if(docInfo.isPDF){
+        setTimeout(()=>renderPDFFromUrl(docInfo.url),0);
+      } else {
+        setTimeout(()=>setDocPages([docInfo.url]),0);
+      }
+      return existing;
+    });
+  },[activeDocUid, sharedDocs]);
 
   // Attach local stream to video element whenever stream changes
   useEffect(()=>{
