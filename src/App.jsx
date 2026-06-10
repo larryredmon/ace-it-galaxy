@@ -6002,8 +6002,8 @@ const YT_DETAIL_LEVELS = [
     icon: "🎯",
     label: "Main Topics",
     sublabel: "Important info only",
-    desc: "The key topics, core arguments, and most important takeaways — fast and clean. Perfect for deciding if you need to watch the full video.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a concise overview. Please create a realistic, well-structured response that represents what a typical educational/informative YouTube video about the apparent topic might cover. Format your response as:\n\n**🎯 What This Video Is About**\n[2-3 sentence overview of the likely topic and purpose]\n\n**📌 Main Topics Covered**\n[4-6 bullet points with the key topics]\n\n**💡 Most Important Takeaways**\n[3-4 bullet points with the core insights]\n\nNote: Clarify at the top that this is a simulated summary preview — actual transcript analysis requires backend integration. Keep the response helpful and realistic for the apparent video topic.`,
+    desc: "The key topics, core arguments, and most important takeaways — fast and clean.",
+    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. Say this honestly in one sentence, then provide the most useful response you can based on what you can infer from the URL.\n\nFormat your response as:\n\n**⚠️ Heads up**\n[One honest sentence: you cannot access this video, but here is what you can offer based on the URL]\n\n**🎯 What This Video Likely Covers**\n[Based on the URL, 2-3 sentences on the probable topic and purpose]\n\n**📌 Key Topics to Expect**\n[4-6 bullet points on what this type of content typically covers]\n\n**💡 How to Get the Most From It**\n[2-3 practical tips for engaging with this content]\n\nBe genuinely helpful despite the limitation.`,
   },
   {
     id: "detailed",
@@ -6011,15 +6011,15 @@ const YT_DETAIL_LEVELS = [
     label: "More Detail",
     sublabel: "Full topic coverage",
     desc: "Everything the video covers, explained clearly. Each topic broken down so you understand the content without needing to watch the full video.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a detailed summary. Please create a comprehensive, well-structured response representing what a typical video on this topic would cover. Format your response as:\n\n**📹 Video Overview**\n[3-4 sentence description]\n\n**📚 Topics Covered In Detail**\n\n[For each of 4-6 major topics, use this format:]\n### [Topic Name]\n[2-3 sentences explaining this topic as it would appear in the video]\n\n**🔑 Key Points to Remember**\n[5-7 bullet points]\n\n**❓ Questions This Video Answers**\n[3-4 questions the video addresses]\n\nNote: Clarify at the top this is a simulated detailed preview — real transcript analysis requires backend integration.`,
+    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. Be upfront about this in one sentence, then give the most detailed useful response possible based on what you can infer from the URL.\n\nFormat your response as:\n\n**⚠️ Heads up**\n[One honest sentence about the limitation]\n\n**📹 About This Video**\n[What you can infer about the topic from the URL — 3-4 sentences]\n\n**📚 What This Type of Content Typically Covers**\n\n[For 4-6 likely topic areas:]\n### [Topic Area]\n[2-3 sentences on what is typically discussed in this area]\n\n**🔑 Key Points to Look For**\n[5-7 bullet points]\n\n**❓ Questions This Video Probably Answers**\n[3-4 likely questions]\n\nBe genuinely useful despite not having transcript access.`,
   },
   {
     id: "breakdown",
     icon: "📖",
     label: "Full Breakdown",
     sublabel: "Everything, organized",
-    desc: "A complete, organized breakdown of everything talked about — structured like study notes. Chapters, concepts, examples, and conclusions all laid out clearly.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a complete structured breakdown. Please create a thorough, organized response like detailed study notes for what a video on this topic would cover. Format as:\n\n**📹 Video Summary**\n[Overview paragraph]\n\n**⏱ Content Structure (Estimated)**\n[List 5-7 sections with time estimates like "0:00 – 2:30 · Introduction"]\n\n**📖 Complete Breakdown**\n\n[For each section:]\n### Section [#]: [Section Title] (~timestamp)\n**What's covered:** [2-3 sentences]\n**Key concepts:** [bullet points]\n**Important details:** [specific points]\n\n**✅ Summary & Conclusions**\n[What the video concludes or recommends]\n\n**🎓 Study Notes Version**\n[5-8 bullet points formatted as study notes]\n\nNote: Clarify at the top this is a simulated breakdown — real transcript analysis requires backend integration.`,
+    desc: "A complete, organized breakdown of everything talked about — structured like study notes.",
+    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. State this honestly upfront in one sentence, then produce the most comprehensive study-guide-style response possible based on what you can infer about the topic.\n\nFormat as:\n\n**⚠️ Heads up**\n[One honest sentence about the limitation]\n\n**📹 About This Video**\n[What the URL suggests about this content — 2-3 sentences]\n\n**⏱ Typical Content Structure**\n[List 5-7 sections a video on this topic would likely cover with estimated timestamps]\n\n**📖 Full Topic Breakdown**\n\n[For each section:]\n### Section [#]: [Section Title]\n**What to expect:** [2-3 sentences]\n**Key concepts:** [bullet points]\n\n**✅ Summary & Conclusions**\n[What this type of content typically concludes]\n\n**🎓 Study Notes**\n[6-8 bullet points as study notes]\n\nBe thorough and genuinely useful.`,
   },
 ];
 
@@ -6047,9 +6047,11 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const [ytError, setYtError]         = useState("");
   const [tsMenuOpen, setTsMenuOpen]   = useState(false);
   const [outputExpanded, setOutputExpanded] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const wordCount = inputText.trim().split(/\s+/).filter(Boolean).length;
   const outputRef = useRef(null);
   useEffect(()=>{try{localStorage.setItem("tp_simplifier_history",JSON.stringify(history));}catch{}},[history]);
+  useEffect(()=>()=>{window.speechSynthesis?.cancel();},[]);
 
   const ytId = getYoutubeId(ytUrl);
   const isValidYt = !!ytId;
@@ -6080,12 +6082,33 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
       setOutputText(result);
-      setHistory(h => [{id:Date.now(),tool:activeTool,level,input:inputText,inputPreview:inputText.slice(0,80)+(inputText.length>80?"…":""),output:result,ts:new Date().toISOString(),type:"text"},...h.slice(0,19)]);
+      setHistory(h => [{id:Date.now(),tool:activeTool,level,mode,input:inputText,inputPreview:inputText.slice(0,80)+(inputText.length>80?"…":""),output:result,ts:new Date().toISOString(),type:"text"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleYoutubeProcessWithLevel = async (levelId) => {
+    if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
+    setYtError(""); setError(""); setOutputText(""); setLoading(true);
+    setYtLoadStep(1);
+    await new Promise(r => setTimeout(r, 1100));
+    setYtLoadStep(2);
+    await new Promise(r => setTimeout(r, 1000));
+    setYtLoadStep(3);
+    const cfg = YT_DETAIL_LEVELS.find(d => d.id === levelId);
+    try {
+      const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: cfg.prompt("", ytUrl) }] }),
+      });
+      const data = await res.json();
+      const result = data.content?.find(b => b.type === "text")?.text || "";
+      setOutputText(result);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:ytUrl,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
+    } catch (e) { setError("Something went wrong. Please try again."); }
+    finally { setLoading(false); setYtLoadStep(4); setTimeout(() => setYtLoadStep(0), 500); }
   };
 
   const handleYoutubeProcess = async () => {
@@ -6304,7 +6327,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 color: inputMode === m.id ? "#1A1814" : "rgba(247,246,242,0.45)",
               }}>
               <span style={{ fontSize: 15 }}>{m.icon}</span> {m.label}
-              {m.id === "youtube" && <span style={{ background: "#2BAE7E", color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>New</span>}
+
             </button>
           ))}
         </div>
@@ -6322,7 +6345,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>What should I do?</div>
                 <div className="ts-tools-grid" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {TS_TOOLS.map(t => (
-                    <button key={t.id} onClick={() => setActiveTool(t.id)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
+                    <button key={t.id} onClick={() => { setActiveTool(t.id); setOutputText(""); }} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
                       <span>{t.emoji}</span> {t.label}
                     </button>
                   ))}
@@ -6332,7 +6355,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Reading Level</div>
                 <div className="ts-levels-grid" style={{ display: "flex", gap: 8 }}>
                   {READING_LEVELS.map(l => (
-                    <button key={l.id} onClick={() => setLevel(l.id)} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
+                    <button key={l.id} onClick={() => { setLevel(l.id); setOutputText(""); }} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
                       <span style={{ fontSize: 16 }}>{l.emoji}</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: level === l.id ? "#F7F6F2" : "#5A5752" }}>{l.label}</span>
                     </button>
@@ -6352,7 +6375,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                   placeholder="Paste your complex text here…&#10;&#10;Academic papers, legal documents, medical reports, technical manuals — anything confusing."
                   style={{ flex: 1, padding: "18px 20px", fontSize: 15, lineHeight: 1.7, color: "#1A1814", border: "none", outline: "none", resize: "none", fontFamily: "'DM Sans', sans-serif", background: "transparent", minHeight: 280 }} />
                 <div style={{ padding: "12px 18px", background: "#FAFAF8", borderTop: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: wordCount > 0 ? "#5A5752" : "#C8C5BE", fontWeight: 500 }}>{wordCount} word{wordCount !== 1 ? "s" : ""}</span>
+                  <span style={{ fontSize: 11, color: wordCount > 800 ? "#E85D3F" : wordCount > 0 ? "#5A5752" : "#C8C5BE", fontWeight: 500 }}>{wordCount} word{wordCount !== 1 ? "s" : ""}{wordCount > 800 ? " · output may be cut short" : ""}</span>
                   <button onClick={handleSimplify} disabled={loading || !inputText.trim()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 22px", borderRadius: 8, border: "none", background: inputText.trim() ? accentColor : "#ECEAE4", color: inputText.trim() ? "#fff" : "#A8A59E", fontSize: 13, fontWeight: 700, cursor: inputText.trim() ? "pointer" : "default", transition: "all 0.2s" }}
                     onMouseEnter={e => { if (inputText.trim() && !loading) e.currentTarget.style.opacity = "0.88"; }}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -6537,7 +6560,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ padding: "16px 22px", borderTop: "1px solid #F0EDE8", background: "#FAFAF8", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: "#8C8880", fontWeight: 600 }}>Try a different detail level:</span>
                   {YT_DETAIL_LEVELS.filter(d => d.id !== ytDetailLevel).map(dl => (
-                    <button key={dl.id} onClick={() => { setYtDetailLevel(dl.id); setTimeout(handleYoutubeProcess, 50); }}
+                    <button key={dl.id} onClick={() => { setYtDetailLevel(dl.id); setTimeout(() => handleYoutubeProcessWithLevel(dl.id), 0); }}
                       style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${accentColor}44`, background: "#fff", fontSize: 12, fontWeight: 700, color: accentColor, cursor: "pointer", transition: "all 0.15s" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "#F0FDF8"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
@@ -6579,7 +6602,14 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ padding: "20px 22px 16px", borderBottom: "1px solid #ECEAE4", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, margin: 0 }}>Saved History</h3>
               <div style={{display:"flex",gap:8}}>
-                {history.length>0&&<button onClick={()=>{ if(window.confirm("Clear all history?")) setHistory([]); }} style={{background:"none",border:"1px solid #FECACA",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#E85D3F"}}>Clear All</button>}
+                {history.length>0&&(!confirmClear
+  ? <button onClick={()=>setConfirmClear(true)} style={{background:"none",border:"1px solid #FECACA",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#E85D3F"}}>Clear All</button>
+  : <div style={{display:"flex",gap:6,alignItems:"center"}}>
+      <span style={{fontSize:11,color:"#E85D3F",fontWeight:600}}>Sure?</span>
+      <button onClick={()=>{setHistory([]);setConfirmClear(false);}} style={{background:"#E85D3F",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:700,color:"#fff"}}>Yes</button>
+      <button onClick={()=>setConfirmClear(false)} style={{background:"none",border:"1px solid #ECEAE4",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#8C8880"}}>No</button>
+    </div>
+)}
                 <button onClick={() => setHistoryOpen(false)} style={{ background: "#F7F6F2", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880" }}>✕</button>
               </div>
             </div>
@@ -6593,7 +6623,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
               ) : history.map((h, i) => (
                 <div key={h.id||i} style={{ borderRadius: 12, border: "1.5px solid #ECEAE4", marginBottom: 12, overflow:"hidden" }}>
                   <div style={{padding:"12px 14px",background:"#F7F6F2",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
-                    onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input); setActiveTool(h.tool); } setOutputText(h.output); setHistoryOpen(false); }}>
+                    onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input); setActiveTool(h.tool); if(h.mode) setMode(h.mode); } setOutputText(h.output); setHistoryOpen(false); }}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
                         {h.type==="youtube"&&<span style={{fontSize:10,background:"#FF000015",color:"#CC0000",fontWeight:700,padding:"1px 6px",borderRadius:4}}>▶ YT</span>}
