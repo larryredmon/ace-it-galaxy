@@ -3988,82 +3988,116 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
         <span style={{ fontSize: 13, color: "#1A1814", fontWeight: 500 }}>{deck.title}</span>
       </div>
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20, marginBottom: 32 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: deck.color, marginBottom: 8 }}>{deck.subject}</div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 900, letterSpacing: -0.8, marginBottom: 10 }}>{deck.title}</h1>
-          <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 13, color: "#8C8880" }}>
-            <span>{deck.cardCount || deck.cards?.length || 0} cards</span>
-            <span>·</span>
-            <span style={{ color: deck.mastery === 100 ? "#2BAE7E" : "#8C8880", fontWeight: deck.mastery === 100 ? 600 : 400 }}>{deck.mastery || 0}% mastered</span>
-            {deck.author && <><span>·</span><span>by {deck.author}</span></>}
-          </div>
-
-          {/* Star rating */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:10 }}>
-            <div style={{ display:"flex", gap:3 }}>
-              {[1,2,3,4,5].map(star => (
-                <span key={star}
-                  onMouseEnter={() => setHoveredStar(star)}
-                  onMouseLeave={() => setHoveredStar(0)}
-                  onClick={() => user && onRate && onRate(deck.id, star, user.uid)}
-                  style={{ fontSize:20, cursor: user ? "pointer" : "default", color: star <= (hoveredStar || userRating) ? "#F5C842" : "#D8D5CE", transition:"color 0.1s" }}>★</span>
-              ))}
+      {/* ── HERO ── */}
+      <div style={{ background:"#1A1814", borderRadius:16, padding:"36px 32px 28px", marginBottom:24, position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, opacity:0.06, backgroundImage:`radial-gradient(circle at 80% 20%, ${deck.color} 0%, transparent 50%)` }}/>
+        <div style={{ position:"relative", zIndex:1 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              {deck.subject && <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:deck.color, marginBottom:10 }}>{deck.subject}</div>}
+              <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(22px,3vw,34px)", fontWeight:900, color:"#F7F6F2", lineHeight:1.2, marginBottom:16, letterSpacing:-0.5 }}>{deck.title}</h1>
+              <div style={{ display:"flex", gap:20, flexWrap:"wrap", marginBottom:16 }}>
+                {[
+                  [`${deck.cardCount||deck.cards?.length||0}`, "Cards"],
+                  [`${deck.mastery||0}%`, "Mastered"],
+                  [""+ (()=>{const now=Date.now();return (deck.cards||[]).filter(c=>!c.dueDate||new Date(c.dueDate).getTime()<=now).length;})(), "Due Today"],
+                ].map(([val,label])=>(
+                  <div key={label} style={{ textAlign:"center" }}>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color: label==="Due Today" && (()=>{const now=Date.now();return (deck.cards||[]).filter(c=>!c.dueDate||new Date(c.dueDate).getTime()<=now).length;})()>0 ? "#F5C842" : "#F7F6F2" }}>{val}</div>
+                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"rgba(255,255,255,0.35)", marginTop:2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <div style={{ display:"flex", gap:3 }}>
+                  {[1,2,3,4,5].map(star=>(
+                    <span key={star} onMouseEnter={()=>setHoveredStar(star)} onMouseLeave={()=>setHoveredStar(0)}
+                      onClick={()=>user&&onRate&&onRate(deck.id,star,user.uid)}
+                      style={{ fontSize:18, cursor:user?"pointer":"default", color:star<=(hoveredStar||userRating)?"#F5C842":"rgba(255,255,255,0.2)", transition:"color 0.1s" }}>★</span>
+                  ))}
+                </div>
+                {avgRating
+                  ? <span style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>{avgRating} ({ratingCount} {ratingCount===1?"rating":"ratings"})</span>
+                  : <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>No ratings yet</span>}
+              </div>
             </div>
-            {avgRating
-              ? <span style={{ fontSize:12, color:"#8C8880" }}>{avgRating} ({ratingCount} {ratingCount===1?"rating":"ratings"})</span>
-              : <span style={{ fontSize:12, color:"#C8C5BE" }}>No ratings yet</span>
-            }
-            {!user && <span style={{ fontSize:11, color:"#A8A59E" }}>· Log in to rate</span>}
+            <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+              <button onClick={onStudy} style={{ background:deck.color, border:"none", borderRadius:10, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", whiteSpace:"nowrap", boxShadow:`0 4px 20px ${deck.color}50` }}>Study Now →</button>
+              <button onClick={()=>onEdit&&onEdit(deck)} style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)" }}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.14)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.08)"}>✏️ Edit Deck</button>
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {!confirmDelete ? (
-            <button onClick={() => setConfirmDelete(true)} style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 8, padding: "10px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#A8A59E", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor="#E85D3F"; e.currentTarget.style.color="#E85D3F"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor="#ECEAE4"; e.currentTarget.style.color="#A8A59E"; }}>🗑 Delete</button>
-          ) : (
-            <div style={{ display:"flex", gap:6, alignItems:"center", background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:8, padding:"8px 12px" }}>
-              <span style={{ fontSize:12, color:"#E85D3F", fontWeight:600 }}>Delete this deck?</span>
-              <button onClick={() => onDelete && onDelete(deck.id)} style={{ padding:"5px 12px", borderRadius:6, border:"none", background:"#E85D3F", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>Yes, Delete</button>
-              <button onClick={() => setConfirmDelete(false)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", color:"#8C8880", fontSize:11, cursor:"pointer" }}>Cancel</button>
+      </div>
+
+      {/* ── ACTION ROW ── */}
+      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
+        <div style={{ position:"relative" }}>
+          <button onClick={()=>setShowFolderPicker(f=>!f)}
+            style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+            📁 {(userFolders.find(f=>f.id===deck.folderKey)?.name||null)||"Add to Folder"}
+          </button>
+          {showFolderPicker&&(
+            <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"8px", minWidth:200, zIndex:100, boxShadow:"0 8px 24px rgba(0,0,0,0.1)" }}>
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase", padding:"4px 8px 8px" }}>Move to Folder</div>
+              <button onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,null);setShowFolderPicker(false);}} style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:!deck.folderKey?"#F0F0F0":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
+                <span>📂</span> No Folder
+              </button>
+              {userFolders.filter(f=>!f.parentId).map(f=>(
+                <button key={f.id} onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,f.id,f.name);setShowFolderPicker(false);}} style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:deck.folderKey===f.id?"#EEF1FF":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
+                  <span>📁</span> {f.name}
+                </button>
+              ))}
+              {userFolders.length===0&&<div style={{ padding:"8px 10px",fontSize:12,color:"#A8A59E" }}>No folders yet — create one in My Library</div>}
             </div>
           )}
-          <button onClick={() => onEdit && onEdit(deck)} style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752", transition:"all 0.15s" }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#5A5752";}}>
-            ✏️ Edit Deck
-          </button>
-          <div style={{ position:"relative" }}>
-            <button onClick={()=>setShowFolderPicker(f=>!f)} style={{ background: "#fff", border: "1px solid #D8D5CE", borderRadius: 8, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#5A5752", transition:"all 0.15s", display:"flex", alignItems:"center", gap:6 }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#5A5752";}}>
-              📁 {deck.folderKey ? deck.folderKey : "Add to Folder"}
-            </button>
-            {showFolderPicker && (
-              <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"8px", minWidth:200, zIndex:100, boxShadow:"0 8px 24px rgba(0,0,0,0.1)" }}>
-                <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase", padding:"4px 8px 8px" }}>Move to Folder</div>
-                <button onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,null);setShowFolderPicker(false);}}
-                  style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:!deck.folderKey?"#F0F0F0":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
-                  <span>📂</span> No Folder
-                </button>
-                {userFolders.filter(f=>!f.parentId).map(f=>(
-                  <button key={f.id} onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,f.id,f.name);setShowFolderPicker(false);}}
-                    style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:deck.folderKey===f.id?"#EEF1FF":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
-                    <span>📁</span> {f.name}
-                  </button>
-                ))}
-                {userFolders.length===0 && <div style={{ padding:"8px 10px",fontSize:12,color:"#A8A59E" }}>No folders yet — create one in My Library</div>}
-              </div>
-            )}
-          </div>
-          <button onClick={() => onTogglePublic && onTogglePublic(deck.id)}
-            style={{ background: deck.isPublic ? "#2BAE7E" : "#fff", border: `1px solid ${deck.isPublic ? "#2BAE7E" : "#D8D5CE"}`, borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: deck.isPublic ? "#fff" : "#5A5752", transition:"all 0.2s", display:"flex", alignItems:"center", gap:6 }}
-            title={deck.isPublic ? "Click to make private" : "Click to make public"}>
-            {deck.isPublic ? "🌐 Public" : "🔒 Private"}
-          </button>
-          <button className="fc-btn" onClick={onStudy} style={{ background: "#1A1814", border: "none", borderRadius: 8, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#F7F6F2", transition: "all 0.2s" }}>Study Now →</button>
+        </div>
+        <button onClick={()=>onTogglePublic&&onTogglePublic(deck.id)}
+          style={{ background:deck.isPublic?"#2BAE7E":"#fff", border:`1px solid ${deck.isPublic?"#2BAE7E":"#ECEAE4"}`, borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:deck.isPublic?"#fff":"#5A5752", transition:"all 0.2s", display:"flex", alignItems:"center", gap:6 }}
+          title={deck.isPublic?"Click to make private":"Click to make public"}>
+          {deck.isPublic?"🌐 Public":"🔒 Private"}
+        </button>
+        <div style={{ height:20, width:1, background:"#ECEAE4", margin:"0 4px" }}/>
+        <button onClick={handleImprove} disabled={improving}
+          style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:improving?"default":"pointer", color:improving?"#A8A59E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
+          onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
+          onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
+          {improving?<><span style={{ width:10,height:10,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/>Improving…</>:"✨ Improve with AI"}
+        </button>
+        <button onClick={()=>{const txt=deck.cards.map((c,i)=>`${i+1},${JSON.stringify(c.term)},${JSON.stringify(c.definition)}`).join("\n");const blob=new Blob([`Term,Definition\n${txt}`],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${deck.title}.csv`;a.click();}}
+          style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          ↓ Export CSV
+        </button>
+        <button onClick={handlePrint} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#5A5752";e.currentTarget.style.color="#1A1814";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          🖨 Print
+        </button>
+        <button onClick={handleShare} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
+          🔗 Share
+        </button>
+        {launchApp&&<button onClick={()=>launchApp("brainmap")} style={{ background:"#fff", border:"1px solid #F0A8C0", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#9B1446", transition:"all 0.15s" }}
+          onMouseEnter={e=>e.currentTarget.style.background="#FFF5F8"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+          🧠 Brain Map
+        </button>}
+        <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
+          {!confirmDelete?(
+            <button onClick={()=>setConfirmDelete(true)} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#C8C5BE", transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#E85D3F";e.currentTarget.style.color="#E85D3F";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#C8C5BE";}}>🗑 Delete</button>
+          ):(
+            <div style={{ display:"flex", gap:6, alignItems:"center", background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:8, padding:"6px 10px" }}>
+              <span style={{ fontSize:12, color:"#E85D3F", fontWeight:600 }}>Delete deck?</span>
+              <button onClick={()=>onDelete&&onDelete(deck.id)} style={{ padding:"4px 10px", borderRadius:6, border:"none", background:"#E85D3F", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>Delete</button>
+              <button onClick={()=>setConfirmDelete(false)} style={{ padding:"4px 8px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", color:"#8C8880", fontSize:11, cursor:"pointer" }}>Cancel</button>
+            </div>
+          )}
         </div>
       </div>
 
