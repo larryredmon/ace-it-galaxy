@@ -1707,7 +1707,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
             Ace It Flash Cards
           </div>
-          {user?.name && <div className="fc-fade-up" style={{ animationDelay:"0.04s", fontSize:14, color:"rgba(247,246,242,0.45)", marginBottom:8 }}>Welcome back, <span style={{ color:"#F7F6F2", fontWeight:600 }}>{user.name.split(" ")[0]}</span> 👋</div>}
+          {typeof user !== "undefined" && user?.name && <div className="fc-fade-up" style={{ animationDelay:"0.04s", fontSize:14, color:"rgba(247,246,242,0.45)", marginBottom:8 }}>Welcome back, <span style={{ color:"#F7F6F2", fontWeight:600 }}>{user.name.split(" ")[0]}</span> 👋</div>}
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
             <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
           </h1>
