@@ -1342,7 +1342,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
                       </div>
                       <div>
                         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{user.name}</div>
-                        <div style={{ fontSize: 11, color: "#8C8880", marginTop: 1 }}>Free Plan</div>
+                        
                       </div>
                     </div>
                     <div style={{ marginBottom: 12 }}>
@@ -1666,7 +1666,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</div>
-                  <div style={{ fontSize: 10, color: "#8C8880" }}>Free Plan</div>
+                  
                 </div>
                 <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #1A1814, #4F6EF7)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#F7F6F2", cursor: "pointer" }}
                   onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
@@ -6958,7 +6958,7 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
                       </div>
                       <div>
                         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{user.name}</div>
-                        <div style={{ fontSize: 11, color: "#8C8880", marginTop: 1 }}>Free Plan</div>
+                        
                       </div>
                     </div>
                     <button onClick={() => { onLogout(); onClose(); }} style={{ width: "100%", padding: "8px 0", borderRadius: 6, background: "transparent", border: "1px solid #D8ECFF", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}
@@ -8498,7 +8498,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           {user ? (
             <div style={{ background:`${NC}10`,border:`1px solid ${NC}25`,borderRadius:10,padding:"12px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10 }}>
               <div style={{ width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff" }}>{user.name?.[0]||"U"}</div>
-              <div><div style={{ fontSize:13,fontWeight:800,color:"#1A1814" }}>{user.name}</div><div style={{ fontSize:11,color:"#8C7A4A" }}>Free Plan</div></div>
+              <div><div style={{ fontSize:13,fontWeight:800,color:"#1A1814" }}>{user.name}</div></div>
             </div>
           ) : (
             <div style={{ marginBottom:14 }}>
@@ -12482,7 +12482,7 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
         <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
         {!isMobile&&(<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…" style={{width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/></div>)}
         <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',background:'rgba(4,2,12,0.75)',padding:'4px 4px 4px 8px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',flexShrink:0}}>
-          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div><div style={{fontSize:10,color:'rgba(245,200,66,0.6)',letterSpacing:0.5,fontWeight:600}}>Free Plan</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'🍎 Get Started Free'}</button></>)}
+          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'🍎 Get Started Free'}</button></>)}
         </div>
       </nav>
       <div style={{position:'absolute',bottom:20,left:0,right:0,textAlign:'center',pointerEvents:'none',zIndex:5}}><p style={{fontSize:9,color:'rgba(255,255,255,0.18)',letterSpacing:2.8,textTransform:'uppercase',fontWeight:600}}>The future of learning is yours</p></div>
