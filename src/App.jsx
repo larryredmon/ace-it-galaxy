@@ -6629,115 +6629,135 @@ const PA_COLOR = "#90C8F8";
 const PA_GLOW  = "#4898E8";
 const PA_DARK  = "#0A1628";
 
-const SKIN_TONES = ["#FDDBB4","#F5C9A0","#E8A87C","#C68642","#8D5524","#4A2912"];
-const HAIR_COLORS = ["#1A0A00","#3D2B1F","#6B3A2A","#A0522D","#C8A84B","#E8D5A3","#888","#FF6B6B"];
-const EYE_COLORS  = ["#634E37","#2C5F8A","#3A7A3A","#8B7355","#1A1A3A","#7A3A3A"];
-const HAIR_STYLES = [
-  { id:"none",   label:"Bald"    },
-  { id:"short",  label:"Short"   },
-  { id:"medium", label:"Medium"  },
-  { id:"long",   label:"Long"    },
-  { id:"curly",  label:"Curly"   },
-  { id:"afro",   label:"Afro"    },
-  { id:"braids", label:"Braids"  },
+// ── DiceBear Toon Head avatar config ─────────────────────────────────────────
+import { createAvatar } from "@dicebear/core";
+import * as toonHead from "@dicebear/toon-head";
+
+const AV_SKIN_COLORS = [
+  { id:"f1c3a5", label:"Light" },
+  { id:"e8b48a", label:"Light tan" },
+  { id:"c68e7a", label:"Medium" },
+  { id:"b98e6a", label:"Tan" },
+  { id:"a36b4f", label:"Brown" },
+  { id:"7a4a35", label:"Dark brown" },
+  { id:"5c3829", label:"Deep" },
 ];
-const ACCESSORIES = [
-  { id:"none",      label:"None"       },
-  { id:"glasses",   label:"Glasses"    },
-  { id:"sunglasses",label:"Shades"     },
-  { id:"headband",  label:"Headband"   },
-  { id:"cap",       label:"Cap"        },
+const AV_HAIR_COLORS = [
+  { id:"2c1b18", label:"Black" },
+  { id:"724133", label:"Dark brown" },
+  { id:"a55728", label:"Brown" },
+  { id:"b58143", label:"Auburn" },
+  { id:"d6b370", label:"Blonde" },
+  { id:"e8d5a3", label:"Light blonde" },
+  { id:"888888", label:"Gray" },
+  { id:"f0f0f0", label:"White" },
+  { id:"c0392b", label:"Red" },
+  { id:"8e44ad", label:"Purple" },
+  { id:"2980b9", label:"Blue" },
+];
+const AV_FRONT_HAIR = [
+  { id:"none",      label:"Bald"        },
+  { id:"sideComed", label:"Side-combed" },
+  { id:"undercut",  label:"Undercut"    },
+  { id:"spiky",     label:"Spiky"       },
+  { id:"bun",       label:"Bun"         },
+];
+const AV_REAR_HAIR = [
+  { id:"none",          label:"None"      },
+  { id:"longStraight",  label:"Straight"  },
+  { id:"longWavy",      label:"Wavy"      },
+  { id:"shoulderHigh",  label:"Shoulder"  },
+  { id:"neckHigh",      label:"Neck"      },
+];
+const AV_EYEBROWS = [
+  { id:"neutral", label:"Neutral" },
+  { id:"raised",  label:"Raised"  },
+  { id:"happy",   label:"Happy"   },
+  { id:"angry",   label:"Angry"   },
+  { id:"sad",     label:"Sad"     },
+];
+const AV_EYES = [
+  { id:"happy",  label:"Happy"  },
+  { id:"wide",   label:"Wide"   },
+  { id:"bow",    label:"Bow"    },
+  { id:"humble", label:"Humble" },
+  { id:"wink",   label:"Wink"   },
+];
+const AV_MOUTH = [
+  { id:"smile",  label:"Smile"  },
+  { id:"laugh",  label:"Laugh"  },
+  { id:"agape",  label:"Agape"  },
+  { id:"sad",    label:"Sad"    },
+  { id:"angry",  label:"Angry"  },
+];
+const AV_BEARD = [
+  { id:"none",           label:"None"         },
+  { id:"chin",           label:"Chin"         },
+  { id:"fullBeard",      label:"Full beard"   },
+  { id:"longBeard",      label:"Long beard"   },
+  { id:"moustacheTwirl", label:"Moustache"    },
+  { id:"chinMoustache",  label:"Chin + Moustache" },
+];
+const AV_CLOTHES = [
+  { id:"tShirt",     label:"T-Shirt"      },
+  { id:"shirt",      label:"Shirt"        },
+  { id:"turtleNeck", label:"Turtleneck"   },
+  { id:"openJacket", label:"Open jacket"  },
+  { id:"dress",      label:"Dress"        },
+];
+const AV_CLOTHES_COLORS = [
+  { id:"545454", label:"Charcoal"  },
+  { id:"151613", label:"Black"     },
+  { id:"e8e9e6", label:"White"     },
+  { id:"b11f1f", label:"Red"       },
+  { id:"0b3286", label:"Navy"      },
+  { id:"147f3c", label:"Green"     },
+  { id:"eab308", label:"Yellow"    },
+  { id:"731ac3", label:"Purple"    },
+  { id:"ec4899", label:"Pink"      },
+  { id:"f97316", label:"Orange"    },
 ];
 
-// ── AvatarHead SVG renderer ───────────────────────────────────────────────────
+const AV_DEFAULT = {
+  skinColor: "f1c3a5",
+  hair: "sideComed",
+  hairColor: "2c1b18",
+  rearHair: "none",
+  eyebrows: "neutral",
+  eyes: "happy",
+  mouth: "smile",
+  beard: "none",
+  clothes: "tShirt",
+  clothesColor: "0b3286",
+  displayName: "",
+};
+
+// ── AvatarHead — DiceBear Toon Head renderer ────────────────────────────────
 function AvatarHead({ avatar = {}, size = 48 }) {
-  const {
-    skinTone  = "#F5C9A0",
-    hairStyle = "short",
-    hairColor = "#3D2B1F",
-    eyeColor  = "#634E37",
-    accessory = "none",
-  } = avatar;
-  const shadow = skinTone === "#FDDBB4" ? "#E8A87C"
-               : skinTone === "#F5C9A0" ? "#D4926A"
-               : skinTone === "#E8A87C" ? "#B8703A"
-               : skinTone === "#C68642" ? "#8D5524"
-               : skinTone === "#8D5524" ? "#5A3010"
-               : "#2A1208";
+  const av = { ...AV_DEFAULT, ...avatar };
+  const svgStr = createAvatar(toonHead, {
+    seed: av.displayName || "default",
+    skinColor:        [av.skinColor],
+    hair:             av.hair === "none" ? [] : [av.hair],
+    hairColor:        [av.hairColor],
+    rearHair:         av.rearHair === "none" ? [] : [av.rearHair],
+    rearHairProbability: av.rearHair === "none" ? 0 : 100,
+    hairProbability:  av.hair === "none" ? 0 : 100,
+    eyebrows:         [av.eyebrows],
+    eyes:             [av.eyes],
+    mouth:            [av.mouth],
+    beard:            av.beard === "none" ? [] : [av.beard],
+    beardProbability: av.beard === "none" ? 0 : 100,
+    clothes:          [av.clothes],
+    clothesColor:     [av.clothesColor],
+  }).toString();
   return (
-    <svg width={size} height={size} viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" style={{ display:"block" }}>
-      {/* Hair back layer (long/braids) */}
-      {hairStyle === "long"   && <rect x="10" y="22" width="7" height="26" rx="5" fill={hairColor} />}
-      {hairStyle === "long"   && <rect x="43" y="22" width="7" height="26" rx="5" fill={hairColor} />}
-      {hairStyle === "braids" && <rect x="9"  y="20" width="6" height="30" rx="4" fill={hairColor} opacity=".9"/>}
-      {hairStyle === "braids" && <rect x="45" y="20" width="6" height="30" rx="4" fill={hairColor} opacity=".9"/>}
-      {/* Neck */}
-      <rect x="24" y="47" width="12" height="11" rx="5" fill={skinTone} />
-      {/* Ears */}
-      <ellipse cx="10" cy="33" rx="4" ry="5" fill={skinTone} />
-      <ellipse cx="50" cy="33" rx="4" ry="5" fill={skinTone} />
-      <ellipse cx="10" cy="33" rx="2.5" ry="3.5" fill={shadow} opacity=".4" />
-      <ellipse cx="50" cy="33" rx="2.5" ry="3.5" fill={shadow} opacity=".4" />
-      {/* Head */}
-      <ellipse cx="30" cy="31" rx="20" ry="23" fill={skinTone} />
-      {/* Chin shadow */}
-      <ellipse cx="30" cy="51" rx="12" ry="3" fill={shadow} opacity=".18" />
-      {/* ── Hair styles ── */}
-      {hairStyle === "short"  && <ellipse cx="30" cy="12" rx="20" ry="11" fill={hairColor} />}
-      {hairStyle === "medium" && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
-      {hairStyle === "medium" && <rect x="9" y="18" width="6" height="14" rx="5" fill={hairColor} />}
-      {hairStyle === "medium" && <rect x="45" y="18" width="6" height="14" rx="5" fill={hairColor} />}
-      {hairStyle === "long"   && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
-      {hairStyle === "curly"  && <circle cx="30" cy="12" r="18" fill={hairColor} />}
-      {hairStyle === "curly"  && <circle cx="13" cy="22" r="8"  fill={hairColor} />}
-      {hairStyle === "curly"  && <circle cx="47" cy="22" r="8"  fill={hairColor} />}
-      {hairStyle === "afro"   && <circle cx="30" cy="16" r="22" fill={hairColor} />}
-      {hairStyle === "braids" && <ellipse cx="30" cy="11" rx="21" ry="12" fill={hairColor} />}
-      {hairStyle === "braids" && [16,22,28,34,40,46].map(x => (
-        <rect key={x} x={x-1} y="19" width="3" height="18" rx="2" fill={hairColor} opacity=".85" />
-      ))}
-      {/* Cap (accessory — drawn over hair) */}
-      {accessory === "cap" && <>
-        <rect x="8" y="15" width="44" height="11" rx="5" fill="#2C3E7A" />
-        <rect x="5" y="22" width="52" height="5"  rx="3" fill="#223066" />
-      </>}
-      {/* Headband */}
-      {accessory === "headband" && <rect x="9" y="18" width="42" height="7" rx="4" fill="#E85D8A" />}
-      {/* Eyebrows */}
-      <path d="M18 24 Q22 21.5 26 23.5" stroke={hairStyle==="none"?"#aaa":hairColor} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      <path d="M34 23.5 Q38 21.5 42 24" stroke={hairStyle==="none"?"#aaa":hairColor} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      {/* Eyes */}
-      <ellipse cx="22" cy="30" rx="5" ry="4.5" fill="white" />
-      <ellipse cx="38" cy="30" rx="5" ry="4.5" fill="white" />
-      <circle  cx="23" cy="30" r="3"    fill={eyeColor} />
-      <circle  cx="39" cy="30" r="3"    fill={eyeColor} />
-      <circle  cx="23" cy="30" r="1.5"  fill="#111" />
-      <circle  cx="39" cy="30" r="1.5"  fill="#111" />
-      <circle  cx="23.7" cy="28.8" r=".8" fill="white" />
-      <circle  cx="39.7" cy="28.8" r=".8" fill="white" />
-      {/* Glasses */}
-      {accessory === "glasses"    && <>
-        <ellipse cx="22" cy="30" rx="7" ry="6"   fill="none" stroke="#3A3A3A" strokeWidth="1.5" />
-        <ellipse cx="38" cy="30" rx="7" ry="6"   fill="none" stroke="#3A3A3A" strokeWidth="1.5" />
-        <line x1="29" y1="30" x2="31" y2="30"    stroke="#3A3A3A" strokeWidth="1.5" />
-        <line x1="9"  y1="29" x2="15" y2="30"    stroke="#3A3A3A" strokeWidth="1.5" />
-        <line x1="45" y1="30" x2="51" y2="29"    stroke="#3A3A3A" strokeWidth="1.5" />
-      </>}
-      {accessory === "sunglasses" && <>
-        <ellipse cx="22" cy="30" rx="7" ry="5.5" fill="#1A1A1A" opacity=".85" />
-        <ellipse cx="38" cy="30" rx="7" ry="5.5" fill="#1A1A1A" opacity=".85" />
-        <line x1="29" y1="29.5" x2="31" y2="29.5" stroke="#555" strokeWidth="1.5" />
-        <line x1="9"  y1="29"   x2="15" y2="30"   stroke="#555" strokeWidth="1.5" />
-        <line x1="45" y1="30"   x2="51" y2="29"   stroke="#555" strokeWidth="1.5" />
-      </>}
-      {/* Nose */}
-      <path d="M29 36 Q27 40 30 42 Q33 40 31 36" stroke={shadow} strokeWidth="1" fill="none" strokeLinecap="round" />
-      {/* Mouth */}
-      <path d="M23 47 Q30 51.5 37 47" stroke="#C07060" strokeWidth="2" fill="none" strokeLinecap="round" />
-    </svg>
+    <div
+      style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+      dangerouslySetInnerHTML={{ __html: svgStr.replace(/<svg /, `<svg width="${size}" height="${size}" style="display:block" `) }}
+    />
   );
 }
-
 // ── Floating AI Assistant Widget ──────────────────────────────────────────────
 function FloatingAssistant({ avatar, visible, user, onOpen }) {
   const [expanded, setExpanded]  = useState(false);
@@ -6789,7 +6809,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
   if (!visible) return null;
 
   const btnSize = 56;
-  const hasAvatar = avatar && avatar.skinTone;
+  const hasAvatar = avatar && avatar.skinColor;
 
   return (
     <div style={{ position:"fixed", zIndex:9999, left:pos.x, top:pos.y, userSelect:"none" }}>
@@ -6953,8 +6973,8 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
                 {user ? (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: avatar?.skinTone ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 0 0 3px #fff, 0 0 0 4px #D8ECFF`, overflow:"hidden" }}>
-                        {avatar?.skinTone ? <AvatarHead avatar={avatar} size={42} /> : <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#fff" }}>{user.avatar}</span>}
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: avatar?.skinColor ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 0 0 3px #fff, 0 0 0 4px #D8ECFF`, overflow:"hidden" }}>
+                        {avatar?.skinColor ? <AvatarHead avatar={avatar} size={42} /> : <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#fff" }}>{user.avatar}</span>}
                       </div>
                       <div>
                         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, color: "#1A1814" }}>{user.name}</div>
@@ -7158,12 +7178,12 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   const [addingTaskDay, setAddingTaskDay] = useState(null);
   const [newTask, setNewTask]             = useState("");
   // Local avatar draft (pending save)
-  const [draftAvatar, setDraftAvatar] = useState(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" });
+  const [draftAvatar, setDraftAvatar] = useState(avatar && avatar.skinColor ? avatar : { ...AV_DEFAULT });
   const [avatarSaved, setAvatarSaved] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
-  useEffect(() => { setDraftAvatar(avatar || { skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); }, [avatar]);
+  useEffect(() => { setDraftAvatar(avatar && avatar.skinColor ? avatar : { ...AV_DEFAULT }); }, [avatar]);
 
   const systemPrompt = aiContext || `You are Ace It Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
@@ -7429,7 +7449,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
             {messages.length === 0 ? (
               <div style={{ maxWidth: 580, margin: "52px auto 0", textAlign: "center", animation: "pa-fadein 0.4s ease both" }}>
                 <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px", boxShadow: `0 8px 32px ${PA_GLOW}33`, overflow: "hidden" }}>
-                  {avatar?.skinTone ? <AvatarHead avatar={avatar} size={72} /> : <span style={{ fontSize: 32 }}>⊕</span>}
+                  {avatar?.skinColor ? <AvatarHead avatar={avatar} size={72} /> : <span style={{ fontSize: 32 }}>⊕</span>}
                 </div>
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#0A1628", marginBottom: 10 }}>
                   Hi {user?.name?.split(" ")[0] || "there"} — what are we working on?
@@ -7465,7 +7485,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                       {/* Avatar */}
                       <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, background: m.role === "user" ? `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})` : `linear-gradient(135deg, ${PA_GLOW}, ${PA_COLOR})`, boxShadow: `0 2px 8px ${PA_GLOW}22`, marginTop: 2 }}>
                         {m.role === "user"
-                          ? (avatar?.skinTone ? <AvatarHead avatar={avatar} size={32}/> : <span style={{ color:"#fff" }}>{user?.avatar||"U"}</span>)
+                          ? (avatar?.skinColor ? <AvatarHead avatar={avatar} size={32}/> : <span style={{ color:"#fff" }}>{user?.avatar||"U"}</span>)
                           : <span style={{ fontSize: 16 }}>⊕</span>
                         }
                       </div>
@@ -7701,74 +7721,121 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
   // ── AVATAR BUILDER VIEW ──
   const AvatarView = () => {
-    const Swatch = ({ value, current, onChange, round = false }) => (
-      <div onClick={() => onChange(value)}
-        style={{ width: 30, height: 30, borderRadius: round ? "50%" : 8, background: value, cursor: "pointer", border: `3px solid ${current===value?"#1A1814":"transparent"}`, outline: current===value?`2px solid ${value}`:"none", outlineOffset:2, transition:"all 0.15s", boxShadow:"0 1px 4px rgba(0,0,0,0.15)" }} />
+    const ColorSwatch = ({ item, current, onChange }) => (
+      <div onClick={() => onChange(item.id)} title={item.label}
+        style={{ width:32, height:32, borderRadius:"50%", background:`#${item.id}`, cursor:"pointer",
+          border:`3px solid ${current===item.id?"#1A1814":"transparent"}`,
+          outline: current===item.id?`2px solid #${item.id}`:"none",
+          outlineOffset:2, transition:"all 0.15s", boxShadow:"0 1px 4px rgba(0,0,0,0.18)" }} />
     );
-    const StyleBtn = ({ id, label, current, onChange }) => (
-      <button onClick={() => onChange(id)} style={{ padding:"7px 14px", borderRadius:20, border:`1.5px solid ${current===id?PA_GLOW:"#D8ECFF"}`, background:current===id?`${PA_COLOR}22`:"#fff", fontSize:12, fontWeight:current===id?700:500, color:current===id?PA_GLOW:"#5A6878", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}>{label}</button>
+    const Chip = ({ item, current, onChange }) => (
+      <button onClick={() => onChange(item.id)}
+        style={{ padding:"7px 14px", borderRadius:20,
+          border:`1.5px solid ${current===item.id?PA_GLOW:"#D8ECFF"}`,
+          background:current===item.id?`${PA_COLOR}22`:"#fff",
+          fontSize:12, fontWeight:current===item.id?700:500,
+          color:current===item.id?PA_GLOW:"#5A6878",
+          cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}>
+        {item.label}
+      </button>
+    );
+    const Section = ({ title, children }) => (
+      <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"18px 20px" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#A8B4C0", marginBottom:12, letterSpacing:1.5, textTransform:"uppercase" }}>{title}</div>
+        {children}
+      </div>
     );
 
     return (
-      <div style={{ maxWidth: 780, margin: "0 auto", padding: "40px 28px" }}>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8B4C0", marginBottom: 8 }}>Personalization</div>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, color: "#0A1628", marginBottom: 6 }}>My Avatar</h2>
-          <p style={{ fontSize: 14, color: "#6A7888" }}>Build your look. Your avatar will appear on your AI assistant button across the entire platform.</p>
+      <div style={{ maxWidth:820, margin:"0 auto", padding:"40px 28px" }}>
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A8B4C0", marginBottom:8 }}>Personalization</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#0A1628", marginBottom:6 }}>My Avatar</h2>
+          <p style={{ fontSize:14, color:"#6A7888" }}>Build your look. Appears on your AI assistant button across the entire platform.</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, alignItems: "start" }}>
-          {/* Left: Preview */}
-          <div style={{ background: "#fff", border: "1.5px solid #E4EEF8", borderRadius: 20, padding: "36px 28px", textAlign: "center", position: "sticky", top: 80 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 140, height: 140, borderRadius: "50%", background: `linear-gradient(135deg, ${PA_DARK}22, ${PA_GLOW}33)`, border: `4px solid ${PA_COLOR}`, marginBottom: 20, boxShadow: `0 8px 32px ${PA_GLOW}33`, overflow:"hidden" }}>
-              <AvatarHead avatar={draftAvatar} size={130} />
+        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", gap:28, alignItems:"start" }}>
+          {/* Left: Preview + Save */}
+          <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:20, padding:"28px 20px", textAlign:"center", position:"sticky", top:80 }}>
+            <div style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:150, height:150, borderRadius:"50%", background:`${PA_COLOR}18`, border:`4px solid ${PA_COLOR}`, marginBottom:16, overflow:"hidden" }}>
+              <AvatarHead avatar={draftAvatar} size={150} />
             </div>
-            <input value={draftAvatar.displayName || ""} onChange={e => setDraftAvatar(a => ({...a, displayName: e.target.value}))} placeholder={user?.name || "Your display name"}
-              style={{ width:"100%", padding:"10px 14px", border:"1.5px solid #E4EEF8", borderRadius:9, fontSize:15, fontWeight:700, textAlign:"center", fontFamily:"'Playfair Display',serif", color:"#0A1628", outline:"none", background:"#F9FCFF", marginBottom:20, boxSizing:"border-box" }}
+            <input value={draftAvatar.displayName || ""} onChange={e => setDraftAvatar(a=>({...a, displayName:e.target.value}))}
+              placeholder={user?.name || "Display name"}
+              style={{ width:"100%", padding:"9px 12px", border:"1.5px solid #E4EEF8", borderRadius:9, fontSize:14, fontWeight:700, textAlign:"center", fontFamily:"'Playfair Display',serif", color:"#0A1628", outline:"none", background:"#F9FCFF", marginBottom:16, boxSizing:"border-box" }}
               onFocus={e=>e.target.style.borderColor=PA_GLOW} onBlur={e=>e.target.style.borderColor="#E4EEF8"} />
-            <button onClick={() => { setAvatar({...draftAvatar}); setAvatarSaved(true); setTimeout(()=>setAvatarSaved(false), 2500); }}
-              style={{ width:"100%", padding:"12px 0", borderRadius:10, border:"none", background:`linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", letterSpacing:0.5, transition:"all 0.2s", boxShadow:`0 4px 16px ${PA_GLOW}44` }}>
-              {avatarSaved ? "✓ Avatar Saved!" : "Save Avatar"}
+            <button onClick={() => { setAvatar({...draftAvatar}); setAvatarSaved(true); setTimeout(()=>setAvatarSaved(false),2500); }}
+              style={{ width:"100%", padding:"11px 0", borderRadius:10, border:"none", background:`linear-gradient(135deg,${PA_GLOW},${PA_COLOR})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", letterSpacing:0.5, transition:"all 0.2s" }}>
+              {avatarSaved ? "✓ Saved!" : "Save Avatar"}
             </button>
-            {avatar?.skinTone && <button onClick={() => { setDraftAvatar({ skinTone:"#F5C9A0", hairStyle:"short", hairColor:"#3D2B1F", eyeColor:"#634E37", accessory:"none", displayName:"" }); setAvatar(null); }} style={{ width:"100%", padding:"8px 0", borderRadius:10, border:"1px solid #E4EEF8", background:"transparent", color:"#A8B4C0", fontSize:12, cursor:"pointer", marginTop:8, fontFamily:"'DM Sans',sans-serif" }}>Reset Avatar</button>}
+            {avatar?.skinColor && <button onClick={() => { setDraftAvatar({...AV_DEFAULT}); setAvatar(null); }}
+              style={{ width:"100%", padding:"8px 0", borderRadius:10, border:"1px solid #E4EEF8", background:"transparent", color:"#A8B4C0", fontSize:12, cursor:"pointer", marginTop:8, fontFamily:"'DM Sans',sans-serif" }}>
+              Reset
+            </button>}
           </div>
 
-          {/* Right: Controls */}
-          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
-            {/* Skin tone */}
-            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
-              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Skin Tone</div>
+          {/* Right: All controls */}
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+            <Section title="Skin Tone">
               <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                {SKIN_TONES.map(t => <Swatch key={t} value={t} current={draftAvatar.skinTone} onChange={v=>setDraftAvatar(a=>({...a,skinTone:v}))} round />)}
+                {AV_SKIN_COLORS.map(t => <ColorSwatch key={t.id} item={t} current={draftAvatar.skinColor} onChange={v=>setDraftAvatar(a=>({...a,skinColor:v}))} />)}
               </div>
-            </div>
-            {/* Hair style */}
-            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
-              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Hair Style</div>
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:16 }}>
-                {HAIR_STYLES.map(h => <StyleBtn key={h.id} id={h.id} label={h.label} current={draftAvatar.hairStyle} onChange={v=>setDraftAvatar(a=>({...a,hairStyle:v}))} />)}
+            </Section>
+
+            <Section title="Hair Style">
+              <div style={{ fontSize:11, fontWeight:600, color:"#A8B4C0", marginBottom:8, letterSpacing:1 }}>FRONT</div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+                {AV_FRONT_HAIR.map(h => <Chip key={h.id} item={h} current={draftAvatar.hair} onChange={v=>setDraftAvatar(a=>({...a,hair:v}))} />)}
               </div>
-              {draftAvatar.hairStyle !== "none" && <>
-                <div style={{ fontSize:11, fontWeight:700, color:"#6A7888", marginBottom:10, letterSpacing:1, textTransform:"uppercase" }}>Hair Color</div>
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                  {HAIR_COLORS.map(c => <Swatch key={c} value={c} current={draftAvatar.hairColor} onChange={v=>setDraftAvatar(a=>({...a,hairColor:v}))} />)}
-                </div>
-              </>}
-            </div>
-            {/* Eye color */}
-            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
-              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Eye Color</div>
-              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                {EYE_COLORS.map(c => <Swatch key={c} value={c} current={draftAvatar.eyeColor} onChange={v=>setDraftAvatar(a=>({...a,eyeColor:v}))} round />)}
-              </div>
-            </div>
-            {/* Accessories */}
-            <div style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 20px" }}>
-              <div style={{ fontSize:12, fontWeight:700, color:"#0A1628", marginBottom:14, letterSpacing:0.5 }}>Accessories</div>
+              <div style={{ fontSize:11, fontWeight:600, color:"#A8B4C0", marginBottom:8, letterSpacing:1 }}>LONG / BACK</div>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                {ACCESSORIES.map(a => <StyleBtn key={a.id} id={a.id} label={a.label} current={draftAvatar.accessory} onChange={v=>setDraftAvatar(d=>({...d,accessory:v}))} />)}
+                {AV_REAR_HAIR.map(h => <Chip key={h.id} item={h} current={draftAvatar.rearHair} onChange={v=>setDraftAvatar(a=>({...a,rearHair:v}))} />)}
               </div>
-            </div>
+            </Section>
+
+            {(draftAvatar.hair !== "none" || draftAvatar.rearHair !== "none") && (
+              <Section title="Hair Color">
+                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                  {AV_HAIR_COLORS.map(c => <ColorSwatch key={c.id} item={c} current={draftAvatar.hairColor} onChange={v=>setDraftAvatar(a=>({...a,hairColor:v}))} />)}
+                </div>
+              </Section>
+            )}
+
+            <Section title="Eyebrows">
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {AV_EYEBROWS.map(e => <Chip key={e.id} item={e} current={draftAvatar.eyebrows} onChange={v=>setDraftAvatar(a=>({...a,eyebrows:v}))} />)}
+              </div>
+            </Section>
+
+            <Section title="Eyes">
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {AV_EYES.map(e => <Chip key={e.id} item={e} current={draftAvatar.eyes} onChange={v=>setDraftAvatar(a=>({...a,eyes:v}))} />)}
+              </div>
+            </Section>
+
+            <Section title="Mouth">
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {AV_MOUTH.map(m => <Chip key={m.id} item={m} current={draftAvatar.mouth} onChange={v=>setDraftAvatar(a=>({...a,mouth:v}))} />)}
+              </div>
+            </Section>
+
+            <Section title="Facial Hair">
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {AV_BEARD.map(b => <Chip key={b.id} item={b} current={draftAvatar.beard} onChange={v=>setDraftAvatar(a=>({...a,beard:v}))} />)}
+              </div>
+            </Section>
+
+            <Section title="Clothes">
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+                {AV_CLOTHES.map(cl => <Chip key={cl.id} item={cl} current={draftAvatar.clothes} onChange={v=>setDraftAvatar(a=>({...a,clothes:v}))} />)}
+              </div>
+              <div style={{ fontSize:11, fontWeight:600, color:"#A8B4C0", marginBottom:10, letterSpacing:1 }}>COLOR</div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {AV_CLOTHES_COLORS.map(c => <ColorSwatch key={c.id} item={c} current={draftAvatar.clothesColor} onChange={v=>setDraftAvatar(a=>({...a,clothesColor:v}))} />)}
+              </div>
+            </Section>
+
           </div>
         </div>
       </div>
@@ -7809,11 +7876,11 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div onClick={() => setView("avatar")} style={{ background:"#fff", border:"1.5px solid #E4EEF8", borderRadius:14, padding:"20px 22px", display:"flex", alignItems:"center", gap:14, cursor:"pointer", marginBottom:16, transition:"all 0.2s" }}
         onMouseEnter={e=>e.currentTarget.style.borderColor=PA_GLOW} onMouseLeave={e=>e.currentTarget.style.borderColor="#E4EEF8"}>
         <div style={{ width:44, height:44, borderRadius:"50%", border:`2px solid ${PA_COLOR}`, overflow:"hidden", flexShrink:0, background:"#F4F8FF", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          {avatar?.skinTone ? <AvatarHead avatar={avatar} size={44}/> : <span style={{fontSize:22}}>🧑</span>}
+          {avatar?.skinColor ? <AvatarHead avatar={avatar} size={44}/> : <span style={{fontSize:22}}>🧑</span>}
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>{avatar?.skinTone ? "Edit My Avatar" : "Create My Avatar"}</div>
-          <div style={{ fontSize:12, color:"#6A7888" }}>{avatar?.skinTone ? "Your avatar appears on the floating button and across your profile" : "Build your personal avatar — it replaces the default ⊕ icon"}</div>
+          <div style={{ fontSize:14, fontWeight:700, color:"#0A1628", marginBottom:3 }}>{avatar?.skinColor ? "Edit My Avatar" : "Create My Avatar"}</div>
+          <div style={{ fontSize:12, color:"#6A7888" }}>{avatar?.skinColor ? "Your avatar appears on the floating button and across your profile" : "Build your personal avatar — it replaces the default ⊕ icon"}</div>
         </div>
         <span style={{ fontSize:16, color:"#A8B4C0" }}>→</span>
       </div>
@@ -7906,8 +7973,8 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <span className="pa-nav-name" style={{ fontSize: 12, fontWeight: 700, color: "#3A4858" }}>{user.name}</span>
-              <div style={{ width: 34, height: 34, borderRadius: "50%", overflow:"hidden", background: avatar?.skinTone ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", border:`2px solid ${PA_COLOR}` }}>
-                {avatar?.skinTone ? <AvatarHead avatar={avatar} size={34}/> : user.avatar}
+              <div style={{ width: 34, height: 34, borderRadius: "50%", overflow:"hidden", background: avatar?.skinColor ? "#fff" : `linear-gradient(135deg, ${PA_DARK}, ${PA_GLOW})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", border:`2px solid ${PA_COLOR}` }}>
+                {avatar?.skinColor ? <AvatarHead avatar={avatar} size={34}/> : user.avatar}
               </div>
             </div>
           ) : (
