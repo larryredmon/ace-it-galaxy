@@ -1707,6 +1707,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
             Ace It Flash Cards
           </div>
+          {user?.name && <div className="fc-fade-up" style={{ animationDelay:"0.04s", fontSize:14, color:"rgba(247,246,242,0.45)", marginBottom:8 }}>Welcome back, <span style={{ color:"#F7F6F2", fontWeight:600 }}>{user.name.split(" ")[0]}</span> 👋</div>}
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22 }}>
             <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
           </h1>
@@ -1721,31 +1722,29 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
         </div>
       </section>
 
-      {/* AI Feature pills strip */}
-      <div style={{ background: "#1A1814", borderBottom: "1px solid rgba(247,246,242,0.06)", overflowX: "auto" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px", display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(247,246,242,0.3)", letterSpacing: 2, textTransform: "uppercase", whiteSpace: "nowrap", marginRight: 6 }}>AI Tools</span>
-          {[
-            { icon:"⚡", label:"Quick Build — Paste Text → Cards" },
-            { icon:"🧠", label:"Spaced Repetition Engine" },
-            { icon:"✦", label:"9 Study Modes" },
-            { icon:"◎", label:"ADHD Focus Mode" },
-            { icon:"🔍", label:"Weak-Area Targeting" },
-            { icon:"📊", label:"Memory Strength Dashboard" },
-            { icon:"🔗", label:"Cross-App Linking" },
-          ].map(({ icon, label }) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(247,246,242,0.06)", border: "1px solid rgba(247,246,242,0.08)", borderRadius: 20, padding: "6px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
-              <span style={{ fontSize: 12 }}>{icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(247,246,242,0.55)" }}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
+
+      {/* Due today CTA */}
+      {(()=>{const now=Date.now();const decks=(()=>{try{return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]");}catch{return[];}})();const due=decks.reduce((a,d)=>a+(d.cards||[]).filter(c=>!c.dueDate||new Date(c.dueDate).getTime()<=now).length,0);if(due===0)return null;return(
+        <div style={{ background:"#F5C84215", borderBottom:"1px solid #F5C84230", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12 }}>
+          <span style={{ fontSize:20 }}>⏰</span>
+          <span style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>You have <span style={{ color:"#C8900A" }}>{due} card{due!==1?"s":""}</span> due for review today</span>
+          <a href="#my-library" style={{ background:"#F5C842", border:"none", borderRadius:7, padding:"6px 16px", fontSize:12, fontWeight:700, cursor:"pointer", color:"#1A1814", textDecoration:"none" }}>Study Now →</a>
+        </div>
+      );})()}
       {/* Stats strip */}
       <div style={{ background: "#ECEAE4", borderBottom: "1px solid #D8D5CE" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-          {[[(()=>{ try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").length; } catch { return 0; } })().toString(), "Study Decks"], [(()=>{ try { return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]").reduce((a,d)=>a+(d.cards?.length||0),0); } catch { return 0; } })().toString(), "Total Cards"], [(()=>{ try { const d=JSON.parse(localStorage.getItem("tp_fc_decks")||"[]"); return d.length?Math.round(d.reduce((a,x)=>a+(x.mastery||0),0)/d.length)+"%":"0%"; } catch { return "0%"; } })(), "Avg Mastery"], ["0", "Day Streak"]].map(([val, lbl], i) => (
+          {(()=>{
+              const decks=(()=>{try{return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]");}catch{return[];}})();
+              const totalCards=decks.reduce((a,d)=>a+(d.cards?.length||0),0);
+              const avgMastery=decks.length?Math.round(decks.reduce((a,x)=>a+(x.mastery||0),0)/decks.length):null;
+              const streak=(()=>{try{return parseInt(localStorage.getItem("tp_fc_streak")||"0");}catch{return 0;}})();
+              const items=[[decks.length.toString(),"Study Decks"],[totalCards.toString(),"Total Cards"]];
+              if(avgMastery!==null&&avgMastery>0) items.push([avgMastery+"%","Avg Mastery"]);
+              if(streak>0) items.push([streak.toString(),"Day Streak"]);
+              return items;
+            })().map(([val, lbl], i) => (
             <div key={lbl} style={{ padding: "20px 0", textAlign: "center", borderRight: i < 3 ? "1px solid #D8D5CE" : "none" }}>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#1A1814" }}>{val}</div>
               <div style={{ fontSize: 11, fontWeight: 500, color: "#8C8880", letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{lbl}</div>
