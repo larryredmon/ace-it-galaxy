@@ -11244,7 +11244,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const [docUploading, setDocUploading] = useState(false);
   const [sharedDocs,   setSharedDocs]   = useState({}); // {uid: {url,name,isPDF,uploaderName}}
   const [activeDocUid, setActiveDocUid] = useState(null); // whose doc is being viewed
-  const [viewingPages, setViewingPages] = useState([]); // rendered pages of active doc
+  const [screenSharing, setScreenSharing] = useState(false);
+  const screenStreamRef = useRef(null);
   const [errMsg,       setErrMsg]       = useState('');
   const [roomLocked,   setRoomLocked]   = useState(false);
   const [pinnedMsg,    setPinnedMsg]    = useState(null);
@@ -11433,8 +11434,11 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       const lib=window['pdfjs-dist/build/pdf'];
       lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       const pdf=await lib.getDocument({data:arrayBuffer}).promise;
+      const totalPages=pdf.numPages;
+      const maxPages=Math.min(totalPages,100);
+      if(totalPages>100){console.warn(`[PDF] Document has ${totalPages} pages, showing first 100.`);}
       const pages=[];
-      for(let p=1;p<=Math.min(pdf.numPages,30);p++){
+      for(let p=1;p<=maxPages;p++){
         const page=await pdf.getPage(p);
         const viewport=page.getViewport({scale:1.5});
         const canvas=document.createElement('canvas');
@@ -11464,7 +11468,9 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       const pdf=await lib.getDocument({data:arrayBuffer}).promise;
       const pages=[];
-      const maxPages=Math.min(pdf.numPages,30);
+      const totalPages=pdf.numPages;
+      const maxPages=Math.min(totalPages,100);
+      if(totalPages>100){setErrMsg(`Note: showing first 100 of ${totalPages} pages.`);setTimeout(()=>setErrMsg(''),5000);}
       for(let p=1;p<=maxPages;p++){
         const page=await pdf.getPage(p);
         const viewport=page.getViewport({scale:1.5});
@@ -11508,6 +11514,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       await Promise.race([up,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
       setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);
       joinedAt.current = Date.now();setView('room');setJoining(false);
+      await startMedia();
       healthRef.current=setInterval(()=>{
         const rId=activeRoomRef.current?.id;
         if(!rId)return;
@@ -11519,7 +11526,6 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           if(uid!==user.uid&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed')){console.log('[health] missing peer',uid.slice(-4));connectToPeer(rId,uid);}
         });
       },6000);
-      await startMedia();
       try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
           if(d.studyDocs){
             setSharedDocs(prev=>{
@@ -11561,33 +11567,48 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   };
 
   const doLeave=async(silent=false)=>{
+    // Stop screen share if active
+    screenStreamRef.current?.getTracks().forEach(t=>t.stop());screenStreamRef.current=null;setScreenSharing(false);
     localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
     Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
     unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
-    if(!silent&&activeRoomRef.current&&user){try{await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));}catch{}}
-    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');setSharedDocs({});setActiveDocUid(null);setViewingPages([]);
+    if(!silent&&activeRoomRef.current&&user){
+      const roomId=activeRoomRef.current.id;
+      try{
+        // Delete my uploaded study doc from Storage
+        const roomSnap=await getDoc(doc(db,'studyRooms',roomId));
+        const myDoc=roomSnap.data()?.studyDocs?.[user.uid];
+        if(myDoc?.url){try{const url=new URL(myDoc.url);const path=decodeURIComponent(url.pathname.split('/o/')[1]?.split('?')[0]||'');if(path){await deleteObject(ref(storage,path));}}catch{}}
+        // Clean up my signals
+        const sigSnap=await getDocs(query(collection(db,'studyRooms',roomId,'signals'),where('from','==',user.uid)));
+        await Promise.all(sigSnap.docs.map(d=>deleteDoc(d.ref)));
+      }catch{}
+      try{
+        await updateDoc(doc(db,'studyRooms',roomId),{[`participants.${user.uid}`]:deleteField(),[`studyDocs.${user.uid}`]:deleteField()});
+        const snap=await getDoc(doc(db,'studyRooms',roomId));
+        if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',roomId));
+      }catch{}
+    }
+    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');setSharedDocs({});setActiveDocUid(null);setScreenSharing(false);
   };
 
   const sendMsg=async()=>{if(!newMsg.trim()||!activeRoom)return;const t=newMsg.trim();setNewMsg('');try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}});}catch{}};
-  const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
+  const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{...u,timerChangedBy:user.name||'Someone'});}catch{}};
   const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
 
-  // Load pages when active doc changes or when doc data arrives
+  // Load pages when active doc changes
   useEffect(()=>{
     if(!activeDocUid||!sharedDocs[activeDocUid])return;
     const docInfo=sharedDocs[activeDocUid];
     if(!docInfo.url)return;
-    // Only reload if pages are empty (avoid re-rendering on unrelated sharedDocs changes)
-    setDocPages(existing=>{
-      if(existing.length>0)return existing;
-      if(docInfo.isPDF){
-        setTimeout(()=>renderPDFFromUrl(docInfo.url),0);
-      } else {
-        setTimeout(()=>setDocPages([docInfo.url]),0);
-      }
-      return existing;
-    });
-  },[activeDocUid, sharedDocs]);
+    setDocPages([]);
+    setDocPage(0);
+    if(docInfo.isPDF){
+      renderPDFFromUrl(docInfo.url);
+    } else {
+      setDocPages([docInfo.url]);
+    }
+  },[activeDocUid]);
 
   // Attach local stream to video element whenever stream changes
   useEffect(()=>{
@@ -11597,6 +11618,23 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     }
   },[localStream]);
   const toggleAudio=()=>{const t=localStreamRef.current?.getAudioTracks()[0];if(t){t.enabled=!audioOn;setAudioOn(!audioOn);}};
+  const toggleScreenShare=async()=>{
+    if(screenSharing){
+      screenStreamRef.current?.getTracks().forEach(t=>t.stop());screenStreamRef.current=null;setScreenSharing(false);
+      // Restore camera track to all peers
+      const camTrack=localStreamRef.current?.getVideoTracks()[0];
+      if(camTrack){Object.values(peerConns.current).forEach(pc=>{const sender=pc.getSenders().find(s=>s.track?.kind==='video');if(sender)sender.replaceTrack(camTrack).catch(()=>{});});}
+      return;
+    }
+    try{
+      const screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      screenStreamRef.current=screenStream;setScreenSharing(true);
+      const screenTrack=screenStream.getVideoTracks()[0];
+      // Replace video track in all peer connections
+      Object.values(peerConns.current).forEach(pc=>{const sender=pc.getSenders().find(s=>s.track?.kind==='video');if(sender)sender.replaceTrack(screenTrack).catch(()=>{});});
+      screenTrack.onended=()=>{screenStreamRef.current=null;setScreenSharing(false);const camTrack=localStreamRef.current?.getVideoTracks()[0];if(camTrack){Object.values(peerConns.current).forEach(pc=>{const sender=pc.getSenders().find(s=>s.track?.kind==='video');if(sender)sender.replaceTrack(camTrack).catch(()=>{});});}};
+    }catch(e){if(e.name!=='NotAllowedError')setMediaError('Screen share failed.');}
+  };
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
   const partList=Object.values(participants);
@@ -11605,7 +11643,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
 
   if(view==='room'&&activeRoom) return(
     <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
-      {roomCode&&isHost&&(<div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}><span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong></span><button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button></div>)}
+      {(()=>{const code=roomCode||(!activeRoom?.isPublic?activeRoom?.code:'');return code&&isHost&&(<div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}><span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{code}</strong></span><button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button></div>);})()}
       {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
       <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 12px',gap:8,flexShrink:0}}>
         <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)',flexShrink:0}}>← Leave</button>
@@ -11684,9 +11722,9 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
             );
             return(
               <div style={{flex:1,display:'grid',gap:5,padding:8,gridTemplateColumns:`repeat(${cols},1fr)`,gridTemplateRows:`repeat(${rows},1fr)`,overflow:'hidden',boxSizing:'border-box'}}>
-                <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${false?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn} muted={!audioOn}>
+                <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${screenSharing?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn} muted={!audioOn}>
                   {localStream?<video ref={el=>{localVidRef.current=el;if(el&&localStream&&el.srcObject!==localStream){el.srcObject=localStream;el.play().catch(()=>{});}}} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:'scaleX(-1)'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',textAlign:'center',maxWidth:160,lineHeight:1.4}}>{mediaError||'Starting camera…'}</span>
-                        {mediaError&&<button onClick={async()=>{setMediaError(null);const s=await startMedia();if(s&&activeRoom)joinRoom(activeRoom);}} style={{marginTop:8,background:'#F5C842',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>🔄 Retry Camera</button>}
+                        {mediaError&&<button onClick={async()=>{setMediaError(null);const s=await startMedia();if(s&&activeRoom)enterRoom(activeRoom);}} style={{marginTop:8,background:'#F5C842',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>🔄 Retry Camera</button>}
                       </div>}
                 </Tile>
                 {otherStreams.map(([uid,stream])=>{const p=participants[uid];const attachRef=(el)=>{if(el&&el.srcObject!==stream){remoteVidRefs.current[uid]=el;el.srcObject=stream;el.play().catch(()=>{});}};return(<Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}><video ref={attachRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/></Tile>);})}
@@ -11696,8 +11734,9 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           })()}
           {mediaError&&<div style={{padding:'8px 14px',background:'rgba(232,93,63,0.1)',borderTop:'1px solid rgba(232,93,63,0.2)',fontSize:11,color:'#E85D3F',display:'flex',gap:6,alignItems:'center',flexShrink:0}}><span>⚠️</span><span>{mediaError}</span></div>}
           <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
-            <button onClick={toggleAudio} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-            <button onClick={toggleVideo} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
+            <button onClick={toggleAudio} title={audioOn?'Mute':'Unmute'} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
+            <button onClick={toggleVideo} title={videoOn?'Turn off camera':'Turn on camera'} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
+            <button onClick={toggleScreenShare} title={screenSharing?'Stop sharing':'Share screen'} style={{width:42,height:42,borderRadius:'50%',background:screenSharing?`${SB}30`:'rgba(255,255,255,0.08)',border:`1px solid ${screenSharing?SB+'80':'rgba(255,255,255,0.12)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{screenSharing?'🖥️':'💻'}</button>
             <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
           </div>
         </div>
@@ -11706,7 +11745,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
           <div style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
             <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:7}}>In this room ({partList.length})</div>
             <div style={{display:'flex',flexDirection:'column',gap:4}}>
-              {partList.map(p=>(<div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 6px',borderRadius:7}}><div style={{width:22,height:22,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{p.avatar||p.name?.[0]||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.7)',fontWeight:600}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span>{isHost&&p.uid!==user?.uid&&(<button onClick={async()=>{try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`participants.${p.uid}`]:deleteField()});}catch{}}} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'rgba(232,93,63,0.4)',fontSize:12,padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(232,93,63,0.4)'}>✕</button>)}</div>))}
+              {partList.map(p=>(<div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 6px',borderRadius:7}}><div style={{width:22,height:22,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{p.avatar||p.name?.[0]||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.7)',fontWeight:600}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span>{isHost&&p.uid!==user?.uid&&(<button onClick={async()=>{try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`participants.${p.uid}`]:deleteField()});const pc=peerConns.current[p.uid];if(pc){pc.close();delete peerConns.current[p.uid];}setRemoteStreams(prev=>{const n={...prev};delete n[p.uid];return n;});}catch{}}} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'rgba(232,93,63,0.4)',fontSize:12,padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(232,93,63,0.4)'}>✕</button>)}</div>))}
             </div>
           </div>
           <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>

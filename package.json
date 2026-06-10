@@ -11,9 +11,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
-    "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.4.2",
-    "firebase": "^12.11.0",
+    "@dicebear/toon-head": "^9.4.2",
+    "firebase": "^12.13.0",
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
