@@ -5250,7 +5250,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
           {/* AI Expand */}
           <div style={{ position:"relative" }}>
-            <button onClick={()=>{ if(!selectedId){alert("Select a node first, then click AI Expand.");return;} setShowAI(a=>!a);}} title="AI Expand — select a node first"
+            <button onClick={()=>{ if(!selectedId){setShowAI(false); return;} setShowAI(a=>!a);}} title="AI Expand — select a node first"
               style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
               ✦ AI Expand
             </button>
@@ -6252,7 +6252,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
-          max_tokens: 1000,
+          max_tokens: 1500,
           system: aiContext || "You are a helpful text simplification assistant.",
           messages: [{ role: "user", content: buildPrompt() }],
         }),
@@ -8547,6 +8547,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   const [showChat, setShowChat]       = useState(false);
   const [notesMsg, setNotesMsg]       = useState("");
   const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState(null); // folder id
 
   const fileInputRef  = useRef(null);
   const recognitionRef = useRef(null);
@@ -8641,9 +8642,9 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   const renderContent = (text) => {
     if (!text) return null;
     return text.split("\n").map((line, i) => {
-      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
-      if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", margin:"12px 0 5px" }}>{line.slice(3)}</h2>;
       if (line.startsWith("### ")) return <h3 key={i} style={{ fontSize:14, fontWeight:800, color:"#1A1814", margin:"10px 0 4px" }}>{line.slice(4)}</h3>;
+      if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", margin:"12px 0 5px" }}>{line.slice(3)}</h2>;
+      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
       if (line.startsWith("- "))  return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18 }}>{line.slice(2)}</li>;
       if (/^\d+\.\s/.test(line)) return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
       const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
@@ -9049,7 +9050,19 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
 
               {/* New folder */}
               <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${NL}66` }}>
-                {addingFolder ? (
+                {confirmDeleteFolder && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setConfirmDeleteFolder(null)}>
+            <div style={{background:"#fff",borderRadius:14,padding:"24px 28px",maxWidth:340,width:"90%",boxShadow:"0 16px 48px rgba(0,0,0,0.18)"}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:8}}>Delete folder?</div>
+              <div style={{fontSize:13,color:"#5A5752",marginBottom:20}}>"{folders.find(f=>f.id===confirmDeleteFolder)?.name}" will be deleted. Notes inside will stay.</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setConfirmDeleteFolder(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #D8D5CE",background:"none",fontSize:13,fontWeight:600,cursor:"pointer",color:"#5A5752"}}>Cancel</button>
+                <button onClick={()=>{setFolders(prev=>prev.filter(x=>x.id!==confirmDeleteFolder));setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {addingFolder ? (
                   <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
                     onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
                     style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:`1.5px solid ${NC}`, background:"#FDFCF7", fontSize:12, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
@@ -9139,7 +9152,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                             style={{ fontSize:10, fontWeight:700, color:"#8C7A4A", background:`${NL}22`, border:"none", borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
                             ✏️ Edit
                           </button>
-                          <button onClick={e=>{e.stopPropagation();alert("Coming soon to Academy! 🎓");}}
+                          <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓"); setTimeout(()=>setNotesMsg(""),3000);}}
                             style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}10`, border:`1px solid ${NC}30`, borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
                             🎓 Course
                           </button>
@@ -9750,7 +9763,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                     <div style={{ fontSize:28,marginBottom:8 }}>📁</div>
                     <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:4 }}>{f.name}</div>
                     <div style={{ fontSize:12,color:"#8C7A4A" }}>{count} {count===1?"note":"notes"}</div>
-                    <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete "${f.name}"?`)){setFolders(prev=>prev.filter(x=>x.id!==f.id));}}}
+                    <button onClick={e=>{e.stopPropagation();setConfirmDeleteFolder(f.id);}}
                       style={{ position:"absolute",top:10,right:10,background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#C8B88A",opacity:0,transition:"opacity 0.15s" }}
                       onMouseEnter={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.color="#E85D3F";}}
                       onMouseLeave={e=>e.currentTarget.style.opacity="0"}>✕</button>
@@ -9794,7 +9807,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   const toggleSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}:t));
   const deleteSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).filter(s=>s.id!==sid)}:t));
   const downloadICS=task=>{const n=new Date(),ds=n.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z",dt=task.date?task.date.replace(/-/g,"")+"T090000Z":ds;const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ace It//EN","BEGIN:VEVENT",`DTSTAMP:${ds}`,`DTSTART:${dt}`,`SUMMARY:${task.title}${task.course?` (${task.course})`:""}`,`DESCRIPTION:Priority: ${task.priority}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");const a=document.createElement("a");a.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);a.download=task.title.replace(/\s+/g,"-")+".ics";a.click();};
-  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
+  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
   const importAITasks=ts=>{ts.forEach(t=>addTask({title:t.title,date:t.date||"",course:t.course||"",priority:t.priority||"medium",notes:t.notes||""}));setShowAIImport(false);setAIImportImg(null);setAIImportResult(null);};
   const sortTasks=arr=>{const s=[...arr],p={high:0,medium:1,low:2};if(sortBy==="priority")s.sort((a,b)=>(p[a.priority]||1)-(p[b.priority]||1));else if(sortBy==="date")s.sort((a,b)=>!a.date&&!b.date?0:!a.date?1:!b.date?-1:new Date(a.date)-new Date(b.date));else if(sortBy==="course")s.sort((a,b)=>(a.course||"").localeCompare(b.course||""));else s.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));return s;};
   const todayStr=new Date().toISOString().split("T")[0];
@@ -10573,7 +10586,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                 {(() => { const c = J_CATEGORIES.find(x => x.id === activeEntry.category); return c ? <span style={{ fontSize:11, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{c.emoji} {c.label}</span> : null; })()}
               </div>
             </div>
-            <button onClick={() => { if (window.confirm("Delete this entry?")) deleteEntry(activeEntry.id); }}
+            <button onClick={() => { setConfirmDeleteEntry(true); }}
               style={{ background:"none", border:`1px solid #FECACA`, borderRadius:7, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#E85D3F", flexShrink:0 }}>
               🗑 Delete
             </button>
