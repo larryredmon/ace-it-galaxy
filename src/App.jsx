@@ -7315,8 +7315,14 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   const [view, setView]               = useState("home");
   // ── Chat history system ──────────────────────────────────────────────────────
   const newConvo = () => ({ id: Date.now(), title: "New Chat", messages: [], createdAt: new Date() });
-  const [conversations, setConversations] = useState([newConvo()]);
-  const [activeConvoId, setActiveConvoId] = useState(conversations[0].id);
+  const [conversations, setConversations] = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_convos"); if (s) { const p = JSON.parse(s); if (p.length) return p; } } catch {}
+    return [newConvo()];
+  });
+  const [activeConvoId, setActiveConvoId] = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_active_convo"); if (s) return parseInt(s); } catch {}
+    return null;
+  });
   const [renamingId, setRenamingId]       = useState(null);
   const [renameVal, setRenameVal]         = useState("");
   const [chatSidebarOpen, setChatSidebarOpen] = useState(true);
@@ -7343,16 +7349,10 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   const deleteConvo = (id) => {
     setConversations(cs => {
       const remaining = cs.filter(c => c.id !== id);
-      if (remaining.length === 0) { const c = newConvo(); return [c]; }
-      return remaining;
+      const final = remaining.length === 0 ? [newConvo()] : remaining;
+      if (activeConvoId === id) setActiveConvoId(final[0].id);
+      return final;
     });
-    if (activeConvoId === id) {
-      setConversations(cs => {
-        const remaining = cs.filter(c => c.id !== id);
-        if (remaining.length) setActiveConvoId(remaining[0].id);
-        return cs;
-      });
-    }
   };
 
   const renameConvo = (id, title) => {
@@ -7381,14 +7381,12 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   };
   // ─────────────────────────────────────────────────────────────────────────────
   const [loading, setLoading]         = useState(false);
-  const [goals, setGoals]             = useState([
+  const PA_DEFAULT_GOALS = [
     { id: 1, text: "Complete my first flashcard deck",    done: false, priority: "high"   },
     { id: 2, text: "Try all three study modes",           done: false, priority: "medium" },
     { id: 3, text: "Study at least 30 min every day",    done: false, priority: "medium" },
-  ]);
-  const [newGoal, setNewGoal]         = useState("");
-  const [newGoalPriority, setNewGoalPriority] = useState("medium");
-  const [planDays, setPlanDays]       = useState([
+  ];
+  const PA_DEFAULT_PLAN = [
     { day:"Monday",    tasks:["Create your first deck", "Explore Flash Cards app"],  done:[false,false] },
     { day:"Tuesday",   tasks:["Try Quick Build mode", "Study your deck"],             done:[false,false] },
     { day:"Wednesday", tasks:["Build a Brain Map", "Link decks to nodes"],           done:[false,false] },
@@ -7396,7 +7394,17 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
     { day:"Friday",    tasks:["Full deck review", "Practice test mode"],              done:[false,false] },
     { day:"Saturday",  tasks:["Rest or light review"],                               done:[false]       },
     { day:"Sunday",    tasks:["Plan your week ahead"],                               done:[false]       },
-  ]);
+  ];
+  const [goals, setGoals]             = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_goals"); if (s) return JSON.parse(s); } catch {}
+    return PA_DEFAULT_GOALS;
+  });
+  const [newGoal, setNewGoal]         = useState("");
+  const [newGoalPriority, setNewGoalPriority] = useState("medium");
+  const [planDays, setPlanDays]       = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_plan"); if (s) return JSON.parse(s); } catch {}
+    return PA_DEFAULT_PLAN;
+  });
   const [addingTaskDay, setAddingTaskDay] = useState(null);
   const [newTask, setNewTask]             = useState("");
   // Local avatar draft (pending save)
@@ -7406,6 +7414,27 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
   useEffect(() => { setDraftAvatar(avatar && avatar.skinColor ? avatar : { ...AV_DEFAULT }); }, [avatar]);
+  // Persist goals and plan
+  const paGoalsMounted = useRef(false);
+  useEffect(() => {
+    if (!paGoalsMounted.current) { paGoalsMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_goals", JSON.stringify(goals)); } catch {}
+  }, [goals]);
+  const paPlanMounted = useRef(false);
+  useEffect(() => {
+    if (!paPlanMounted.current) { paPlanMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_plan", JSON.stringify(planDays)); } catch {}
+  }, [planDays]);
+  // Persist conversations
+  const paConvoMounted = useRef(false);
+  useEffect(() => {
+    if (!paConvoMounted.current) { paConvoMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_convos", JSON.stringify(conversations.slice(0, 50))); } catch {}
+  }, [conversations]);
+  // Persist active convo id
+  useEffect(() => {
+    if (activeConvoId) try { localStorage.setItem("tp_pa_active_convo", String(activeConvoId)); } catch {}
+  }, [activeConvoId]);
 
   const systemPrompt = aiContext || `You are Ace It Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
@@ -7450,7 +7479,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
-          max_tokens: 1000,
+          max_tokens: 2000,
           system: typeof activePrompt === "string" ? activePrompt.slice(0, 10000) : "You are a helpful study assistant.",
           messages: newMsgs.map(m => ({ role: m.role, content: String(m.content) })),
         }),
@@ -8516,10 +8545,15 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   const [chatInput, setChatInput]     = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [showChat, setShowChat]       = useState(false);
+  const [notesMsg, setNotesMsg]       = useState("");
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
 
   const fileInputRef  = useRef(null);
   const recognitionRef = useRef(null);
   const editorRef     = useRef(null);
+
+  // Stop recording on unmount
+  useEffect(() => () => { recognitionRef.current?.stop(); }, []);
 
   const notesMounted = useRef(false);
   useEffect(() => { if (!notesMounted.current) { notesMounted.current = true; return; } try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} tpSync("tp_notes", notes); }, [notes]);
@@ -8563,7 +8597,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   // Recording
   const toggleRecording = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Your browser doesn't support recording. Try Chrome."); return; }
+    if (!SR) { setNotesMsg("Recording not supported in this browser. Try Chrome."); return; }
     if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); return; }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
@@ -8609,6 +8643,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     return text.split("\n").map((line, i) => {
       if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
       if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", margin:"12px 0 5px" }}>{line.slice(3)}</h2>;
+      if (line.startsWith("### ")) return <h3 key={i} style={{ fontSize:14, fontWeight:800, color:"#1A1814", margin:"10px 0 4px" }}>{line.slice(4)}</h3>;
       if (line.startsWith("- "))  return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18 }}>{line.slice(2)}</li>;
       if (/^\d+\.\s/.test(line)) return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
       const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
@@ -8713,7 +8748,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
 
   const fetchYouTube = (url) => {
     const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
-    if (!videoId) { alert("Invalid YouTube URL"); return; }
+    if (!videoId) { setNotesMsg("Invalid YouTube URL. Please paste a full YouTube link."); return; }
     setUploadText(`YouTube Video: ${url}\nVideo ID: ${videoId}\n\nGenerate comprehensive study notes based on this educational video.`);
     if (!uploadTitle) setUploadTitle("YouTube Notes");
   };
@@ -8942,7 +8977,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                     </div>
                     <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10 }}>
                       <span style={{ fontSize:10,color:"#C8B88A" }}>{n.wordCount} words</span>
-                      <button onClick={e=>{e.stopPropagation();alert("Turn into Course — coming soon to Academy! 🎓");}}
+                      <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
                         style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}10`,border:`1px solid ${NC}30`,borderRadius:10,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
                         onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
@@ -9274,10 +9309,13 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                   ✺ → Brain Map
                 </button>
               </>}
-              <button onClick={()=>{ if(window.confirm("Delete this note?")) deleteNote(activeNote.id); }}
-                style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                🗑
-              </button>
+              {!confirmDeleteNote
+              ? <button onClick={()=>setConfirmDeleteNote(true)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>🗑</button>
+              : <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                  <span style={{ fontSize:11, color:"#E85D3F", fontWeight:600 }}>Delete?</span>
+                  <button onClick={()=>{deleteNote(activeNote.id);setConfirmDeleteNote(false);}} style={{ padding:"5px 10px", borderRadius:6, border:"none", background:"#E85D3F", fontSize:11, fontWeight:700, cursor:"pointer", color:"#fff" }}>Yes</button>
+                  <button onClick={()=>setConfirmDeleteNote(false)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #ECEAE4", background:"transparent", fontSize:11, cursor:"pointer", color:"#8C8880" }}>No</button>
+                </div>}
             </div>
           </div>
 
@@ -9436,7 +9474,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
               ✏️ Edit This Note
             </button>
-            <button onClick={()=>{alert("Turn into Course — coming soon to Academy! 🎓");}}
+            <button onClick={()=>{setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
               style={{ padding:"12px 24px", borderRadius:10, border:`1.5px solid ${NC}30`, background:`${NC}10`, color:NC, fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
@@ -9600,7 +9638,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               💬 Chat
             </button>
             {activeNote && (
-              <button onClick={()=>{if(window.confirm("Delete this note?"))deleteNote(activeNote.id);}}
+              <button onClick={()=>setConfirmDeleteNote(true)}
                 style={{ marginLeft:"auto", padding:"5px 12px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", fontSize:11, fontWeight:600, cursor:"pointer", color:"#E85D3F", whiteSpace:"nowrap" }}>
                 🗑 Delete
               </button>
@@ -12044,8 +12082,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [expandedFolders, setExpandedFolders] = useState({});
   const [dragDocId,   setDragDocId]   = useState(null);
   const [assignDocId, setAssignDocId] = useState(null); // doc being assigned to folder
+  const [chConfirmDelete, setChConfirmDelete] = useState(false);
 
-  useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));tpSync('tp_courses',courses);},[courses]);
+  const chMounted = useRef(false);
+  useEffect(()=>{if(!chMounted.current){chMounted.current=true;return;}localStorage.setItem('tp_courses',JSON.stringify(courses));tpSync('tp_courses',courses);},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
   const coursesRef=useRef(courses);
@@ -12102,7 +12142,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const createCourse=()=>{
     if(!createForm.name.trim())return;
     if(courses.some(c=>c.name.trim().toLowerCase()===createForm.name.trim().toLowerCase())){
-      alert(`A course named "${createForm.name.trim()}" already exists. Please use a different name.`);
+      setErrMsg(`A course named "${createForm.name.trim()}" already exists.`);
+      setTimeout(()=>setErrMsg(""),4000);
       return;
     }
     const c={id:`course_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,...createForm,name:createForm.name.trim(),documents:[],flashDeckIds:[],brainMapIds:[],createdAt:new Date().toISOString()};
@@ -12437,7 +12478,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           </div>
           <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4',display:'flex',flexDirection:'column',gap:8}}>
             <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',borderRadius:9,border:'1px dashed #ECEAE4',background:'transparent',cursor:'pointer',color:'#6B6860',fontSize:12,fontWeight:600}} onMouseEnter={e=>e.currentTarget.style.borderColor=active.color} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>📁 New Folder</button>
-            <button onClick={()=>{if(window.confirm('Delete this course and all its content?'))deleteCourse(active.id);}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:'transparent',cursor:'pointer',color:'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>Delete course</button>
+            <button onClick={()=>{if(chConfirmDelete){deleteCourse(active.id);setChConfirmDelete(false);}else{setChConfirmDelete(true);setTimeout(()=>setChConfirmDelete(false),4000);}}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:chConfirmDelete?'rgba(232,93,63,0.1)':'transparent',cursor:'pointer',color:chConfirmDelete?'#E85D3F':'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>{if(!chConfirmDelete)e.currentTarget.style.color='#D8D5CE';}}>{chConfirmDelete?'⚠️ Tap again to confirm':'Delete course'}</button>
           </div>
         </div>
 
@@ -13124,18 +13165,19 @@ Help them see connections ACROSS their apps. For example:
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
         const userData = { uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() };
+        // Read cached UID BEFORE overwriting so we can detect account switch
+        const cachedUser = localStorage.getItem("tp_user");
+        const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
+        if (cachedUid && cachedUid !== firebaseUser.uid) {
+          // Different user logged in — clear previous user's data
+          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses","tp_pa_convos","tp_pa_goals","tp_pa_plan"].forEach(k => {
+            try { localStorage.removeItem(k); } catch {}
+          });
+        }
         try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
-        // Clear any previous user localStorage data before loading new user data
-        const cachedUser = localStorage.getItem("tp_user");
-        const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
-        if (cachedUid && cachedUid !== firebaseUser.uid) {
-          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses"].forEach(k => {
-            try { localStorage.removeItem(k); } catch {}
-          });
-        }
         // Load all Firestore data on login
         fsLoadAll(firebaseUser.uid).then(() => {
           // Force re-render so apps pick up new localStorage values
