@@ -1687,12 +1687,13 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
-      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastery = Math.round(newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length/newCards.length*100); updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
+      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastered = newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length;
+const mastery = newCards.length > 0 ? Math.round(mastered/newCards.length*100) : 0; updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
     </div>
   );
 }
@@ -2083,10 +2084,10 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
           const res = await fetch("/api/claude", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "claude-sonnet-4-5-20250929", max_tokens: 3000,
+              model: "claude-sonnet-4-6", max_tokens: 3000,
               messages: [{ role: "user", content: [
                 { type: "image", source: { type: "base64", media_type: img.mediaType, data: img.base64 } },
-                { type: "text", text: "Extract ALL text from this image exactly as written. Include every word, number, formula, heading, bullet point, and definition. Output only the extracted text, no commentary." }
+                { type: "text", text: "Extract ALL content from this image. Preserve structure: use | to separate table columns, keep bullet points with their symbols, keep formulas in their original notation. Include every word, number, formula, heading, bullet, and definition. Output only the extracted content, no commentary." }
               ]}],
             }),
           });
@@ -2111,12 +2112,12 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
 
       // ── Topic categories ───────────────────────────────────────────
       let topicCategories = ["General"];
-      if (totalChunks > 1) {
+      if (totalChunks >= 1) {
         setQbChunkProgress(p => ({ ...p, step: "Identifying topics and categories…" }));
         const summaryChunk = words.slice(0, 1500).join(" ");
         const catRes = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 400,
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400,
             messages: [{ role: "user", content: `Identify 3-8 main topic categories for organizing flashcards from this material. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2"]}\n\nMaterial:\n${summaryChunk}` }] }),
         });
         const catData = await catRes.json();
@@ -2130,7 +2131,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
         setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
         const res = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 4000,
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 4000,
             messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information as flashcards.
 
 RULES:
@@ -2152,7 +2153,7 @@ ${chunks[ci]}` }] }),
         try {
           const parsed = JSON.parse(clean);
           const chunkCards = (parsed.cards || []).map((c, i) => ({
-            id: Date.now() + ci * 10000 + i,
+            id: Date.now() + ci * 100000 + i * 7 + Math.floor(Math.random() * 100),
             term: c.term || "", definition: c.definition || "",
             topic: c.topic || topicCategories[0] || "General",
             isDuplicate: false,
@@ -2169,10 +2170,10 @@ ${chunks[ci]}` }] }),
         const normalized = card.term.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
         if (termsSeen.has(normalized)) { duplicateIds.add(card.id); duplicateIds.add(termsSeen.get(normalized)); }
         else termsSeen.set(normalized, card.id);
-        const shortKey = normalized.split(" ").slice(0, 5).join(" ");
-        if (shortKey.length > 10) {
-          if (termsSeen.has(shortKey)) duplicateIds.add(card.id);
-          else termsSeen.set(shortKey, card.id);
+        // Only flag near-exact normalized matches to avoid false positives
+        if (normalized.length > 15) {
+          const exactKey = normalized.replace(/\s+/g, " ").trim();
+          if (termsSeen.has(exactKey) && exactKey === normalized) duplicateIds.add(card.id);
         }
       }
 
@@ -2222,7 +2223,7 @@ ${chunks[ci]}` }] }),
         setUserFolders(prev => [...prev, deckFolder, ...subFolders]);
       }
     }
-    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbSource(""); setQbImages([]);
+    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]);
     setQbChunkProgress({ current: 0, total: 0, step: "" }); setQbOrgChoice(null);
     setQbGenerated(true);
     setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
@@ -2273,7 +2274,7 @@ ${chunks[ci]}` }] }),
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 300,
           messages: [{
             role: "user",
@@ -2320,7 +2321,7 @@ Text: "${text}"`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 150,
           messages: [{
             role: "user",
@@ -2352,7 +2353,7 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 200,
           messages: [{
             role: "user",
@@ -3910,6 +3911,7 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [improving, setImproving]       = useState(false);
   const [improveResult, setImproveResult] = useState(null);
+  const [confirmApply, setConfirmApply]   = useState(false);
   const [shareUrl, setShareUrl]         = useState(null);
   const [shareCopied, setShareCopied]   = useState(false);
 
@@ -3928,13 +3930,13 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
     setImproving(true);
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:4000,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,
           messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.\nRespond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}\nCards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
       const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
       setImproveResult(parsed.cards);
-    } catch { alert("Could not improve deck. Please try again."); }
+    } catch { setImproveResult("error"); }
     setImproving(false);
   };
 
@@ -3953,12 +3955,12 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
 body{font-family:Georgia,serif;margin:0;padding:20px;background:#fff}
 h1{font-size:22px;color:#1A1814;margin-bottom:4px}
 .sub{font-size:13px;color:#888;margin-bottom:28px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .card{border:1px solid #ddd;border-top:3px solid ${deck.color};border-radius:8px;padding:16px;page-break-inside:avoid}
 .label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:8px}
 .term{font-size:15px;font-weight:800;color:#1A1814;margin-bottom:10px;min-height:40px}
 .divider{border:none;border-top:1px solid #eee;margin:10px 0}
-.def{font-size:13px;color:#444;line-height:1.6;min-height:40px}
+.def{font-size:13px;color:#444;line-height:1.6;min-height:40px;word-break:break-word;overflow-wrap:break-word}
 @media print{.card{break-inside:avoid}}
 </style></head><body>
 <h1>${deck.title}</h1>
@@ -4185,13 +4187,19 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
       )}
 
       {/* Improve result */}
-      {improveResult && (
+      {improveResult === "error" && (
+        <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:10, padding:"14px 18px", marginBottom:16, fontSize:13, color:"#E85D3F", fontWeight:500, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span>Could not improve deck. Please try again.</span>
+          <button onClick={()=>setImproveResult(null)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#E85D3F" }}>✕</button>
+        </div>
+      )}
+      {improveResult && improveResult !== "error" && (
         <div style={{ background:"#F9F5FF", border:"1.5px solid #9B59B630", borderRadius:14, padding:"20px", marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>✨ AI Improved {improveResult.length} cards</div>
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={()=>setImproveResult(null)} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
-              <button onClick={applyImproved} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
+              <button onClick={()=>{setImproveResult(null);setConfirmApply(false);}} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
+              <button onClick={()=>setConfirmApply(true)} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
             </div>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:280, overflowY:"auto" }}>
@@ -4205,6 +4213,18 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
               </div>
             ))}
           </div>
+          {confirmApply && (
+            <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={()=>setConfirmApply(false)}>
+              <div style={{ background:"#fff", borderRadius:16, padding:"28px 32px", maxWidth:380, width:"90%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+                <div style={{ fontSize:18, fontWeight:800, color:"#1A1814", marginBottom:8 }}>Apply improvements?</div>
+                <div style={{ fontSize:14, color:"#5A5752", marginBottom:24, lineHeight:1.5 }}>This will replace all {deck.cards.length} current cards. This cannot be undone.</div>
+                <div style={{ display:"flex", gap:10 }}>
+                  <button onClick={()=>setConfirmApply(false)} style={{ flex:1, padding:"10px", borderRadius:8, border:"1px solid #D8D5CE", background:"none", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Cancel</button>
+                  <button onClick={applyImproved} style={{ flex:1, padding:"10px", borderRadius:8, border:"none", background:"#2BAE7E", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>Yes, Apply</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -4532,7 +4552,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     try {
       const sample = cards.slice(0,Math.min(10,cards.length));
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:1200,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,
           messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.\nRespond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}\nCards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
@@ -4571,7 +4591,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     setWrittenLoading(true);
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:200,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,
           messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".\nRespond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
@@ -6003,7 +6023,28 @@ const YT_DETAIL_LEVELS = [
     label: "Main Topics",
     sublabel: "Important info only",
     desc: "The key topics, core arguments, and most important takeaways — fast and clean.",
-    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. Say this honestly in one sentence, then provide the most useful response you can based on what you can infer from the URL.\n\nFormat your response as:\n\n**⚠️ Heads up**\n[One honest sentence: you cannot access this video, but here is what you can offer based on the URL]\n\n**🎯 What This Video Likely Covers**\n[Based on the URL, 2-3 sentences on the probable topic and purpose]\n\n**📌 Key Topics to Expect**\n[4-6 bullet points on what this type of content typically covers]\n\n**💡 How to Get the Most From It**\n[2-3 practical tips for engaging with this content]\n\nBe genuinely helpful despite the limitation.`,
+    prompt: (meta, url) => `A user wants a summary of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot access or watch the video directly. Using the title, channel name, and description above, produce a genuinely useful overview. If the title and channel give clear context, use that to give specific, relevant content — not generic filler.
+
+Format your response as:
+
+**🎯 What This Video Is About**
+[2-3 sentences explaining the video's topic and purpose based on the title/channel]
+
+**📌 Key Topics Covered**
+[4-6 specific bullet points based on what the title/description suggests]
+
+**💡 Most Important Takeaways**
+[3-4 bullet points with the core insights a viewer would gain]
+
+**👀 Worth Watching If...**
+[1-2 sentences on who this video is most useful for]`,
   },
   {
     id: "detailed",
@@ -6011,7 +6052,31 @@ const YT_DETAIL_LEVELS = [
     label: "More Detail",
     sublabel: "Full topic coverage",
     desc: "Everything the video covers, explained clearly. Each topic broken down so you understand the content without needing to watch the full video.",
-    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. Be upfront about this in one sentence, then give the most detailed useful response possible based on what you can infer from the URL.\n\nFormat your response as:\n\n**⚠️ Heads up**\n[One honest sentence about the limitation]\n\n**📹 About This Video**\n[What you can infer about the topic from the URL — 3-4 sentences]\n\n**📚 What This Type of Content Typically Covers**\n\n[For 4-6 likely topic areas:]\n### [Topic Area]\n[2-3 sentences on what is typically discussed in this area]\n\n**🔑 Key Points to Look For**\n[5-7 bullet points]\n\n**❓ Questions This Video Probably Answers**\n[3-4 likely questions]\n\nBe genuinely useful despite not having transcript access.`,
+    prompt: (meta, url) => `A user wants a detailed summary of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot watch the video, but use the metadata above to give a detailed, specific response. Draw on your knowledge of the topic suggested by the title and channel. Be specific — not generic.
+
+Format your response as:
+
+**📹 About This Video**
+[3-4 sentences on the topic, based on the title/channel/description]
+
+**📚 Topics Covered In Detail**
+
+[For each of 4-6 major topic areas you'd expect in this video:]
+### [Topic Name]
+[2-3 sentences explaining this topic specifically as it likely appears in this video]
+
+**🔑 Key Points to Remember**
+[5-7 specific bullet points]
+
+**❓ Questions This Video Answers**
+[3-4 specific questions the video likely addresses]`,
   },
   {
     id: "breakdown",
@@ -6019,7 +6084,36 @@ const YT_DETAIL_LEVELS = [
     label: "Full Breakdown",
     sublabel: "Everything, organized",
     desc: "A complete, organized breakdown of everything talked about — structured like study notes.",
-    prompt: (title, url) => `The user submitted this YouTube URL: ${url}\n\nYou cannot access YouTube or fetch video transcripts. State this honestly upfront in one sentence, then produce the most comprehensive study-guide-style response possible based on what you can infer about the topic.\n\nFormat as:\n\n**⚠️ Heads up**\n[One honest sentence about the limitation]\n\n**📹 About This Video**\n[What the URL suggests about this content — 2-3 sentences]\n\n**⏱ Typical Content Structure**\n[List 5-7 sections a video on this topic would likely cover with estimated timestamps]\n\n**📖 Full Topic Breakdown**\n\n[For each section:]\n### Section [#]: [Section Title]\n**What to expect:** [2-3 sentences]\n**Key concepts:** [bullet points]\n\n**✅ Summary & Conclusions**\n[What this type of content typically concludes]\n\n**🎓 Study Notes**\n[6-8 bullet points as study notes]\n\nBe thorough and genuinely useful.`,
+    prompt: (meta, url) => `A user wants a full study-guide breakdown of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot watch the video, but use the metadata above to produce the most comprehensive study guide possible. Draw on your knowledge of this topic. Be specific and detailed — not generic.
+
+Format as:
+
+**📹 Video Overview**
+[3-4 sentences on what this video covers, based on the title and channel]
+
+**⏱ Likely Content Structure**
+[List 5-7 sections this video probably covers with estimated timestamps like "0:00 – 2:30 · Introduction"]
+
+**📖 Full Topic Breakdown**
+
+[For each section:]
+### Section [#]: [Section Title]
+**What's covered:** [2-3 specific sentences]
+**Key concepts:** [bullet points]
+**Important details:** [specific points to remember]
+
+**✅ Summary & Conclusions**
+[What this video likely concludes or recommends]
+
+**🎓 Study Notes**
+[6-8 bullet points formatted as study notes a student would actually use]`,
   },
 ];
 
@@ -6073,7 +6167,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 1000,
           system: aiContext || "You are a helpful text simplification assistant.",
           messages: [{ role: "user", content: buildPrompt() }],
@@ -6090,23 +6184,36 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
     }
   };
 
+  // Fetch YouTube title + channel via oEmbed (no API key needed)
+  const fetchYoutubeMeta = async (url) => {
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (!res.ok) return {};
+      const data = await res.json();
+      return { title: data.title || "", channel: data.author_name || "", description: "" };
+    } catch { return {}; }
+  };
+
   const handleYoutubeProcessWithLevel = async (levelId) => {
     if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
     setYtError(""); setError(""); setOutputText(""); setLoading(true);
     setYtLoadStep(1);
-    await new Promise(r => setTimeout(r, 1100));
+    const meta = await fetchYoutubeMeta(ytUrl);
+    await new Promise(r => setTimeout(r, 400));
     setYtLoadStep(2);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 600));
     setYtLoadStep(3);
     const cfg = YT_DETAIL_LEVELS.find(d => d.id === levelId);
     try {
       const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: cfg.prompt("", ytUrl) }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: cfg.prompt(meta, ytUrl) }] }),
       });
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
+      const preview = meta.title ? `${meta.title} — ${ytUrl}` : ytUrl;
       setOutputText(result);
-      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:ytUrl,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:preview,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
     } catch (e) { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); setYtLoadStep(4); setTimeout(() => setYtLoadStep(0), 500); }
   };
@@ -6115,11 +6222,11 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
     if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
     setYtError(""); setError(""); setOutputText(""); setLoading(true);
 
-    // Animated multi-step loading
     setYtLoadStep(1);
-    await new Promise(r => setTimeout(r, 1100));
+    const meta = await fetchYoutubeMeta(ytUrl);
+    await new Promise(r => setTimeout(r, 400));
     setYtLoadStep(2);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 600));
     setYtLoadStep(3);
 
     const cfg = YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel);
@@ -6128,15 +6235,16 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1500,
-          messages: [{ role: "user", content: cfg.prompt("", ytUrl) }],
+          model: "claude-sonnet-4-6",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: cfg.prompt(meta, ytUrl) }],
         }),
       });
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
+      const preview = meta.title ? `${meta.title} — ${ytUrl}` : ytUrl;
       setOutputText(result);
-      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:ytUrl,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:preview,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -6829,7 +6937,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
         : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
-      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
+      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
     } catch { setMessages(h => [...h, { role:"assistant", content:"Connection error. Please try again." }]); }
@@ -7257,7 +7365,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 1000,
           system: typeof activePrompt === "string" ? activePrompt.slice(0, 10000) : "You are a helpful study assistant.",
           messages: newMsgs.map(m => ({ role: m.role, content: String(m.content) })),
@@ -8444,7 +8552,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:2000,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:2000,
           system:"You are an expert study coach helping students master their course material.",
           messages:[{role:"user", content:prompts[mode]}] }),
       });
@@ -8469,7 +8577,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
         : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:4000,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:4000,
           system:`You are an expert academic note-taker. Create comprehensive study notes always including:\n# Chapter/Topic Overview\n## Learning Objectives\n## Key Concepts\n## Key Terms & Definitions\n## Detailed Notes\n## Summary\n## Study Tips\nUse clear headings, bullet points, bold key terms. Make it excellent.`,
           messages:[{ role:"user", content:userContent }] }),
       });
@@ -8535,7 +8643,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:800,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:800,
           system:`You are a helpful study tutor. Answer questions based on these notes plus your knowledge. Be concise.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
           messages:[...chatMessages, userMsg].map(m=>({role:m.role,content:m.content})) }),
       });
@@ -9902,7 +10010,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 500,
           system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
