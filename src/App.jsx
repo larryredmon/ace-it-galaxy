@@ -4936,7 +4936,7 @@ const BM_PALETTE = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22",
 const BM_INITIAL_MAPS = [];
 
 // ── BrainMapCanvas — the interactive map editor ───────────────────────────────
-function BrainMapCanvas({ map, onNodesChange, onBack }) {
+function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
   const [nodes,         setNodes]         = useState(map.nodes);
   const [selectedId,    setSelectedId]    = useState(null);
   const [pan,           setPan]           = useState({ x: 0, y: 0 });
@@ -4990,8 +4990,12 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   const selectedNode = nodes.find(n => n.id === selectedId);
 
-  // ── Sync changes up ──
-  useEffect(() => { onNodesChange(nodes, mapTitle); }, [nodes, mapTitle]);
+  // ── Sync changes up (skip initial mount) ──
+  const bmSyncMounted = useRef(false);
+  useEffect(() => {
+    if (!bmSyncMounted.current) { bmSyncMounted.current = true; return; }
+    onNodesChange(nodes, mapTitle);
+  }, [nodes, mapTitle]);
 
   // ── Global mouse events for reliable drag ──
   useEffect(() => {
@@ -5003,17 +5007,43 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       } else if (d.type === "node") {
         const dx = (e.clientX - d.startX) / zoom;
         const dy = (e.clientY - d.startY) / zoom;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) d.hasMoved = true;
         setNodes(ns => ns.map(n => n.id === d.id ? { ...n, x: d.origX + dx, y: d.origY + dy } : n));
       }
     };
-    const onUp = () => { dragRef.current = null; };
+    const onUp = () => {
+      const d = dragRef.current;
+      if (d?.type === "node" && d.hasMoved) {
+        // Push original position to undo history now that drag is complete
+        pushHistory(d.origNodes);
+      }
+      dragRef.current = null;
+    };
     const onKeyDown = (e) => {
-      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault(); handleRedo(); return; }
-      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); handleUndo(); return; }
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault();
+        // Access refs directly to avoid stale closure
+        const next = redoRef.current[redoRef.current.length-1];
+        if (next) { historyRef.current=[...historyRef.current,nodes]; redoRef.current=redoRef.current.slice(0,-1); setNodes(next); setSelectedId(null); }
+        return;
+      }
+      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault();
+        const prev = historyRef.current[historyRef.current.length-1];
+        if (prev) { redoRef.current=[...redoRef.current,nodes]; historyRef.current=historyRef.current.slice(0,-1); setNodes(prev); setSelectedId(null); }
+        return;
+      }
       if (editingId || e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
       if (e.key==='Tab' && selectedId) { e.preventDefault(); addChild(selectedId); return; }
       if (e.key==='Enter' && selectedId) { e.preventDefault(); const n=nodes.find(x=>x.id===selectedId); if(n) startEditing(n.id,n.label); return; }
-      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') { e.preventDefault(); deleteNode(selectedId); return; }
+      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') {
+        e.preventDefault();
+        const hasChildren = nodes.some(n => n.parentId === selectedId);
+        if (hasChildren) {
+          const label = nodes.find(n=>n.id===selectedId)?.label||'this node';
+          const childCount = (function countAll(id){return nodes.filter(n=>n.parentId===id).reduce((a,n)=>a+1+countAll(n.id),0);})(selectedId);
+          if(!window.confirm(`Delete "${label.replace(/\n/g,' ')}" and its ${childCount} child node${childCount!==1?'s':''}?`)) return;
+        }
+        deleteNode(selectedId); return;
+      }
       if (e.key==='Escape') { setSelectedId(null); setShowAI(false); return; }
       if (e.key==='+'||e.key==='=') { setZoom(z=>Math.min(z*1.15,3)); return; }
       if (e.key==='-') { setZoom(z=>Math.max(z*0.87,0.15)); return; }
@@ -5033,7 +5063,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   const onNodeDown = (e, node) => {
     e.stopPropagation();
-    dragRef.current = { type: "node", id: node.id, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y };
+    dragRef.current = { type: "node", id: node.id, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y, origNodes: nodes, hasMoved: false };
   };
 
   const onWheel = (e) => {
@@ -5045,6 +5075,32 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     if (el) el.addEventListener("wheel", onWheel, { passive: false });
     return () => { if (el) el.removeEventListener("wheel", onWheel); };
   }, []);
+
+  // Touch support
+  const lastTouchRef = useRef(null);
+  const onTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      lastTouchRef.current = { x: t.clientX, y: t.clientY, origPanX: pan.x, origPanY: pan.y };
+    }
+  };
+  const onTouchMove = (e) => {
+    if (e.touches.length === 1 && lastTouchRef.current) {
+      e.preventDefault();
+      const t = e.touches[0];
+      setPan({ x: lastTouchRef.current.origPanX + (t.clientX - lastTouchRef.current.x), y: lastTouchRef.current.origPanY + (t.clientY - lastTouchRef.current.y) });
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (lastTouchRef.current?.pinchDist) {
+        setZoom(z => Math.min(Math.max(z * (dist/lastTouchRef.current.pinchDist), 0.15), 3));
+      }
+      if (lastTouchRef.current) lastTouchRef.current.pinchDist = dist;
+    }
+  };
+  const onTouchEnd = () => { lastTouchRef.current = null; };
 
   // ── Node ops ──
   const getNodeById = (id) => nodes.find(n => n.id === id);
@@ -5090,7 +5146,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const commitEdit   = () => { if (editingId) { updateNode(editingId, { label: editLabel.trim() || "Topic" }); setEditingId(null); } };
 
   // ── Flash card study ──
-  const studyDecks    = studyNode ? FC_DECKS.filter(d => studyNode.deckIds.includes(d.id)) : [];
+  const studyDecks    = studyNode ? allDecks.filter(d => studyNode.deckIds.includes(d.id)) : [];
   const activeSDeck   = studyDecks[studyDeckIdx];
   const activeSCard   = activeSDeck?.cards[studyCardIdx];
   const totalStudyCards = studyDecks.reduce((a, d) => a + d.cards.length, 0);
@@ -5116,10 +5172,11 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     const layoutLevel = (parentId, startAngle, sweepAngle, radius) => {
       const kids = children(parentId);
       if(!kids.length) return;
+      if(!positioned.has(parentId)) return; // guard: skip orphaned nodes
       const angleStep = sweepAngle / Math.max(kids.length,1);
+      const {x:px=0, y:py=0} = positioned.get(parentId);
       kids.forEach((kid,i) => {
         const angle = startAngle + angleStep*i + angleStep/2 - sweepAngle/2;
-        const px = positioned.get(parentId)?.x||0, py = positioned.get(parentId)?.y||0;
         positioned.set(kid.id, {x: px+Math.cos(angle)*radius, y: py+Math.sin(angle)*radius});
         layoutLevel(kid.id, angle-sweepAngle/4, sweepAngle/2, radius*0.75);
       });
@@ -5147,7 +5204,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       const newNodes = parsed.nodes.map((item,i) => {
         const angle = (-Math.PI/2)+(i/parsed.nodes.length)*Math.PI*2;
         const dist = parentId==='root'?260:180;
-        return { id:`ai${Date.now()}${i}`, label:item.label, note:item.note||'', x:parent.x+Math.cos(angle)*dist, y:parent.y+Math.sin(angle)*dist, color, parentId, deckIds:[] };
+        return { id:`ai${Date.now()}${i}x${Math.floor(Math.random()*9999)}`, label:item.label, note:item.note||'', x:parent.x+Math.cos(angle)*dist, y:parent.y+Math.sin(angle)*dist, color, parentId, deckIds:[] };
       });
       setNodesWithHistory(ns=>[...ns,...newNodes]);
       setShowAI(false); setAiTopic('');
@@ -5193,7 +5250,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
           {/* AI Expand */}
           <div style={{ position:"relative" }}>
-            <button onClick={()=>setShowAI(a=>!a)} title="AI Expand"
+            <button onClick={()=>{ if(!selectedId){alert("Select a node first, then click AI Expand.");return;} setShowAI(a=>!a);}} title="AI Expand — select a node first"
               style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
               ✦ AI Expand
             </button>
@@ -5247,8 +5304,8 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       </div>
 
       {/* ── Canvas area ── */}
-      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab" }}
-        onMouseDown={onCanvasDown}>
+      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab", touchAction:"none" }}
+        onMouseDown={onCanvasDown} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
         {/* Dot grid */}
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}>
@@ -5284,7 +5341,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               const isSel  = n.id === selectedId;
               const lines  = n.label.split("\n");
               const hasCards = n.deckIds.length > 0;
-              const deckCount = FC_DECKS.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0);
+              const deckCount = allDecks.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0);
 
               return (
                 <g key={n.id} transform={`translate(${n.x - w/2}, ${n.y - h/2})`}
@@ -5372,7 +5429,13 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 8 }}>Branch Color</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {BM_PALETTE.map(c => (
-                  <button key={c} onClick={() => updateNode(selectedNode.id, { color: c })}
+                  <button key={c} onClick={() => {
+                    // Update selected node AND all descendants
+                    const toUpdate = new Set([selectedNode.id]);
+                    const q = [selectedNode.id];
+                    while(q.length){ const cur=q.shift(); nodes.filter(n=>n.parentId===cur).forEach(n=>{toUpdate.add(n.id);q.push(n.id);}); }
+                    setNodesWithHistory(ns=>ns.map(n=>toUpdate.has(n.id)?{...n,color:c}:n));
+                  }}
                     style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: `2.5px solid ${selectedNode.color === c ? "#fff" : "transparent"}`, cursor: "pointer", outline: selectedNode.color === c ? `2px solid ${c}` : "none", outlineOffset: 1.5, transition: "all 0.15s" }} />
                 ))}
               </div>
@@ -5391,7 +5454,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               {selectedNode.deckIds.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 8 }}>
                   {selectedNode.deckIds.map(did => {
-                    const deck = FC_DECKS.find(d => d.id === did);
+                    const deck = allDecks.find(d => d.id === did);
                     if (!deck) return null;
                     return (
                       <div key={did} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", background: "rgba(255,255,255,0.04)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -5403,7 +5466,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
                     );
                   })}
                   <button onClick={() => openStudy(selectedNode)} style={{ padding: "8px", borderRadius: 8, border: "none", background: "#F5C842", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    📇 Study ({FC_DECKS.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0)} cards)
+                    📇 Study ({allDecks.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0)} cards)
                   </button>
                 </div>
               )}
@@ -5412,7 +5475,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               </button>
               {showDeckPicker && (
                 <div style={{ marginTop: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
-                  {FC_DECKS.map(deck => {
+                  {allDecks.map(deck => {
                     const linked = selectedNode.deckIds.includes(deck.id);
                     return (
                       <div key={deck.id} onClick={() => updateNode(selectedNode.id, { deckIds: linked ? selectedNode.deckIds.filter(i => i !== deck.id) : [...selectedNode.deckIds, deck.id] })}
@@ -5433,7 +5496,11 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
             </div>
 
             {selectedNode.id !== "root" && (
-              <button onClick={() => deleteNode(selectedNode.id)} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
+              <button onClick={() => {
+                const hasKids = nodes.some(n=>n.parentId===selectedNode.id);
+                if(hasKids){const cnt=(function cA(id){return nodes.filter(n=>n.parentId===id).reduce((a,n)=>a+1+cA(n.id),0);})(selectedNode.id);if(!window.confirm(`Delete "${selectedNode.label.replace(/\n/g,' ')}" and its ${cnt} child node${cnt!==1?'s':''}?`))return;}
+                deleteNode(selectedNode.id);
+              }} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; e.currentTarget.style.background = "rgba(232,93,63,0.07)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(232,93,63,0.22)"; e.currentTarget.style.color = "rgba(232,93,63,0.55)"; e.currentTarget.style.background = "transparent"; }}>
                 🗑 Delete Node
@@ -5467,7 +5534,9 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
                     const vH=typeof window!=='undefined'?window.innerHeight-100:800;
                     const vpX=(-(pan.x)-minX-(vW/(2*zoom)))*sc+offX;
                     const vpY=(-(pan.y)-minY-(vH/(2*zoom)))*sc+offY;
-                    return <rect x={vpX} y={vpY} width={(vW/zoom)*sc} height={(vH/zoom)*sc} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
+                    const vpW=Math.min((vW/zoom)*sc, MM_W); const vpH=Math.min((vH/zoom)*sc, MM_H);
+                    const clampedX=Math.max(-PAD,Math.min(vpX,MM_W)); const clampedY=Math.max(-PAD,Math.min(vpY,MM_H));
+                    return <rect x={clampedX} y={clampedY} width={vpW} height={vpH} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
                   })()}
                 </g>
               </svg>
@@ -5546,6 +5615,21 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 // ── BrainMapApp — top-level router (home | maps | canvas) ─────────────────────
 function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [view,        setView]       = useState("home");
+  // Read user's actual decks from localStorage (same key as FlashCardsApp)
+  const [userDecks, setUserDecks] = useState(() => {
+    try { const s = localStorage.getItem("tp_fc_decks"); if (s) return JSON.parse(s); } catch {}
+    return FC_DECKS;
+  });
+  // Keep userDecks fresh if localStorage changes (e.g. user creates a deck in another tab)
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "tp_fc_decks") {
+        try { const d = JSON.parse(e.newValue); if (d) setUserDecks(d); } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const [maps,        setMaps]       = useState(() => {
     try { const s = localStorage.getItem("tp_bm_maps"); if (s) return JSON.parse(s); } catch {}
     return BM_INITIAL_MAPS;
@@ -5661,12 +5745,12 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           {/* FC Decks panel */}
           <div style={{ padding: "12px 14px 20px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 10 }}>Flash Card Decks</div>
-            {FC_DECKS.map(d => (
+            {userDecks.map(d => (
               <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{d.title}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>{d.cardCount} cards · {d.mastery}% mastered</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>{d.cardCount || d.cards?.length || 0} cards · {d.mastery || 0}% mastered</div>
                 </div>
               </div>
             ))}
@@ -5674,7 +5758,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           </div>
         </div>
 
-        <BrainMapCanvas map={activeMap} onNodesChange={onNodesChange} onBack={() => setView("maps")} />
+        <BrainMapCanvas map={activeMap} onNodesChange={onNodesChange} onBack={() => setView("maps")} allDecks={userDecks} />
       </div>
     );
   }
@@ -5796,7 +5880,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               {[
                 [maps.length.toString(), "Brain Maps"],
                 [maps.reduce((a, m) => a + m.nodes.length, 0).toString(), "Total Nodes"],
-                [FC_DECKS.length.toString(), "Linked Decks"],
+                [userDecks.length.toString(), "Linked Decks"],
                 [maps.reduce((a, m) => a + m.nodes.filter(n => n.deckIds?.length > 0).length, 0).toString(), "Nodes with Cards"],
               ].map(([val, lbl], i) => (
                 <div key={lbl} style={{ padding: "22px 0", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
