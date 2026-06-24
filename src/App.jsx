@@ -275,7 +275,7 @@ function OrbitRing({ orbitRadius, highlight }) {
 }
 
 // ── Galaxy app icons (clean SVG line icons) ──────────────────────────────────
-function AppIcon({ appId, size = 20, color = "rgba(255,255,255,0.92)" }) {
+function AppIcon({ appId, size = 20, color = "rgba(255,255,255,0.92)" }) { /* v2 */
   const s = size;
   const props = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block", filter: `drop-shadow(0 0 4px ${color}88)` } };
   switch (appId) {
