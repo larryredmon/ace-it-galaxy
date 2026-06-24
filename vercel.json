@@ -12,5 +12,7 @@
     "api/claude.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "buildCommand": "echo 'skip'",
+  "outputDirectory": "dist"
 }
