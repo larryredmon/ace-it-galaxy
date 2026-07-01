@@ -12908,7 +12908,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
 
 // ─── Galaxy Homepage ──────────────────────────────────────────────────────────
 function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
-  const canvasRef=useRef(null),labelsRef=useRef(null),animRef=useRef(null);
+  const canvasRef=useRef(null),labelsRef=useRef(null),iconsRef=useRef(null),animRef=useRef(null);
   const stateRef=useRef({hov:null,T:0,last:0,searchQ:'',speedMult:1,planets:PLANETS.map((p,i)=>({...p,angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2}))});
   const [selectedApp,setSelectedApp]=useState(null);
   const [searchQ,setSearchQ]=useState('');
@@ -12919,8 +12919,35 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
   useEffect(()=>{
     const canvas=canvasRef.current,labelWrap=labelsRef.current;
     if(!canvas||!labelWrap)return;
-    const ctx=canvas.getContext('2d'),state=stateRef.current,labelEls={};
-    state.planets.forEach(p=>{const el=document.createElement('div');el.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';el.textContent=p.name;labelWrap.appendChild(el);labelEls[p.appId]=el;});
+    const ctx=canvas.getContext('2d'),state=stateRef.current,labelEls={},iconEls={};
+    const iconWrap=iconsRef.current;
+    // Icon SVG paths for each app
+    const ICON_PATHS={
+      flashcards:'<rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/><path d="M16 13l2 2 3-3"/>',
+      notes:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+      tracker:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="12" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="16" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="8" cy="18" r="1" fill="rgba(255,255,255,0.9)"/>',
+      brainmap:'<circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/>',
+      simplifier:'<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/><circle cx="19" cy="16" r="3"/><line x1="17.5" y1="14.5" x2="20.5" y2="17.5"/>',
+      assistant:'<path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/>',
+      studybuddy:'<circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/>',
+      settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+      journal:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+      coursehub:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'
+    };
+    state.planets.forEach(p=>{
+      // Label
+      const lbl=document.createElement('div');
+      lbl.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';
+      lbl.textContent=p.name;labelWrap.appendChild(lbl);labelEls[p.appId]=lbl;
+      // Icon
+      if(iconWrap&&ICON_PATHS[p.appId]){
+        const s=p.size||48;const sz=Math.round(s*0.44);
+        const ic=document.createElement('div');
+        ic.style.cssText=`position:absolute;top:0;left:0;pointer-events:none;will-change:transform;transition:opacity 0.2s;`;
+        ic.innerHTML=`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 3px rgba(255,255,255,0.4))">${ICON_PATHS[p.appId]}</svg>`;
+        iconWrap.appendChild(ic);iconEls[p.appId]=ic;
+      }
+    });
     function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;setIsMobile(canvas.width<520);}
     resize();window.addEventListener('resize',resize);
     const CX=()=>canvas.width/2,CY=()=>canvas.height*0.48,RX=()=>canvas.width*0.40,RY=()=>canvas.height*0.21,BASE_R=26,SPD=0.0014;
@@ -12928,20 +12955,33 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
     function getPos(p){const sinA=Math.sin(p.angle),depth=smooth((sinA+1)*0.5),scale=0.85+depth*0.30;return{x:CX()+RX()*Math.cos(p.angle),y:CY()+RY()*sinA,scale,depth,sinA,r:BASE_R*scale};}
     function drawCenter(){const x=CX(),y=CY(),T=state.T;ctx.textAlign='center';ctx.textBaseline='middle';for(let i=0;i<3;i++){const pr=52+i*24+4*Math.sin(T*1.1+i*1.2);ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(245,200,66,${0.07-i*0.018})`;ctx.lineWidth=0.9;ctx.stroke();}ctx.beginPath();ctx.moveTo(x-90,y);ctx.lineTo(x-58,y);ctx.moveTo(x+58,y);ctx.lineTo(x+90,y);ctx.strokeStyle='rgba(245,200,66,0.18)';ctx.lineWidth=1;ctx.stroke();[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{const bx=x+sx*60,by=y+sy*28;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+sx*12,by);ctx.lineTo(bx+sx*12,by+sy*7);ctx.strokeStyle='rgba(245,200,66,0.15)';ctx.lineWidth=1;ctx.stroke();});ctx.font='14px sans-serif';ctx.fillStyle='rgba(245,200,66,0.3)';ctx.fillText('✦',x,y-38);ctx.font='900 54px sans-serif';ctx.fillStyle='#F5C842';ctx.fillText('ACE IT',x,y+2);ctx.font='600 11px sans-serif';ctx.fillStyle='rgba(245,200,66,0.32)';ctx.fillText('G  A  L  A  X  Y',x,y+30);ctx.textAlign='left';ctx.textBaseline='alphabetic';}
     function drawPlanet(p){const pos=getPos(p),isH=state.hov===p,r=pos.r*(isH?1.12:1),hasSearch=state.searchQ.length>0,matches=hasSearch&&p.name.toLowerCase().includes(state.searchQ),bodyAlpha=hasSearch?(matches?1:0.2):1,T=state.T;if(matches&&hasSearch){const pulse=0.55+0.45*Math.sin(T*3);ctx.globalAlpha=pulse*0.65;ctx.beginPath();ctx.arc(pos.x,pos.y,r+18,0,Math.PI*2);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}if(isH){ctx.beginPath();ctx.arc(pos.x,pos.y,r+16,0,Math.PI*2);ctx.strokeStyle=p.color+'40';ctx.lineWidth=1.2;ctx.stroke();for(let i=0;i<6;i++){const ang=i*Math.PI/3+T*0.6;ctx.beginPath();ctx.moveTo(pos.x+Math.cos(ang)*(r+10),pos.y+Math.sin(ang)*(r+10));ctx.lineTo(pos.x+Math.cos(ang)*(r+16),pos.y+Math.sin(ang)*(r+16));ctx.strokeStyle=p.color+'90';ctx.lineWidth=1.5;ctx.stroke();}}ctx.globalAlpha=bodyAlpha;ctx.beginPath();ctx.arc(pos.x,pos.y,r+5,0,Math.PI*2);ctx.fillStyle=p.color+'18';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();ctx.beginPath();ctx.arc(pos.x-r*0.25,pos.y-r*0.28,r*0.27,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fill();
-const iconSize=Math.round(r*0.72);ctx.font=`${iconSize}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,255,255,0.92)';const icons={flashcards:'🃏',notes:'📄',tracker:'📅',brainmap:'🕸',simplifier:'🔍',assistant:'💡',studybuddy:'👥',settings:'⚙️',journal:'✏️',coursehub:'📚'};ctx.fillText(icons[p.appId]||p.symbol||'●',pos.x,pos.y);ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.globalAlpha=1;}
-    function frame(ts){const dt=state.last?Math.min((ts-state.last)/16.67,2):1;state.last=ts;state.T+=0.016*dt;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);drawCenter();sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);if(state.hov)drawPlanet(state.hov);state.planets.forEach(p=>{const el=labelEls[p.appId];if(!el)return;const pos=getPos(p);el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;el.style.opacity='1';el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';el.style.zIndex=state.hov===p?'10':'1';});animRef.current=requestAnimationFrame(frame);}
+ctx.globalAlpha=1;}
+    function frame(ts){const dt=state.last?Math.min((ts-state.last)/16.67,2):1;state.last=ts;state.T+=0.016*dt;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);drawCenter();sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);if(state.hov)drawPlanet(state.hov);state.planets.forEach(p=>{
+      const el=labelEls[p.appId];if(!el)return;
+      const pos=getPos(p);
+      el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;
+      el.style.opacity='1';
+      el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';
+      el.style.zIndex=state.hov===p?'10':'1';
+      const ic=iconEls[p.appId];if(!ic)return;
+      const sz=ic.querySelector('svg')?.width?.baseVal?.value||20;
+      ic.style.transform=`translate(calc(${pos.x}px - 50%), calc(${pos.y}px - 50%))`;
+      ic.style.opacity=state.hov===p?'1':'0.85';
+      ic.style.zIndex=state.hov===p?'11':'2';
+    });animRef.current=requestAnimationFrame(frame);}
     animRef.current=requestAnimationFrame(frame);
     function onMouseMove(e){const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;let found=null;for(const p of state.planets){const pos=getPos(p);if(Math.hypot(mx-pos.x,my-pos.y)<pos.r+10){found=p;break;}}state.hov=found;canvas.style.cursor=found?'pointer':'default';}
     function onMouseLeave(){state.hov=null;canvas.style.cursor='default';}
     function onClick(){if(state.hov)setSelectedApp({...state.hov});}
     canvas.addEventListener('mousemove',onMouseMove);canvas.addEventListener('mouseleave',onMouseLeave);canvas.addEventListener('click',onClick);
-    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());};
+    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());Object.values(iconEls).forEach(el=>el.remove());};
   },[]);
   const navBtn={borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",whiteSpace:'nowrap'};
   return(
     <div style={{position:'fixed',inset:0,background:'#04020C',overflow:'hidden',fontFamily:"'DM Sans',sans-serif"}}>
       {!isMobile&&<canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>}
       {!isMobile&&<div ref={labelsRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:2}}/>}
+      {!isMobile&&<div ref={iconsRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:3}}/>}
       {isMobile&&(<div style={{position:'absolute',top:58,left:0,right:0,bottom:0,overflowY:'auto',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,alignContent:'start'}}>{PLANETS.map(app=>(<div key={app.appId} onClick={()=>setSelectedApp({...app})} style={{background:'rgba(255,255,255,0.04)',border:`1px solid ${app.color}28`,borderRadius:13,padding:'14px 12px',cursor:'pointer'}}><div style={{fontSize:22,marginBottom:7}}>{app.symbol}</div><div style={{fontSize:11,fontWeight:700,color:app.color,marginBottom:3}}>{app.name}</div><div style={{fontSize:9.5,color:'rgba(247,246,242,0.32)',lineHeight:1.4}}>{app.desc}</div></div>))}</div>)}
       <nav style={{position:'absolute',top:0,left:0,right:0,height:56,display:'flex',alignItems:'center',padding:'0 12px',gap:8,zIndex:20,background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)'}}>
         <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
