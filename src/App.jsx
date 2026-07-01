@@ -10991,7 +10991,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
     <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", color:"#F7F6F2", minHeight:"100vh", overflowX:"hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; } body, h1, h2, h3, p { color: inherit; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
         @keyframes fade-up { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
@@ -11046,7 +11046,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
 
         {/* Headline */}
-        <h1 className="fade-up lp-hero-title" style={{ animationDelay:"0.08s", fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,6vw,80px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:820 }}>
+        <h1 className="fade-up lp-hero-title" style={{ animationDelay:"0.08s", fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,6vw,80px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:820, color:"#F7F6F2" }}>
           Everything you need to<br/>ace any class —<br/><em style={{ color:"#F5C842", fontStyle:"italic" }}>in one place.</em>
         </h1>
 
