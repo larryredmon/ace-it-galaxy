@@ -12695,6 +12695,75 @@ function AceItGalaxyInner() {
   return validApps.includes(path) ? path : null;
 });
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
+
+  // Structured data (JSON-LD) per page for rich search results
+  useEffect(() => {
+    const existing = document.getElementById("page-jsonld");
+    if (existing) existing.remove();
+    if (!currentApp) return;
+    const appData = {
+      flashcards: { name:"AI Flashcard Generator", desc:"Create AI-powered flashcards from any text. Free for students." },
+      notes:      { name:"AI Note Taking App", desc:"AI-powered notes for students. Upload anything and get organized study notes." },
+      brainmap:   { name:"Mind Mapping Tool", desc:"Free visual mind mapping for students. Connect concepts and build brain maps." },
+      simplifier: { name:"Text Simplifier", desc:"Simplify complex text and YouTube videos with AI. Free for students." },
+      tracker:    { name:"Assignment Tracker", desc:"Free student planner and assignment tracker. Never miss a deadline." },
+      assistant:  { name:"AI Study Assistant", desc:"Personal AI tutor and study guide. Free for students." },
+      studybuddy: { name:"Study Buddy", desc:"Live study rooms for students. Study with friends in real time." },
+      coursehub:  { name:"Course Hub", desc:"Organize all your course materials in one place. Free for students." },
+      journal:    { name:"Student Journal", desc:"Reflection journal to track learning progress. Free for students." },
+    };
+    const app = appData[currentApp];
+    if (!app) return;
+    const script = document.createElement("script");
+    script.id = "page-jsonld";
+    script.type = "application/ld+json";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": `Ace It Galaxy — ${app.name}`,
+      "url": `https://aceitgalaxy.com/${currentApp}`,
+      "description": app.desc,
+      "applicationCategory": "EducationApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    });
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [currentApp]);
+
+  // Dynamic page title for SEO
+  useEffect(() => {
+    const titles = {
+      flashcards: "Flash Cards — Ace It Galaxy | Free AI Flashcard Generator",
+      notes:      "Notes — Ace It Galaxy | AI-Powered Note Taking",
+      brainmap:   "Brain Map — Ace It Galaxy | Visual Mind Mapping Tool",
+      simplifier: "Text Simplifier — Ace It Galaxy | Simplify Any Text with AI",
+      tracker:    "Tracker — Ace It Galaxy | Student Assignment & Deadline Tracker",
+      assistant:  "Personal Assistant — Ace It Galaxy | Your AI Study Guide",
+      studybuddy: "Study Buddy — Ace It Galaxy | Live Study Rooms for Students",
+      coursehub:  "Course Hub — Ace It Galaxy | Organize All Your Courses",
+      journal:    "Journal — Ace It Galaxy | Student Reflection Journal",
+      settings:   "Settings — Ace It Galaxy",
+    };
+    document.title = currentApp
+      ? (titles[currentApp] || "Ace It Galaxy — Free AI Study Platform")
+      : "Ace It Galaxy — Free AI Study Platform for Students";
+    // Update meta description per page
+    const descs = {
+      flashcards: "Free AI flashcard generator. Paste any text and get a full flashcard deck in seconds. Study with spaced repetition on Ace It Galaxy.",
+      notes:      "AI-powered note taking for students. Upload lectures, textbooks, and materials — AI organizes everything into clean study notes.",
+      brainmap:   "Free visual mind mapping tool for students. Build brain maps, connect concepts, and attach flashcard decks to any node.",
+      simplifier: "Simplify any complex text or YouTube video instantly. Free AI text simplifier built for students on Ace It Galaxy.",
+      tracker:    "Free student assignment tracker and planner. Never miss a deadline. Manage all your courses and due dates in one place.",
+      assistant:  "Your personal AI study assistant. Get answers, build study plans, and stay on track with Ace It Galaxy's AI tutor.",
+      studybuddy: "Study live with classmates in real-time video rooms. Share documents and collaborate with Study Buddy on Ace It Galaxy.",
+      coursehub:  "Upload your course materials once and AI organizes everything. Free course management for students.",
+      journal:    "Student reflection journal. Track your progress, build study habits, and think deeply about what you're learning.",
+    };
+    const desc = currentApp ? descs[currentApp] : "Ace It Galaxy gives every student AI-powered flashcards, mind maps, notes, a personal assistant, live study rooms, and more — all free.";
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", desc);
+  }, [currentApp]);
   const [legalPage, setLegalPage]     = useState(() => {
     const path = window.location.pathname;
     if (path === "/privacy") return "privacy";
