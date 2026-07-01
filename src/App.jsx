@@ -10943,203 +10943,182 @@ We aim to respond to all inquiries within 30 days.`
 }
 
 function LandingPage({ onEnter, openAuth, onLegal }) {
-  const [scrolled, setScrolled]     = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [showSticky, setShowSticky] = useState(false);
-  const [quizStep, setQuizStep]     = useState(0);
-  const [quizAnswer, setQuizAnswer] = useState(null);
-  const heroRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const onScroll = () => {
       setScrolled(window.scrollY > 40);
-      setShowSticky(window.scrollY > window.innerHeight * 0.8);
+      setShowSticky(window.scrollY > window.innerHeight * 0.7);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const QUIZ_OPTIONS = [
-    { id:"student",  emoji:"🎓", label:"Student",          sub:"I\'m in school and need to study smarter" },
-    { id:"career",   emoji:"🚀", label:"Career Builder",   sub:"I\'m upskilling or changing careers" },
-    { id:"curious",  emoji:"🌍", label:"Lifelong Learner",  sub:"I just love learning new things" },
-    { id:"adhd",     emoji:"⚡", label:"Neurodiverse",      sub:"I need tools that work with my brain" },
+  const APPS = [
+    { appId:"flashcards",  name:"Flash Cards",        color:"#C8B8FF", desc:"AI generates a full flashcard deck from any text, notes, or textbook in seconds. Study with spaced repetition until you master it." },
+    { appId:"notes",       name:"Notes",              color:"#F0D080", desc:"Write, record lectures, and upload materials. AI turns everything into clean, organized study notes instantly." },
+    { appId:"brainmap",    name:"Brain Map",          color:"#F0A8C0", desc:"Build visual mind maps to connect ideas and see the big picture. Attach flashcard decks directly to any concept." },
+    { appId:"simplifier",  name:"Text Simplifier",    color:"#6ED9B8", desc:"Paste any complex passage or YouTube link and get a simplified, structured version you can actually understand." },
+    { appId:"tracker",     name:"Tracker",            color:"#6ED9B8", desc:"Your planner, calendar, and to-do list in one place. Never miss a deadline or forget an assignment again." },
+    { appId:"assistant",   name:"Personal Assistant", color:"#90C8F8", desc:"Your AI study guide. Answers questions, builds study plans, and helps you stay on track across every app." },
+    { appId:"studybuddy",  name:"Study Buddy",        color:"#FFA8D0", desc:"Study live with classmates over video. Share documents, sync timers, and collaborate in real time." },
+    { appId:"coursehub",   name:"Course Hub",         color:"#6ED9B8", desc:"Upload your syllabus and course materials once. AI organizes everything and keeps your coursework in one place." },
+    { appId:"journal",     name:"Journal",            color:"#E8C4F0", desc:"Reflect on what you've learned, track your progress, and build the habit of thinking deeply about your studies." },
+    { appId:"settings",    name:"Settings",           color:"#B8C8E8", desc:"Customize your experience, manage your account, and personalize Ace It Galaxy to fit how you learn best." },
   ];
 
-  const QUIZ_RESULTS = {
-    student:  { headline:"You need Flash Cards + Notes", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","Notes","Brain Map"] },
-    career:   { headline:"You need Career Compass + Studio", desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
-    curious:  { headline:"You need Universe + Earth\'s Record", desc:"Dive into any topic, explore the world\'s knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth\'s Record","Text Simplifier"] },
-    adhd:     { headline:"You need Flow + Study Buddy", desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
+  const ICON_PATHS = {
+    flashcards: <><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>,
+    notes: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>,
+    brainmap: <><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/></>,
+    simplifier: <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/></>,
+    tracker: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    assistant: <><path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/></>,
+    studybuddy: <><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/></>,
+    coursehub: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+    journal: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
   };
+
+  const Icon = ({ appId, color, size = 20 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {ICON_PATHS[appId]}
+    </svg>
+  );
 
   return (
     <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", color:"#F7F6F2", minHeight:"100vh", overflowX:"hidden" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
       <style>{`
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        @keyframes lp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes lp-fade { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lp-glow { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        @keyframes lp-pulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.08)} }
-        .lp-fade { animation: lp-fade 0.7s ease both; }
-        .lp-app-card:hover { transform: translateY(-6px) !important; box-shadow: 0 20px 50px rgba(0,0,0,0.35) !important; }
-        .lp-app-card { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
-        .lp-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(245,200,66,0.5) !important; }
-        .lp-cta-btn { transition: all 0.2s ease; }
-        /* ── MOBILE ── */
-        @media (max-width: 768px) {
-          .lp-nav-links { display: none !important; }
-          .lp-nav { padding: 0 20px !important; }
-          .lp-hero { padding: 100px 20px 60px !important; }
-          .lp-hero h1 { font-size: 38px !important; letter-spacing: -1px !important; }
-          .lp-hero p { font-size: 15px !important; }
-          .lp-cta-row { flex-direction: column !important; align-items: stretch !important; }
-          .lp-cta-row button { width: 100% !important; }
-          .lp-stats { flex-wrap: wrap !important; }
-          .lp-stats > div { min-width: 40% !important; flex: 1 !important; padding: 16px 12px !important; }
-          .lp-section { padding: 60px 20px !important; }
-          .lp-quiz-grid { grid-template-columns: 1fr !important; }
-          .lp-compare { overflow-x: auto !important; }
-          .lp-compare table { min-width: 560px !important; }
-          .lp-footer { flex-direction: column !important; text-align: center !important; gap: 16px !important; padding: 24px 20px !important; }
-          .lp-sticky { padding: 12px 20px !important; }
-          .lp-sticky-actions { flex-direction: column !important; gap: 8px !important; }
-          .lp-how-grid { grid-template-columns: 1fr !important; }
-          .lp-feat-grid { grid-template-columns: 1fr 1fr !important; }
+        @keyframes fade-up { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes pulse-glow { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        .fade-up { animation: fade-up 0.7s ease both; }
+        .lp-btn-primary { transition: transform 0.2s, box-shadow 0.2s; }
+        .lp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(245,200,66,0.5) !important; }
+        .lp-app-card { transition: transform 0.2s, border-color 0.2s; }
+        .lp-app-card:hover { transform: translateY(-4px); }
+        .lp-nav-link { opacity:0.5; transition:opacity 0.15s; cursor:pointer; }
+        .lp-nav-link:hover { opacity:1; }
+        @media (max-width:768px) {
+          .lp-nav-links { display:none !important; }
+          .lp-hero-title { font-size: 36px !important; }
+          .lp-hero-sub { font-size: 16px !important; }
+          .lp-cta-row { flex-direction:column !important; }
+          .lp-cta-row button { width:100% !important; }
+          .lp-section { padding: 64px 24px !important; }
+          .lp-steps-grid { grid-template-columns: 1fr !important; }
           .lp-apps-grid { grid-template-columns: 1fr !important; }
+          .lp-pain-grid { grid-template-columns: 1fr !important; }
         }
-        @media (max-width: 480px) {
-          .lp-stats > div { min-width: 45% !important; }
-          .lp-feat-grid { grid-template-columns: 1fr !important; }
-          .lp-hero h1 { font-size: 32px !important; }
-          .lp-nav-auth .lp-login-btn { display: none !important; }
-        }
-        .lp-nav-link { opacity: 0.55; transition: opacity 0.18s; cursor: pointer; }
-        .lp-nav-link:hover { opacity: 1; }
-        .lp-step-card:hover { transform: translateY(-4px) !important; }
-        .lp-step-card { transition: transform 0.2s ease; }
       `}</style>
 
-      {/* ── STICKY NAV ── */}
-      <nav className="lp-nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Ace It</span>
-        </div>
-        <div className="lp-nav-links" style={{ display:"flex", gap:32, alignItems:"center" }}>
-          {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
+      {/* ── NAV ── */}
+      <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:60, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 40px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
+        <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:16, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
+        <div className="lp-nav-links" style={{ display:"flex", gap:32 }}>
+          {[["What It Is","what"],["How It Works","how"],["The Apps","apps"]].map(([l,id]) => (
             <span key={l} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2" }}
-              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>
-              {l}
-            </span>
+              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>{l}</span>
           ))}
         </div>
-        <div className="lp-nav-auth" style={{ display:"flex", gap:10 }}>
-          <button className="lp-login-btn" onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.18s" }}
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.65)", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>Log In</button>
-          <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>
-            Get Started Free
-          </button>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}>Log in</button>
+          <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>Get started free</button>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="lp-hero" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", width:800, height:800, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.07) 0%, transparent 70%)", top:"-15%", left:"-10%", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"0%", right:"-5%", pointerEvents:"none" }} />
+      <section id="what" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 40px 80px", position:"relative", overflow:"hidden" }}>
+        {/* Background glow */}
+        <div style={{ position:"absolute", width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.08) 0%, transparent 70%)", top:"-10%", left:"-5%", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"5%", right:"-5%", pointerEvents:"none" }} />
 
-        {/* Badge */}
-        <div className="lp-fade" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.12)", border:"1px solid rgba(232,93,63,0.35)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
-          <span style={{ width:7, height:7, borderRadius:"50%", background:"#E85D3F", animation:"lp-glow 2s infinite", display:"inline-block" }} />
-          <span style={{ fontSize:12, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#FF8A6A" }}>Early Access — Free While We Launch</span>
+        {/* Label */}
+        <div className="fade-up" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"6px 18px", marginBottom:28 }}>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Free for students · 10 AI-powered tools</span>
         </div>
 
-        {/* Apple mascot + headline */}
-        <div className="lp-fade" style={{ animationDelay:"0.05s", fontSize:72, marginBottom:8, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
-
-        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(44px, 6.5vw, 86px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:20, maxWidth:860, color:"#F7F6F2" }}>
-          The smartest student<br/>
-          in the room is <em style={{ color:"#F5C842", fontStyle:"italic" }}>you.</em>
+        {/* Headline */}
+        <h1 className="fade-up lp-hero-title" style={{ animationDelay:"0.08s", fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,6vw,80px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:820 }}>
+          Everything you need to<br/>ace any class —<br/><em style={{ color:"#F5C842", fontStyle:"italic" }}>in one place.</em>
         </h1>
 
-        <p className="lp-fade" style={{ animationDelay:"0.18s", fontSize:"clamp(16px,2vw,19px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.8, maxWidth:580, marginBottom:40 }}>
-          Ace It is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
+        {/* Subheadline */}
+        <p className="fade-up lp-hero-sub" style={{ animationDelay:"0.15s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.55)", lineHeight:1.8, maxWidth:560, marginBottom:48 }}>
+          Stop juggling five different apps, expensive tutors, and scattered notes. Ace It Galaxy puts AI flashcards, mind maps, a personal assistant, live study rooms, and more — all in one free platform built for students.
         </p>
 
-        {/* Social proof */}
-        <div className="lp-fade" style={{ animationDelay:"0.22s", display:"inline-flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:30, padding:"8px 20px", marginBottom:32 }}>
-          <div style={{ display:"flex" }}>
-            {["#C8B8FF","#F0D080","#F0A8C0","#6ED9B8","#90C8F8"].map((c, i) => (
-              <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:`linear-gradient(135deg, ${c}88, ${c})`, border:"2px solid #06040E", marginLeft: i===0?0:-8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#1A1814", zIndex:5-i }}>
-                {["S","M","J","A","R"][i]}
-              </div>
-            ))}
-          </div>
-          <span style={{ fontSize:13, fontWeight:600, color:"rgba(247,246,242,0.65)" }}>Join students already studying smarter</span>
-          <span style={{ fontSize:13, color:"#F5C842" }}>🍎</span>
-        </div>
-
         {/* CTAs */}
-        <div className="lp-fade" style={{ animationDelay:"0.28s", display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginBottom:52 }}>
-          <div className="lp-cta-row" style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.35, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"17px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                🍎 Claim Free Access
-              </button>
-            </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"17px 36px", fontSize:16, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              See the Platform ✦
-            </button>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.08)", border:"1px solid rgba(232,93,63,0.2)", borderRadius:20, padding:"5px 16px" }}>
-            <span style={{ fontSize:13 }}>⏳</span>
-            <span style={{ fontSize:12, color:"#FF8A6A", fontWeight:600 }}>Free during launch — paid plans coming soon.</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            {["✓ No credit card","✓ Start in 30 seconds","✓ Cancel anytime"].map((t, i) => (
-              <span key={i} style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontWeight:500 }}>{t}</span>
-            ))}
-          </div>
+        <div className="fade-up lp-cta-row" style={{ animationDelay:"0.2s", display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:48 }}>
+          <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:12, padding:"16px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.4)", fontFamily:"'Montserrat',sans-serif" }}>
+            Get started free →
+          </button>
+          <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"16px 36px", fontSize:16, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.2s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>
+            Explore the platform
+          </button>
         </div>
 
-        {/* Stats */}
-        <div className="lp-fade lp-stats" style={{ animationDelay:"0.35s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
-          {[["15+","Learning Apps"],["AI","Powered"],["Free","To Start"],["∞","Curiosity"]].map(([value, label], i, arr) => (
-            <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", marginBottom:4 }}>{value}</div>
-              <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.35)", letterSpacing:1.5, textTransform:"uppercase" }}>{label}</div>
-            </div>
+        {/* Trust line */}
+        <div className="fade-up" style={{ animationDelay:"0.25s", fontSize:13, color:"rgba(255,255,255,0.25)", display:"flex", gap:24, justifyContent:"center", flexWrap:"wrap" }}>
+          {["No credit card required","Free to use","10 tools included"].map(t => (
+            <span key={t} style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ color:"#6ED9B8" }}>✓</span> {t}
+            </span>
           ))}
         </div>
       </section>
 
+      {/* ── THE PROBLEM ── */}
+      <section style={{ padding:"80px 40px", borderTop:"1px solid rgba(255,255,255,0.05)", background:"rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth:960, margin:"0 auto" }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,3.5vw,42px)", fontWeight:900, textAlign:"center", marginBottom:48, color:"#F7F6F2" }}>
+            Sound familiar?
+          </h2>
+          <div className="lp-pain-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+            {[
+              { icon:"😩", title:"Scattered everywhere", desc:"Your notes are in one app, flashcards in another, your planner somewhere else, and your tutor costs $80/hr." },
+              { icon:"⏱", title:"Running out of time", desc:"You spend more time organizing your study tools than actually studying. There has to be a better way." },
+              { icon:"💸", title:"Paying for everything", desc:"Quizlet charges. Chegg charges. Tutors charge. AI tools charge. It adds up fast — especially when you're a student." },
+            ].map(p => (
+              <div key={p.title} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:"28px 24px" }}>
+                <div style={{ fontSize:32, marginBottom:16 }}>{p.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#F7F6F2", marginBottom:10 }}>{p.title}</div>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.45)", lineHeight:1.75, margin:0 }}>{p.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign:"center", marginTop:40, fontSize:18, fontWeight:600, color:"rgba(255,255,255,0.7)" }}>
+            Ace It Galaxy solves all three. <span style={{ color:"#F5C842" }}>For free.</span>
+          </div>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS ── */}
-      <section id="howitworks" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1000, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:64 }}>
+      <section id="how" className="lp-section" style={{ padding:"100px 40px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:960, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:60 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>How It Works</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Study smarter in 3 steps.</h2>
-            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, maxWidth:480, margin:"0 auto" }}>No learning curve. Just better results from day one.</p>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, color:"#F7F6F2" }}>Up and studying in 3 steps.</h2>
           </div>
-          <div className="lp-how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
+          <div className="lp-steps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
             {[
-              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Ace It reads it all." },
-              { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
-              { step:"03", icon:"🎓", color:"#6ED9B8", glow:"#2BAE7E", title:"Study & Master It", desc:"Use flashcards, quizzes, brain maps, and your AI tutor to drill the material until it sticks. Chat with your notes anytime." },
+              { num:"01", color:"#C8B8FF", title:"Upload your material", desc:"Drop in your textbook pages, lecture notes, a syllabus, or anything you're studying. Ace It reads it all." },
+              { num:"02", color:"#F5C842", title:"AI builds your tools", desc:"In seconds, AI generates flashcards, study notes, a brain map, and a personalized study plan — automatically." },
+              { num:"03", color:"#6ED9B8", title:"Study and master it", desc:"Use every tool in the galaxy — quiz yourself, map concepts, chat with your AI tutor, and study live with friends." },
             ].map(s => (
-              <div key={s.step} className="lp-step-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:`radial-gradient(circle, ${s.glow}33 0%, ${s.color}11 70%)`, border:`1.5px solid ${s.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{s.icon}</div>
-                  <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2 }}>STEP {s.step}</span>
-                </div>
+              <div key={s.num} style={{ background:"rgba(255,255,255,0.02)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2, marginBottom:16 }}>STEP {s.num}</div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{s.title}</div>
                 <p style={{ fontSize:14, color:"rgba(247,246,242,0.5)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
               </div>
@@ -11148,249 +11127,80 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" className="lp-section" style={{ padding:"80px 48px", background:"rgba(255,255,255,0.01)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1000, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:56 }}>
+      {/* ── THE APPS ── */}
+      <section id="apps" className="lp-section" style={{ padding:"100px 40px", borderTop:"1px solid rgba(255,255,255,0.05)", background:"rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:60 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Features</span>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>10 Apps Included</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Everything a serious student needs.</h2>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Your entire study toolkit.</h2>
+            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:480, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own. Every app works better together.</p>
           </div>
-          <div className="lp-feat-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14 }}>
-            {[
-              { icon:"🎙", title:"Record & Transcribe", desc:"Record any lecture. AI transcribes every word and turns it into structured notes instantly." },
-              { icon:"📇", title:"AI Flashcards", desc:"Paste any content and AI generates a full flashcard deck. Study with 9 modes including spaced repetition." },
-              { icon:"🧠", title:"Brain Mapping", desc:"Build visual mind maps and attach flashcard decks directly to any topic node." },
-              { icon:"💬", title:"Chat with Notes", desc:"Ask your notes anything. Your AI tutor answers based on your specific course content." },
-              { icon:"📺", title:"YouTube to Notes", desc:"Paste any YouTube lecture URL and get comprehensive study notes in seconds." },
-              { icon:"🎯", title:"Exam Prep", desc:"AI identifies what you're most likely to be tested on and creates quizzes from your notes." },
-              { icon:"🔤", title:"Text Simplifier", desc:"Paste any complex passage and get it simplified to your exact reading level." },
-              { icon:"📊", title:"Progress Tracking", desc:"Track your mastery across all decks and subjects. Know exactly what needs more work." },
-            ].map(f => (
-              <div key={f.title} style={{ background:"rgba(255,255,255,0.025)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, padding:"22px 20px" }}>
-                <div style={{ fontSize:28, marginBottom:12 }}>{f.icon}</div>
-                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2", marginBottom:8 }}>{f.title}</div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ALL APPS ── */}
-      <section id="apps" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:64 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>15 Apps</span>
-            </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Your entire learning universe.</h2>
-            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:500, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own — and works better together.</p>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
-            {LANDING_APPS.map((app) => (
-              <div key={app.name} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
+          <div className="lp-apps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
+            {APPS.map(app => (
+              <div key={app.appId} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-                  <div style={{ width:38, height:38, borderRadius:"50%", background:`radial-gradient(circle, ${app.glow}44 0%, ${app.color}22 70%)`, border:`1.5px solid ${app.color}44`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <span style={{ fontSize:17, color:app.color }}>{app.icon}</span>
+                  <div style={{ width:36, height:36, borderRadius:9, background:`${app.color}18`, border:`1px solid ${app.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <Icon appId={app.appId} color={app.color} size={18} />
                   </div>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#F7F6F2" }}>{app.name}</div>
+                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>{app.name}</div>
                 </div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{app.desc}</p>
+                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.75, margin:0 }}>{app.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── QUIZ ── */}
-      <section style={{ padding:"100px 48px", background:"rgba(255,255,255,0.015)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:720, margin:"0 auto", textAlign:"center" }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Find Your Path</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,42px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>What kind of learner are you?</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which apps are built for you.</p>
-
-          {quizStep === 0 && (
-            <button onClick={() => setQuizStep(1)} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"16px 36px", fontSize:16, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-              Take the 10-Second Quiz →
-            </button>
-          )}
-
-          {quizStep === 1 && (
-            <div className="lp-quiz-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, textAlign:"left" }}>
-              {QUIZ_OPTIONS.map(opt => (
-                <div key={opt.id} onClick={() => { setQuizAnswer(opt.id); setQuizStep(2); }}
-                  style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"22px 22px", cursor:"pointer", transition:"all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(245,200,66,0.5)"; e.currentTarget.style.background="rgba(245,200,66,0.06)"; e.currentTarget.style.transform="translateY(-3px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.08)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.transform="none"; }}>
-                  <div style={{ fontSize:32, marginBottom:10 }}>{opt.emoji}</div>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#F7F6F2", marginBottom:6 }}>{opt.label}</div>
-                  <div style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.5 }}>{opt.sub}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {quizStep === 2 && quizAnswer && (() => {
-            const result = QUIZ_RESULTS[quizAnswer];
-            const option = QUIZ_OPTIONS.find(o => o.id === quizAnswer);
-            return (
-              <div style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(245,200,66,0.25)", borderRadius:18, padding:"36px 36px", textAlign:"left", position:"relative", overflow:"hidden" }}>
-                <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg, transparent, #F5C842, transparent)" }} />
-                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"4px 14px", marginBottom:16 }}>
-                  <span>{option.emoji}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase" }}>{option.label}</span>
-                </div>
-                <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{result.headline}</h3>
-                <p style={{ fontSize:15, color:"rgba(247,246,242,0.55)", lineHeight:1.75, marginBottom:24 }}>{result.desc}</p>
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:28 }}>
-                  {result.apps.map(app => (
-                    <span key={app} style={{ background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.25)", borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:"#F5C842" }}>🍎 {app}</span>
-                  ))}
-                </div>
-                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-                  <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:9, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 20px rgba(245,200,66,0.35)" }}>
-                    Get Started Free →
-                  </button>
-                  <button onClick={() => { setQuizStep(1); setQuizAnswer(null); }} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", borderRadius:9, padding:"13px 22px", fontSize:13, cursor:"pointer", color:"rgba(255,255,255,0.5)", transition:"all 0.15s" }}
-                    onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.5)";e.currentTarget.style.borderColor="rgba(255,255,255,0.12)";}}>
-                    ← Try Again
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </section>
-
-      {/* ── COMPARISON TABLE ── */}
-      <section id="compare" className="lp-section" style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
-        <div style={{ textAlign:"center", marginBottom:56 }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Ace It vs everything else.</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
-        </div>
-        <div className="lp-compare" style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"separate", borderSpacing:0, fontSize:14 }}>
-            <thead>
-              <tr>
-                <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
-                {[{ name:"Ace It 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
-                  <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", minWidth:110 }}>
-                    {col.highlight && <div style={{ fontSize:10, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase", marginBottom:4 }}>★ Best</div>}
-                    {col.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["AI note generation from uploads", "🍎","✕","✕","~"],
-                ["Lecture recording + transcription","🍎","✕","✕","✕"],
-                ["Chat with your notes",            "🍎","✕","✕","✓"],
-                ["AI flashcard generation",          "🍎","✓","✕","✓"],
-                ["Brain mapping",                   "🍎","✕","✕","✕"],
-                ["Spaced repetition",               "🍎","✓","✓","✕"],
-                ["YouTube to notes",                "🍎","✕","✕","✓"],
-                ["Mental health tools",             "🍎","✕","✕","✕"],
-                ["Career planning",                 "🍎","✕","✕","✕"],
-                ["Free to start",                   "🍎","~","✓","~"],
-              ].map(([feature, tp, quizlet, anki, gpt], i) => (
-                <tr key={feature} style={{ background: i%2===0 ? "rgba(255,255,255,0.01)" : "transparent" }}>
-                  <td style={{ padding:"13px 20px", color:"rgba(247,246,242,0.6)", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>{feature}</td>
-                  {[tp, quizlet, anki, gpt].map((val, ci) => (
-                    <td key={ci} style={{ padding:"13px 20px", textAlign:"center", borderBottom:"1px solid rgba(255,255,255,0.04)", background: ci===0 ? "rgba(245,200,66,0.03)" : "transparent", fontSize:16 }}>
-                      {val === "🍎" ? <span style={{ fontSize:18 }}>🍎</span>
-                       : val === "✓" ? <span style={{ color:"#2BAE7E", fontSize:18 }}>✓</span>
-                       : val === "~" ? <span style={{ color:"rgba(255,255,255,0.25)", fontSize:12 }}>Partial</span>
-                       : <span style={{ color:"rgba(255,255,255,0.15)", fontSize:18 }}>✕</span>}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ textAlign:"center", marginTop:36 }}>
-          <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"14px 34px", fontSize:15, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-            Switch to Ace It — Free While It Lasts →
-          </button>
         </div>
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section style={{ padding:"100px 48px", textAlign:"center", position:"relative", overflow:"hidden", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.07) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
-        <div style={{ position:"relative", maxWidth:680, margin:"0 auto" }}>
-          <div style={{ fontSize:64, marginBottom:16, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.1)", border:"1px solid rgba(232,93,63,0.3)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
-            <span style={{ fontSize:13 }}>⏳</span>
-            <span style={{ fontSize:12, fontWeight:700, color:"#FF8A6A", letterSpacing:1, textTransform:"uppercase" }}>Free During Launch — Paid Plans Coming Soon</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(34px,5vw,62px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20 }}>
-            The future of learning is yours.
+      <section style={{ padding:"100px 40px", textAlign:"center", borderTop:"1px solid rgba(255,255,255,0.05)", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", maxWidth:640, margin:"0 auto" }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,5vw,60px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20, color:"#F7F6F2" }}>
+            The future of learning<br/>is <em style={{ color:"#F5C842", fontStyle:"italic" }}>yours.</em>
           </h2>
-          <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:520, margin:"0 auto 44px" }}>
-            Ace It is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
+          <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:480, margin:"0 auto 44px" }}>
+            10 AI-powered study tools, completely free. No subscriptions, no paywalls, no excuses. Just you, your goals, and everything you need to reach them.
           </p>
-          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.3, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:12, padding:"18px 44px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.35)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                🍎 Claim My Free Account →
-              </button>
-            </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"18px 40px", fontSize:17, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              See the Platform
+          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:20 }}>
+            <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:12, padding:"18px 48px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.4)", fontFamily:"'Montserrat',sans-serif" }}>
+              Get started free →
             </button>
           </div>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>No credit card required · Cancel anytime</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.2)" }}>No credit card required · Free to use · Start in 30 seconds</div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Ace It</span>
-        </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All learning, one platform.</div>
+      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"28px 40px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+        <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.18)" }}>© 2026 Ace It Galaxy · Built for students.</div>
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
+              onClick={() => { if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); } }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
           ))}
         </div>
       </footer>
 
-      {/* ── STICKY CTA BAR ── */}
+      {/* ── STICKY CTA ── */}
       {showSticky && (
-        <div className="lp-sticky" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontSize:20 }}>🍎</span>
-            <div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Free while we launch — paid plans coming soon.</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>Sign up now and lock in free access before pricing goes live.</div>
-            </div>
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(245,200,66,0.15)", padding:"14px 40px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"fade-up 0.3s ease both" }}>
+          <div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Ready to study smarter?</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>10 AI tools, completely free. No credit card needed.</div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.18s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>
-              See Platform
+            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";}}
+              onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";}}>
+              Explore first
             </button>
-            <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 16px rgba(245,200,66,0.4)" }}>
-              🍎 Claim Free Access →
+            <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 16px rgba(245,200,66,0.35)" }}>
+              Get started free →
             </button>
           </div>
         </div>
