@@ -12763,6 +12763,11 @@ function AceItGalaxyInner() {
     const desc = currentApp ? descs[currentApp] : "Ace It Galaxy gives every student AI-powered flashcards, mind maps, notes, a personal assistant, live study rooms, and more — all free.";
     let metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", desc);
+
+    // Update canonical URL dynamically per page
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = currentApp ? `https://aceitgalaxy.com/${currentApp}` : 'https://aceitgalaxy.com';
   }, [currentApp]);
   const [legalPage, setLegalPage]     = useState(() => {
     const path = window.location.pathname;
