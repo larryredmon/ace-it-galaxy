@@ -12400,19 +12400,33 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {/* Audio */}
             {addContentType==='audio'&&(
               <>
-                <div style={{textAlign:'center',padding:'28px 20px',background:'#F7F6F2',borderRadius:14,marginBottom:16}}>
+                <div style={{textAlign:'center',padding:'24px 20px',background:'#F7F6F2',borderRadius:14,marginBottom:12}}>
                   {isRecording
-                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',border:'4px solid #E85D3F30',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',animation:'qbSpin 2s linear infinite'}}>🎙️</div>
+                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:24}}>🎙️</div>
                       <div style={{fontSize:14,fontWeight:700,color:'#E85D3F',marginBottom:12}}>Recording…</div>
                       <button onClick={stopRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#E85D3F',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>Stop Recording</button></>
                     :audioBlob
-                      ?<><div style={{fontSize:40,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
-                      :<><div style={{fontSize:48,marginBottom:12}}>🎙️</div>
+                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
+                      :<><div style={{fontSize:40,marginBottom:10}}>🎙️</div>
                         <div style={{fontSize:13,fontWeight:600,color:'#1A1814',marginBottom:4}}>Record a lecture or voice note</div>
-                        <div style={{fontSize:11,color:'#8C8880',marginBottom:16}}>Requires microphone access</div>
+                        <div style={{fontSize:11,color:'#8C8880',marginBottom:14}}>Requires microphone access</div>
                         <button onClick={startRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Start Recording</button></>
                   }
                 </div>
+                <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'4px 0 10px'}}>— or upload an audio file —</div>
+                <label style={{display:'block',border:'1.5px dashed #ECEAE4',borderRadius:10,padding:'12px',textAlign:'center',cursor:'pointer',marginBottom:12,transition:'all 0.15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=active.color}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>
+                  <input type="file" accept="audio/*" style={{display:'none'}} onChange={e=>{
+                    const file=e.target.files?.[0];
+                    if(!file)return;
+                    setDocName(docName||file.name.replace(/\.[^.]+$/,''));
+                    setDocText(`[Audio File: ${file.name}]`);
+                    setAudioBlob(file);
+                    e.target.value='';
+                  }}/>
+                  <span style={{fontSize:12,fontWeight:600,color:'#6B6860'}}>📂 Upload audio file (MP3, M4A, WAV…)</span>
+                </label>
                 <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Recording name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
               </>
             )}
@@ -12499,8 +12513,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {(active.folders||[]).filter(f=>!f.parentId).map(folder=>renderSidebarFolder(folder,0))}
             {(active.folders||[]).length===0&&<div style={{fontSize:12,color:'#A8A59E',padding:'8px 12px',lineHeight:1.5}}>No folders yet. Create one to organize your documents.</div>}
           </div>
-          <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4',display:'flex',flexDirection:'column',gap:8}}>
-            <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',borderRadius:9,border:'1px dashed #ECEAE4',background:'transparent',cursor:'pointer',color:'#6B6860',fontSize:12,fontWeight:600}} onMouseEnter={e=>e.currentTarget.style.borderColor=active.color} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>📁 New Folder</button>
+          <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4'}}>
             <button onClick={()=>{if(chConfirmDelete){deleteCourse(active.id);setChConfirmDelete(false);}else{setChConfirmDelete(true);setTimeout(()=>setChConfirmDelete(false),4000);}}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:chConfirmDelete?'rgba(232,93,63,0.1)':'transparent',cursor:'pointer',color:chConfirmDelete?'#E85D3F':'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>{if(!chConfirmDelete)e.currentTarget.style.color='#D8D5CE';}}>{chConfirmDelete?'⚠️ Tap again to confirm':'Delete course'}</button>
           </div>
         </div>
@@ -12616,7 +12629,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                   <div style={{textAlign:'center',padding:'50px 20px',background:'#fff',borderRadius:16,border:'1px solid #ECEAE4'}}>
                     <div style={{fontSize:40,marginBottom:10}}>📂</div>
                     <div style={{fontSize:15,fontWeight:700,color:'#1A1814',marginBottom:6}}>This folder is empty</div>
-                    <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Click <strong>+ Add Document</strong> above to add content here.</p>
+                    <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Use the <strong>New Folder</strong> tile or <strong>+ Add Document</strong> button above to add content.</p>
                   </div>
                 ):(
                   <>
