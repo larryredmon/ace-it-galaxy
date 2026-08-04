@@ -12480,6 +12480,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             </div>
                           </div>
                         ))}
+                        {/* New Subfolder tile */}
+                        <div onClick={()=>{setFolderForm({name:'',parentId:activeFolderId});setShowFolderModal(true);}}
+                          style={{background:'transparent',border:'2px dashed #ECEAE4',borderRadius:14,padding:'18px 16px',textAlign:'center',cursor:'pointer',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:110}}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='transparent';}}>
+                          <div style={{fontSize:28,marginBottom:8,color:'#C8C4BE'}}>+</div>
+                          <div style={{fontSize:12,fontWeight:600,color:'#A8A59E'}}>New Folder</div>
+                        </div>
                       </div>
                     </>)}
                     {folderDocs.length>0&&(<>
