@@ -11831,8 +11831,16 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [chMenuOpen, setChMenuOpen] = useState(false);
   const [active,     setActive]     = useState(null);
   const [showAddDoc, setShowAddDoc] = useState(false);
+  const [addContentType, setAddContentType] = useState(null); // 'text'|'file'|'link'|'audio'
   const [docName,    setDocName]    = useState('');
   const [docText,    setDocText]    = useState('');
+  const [linkUrl,    setLinkUrl]    = useState('');
+  const [linkTitle,  setLinkTitle]  = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob,   setAudioBlob]   = useState(null);
+  const [audioTranscribing, setAudioTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef   = useRef([]);
   const [fileUploading, setFileUploading] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [generating, setGenerating] = useState(null);
@@ -11972,6 +11980,56 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     }
     const c={id:`course_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,...createForm,name:createForm.name.trim(),documents:[],flashDeckIds:[],brainMapIds:[],createdAt:new Date().toISOString()};
     setCourses(cs=>[...cs,c]);setActive(c);setView('course');setShowCreate(false);setCreateForm({name:'',subject:'',color:CH,description:''});
+  };
+
+  const startRecording=async()=>{
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mr=new MediaRecorder(stream);
+      mediaRecorderRef.current=mr;
+      audioChunksRef.current=[];
+      mr.ondataavailable=e=>audioChunksRef.current.push(e.data);
+      mr.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        const blob=new Blob(audioChunksRef.current,{type:'audio/webm'});
+        setAudioBlob(blob);
+        setIsRecording(false);
+        // Transcribe using Web Speech API simulation — store as placeholder
+        setDocText('[Audio recorded — transcription coming soon. Save to add the audio note.]');
+        setDocName(docName||`Audio Note ${new Date().toLocaleTimeString()}`);
+      };
+      mr.start();
+      setIsRecording(true);
+    }catch(e){setErrMsg('Microphone access denied. Please allow microphone access and try again.');}
+  };
+  const stopRecording=()=>{mediaRecorderRef.current?.stop();};
+
+  const fetchLinkContent=async()=>{
+    if(!linkUrl.trim())return;
+    setFileUploading(true);
+    try{
+      const isYT=linkUrl.includes('youtube.com')||linkUrl.includes('youtu.be');
+      if(isYT){
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+            messages:[{role:'user',content:`This YouTube URL was added to a course: ${linkUrl}\nWrite a brief description of what this video likely covers based on the URL. Keep it to 2-3 sentences.`}]})});
+        const data=await res.json();
+        const desc=data.content?.find(b=>b.type==='text')?.text||'';
+        setDocText(`[YouTube Video]\nURL: ${linkUrl}\n\n${desc}`);
+        setDocName(linkTitle||'YouTube Video');
+      } else {
+        setDocText(`[Web Link]\nURL: ${linkUrl}\nTitle: ${linkTitle||linkUrl}`);
+        setDocName(linkTitle||linkUrl.replace(/https?:\/\//,'').split('/')[0]);
+      }
+      setFileUploaded(true);
+    }catch(e){setErrMsg('Could not fetch link. Saved as reference.');}
+    setFileUploading(false);
+  };
+
+  const resetAddModal=()=>{
+    setShowAddDoc(false);setAddContentType(null);setDocName('');setDocText('');
+    setLinkUrl('');setLinkTitle('');setFileUploading(false);setFileUploaded(false);
+    setAudioBlob(null);setIsRecording(false);setAudioTranscribing(false);
   };
 
   const addDocument=(overrideName=null,overrideContent=null)=>{
@@ -12263,23 +12321,123 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       </nav>
 
       {showAddDoc&&(
-        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);setFileUploaded(false);}}>
-          <div style={{background:'#fff',borderRadius:18,padding:'32px',width:520,maxWidth:'94vw',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:6}}>Add Document</h3>
-            <p style={{fontSize:13,color:'#8C8880',marginBottom:20}}>{activeFolderId?`Adding to folder: ${(active.folders||[]).find(f=>f.id===activeFolderId)?.name}`:'Upload a file or paste content.'}</p>
-            <label style={{display:'block',border:`2px dashed ${active.color}`,borderRadius:12,padding:'20px',textAlign:'center',cursor:'pointer',background:active.color+'08',marginBottom:16}} onMouseEnter={e=>e.currentTarget.style.background=active.color+'15'} onMouseLeave={e=>e.currentTarget.style.background=active.color+'08'}>
-              <input type="file" accept=".pdf,.txt,.md,image/*" style={{display:'none'}} onChange={async e=>{const file=e.target.files?.[0];if(file)handleFileUpload(file);e.target.value='';}}/>
-              {fileUploading?<><div style={{width:28,height:28,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 8px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading file…</div></>:<><div style={{fontSize:32,marginBottom:6}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Upload PDF, image, or text file</div><div style={{fontSize:11,color:'#8C8880',marginTop:3}}>PDF, PNG, JPG, TXT, MD supported</div></>}
-            </label>
-            <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'8px 0'}}>— or paste text below —</div>
-            <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…" onKeyDown={e=>e.stopPropagation()} style={{width:'100%',minHeight:160,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);setFileUploaded(false);}} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
-              <button onClick={()=>{const name=(docName).trim()||`Document ${(active.documents?.length||0)+1}`;const content=docText.trim();if(!content&&!fileUploaded)return;const d={id:`doc_${Date.now()}`,name,content,folderId:activeFolderId||null,addedAt:new Date().toISOString()};updateCourse(active.id,{documents:[...(active.documents||[]),d]});setDocName('');setDocText('');setShowAddDoc(false);setFileUploading(false);setFileUploaded(false);}} disabled={fileUploading||(!docText.trim()&&!fileUploaded&&!docName.trim())} style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:(docText.trim()||fileUploaded)?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(docText.trim()||fileUploaded)?'pointer':'default',color:(docText.trim()||fileUploaded)?'#1A1814':'#A8A59E'}}>
-                {fileUploading?'Processing file…':'Save Document'}
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(10px)'}} onClick={resetAddModal}>
+          <div style={{background:'#fff',borderRadius:20,padding:'28px 32px',width:540,maxWidth:'94vw',maxHeight:'92vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814'}}>
+                {addContentType?{text:'Paste Text',file:'Upload File',link:'Add Link',audio:'Record Audio'}[addContentType]:'Add Content'}
+              </h3>
+              <button onClick={addContentType?()=>setAddContentType(null):resetAddModal} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:8,width:30,height:30,cursor:'pointer',fontSize:14,color:'#8C8880'}}>
+                {addContentType?'←':'✕'}
               </button>
             </div>
+            <p style={{fontSize:13,color:'#8C8880',marginBottom:20}}>
+              {activeFolderId?`Adding to: ${(active.folders||[]).find(f=>f.id===activeFolderId)?.name}`:'Choose how to add content'}
+            </p>
+
+            {/* Type picker */}
+            {!addContentType&&(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:8}}>
+                {[
+                  {id:'file',icon:'📎',label:'Upload File',desc:'PDF, image, TXT, MD'},
+                  {id:'text',icon:'✏️',label:'Paste Text',desc:'Notes, chapters, content'},
+                  {id:'link',icon:'🔗',label:'Add Link',desc:'YouTube, article, website'},
+                  {id:'audio',icon:'🎙️',label:'Record Audio',desc:'Lecture, voice notes'},
+                ].map(t=>(
+                  <button key={t.id} onClick={()=>setAddContentType(t.id)}
+                    style={{display:'flex',alignItems:'center',gap:12,padding:'16px',borderRadius:14,border:'1.5px solid #ECEAE4',background:'#fff',cursor:'pointer',textAlign:'left',transition:'all 0.15s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
+                    <span style={{fontSize:28}}>{t.icon}</span>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>{t.label}</div>
+                      <div style={{fontSize:11,color:'#A8A59E',marginTop:2}}>{t.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* File upload */}
+            {addContentType==='file'&&(
+              <>
+                <label style={{display:'block',border:`2px dashed ${active.color}`,borderRadius:12,padding:'28px 20px',textAlign:'center',cursor:'pointer',background:active.color+'08',marginBottom:16}}
+                  onMouseEnter={e=>e.currentTarget.style.background=active.color+'15'}
+                  onMouseLeave={e=>e.currentTarget.style.background=active.color+'08'}>
+                  <input type="file" accept=".pdf,.txt,.md,image/*" style={{display:'none'}} onChange={async e=>{const file=e.target.files?.[0];if(file)handleFileUpload(file);e.target.value='';}}/>
+                  {fileUploading
+                    ?<><div style={{width:32,height:32,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 10px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading file…</div></>
+                    :fileUploaded
+                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534'}}>File ready — give it a name below</div></>
+                      :<><div style={{fontSize:36,marginBottom:8}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Click to upload</div><div style={{fontSize:11,color:'#8C8880',marginTop:4}}>PDF, PNG, JPG, TXT, MD supported</div></>
+                  }
+                </label>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Text paste */}
+            {addContentType==='text'&&(
+              <>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…" onKeyDown={e=>e.stopPropagation()} style={{width:'100%',minHeight:200,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Link */}
+            {addContentType==='link'&&(
+              <>
+                <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="Paste URL (YouTube, article, website…)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <input value={linkTitle} onChange={e=>setLinkTitle(e.target.value)} placeholder="Title (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                {!fileUploaded&&<button onClick={fetchLinkContent} disabled={!linkUrl.trim()||fileUploading} style={{width:'100%',padding:'10px',borderRadius:9,border:'none',background:linkUrl.trim()?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:linkUrl.trim()?'pointer':'default',color:linkUrl.trim()?'#1A1814':'#A8A59E',marginBottom:16}}>
+                  {fileUploading?'Fetching…':'Preview Link'}
+                </button>}
+                {fileUploaded&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:9,padding:'10px 14px',marginBottom:16,fontSize:12,color:'#166534'}}>✓ Link ready to save</div>}
+              </>
+            )}
+
+            {/* Audio */}
+            {addContentType==='audio'&&(
+              <>
+                <div style={{textAlign:'center',padding:'28px 20px',background:'#F7F6F2',borderRadius:14,marginBottom:16}}>
+                  {isRecording
+                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',border:'4px solid #E85D3F30',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',animation:'qbSpin 2s linear infinite'}}>🎙️</div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#E85D3F',marginBottom:12}}>Recording…</div>
+                      <button onClick={stopRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#E85D3F',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>Stop Recording</button></>
+                    :audioBlob
+                      ?<><div style={{fontSize:40,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
+                      :<><div style={{fontSize:48,marginBottom:12}}>🎙️</div>
+                        <div style={{fontSize:13,fontWeight:600,color:'#1A1814',marginBottom:4}}>Record a lecture or voice note</div>
+                        <div style={{fontSize:11,color:'#8C8880',marginBottom:16}}>Requires microphone access</div>
+                        <button onClick={startRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Start Recording</button></>
+                  }
+                </div>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Recording name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Footer buttons */}
+            {addContentType&&(
+              <div style={{display:'flex',gap:10}}>
+                <button onClick={resetAddModal} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+                <button
+                  onClick={()=>{
+                    const name=(docName).trim()||`Document ${(active.documents?.length||0)+1}`;
+                    const content=docText.trim()||(addContentType==='link'?`[Link] ${linkUrl}`:addContentType==='audio'?'[Audio Note]':'');
+                    if(!content&&!fileUploaded&&!audioBlob)return;
+                    const d={id:`doc_${Date.now()}`,name,content,type:addContentType,url:addContentType==='link'?linkUrl:null,folderId:activeFolderId||null,addedAt:new Date().toISOString()};
+                    updateCourse(active.id,{documents:[...(active.documents||[]),d]});
+                    resetAddModal();
+                  }}
+                  disabled={fileUploading||isRecording||(addContentType==='text'&&!docText.trim())||(addContentType==='file'&&!fileUploaded)||(addContentType==='link'&&!fileUploaded&&!linkUrl.trim())||(addContentType==='audio'&&!audioBlob)}
+                  style={{flex:2,padding:'11px',borderRadius:10,border:'none',fontSize:13,fontWeight:700,cursor:'pointer',
+                    background:((addContentType==='text'&&docText.trim())||(addContentType==='file'&&fileUploaded)||(addContentType==='link'&&(fileUploaded||linkUrl.trim()))||(addContentType==='audio'&&audioBlob))?active.color:'#ECEAE4',
+                    color:((addContentType==='text'&&docText.trim())||(addContentType==='file'&&fileUploaded)||(addContentType==='link'&&(fileUploaded||linkUrl.trim()))||(addContentType==='audio'&&audioBlob))?'#1A1814':'#A8A59E'}}>
+                  Save Content
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
