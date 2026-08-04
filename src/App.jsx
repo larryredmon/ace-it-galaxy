@@ -12132,6 +12132,48 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setGenerating(null);
   };
 
+  // Recursive sidebar folder tree component
+  const SidebarFolder=({folder,depth=0})=>{
+    const [open,setOpen]=useState(true);
+    const children=(active.folders||[]).filter(f=>f.parentId===folder.id);
+    const docCount=(active.documents||[]).filter(d=>d.folderId===folder.id).length;
+    const isActive=activeFolderId===folder.id;
+    return(
+      <div>
+        <div style={{display:'flex',alignItems:'center',paddingLeft:depth*12}}>
+          {children.length>0&&<button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}} style={{background:'none',border:'none',cursor:'pointer',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',color:'#A8A59E',fontSize:10,flexShrink:0}}>{open?'▼':'▶'}</button>}
+          {children.length===0&&<div style={{width:18,flexShrink:0}}/>}
+          <button onClick={()=>setActiveFolderId(folder.id)} style={{flex:1,display:'flex',alignItems:'center',gap:8,padding:'7px 8px',borderRadius:8,border:'none',background:isActive?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',minWidth:0}}>
+            <span style={{fontSize:13}}>{open&&children.length>0?'📂':'📁'}</span>
+            <span style={{fontSize:12,fontWeight:isActive?700:500,color:isActive?active.color:'#3A3530',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{folder.name}</span>
+            {docCount>0&&<span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{docCount}</span>}
+          </button>
+        </div>
+        {open&&children.length>0&&children.map(child=><SidebarFolder key={child.id} folder={child} depth={depth+1}/>)}
+      </div>
+    );
+  };
+
+  // Send To dropdown
+  const SendToDropdown=({sourceType,sourceId,onClose})=>(
+    <div style={{position:'absolute',top:'100%',right:0,zIndex:200,background:'#fff',border:'1px solid #ECEAE4',borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.12)',padding:'6px',minWidth:180,marginTop:4}}>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',padding:'4px 10px 6px'}}>Send to...</div>
+      {[
+        {id:'flashcards',label:'Flash Cards',icon:'🃏',color:'#C8B8FF'},
+        {id:'notes',label:'Notes',icon:'📄',color:'#F0D080'},
+        {id:'simplifier',label:'Text Simplifier',icon:'🔍',color:'#6ED9B8'},
+      ].map(app=>(
+        <button key={app.id} onClick={()=>{sendToApp(app.id,sourceType,sourceId);onClose();}}
+          style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}
+          onMouseEnter={e=>e.currentTarget.style.background=app.color+'20'}
+          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+          <span style={{fontSize:16}}>{app.icon}</span>
+          <span style={{fontSize:13,fontWeight:500,color:'#1A1814'}}>{app.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if(view==='course'&&active) return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814',display:'flex',flexDirection:'column'}}>
       <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.ch-folder-tile:hover{border-color:var(--ac)!important;background:var(--ac-light)!important;}.ch-doc-row:hover{background:#F7F6F2!important;}@media(max-width:768px){.ch-layout{flex-direction:column!important}.ch-sidebar{width:100%!important;border-right:none!important;border-bottom:1px solid #ECEAE4!important;max-height:200px!important}}`}</style>
