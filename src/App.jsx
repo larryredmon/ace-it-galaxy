@@ -11853,6 +11853,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [editCourseForm, setEditCourseForm] = useState({name:'',subject:'',color:''});
   const [expandedFolders, setExpandedFolders] = useState({});
   const [dragDocId,   setDragDocId]   = useState(null);
+  const [sendToMenu,  setSendToMenu]  = useState(null);
+  const [sendingTo,   setSendingTo]   = useState(null);
   const [assignDocId, setAssignDocId] = useState(null); // doc being assigned to folder
   const [chConfirmDelete, setChConfirmDelete] = useState(false);
 
