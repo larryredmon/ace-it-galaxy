@@ -12132,30 +12132,32 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setGenerating(null);
   };
 
-  // Recursive sidebar folder tree component
-  const SidebarFolder=({folder,depth=0})=>{
-    const [open,setOpen]=useState(true);
+  // Recursive sidebar folder tree — uses expandedFolders state (no hooks needed)
+  const renderSidebarFolder=(folder,depth=0)=>{
     const children=(active.folders||[]).filter(f=>f.parentId===folder.id);
     const docCount=(active.documents||[]).filter(d=>d.folderId===folder.id).length;
     const isActive=activeFolderId===folder.id;
+    const isOpen=expandedFolders[folder.id]!==false; // default open
     return(
-      <div>
+      <div key={folder.id}>
         <div style={{display:'flex',alignItems:'center',paddingLeft:depth*12}}>
-          {children.length>0&&<button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}} style={{background:'none',border:'none',cursor:'pointer',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',color:'#A8A59E',fontSize:10,flexShrink:0}}>{open?'▼':'▶'}</button>}
-          {children.length===0&&<div style={{width:18,flexShrink:0}}/>}
+          {children.length>0
+            ?<button onClick={e=>{e.stopPropagation();setExpandedFolders(ef=>({...ef,[folder.id]:!isOpen}));}} style={{background:'none',border:'none',cursor:'pointer',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',color:'#A8A59E',fontSize:10,flexShrink:0}}>{isOpen?'▼':'▶'}</button>
+            :<div style={{width:18,flexShrink:0}}/>
+          }
           <button onClick={()=>setActiveFolderId(folder.id)} style={{flex:1,display:'flex',alignItems:'center',gap:8,padding:'7px 8px',borderRadius:8,border:'none',background:isActive?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',minWidth:0}}>
-            <span style={{fontSize:13}}>{open&&children.length>0?'📂':'📁'}</span>
+            <span style={{fontSize:13}}>{isOpen&&children.length>0?'📂':'📁'}</span>
             <span style={{fontSize:12,fontWeight:isActive?700:500,color:isActive?active.color:'#3A3530',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{folder.name}</span>
             {docCount>0&&<span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{docCount}</span>}
           </button>
         </div>
-        {open&&children.length>0&&children.map(child=><SidebarFolder key={child.id} folder={child} depth={depth+1}/>)}
+        {isOpen&&children.length>0&&children.map(child=>renderSidebarFolder(child,depth+1))}
       </div>
     );
   };
 
-  // Send To dropdown
-  const SendToDropdown=({sourceType,sourceId,onClose})=>(
+  // Send To dropdown renderer
+  const renderSendToDropdown=(sourceType,sourceId)=>(
     <div style={{position:'absolute',top:'100%',right:0,zIndex:200,background:'#fff',border:'1px solid #ECEAE4',borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.12)',padding:'6px',minWidth:180,marginTop:4}}>
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',padding:'4px 10px 6px'}}>Send to...</div>
       {[
@@ -12163,7 +12165,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         {id:'notes',label:'Notes',icon:'📄',color:'#F0D080'},
         {id:'simplifier',label:'Text Simplifier',icon:'🔍',color:'#6ED9B8'},
       ].map(app=>(
-        <button key={app.id} onClick={()=>{sendToApp(app.id,sourceType,sourceId);onClose();}}
+        <button key={app.id} onClick={()=>{sendToApp(app.id,sourceType,sourceId);setSendToMenu(null);}}
           style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}
           onMouseEnter={e=>e.currentTarget.style.background=app.color+'20'}
           onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
@@ -12284,9 +12286,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{fontSize:11,color:'#A8A59E'}}>{(active.folders||[]).length} folders</div>
               </div>
             </button>
-            {(active.folders||[]).filter(f=>!f.parentId).map(folder=>(
-              <SidebarFolder key={folder.id} folder={folder} depth={0}/>
-            ))}
+            {(active.folders||[]).filter(f=>!f.parentId).map(folder=>renderSidebarFolder(folder,0))}
             {(active.folders||[]).length===0&&<div style={{fontSize:12,color:'#A8A59E',padding:'8px 12px',lineHeight:1.5}}>No folders yet. Create one to organize your documents.</div>}
           </div>
           <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4',display:'flex',flexDirection:'column',gap:8}}>
@@ -12424,7 +12424,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             </div>
                             <div style={{position:'relative',marginTop:8}}>
                               <button onClick={e=>{e.stopPropagation();setSendToMenu(sm=>sm?.id===sub.id?null:{type:'folder',id:sub.id});}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>Send ↗</button>
-                              {sendToMenu?.id===sub.id&&<SendToDropdown sourceType="folder" sourceId={sub.id} onClose={()=>setSendToMenu(null)}/>}
+                              {sendToMenu?.id===sub.id&&renderSendToDropdown("folder",sub.id)}
                             </div>
                           </div>
                         ))}
@@ -12445,7 +12445,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                               <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>{expandedDoc===d.id?'▲ Hide':'▼ View'}</button>
                               <div style={{position:'relative',flexShrink:0}}>
                                 <button onClick={()=>setSendToMenu(sm=>sm?.id===d.id?null:{type:'doc',id:d.id})} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',fontSize:11,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>Send ↗</button>
-                                {sendToMenu?.id===d.id&&<SendToDropdown sourceType="doc" sourceId={d.id} onClose={()=>setSendToMenu(null)}/>}
+                                {sendToMenu?.id===d.id&&renderSendToDropdown("doc",d.id)}
                               </div>
                               <button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,color:'#D8D5CE',flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
                             </div>
