@@ -9006,7 +9006,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               <div style={{fontSize:13,color:"#5A5752",marginBottom:20}}>"{folders.find(f=>f.id===confirmDeleteFolder)?.name}" will be deleted. Notes inside will stay.</div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>setConfirmDeleteFolder(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #D8D5CE",background:"none",fontSize:13,fontWeight:600,cursor:"pointer",color:"#5A5752"}}>Cancel</button>
-                <button onClick={()=>{setFolders(prev=>prev.filter(x=>x.id!==confirmDeleteFolder));setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
+                <button onClick={()=>{deleteFolderDeep(active.id,confirmDeleteFolder);setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
               </div>
             </div>
           </div>
@@ -12158,7 +12158,12 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         <span style={{fontSize:13,fontWeight:600,color:'#8C8880',cursor:'pointer',whiteSpace:'nowrap'}} onClick={()=>{setView('home');setActive(null);setActiveFolderId(null);}}>Course Hub</span>
         <span style={{color:'#C8C4BE',fontSize:12}}>›</span>
         <span style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{active.name}</span>
-        {activeFolderId&&<><span style={{color:'#C8C4BE',fontSize:12}}>›</span><span style={{fontSize:13,fontWeight:700,color:active.color,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(active.folders||[]).find(f=>f.id===activeFolderId)?.name}</span></>}
+        {activeFolderId&&getFolderPath(active.folders||[],activeFolderId).map((folder,idx,arr)=>(
+          <span key={folder.id} style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{color:'#C8C4BE',fontSize:12}}>›</span>
+            <span onClick={()=>setActiveFolderId(folder.id)} style={{fontSize:13,fontWeight:idx===arr.length-1?700:500,color:idx===arr.length-1?active.color:'#8C8880',cursor:'pointer',whiteSpace:'nowrap'}}>{folder.name}</span>
+          </span>
+        ))}
       </nav>
 
       {showAddDoc&&(
@@ -12238,13 +12243,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
               </div>
             </button>
             {(active.folders||[]).filter(f=>!f.parentId).map(folder=>(
-              <button key={folder.id} onClick={()=>setActiveFolderId(folder.id)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,border:'none',background:activeFolderId===folder.id?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',marginBottom:2}}>
-                <div style={{width:28,height:28,borderRadius:7,background:activeFolderId===folder.id?active.color+'40':'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>📁</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{folder.name}</div>
-                  <div style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===folder.id).length} docs</div>
-                </div>
-              </button>
+              <SidebarFolder key={folder.id} folder={folder} depth={0}/>
             ))}
             {(active.folders||[]).length===0&&<div style={{fontSize:12,color:'#A8A59E',padding:'8px 12px',lineHeight:1.5}}>No folders yet. Create one to organize your documents.</div>}
           </div>
@@ -12373,13 +12372,18 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                       <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:12}}>Subfolders</div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:12,marginBottom:24}}>
                         {subFolders.map(sub=>(
-                          <div key={sub.id} onClick={()=>setActiveFolderId(sub.id)}
-                            style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'18px 16px',cursor:'pointer',textAlign:'center',transition:'all 0.15s'}}
+                          <div key={sub.id} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'18px 16px',textAlign:'center',transition:'all 0.15s',position:'relative'}}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
-                            <div style={{fontSize:32,marginBottom:8}}>📁</div>
-                            <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
-                            <div style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===sub.id).length} docs</div>
+                            <div onClick={()=>setActiveFolderId(sub.id)} style={{cursor:'pointer'}}>
+                              <div style={{fontSize:32,marginBottom:8}}>📁</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
+                              <div style={{fontSize:11,color:'#A8A59E'}}>{getDocCount(active.folders||[],active.documents||[],sub.id)} docs</div>
+                            </div>
+                            <div style={{position:'relative',marginTop:8}}>
+                              <button onClick={e=>{e.stopPropagation();setSendToMenu(sm=>sm?.id===sub.id?null:{type:'folder',id:sub.id});}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>Send ↗</button>
+                              {sendToMenu?.id===sub.id&&<SendToDropdown sourceType="folder" sourceId={sub.id} onClose={()=>setSendToMenu(null)}/>}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -12397,6 +12401,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                                 <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                               </div>
                               <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>{expandedDoc===d.id?'▲ Hide':'▼ View'}</button>
+                              <div style={{position:'relative',flexShrink:0}}>
+                                <button onClick={()=>setSendToMenu(sm=>sm?.id===d.id?null:{type:'doc',id:d.id})} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',fontSize:11,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>Send ↗</button>
+                                {sendToMenu?.id===d.id&&<SendToDropdown sourceType="doc" sourceId={d.id} onClose={()=>setSendToMenu(null)}/>}
+                              </div>
                               <button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,color:'#D8D5CE',flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
                             </div>
                             {expandedDoc===d.id&&(
@@ -12420,6 +12428,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {errMsg&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:'#E85D3F',display:'flex',justifyContent:'space-between'}}>{errMsg}<button onClick={()=>setErrMsg('')} style={{background:'none',border:'none',cursor:'pointer',color:'#E85D3F',fontSize:14}}>✕</button></div>}
             {genProgress&&<div style={{fontSize:12,color:active.color,marginBottom:10,fontWeight:600}}>{genProgress}</div>}
             {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards! <button onClick={()=>launchApp('flashcards')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
+            {genResult?.type==='send-cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#166534',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" → {genResult.count} flashcards created!</span><button onClick={()=>launchApp('flashcards')} style={{background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
+            {genResult?.type==='send-notes'&&<div style={{background:'#FFF9E6',border:'1px solid #F0D080',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#8B6914',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" sent to Notes!</span><button onClick={()=>launchApp('notes')} style={{background:'none',border:'none',cursor:'pointer',color:'#8B6914',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
+            {genResult?.type==='error'&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#E85D3F'}}>{genResult.msg}</div>}
+            {sendingTo&&<div style={{background:'#EEF2FF',border:'1px solid #C7D2FE',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#4338CA'}}>⏳ Sending to {sendingTo}…</div>}
             {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#9B1446'}}>✓ Brain map created! <button onClick={()=>launchApp('brainmap')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
               <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
