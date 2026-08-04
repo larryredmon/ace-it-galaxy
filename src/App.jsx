@@ -12563,7 +12563,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
                             <div style={{position:'absolute',top:8,right:8,display:'flex',gap:4}}>
                               <button onClick={e=>{e.stopPropagation();setEditingFolder(folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:2}} onMouseEnter={e=>e.currentTarget.style.color=active.color} onMouseLeave={e=>e.currentTarget.style.color='#A8A59E'}>✏️</button>
-                              <button onClick={e=>{e.stopPropagation();deleteFolder(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                              <button onClick={e=>{e.stopPropagation();const cnt=getDocCount(active.folders||[],active.documents||[],folder.id);if(cnt>0&&!window.confirm(`Delete "${folder.name}" and ${cnt} document(s) inside?`))return;deleteFolderDeep(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
                             </div>
                             <div style={{fontSize:40,marginBottom:8}}>📁</div>
                             {editingFolder===folder.id
