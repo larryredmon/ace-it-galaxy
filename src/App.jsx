@@ -11894,6 +11894,56 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   },[view,active]);
   const deleteCourse=(id)=>{setCourses(cs=>cs.filter(c=>c.id!==id));setView('home');setActive(null);};
 
+  // Recursive folder helpers
+  const getFolderPath=(folders,folderId)=>{
+    if(!folderId) return [];
+    const path=[];let current=folderId;const visited=new Set();
+    while(current&&!visited.has(current)){visited.add(current);const folder=folders.find(f=>f.id===current);if(!folder)break;path.unshift(folder);current=folder.parentId;}
+    return path;
+  };
+  const getDescendantFolderIds=(folders,folderId)=>{
+    const result=[];const queue=[folderId];
+    while(queue.length){const id=queue.shift();folders.filter(f=>f.parentId===id).forEach(f=>{result.push(f.id);queue.push(f.id);});}
+    return result;
+  };
+  const getDocCount=(folders,documents,folderId)=>{
+    const descendants=getDescendantFolderIds(folders,folderId);
+    const allIds=new Set([folderId,...descendants]);
+    return documents.filter(d=>allIds.has(d.folderId)).length;
+  };
+  const deleteFolderDeep=(courseId,folderId)=>{
+    const descendants=getDescendantFolderIds(active?.folders||[],folderId);
+    const toDelete=new Set([folderId,...descendants]);
+    const updatedDocs=(active?.documents||[]).map(d=>toDelete.has(d.folderId)?{...d,folderId:null}:d);
+    const updatedFolders=(active?.folders||[]).filter(f=>!toDelete.has(f.id));
+    updateCourse(courseId,{folders:updatedFolders,documents:updatedDocs});
+    if(toDelete.has(activeFolderId)) setActiveFolderId(null);
+  };
+  const sendToApp=async(appId,sourceType,sourceId)=>{
+    if(!user){openAuth('login');return;}
+    setSendingTo(appId);setSendToMenu(null);
+    try{
+      let docs=[];let sourceName='';
+      if(sourceType==='doc'){const doc=(active.documents||[]).find(d=>d.id===sourceId);if(!doc){setSendingTo(null);return;}docs=[doc];sourceName=doc.name;}
+      else{const descendants=getDescendantFolderIds(active.folders||[],sourceId);const allIds=new Set([sourceId,...descendants]);docs=(active.documents||[]).filter(d=>allIds.has(d.folderId));sourceName=(active.folders||[]).find(f=>f.id===sourceId)?.name||'Folder';}
+      const allText=docs.map(d=>'['+d.name+']\n'+(d.content||'')).join('\n\n').slice(0,12000);
+      if(!allText.trim()){setSendingTo(null);setGenResult({type:'error',msg:'No text content found.'});return;}
+      if(appId==='flashcards'){
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:'Create flashcards. Return ONLY JSON: {"cards":[{"term":"...","definition":"..."}]}\n\n'+allText}]})});
+        const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
+        const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+        if(parsed.cards?.length>0){const deck={id:'deck_'+Date.now(),title:sourceName,subject:active.subject||active.name,color:active.color,description:'From '+active.name,tags:[],courseId:active.id,cards:parsed.cards.map((card,i)=>({id:i+1,term:card.term,definition:card.definition,hint:'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()};const existing=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,deck]));tpSync('tp_fc_decks',[...existing,deck]);setGenResult({type:'send-cards',count:parsed.cards.length,app:'flashcards',name:sourceName});}
+      } else if(appId==='notes'){
+        const note={id:`note_${Date.now()}`,title:sourceName,content:allText,folder:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        const existing=JSON.parse(localStorage.getItem('tp_notes')||'[]');localStorage.setItem('tp_notes',JSON.stringify([...existing,note]));tpSync('tp_notes',[...existing,note]);
+        setGenResult({type:'send-notes',app:'notes',name:sourceName});
+      } else if(appId==='simplifier'){
+        localStorage.setItem('ch_pending_simplify',allText.slice(0,5000));launchApp('simplifier');return;
+      }
+    }catch(e){setGenResult({type:'error',msg:'Failed to send. Please try again.'});}
+    setSendingTo(null);
+  };
+
   const addFolder=(courseId,name,parentId=null)=>{
     if(!name.trim())return;
     const folder={id:`folder_${Date.now()}`,name:name.trim(),parentId,createdAt:new Date().toISOString()};
