@@ -12528,14 +12528,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
               </div>
             </div>
-            <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-              {[['Documents',(active.documents||[]).length],['Folders',(active.folders||[]).length],['Flash Decks',(active.flashDeckIds||[]).length]].map(([label,val])=>(
-                <div key={label} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:10,padding:'8px 14px',textAlign:'center'}}>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814'}}>{val}</div>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#A8A59E'}}>{label}</div>
-                </div>
-              ))}
-            </div>
+
           </div>
 
           {activeFolderId===null&&(
