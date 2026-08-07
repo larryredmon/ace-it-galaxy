@@ -12519,17 +12519,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         </div>
 
         <div style={{flex:1,overflowY:'auto',padding:'28px 28px 80px',minWidth:0}}>
-          <div style={{marginBottom:24}}>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:4}}>{active.subject||'Course'}</div>
-            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:14}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,color:'#1A1814',margin:0,textAlign:'center'}}>{active.name}</h2>
-              <div style={{display:'flex',gap:8}}>
-                <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
-                <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',whiteSpace:'nowrap'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#1A1814';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>+ New Folder</button>
-                <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
-              </div>
+          <div style={{marginBottom:24,textAlign:'center'}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:8}}>{active.subject||'Course'}</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:900,color:'#1A1814',margin:'0 0 16px'}}>{active.name}</h2>
+            <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+              <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
+              <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',whiteSpace:'nowrap'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#1A1814';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>+ New Folder</button>
+              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
             </div>
-
           </div>
 
           {activeFolderId===null&&(
