@@ -12617,7 +12617,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
                   <button onClick={()=>setActiveFolderId(null)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>← All Folders</button>
                   <div style={{width:32,height:32,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📁</div>
-                  <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}>{folder?.name}</span>
+                  {editingFolder===activeFolderId
+                    ?<input autoFocus defaultValue={folder?.name}
+                        onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}if(e.key==='Escape')setEditingFolder(null);}}
+                        onBlur={e=>{renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}}
+                        style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',border:'none',borderBottom:`2px solid ${active.color}`,outline:'none',background:'transparent',minWidth:120}}/>
+                    :<span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',cursor:'pointer'}} onDoubleClick={()=>setEditingFolder(activeFolderId)} title="Double-click to rename">{folder?.name}</span>}
+                  <button onClick={()=>setEditingFolder(ef=>ef===activeFolderId?null:activeFolderId)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#A8A59E',padding:'2px 4px'}} title="Rename folder">✏️</button>
                 </div>
                 {subFolders.length===0&&folderDocs.length===0?(
                   <div style={{textAlign:'center',padding:'50px 20px',background:'#fff',borderRadius:16,border:'1px solid #ECEAE4'}}>
@@ -12664,9 +12670,15 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                               onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                               <div style={{width:36,height:36,borderRadius:9,background:active.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div>
+                                {editingDoc===d.id
+                                  ?<input autoFocus defaultValue={d.name}
+                                      onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}if(e.key==='Escape')setEditingDoc(null);}}
+                                      onBlur={e=>{renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}}
+                                      style={{width:'100%',padding:'2px 6px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
+                                  :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}} onDoubleClick={()=>setEditingDoc(d.id)} title="Double-click to rename">{d.name}</div>}
                                 <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                               </div>
+                              <button onClick={()=>setEditingDoc(id=>id===d.id?null:d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#C8C4BE',flexShrink:0,padding:'0 2px'}} title="Rename">✏️</button>
                               <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>{expandedDoc===d.id?'▲ Hide':'▼ View'}</button>
                               <div style={{position:'relative',flexShrink:0}}>
                                 <button onClick={()=>setSendToMenu(sm=>sm?.id===d.id?null:{type:'doc',id:d.id})} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',fontSize:11,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>Send ↗</button>
