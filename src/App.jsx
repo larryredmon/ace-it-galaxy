@@ -12133,7 +12133,15 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     if(!active?.documents?.length){setErrMsg('Add at least one document first.');return;}
     if(!user){openAuth('login');return;}
     setGenerating('cards');setGenResult(null);setErrMsg('');
-    const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
+    // Only use docs from current folder (and subfolders) if inside a folder
+    let docsToUse=active.documents||[];
+    if(activeFolderId){
+      const descendants=getDescendantFolderIds(active.folders||[],activeFolderId);
+      const folderIds=new Set([activeFolderId,...descendants]);
+      docsToUse=docsToUse.filter(d=>folderIds.has(d.folderId));
+    }
+    if(!docsToUse.length){setErrMsg('No documents in this folder. Add documents first.');setGenerating(null);return;}
+    const allText=docsToUse.map(d=>'['+d.name+']\n'+d.content).join('\n\n');
     const totalChars=allText.length;
     try{
       setGenProgress('📖 Reading your document and planning study structure…');
@@ -12722,7 +12730,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {sendingTo&&<div style={{background:'#EEF2FF',border:'1px solid #C7D2FE',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#4338CA'}}>⏳ Sending to {sendingTo}…</div>}
             {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#9B1446'}}>✓ Brain map created! <button onClick={()=>launchApp('brainmap')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <button onClick={generateFlashCards} disabled={generating==='cards'} style={{padding:'12px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
                 {generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:<>🃏 Generate Flash Cards</>}
               </button>
               <button onClick={generateBrainMap} disabled={generating==='map'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?'#F0A8C0':'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#9B1446':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
