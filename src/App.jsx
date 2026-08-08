@@ -12585,12 +12585,15 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                             <div style={{width:36,height:36,borderRadius:9,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
                             <div style={{flex:1,minWidth:0}}>
-                              {editingDoc===d.id
-                                ?<input autoFocus defaultValue={d.name}
-                                  onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')renameDoc(active.id,d.id,e.target.value);if(e.key==='Escape')setEditingDoc(null);}}
-                                  onBlur={e=>renameDoc(active.id,d.id,e.target.value)}
-                                  style={{width:'100%',padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
-                                :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} onDoubleClick={()=>setEditingDoc(d.id)}>{d.name}</div>}
+                              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                {editingDoc===d.id
+                                  ?<input autoFocus defaultValue={d.name}
+                                    onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}if(e.key==='Escape')setEditingDoc(null);}}
+                                    onBlur={e=>{renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}}
+                                    style={{flex:1,padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
+                                  :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}} onDoubleClick={()=>setEditingDoc(d.id)} title="Double-click to rename">{d.name}</div>}
+                                <button onClick={()=>setEditingDoc(id=>id===d.id?null:d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#C8C4BE',padding:'0 2px',flexShrink:0}} title="Rename">✏️</button>
+                              </div>
                               <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                             </div>
                             {(active.folders||[]).length>0&&<select onChange={e=>{if(e.target.value)assignDocToFolder(active.id,d.id,e.target.value);}} defaultValue="" style={{padding:'4px 8px',borderRadius:6,border:'1px solid #ECEAE4',background:'#fff',fontSize:11,color:'#6B6860',cursor:'pointer'}}><option value="">Move to folder…</option>{(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>📁 {f.name}</option>)}</select>}
