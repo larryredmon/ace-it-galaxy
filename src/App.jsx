@@ -11952,6 +11952,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setSendingTo(null);
   };
 
+  const renameFolder=(courseId,folderId,name)=>{
+    if(!name?.trim())return;
+    updateCourse(courseId,{folders:(active?.folders||[]).map(f=>f.id===folderId?{...f,name:name.trim()}:f)});
+  };
+  const renameDoc=(courseId,docId,name)=>{
+    if(!name?.trim())return;
+    updateCourse(courseId,{documents:(active?.documents||[]).map(d=>d.id===docId?{...d,name:name.trim()}:d)});
+  };
   const addFolder=(courseId,name,parentId=null)=>{
     if(!name.trim())return;
     const folder={id:`folder_${Date.now()}`,name:name.trim(),parentId,createdAt:new Date().toISOString()};
