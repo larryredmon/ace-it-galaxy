@@ -11925,6 +11925,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const updatedDocs=(active?.documents||[]).map(d=>toDelete.has(d.folderId)?{...d,folderId:null}:d);
     const updatedFolders=(active?.folders||[]).filter(f=>!toDelete.has(f.id));
     updateCourse(courseId,{folders:updatedFolders,documents:updatedDocs});
+    // Clear expanded state for deleted folders so sidebar re-renders correctly
+    setExpandedFolders(ef=>{const next={...ef};toDelete.forEach(id=>delete next[id]);return next;});
     if(toDelete.has(activeFolderId)) setActiveFolderId(null);
   };
   const sendToApp=async(appId,sourceType,sourceId)=>{
@@ -12661,8 +12663,9 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                               <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
                               <div style={{fontSize:11,color:'#A8A59E'}}>{getDocCount(active.folders||[],active.documents||[],sub.id)} docs</div>
                             </div>
-                            <div style={{position:'relative',marginTop:8}}>
+                            <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8,position:'relative'}}>
                               <button onClick={e=>{e.stopPropagation();setSendToMenu(sm=>sm?.id===sub.id?null:{type:'folder',id:sub.id});}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>Send ↗</button>
+                              <button onClick={e=>{e.stopPropagation();if(window.confirm('Delete "'+sub.name+'" and all its contents?'))deleteFolderDeep(active.id,sub.id);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#D8D5CE'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
                               {sendToMenu?.id===sub.id&&renderSendToDropdown("folder",sub.id)}
                             </div>
                           </div>
