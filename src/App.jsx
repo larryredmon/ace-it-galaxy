@@ -8216,6 +8216,12 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const passStrength = (p) => {
     if (!p) return 0;
     let s = 0;
@@ -8299,7 +8305,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div role="dialog" aria-modal="true" aria-label={mode === "login" ? "Sign in" : "Create account"} style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
       <div style={{ position: "relative", zIndex: 1, width: "min(90vw,860px)", maxHeight: "95vh", display: "flex", flexDirection: "row", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         <style>{`@media(max-width:640px){.auth-left-panel{display:none!important}.auth-right-panel{border-radius:20px!important;width:100%!important}}`}</style>
@@ -8333,7 +8339,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
 
         {/* RIGHT */}
         <div className="auth-right-panel" style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
-          <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
+          <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
           {step === "success" ? (
@@ -8372,25 +8378,25 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Full Name</label>
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
+                    <label htmlFor="auth-name" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Full Name</label>
+                    <input id="auth-name" autoComplete="name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.name ? "#E85D3F" : "#E8E5E0"} />
                     {errors.name && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.name}</div>}
                   </div>
                 )}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Email Address</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
+                  <label htmlFor="auth-email" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Email Address</label>
+                  <input id="auth-email" autoComplete="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
                     onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.email ? "#E85D3F" : "#E8E5E0"} />
                   {errors.email && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.email}</div>}
                 </div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752" }}>Password</label>
+                    <label htmlFor="auth-password" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752" }}>Password</label>
                     {mode === "login" && <span onClick={handleForgotPassword} style={{ fontSize: 11, color: "#4F6EF7", cursor: "pointer", fontWeight: 600 }}>{loading ? "Sending…" : "Forgot password?"}</span>}
                   </div>
                   <div style={{ position: "relative" }}>
-                    <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
+                    <input id="auth-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.password ? "#E85D3F" : "#E8E5E0"} />
                     <button onClick={() => setShowPass(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
@@ -8406,9 +8412,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                 </div>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Confirm Password</label>
+                    <label htmlFor="auth-confirm" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Confirm Password</label>
                     <div style={{ position: "relative" }}>
-                      <input type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
+                      <input id="auth-confirm" autoComplete="new-password" type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
                         onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.confirm ? "#E85D3F" : "#E8E5E0"} />
                       <button onClick={() => setShowConf(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showConf ? "🙈" : "👁"}</button>
                     </div>
@@ -10670,7 +10676,7 @@ function PrivacyPolicyPage({ onBack }) {
         {[
           {
             title: "1. Who We Are",
-            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
+            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.com and any associated services.`
           },
           {
             title: "2. Information We Collect",
@@ -11014,6 +11020,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           .lp-steps-grid { grid-template-columns: 1fr !important; }
           .lp-apps-grid { grid-template-columns: 1fr !important; }
           .lp-pain-grid { grid-template-columns: 1fr !important; }
+          .lp-footer { padding-bottom: 176px !important; }
         }
       `}</style>
 
@@ -11022,8 +11029,8 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:16, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
         <div className="lp-nav-links" style={{ display:"flex", gap:32 }}>
           {[["What It Is","what"],["How It Works","how"],["The Apps","apps"]].map(([l,id]) => (
-            <span key={l} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2" }}
-              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>{l}</span>
+            <a key={l} href={`#${id}`} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2", textDecoration:"none" }}
+              onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior:"smooth" }); }}>{l}</a>
           ))}
         </div>
         <div style={{ display:"flex", gap:10 }}>
@@ -11068,7 +11075,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
 
         {/* Trust line */}
-        <div className="fade-up" style={{ animationDelay:"0.25s", fontSize:13, color:"rgba(255,255,255,0.25)", display:"flex", gap:24, justifyContent:"center", flexWrap:"wrap" }}>
+        <div className="fade-up" style={{ animationDelay:"0.25s", fontSize:13, color:"rgba(255,255,255,0.5)", display:"flex", gap:24, justifyContent:"center", flexWrap:"wrap" }}>
           {["No credit card required","Free to use","10 tools included"].map(t => (
             <span key={t} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <span style={{ color:"#6ED9B8" }}>✓</span> {t}
@@ -11092,7 +11099,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
               <div key={p.title} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:"28px 24px" }}>
                 <div style={{ fontSize:32, marginBottom:16 }}>{p.icon}</div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#F7F6F2", marginBottom:10 }}>{p.title}</div>
-                <p style={{ fontSize:14, color:"rgba(247,246,242,0.45)", lineHeight:1.75, margin:0 }}>{p.desc}</p>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{p.desc}</p>
               </div>
             ))}
           </div>
@@ -11120,7 +11127,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
               <div key={s.num} style={{ background:"rgba(255,255,255,0.02)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2, marginBottom:16 }}>STEP {s.num}</div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{s.title}</div>
-                <p style={{ fontSize:14, color:"rgba(247,246,242,0.5)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -11135,7 +11142,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>10 Apps Included</span>
             </div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Your entire study toolkit.</h2>
-            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:480, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own. Every app works better together.</p>
+            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.6)", maxWidth:480, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own. Every app works better together.</p>
           </div>
           <div className="lp-apps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
             {APPS.map(app => (
@@ -11144,9 +11151,9 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
                   <div style={{ width:36, height:36, borderRadius:9, background:`${app.color}18`, border:`1px solid ${app.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                     <Icon appId={app.appId} color={app.color} size={18} />
                   </div>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>{app.name}</div>
+                  <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2", margin:0 }}>{app.name}</h3>
                 </div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.75, margin:0 }}>{app.desc}</p>
+                <p style={{ fontSize:13, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{app.desc}</p>
               </div>
             ))}
           </div>
@@ -11168,20 +11175,20 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
               Get started free →
             </button>
           </div>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,0.2)" }}>No credit card required · Free to use · Start in 30 seconds</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.45)" }}>No credit card required · Free to use · Start in 30 seconds</div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"28px 40px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+      <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"28px 40px 96px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.18)" }}>© 2026 Ace It Galaxy · Built for students.</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
-            <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={() => { if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); } }}
-              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
-              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
+            <a key={l} href={key==="contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize:12, color:"rgba(255,255,255,0.55)", cursor:"pointer", transition:"color 0.15s", textDecoration:"none" }}
+              onClick={(e) => { if(key==="contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.85)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}>{l}</a>
           ))}
         </div>
       </footer>
