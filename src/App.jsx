@@ -10948,6 +10948,372 @@ We aim to respond to all inquiries within 30 days.`
   );
 }
 
+// ─── Per-app SEO landing pages (shown to logged-out visitors on app routes) ───
+const SEO_CONTENT = {
+  flashcards: {
+    name: "Flash Cards", color: "#C8B8FF", kicker: "AI FLASHCARDS",
+    h1: "Free AI Flashcard Generator",
+    tagline: "Turn any notes, textbook chapter, or PDF into a complete flashcard deck in seconds — then study it with spaced repetition until it sticks. No card limits, no paywalls, free for students.",
+    features: [
+      { t: "Generate decks instantly", d: "Paste text or upload a file and AI writes accurate question-and-answer cards for you — no more typing decks by hand." },
+      { t: "Spaced repetition built in", d: "Cards you miss come back more often, so your time goes to what you haven't mastered yet." },
+      { t: "Organized by class", d: "Group decks into folders by course, and pull them into brain maps or notes whenever you need them." },
+    ],
+    steps: [
+      { t: "Upload your material", d: "Drop in notes, a textbook passage, or a PDF." },
+      { t: "AI builds the deck", d: "A full set of study-ready cards appears in seconds." },
+      { t: "Study until mastered", d: "Quiz yourself with spaced repetition and watch your mastery climb." },
+    ],
+    faqs: [
+      { q: "Is the flashcard generator really free?", a: "Yes. Every study tool on Ace It Galaxy is free for students, with no card limits or paywalls." },
+      { q: "What can I make flashcards from?", a: "Paste your notes or a textbook passage, or upload a PDF or document — AI turns any of it into a study-ready deck." },
+      { q: "Do I need an account?", a: "You can try it without signing up. Create a free account to save your decks and sync them across devices." },
+    ],
+  },
+  notes: {
+    name: "Notes", color: "#F0D080", kicker: "AI NOTES",
+    h1: "AI Note-Taking for Students",
+    tagline: "Record lectures, upload slides, or paste your own notes and let AI turn them into clean, organized study notes — structured, summarized, and ready to review.",
+    features: [
+      { t: "Record & transcribe lectures", d: "Capture a lecture live and get an organized transcript you can actually study from." },
+      { t: "Clean up any input", d: "Messy notes, slides, or uploads become clear, structured study notes automatically." },
+      { t: "Send notes to flashcards", d: "Turn any note into a flashcard deck with one click and study it right away." },
+    ],
+    steps: [
+      { t: "Capture anything", d: "Record, upload, or paste your material." },
+      { t: "AI organizes it", d: "Everything becomes clean, structured notes." },
+      { t: "Review and reuse", d: "Study your notes or turn them into cards." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — AI note-taking is free for students on Ace It Galaxy, with no subscription." },
+      { q: "Can it record and transcribe lectures?", a: "Yes. Record a lecture in the app and AI turns it into organized notes you can review later." },
+      { q: "Can I turn notes into flashcards?", a: "Absolutely — send any note straight to the flashcard generator in one click." },
+    ],
+  },
+  brainmap: {
+    name: "Brain Map", color: "#F0A8C0", kicker: "BRAIN MAP",
+    h1: "Free Online Mind Map Maker",
+    tagline: "Build visual mind maps that connect ideas and reveal the big picture. Attach flashcard decks to any node and study straight from the map.",
+    features: [
+      { t: "Unlimited nodes & nesting", d: "Branch out as far as your subject goes — there are no limits on how deep your map gets." },
+      { t: "Attach decks to concepts", d: "Pin a flashcard deck to any node and study a topic without leaving the map." },
+      { t: "Works on any device", d: "Pinch-to-zoom and drag on your phone, tablet, or laptop." },
+    ],
+    steps: [
+      { t: "Start a central idea", d: "Drop your main topic in the middle." },
+      { t: "Branch out concepts", d: "Add and connect related ideas visually." },
+      { t: "Attach decks and study", d: "Pin flashcards to nodes and review from the map." },
+    ],
+    faqs: [
+      { q: "Is the mind map maker free?", a: "Yes — building brain maps is completely free for students, with unlimited nodes." },
+      { q: "Can I attach flashcards to a node?", a: "Yes. Attach any deck to any concept and study it directly from your map." },
+      { q: "Does it work on a phone or tablet?", a: "Yes — the map supports pinch-to-zoom and touch, so it works on any device." },
+    ],
+  },
+  simplifier: {
+    name: "Text Simplifier", color: "#6ED9B8", kicker: "TEXT SIMPLIFIER",
+    h1: "AI Text Simplifier & YouTube Summarizer",
+    tagline: "Paste a dense passage or a YouTube link and get a clear, structured version you can actually understand — at the reading level that works for you.",
+    features: [
+      { t: "Simplify any passage", d: "Turn confusing academic text into plain language without losing the meaning." },
+      { t: "Summarize YouTube videos", d: "Drop in a video link and get a structured summary of what it covers." },
+      { t: "Adjustable reading level", d: "Choose how simple you want it — from quick overview to detailed breakdown." },
+    ],
+    steps: [
+      { t: "Paste text or a link", d: "Add any passage or a YouTube URL." },
+      { t: "AI simplifies it", d: "Get a clear, structured version in seconds." },
+      { t: "Read and understand", d: "Study it at a level that makes sense to you." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — the text simplifier is free for students on Ace It Galaxy." },
+      { q: "Does it work on YouTube videos?", a: "Yes. Paste a YouTube link and AI returns a structured summary of the video." },
+      { q: "Can I change how simple the output is?", a: "Yes — pick a reading level so the result matches how much detail you want." },
+    ],
+  },
+  tracker: {
+    name: "Tracker", color: "#7FB8F0", kicker: "TRACKER",
+    h1: "Free Student Planner & Assignment Tracker",
+    tagline: "Your planner, calendar, and to-do list in one place. Track assignments, deadlines, and exams so nothing slips through the cracks.",
+    features: [
+      { t: "Every deadline in one view", d: "See all your assignments and due dates across every class at a glance." },
+      { t: "Calendar + to-do together", d: "Plan on a calendar and check items off a list in the same place." },
+      { t: "Never miss an assignment", d: "Keep due dates front and center so nothing sneaks up on you." },
+    ],
+    steps: [
+      { t: "Add your assignments", d: "Enter due dates for every class." },
+      { t: "See what's due", d: "View everything on a calendar or list." },
+      { t: "Check it off", d: "Mark work done and stay ahead." },
+    ],
+    faqs: [
+      { q: "Is the planner free?", a: "Yes — the student planner and assignment tracker are free on Ace It Galaxy." },
+      { q: "Can I see a calendar view?", a: "Yes. Your assignments show up on a calendar and as a to-do list." },
+      { q: "Does it sync across devices?", a: "With a free account, your tracker syncs everywhere you log in." },
+    ],
+  },
+  assistant: {
+    name: "Personal Assistant", color: "#90C8F8", kicker: "PERSONAL ASSISTANT",
+    h1: "Your Personal AI Study Assistant",
+    tagline: "An AI tutor that knows what you're working on. Ask questions, build study plans, and get help staying on track across every tool in the platform.",
+    features: [
+      { t: "Answers your questions", d: "Get clear explanations for anything you're studying, any time." },
+      { t: "Builds study plans", d: "Tell it your goals and it maps out what to study and when." },
+      { t: "Knows your work", d: "It sees your decks, notes, and coursework, so its help is actually about your classes." },
+    ],
+    steps: [
+      { t: "Ask anything", d: "Bring a question, a topic, or a goal." },
+      { t: "Get a plan", d: "Receive a personalized study plan or answer." },
+      { t: "Stay on track", d: "Check in across every app as you go." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — your AI study assistant is free for students on Ace It Galaxy." },
+      { q: "How is it different from a generic chatbot?", a: "It's connected to your own decks, notes, and coursework, so its answers and study plans are tailored to what you're actually studying." },
+      { q: "Can it build me a study plan?", a: "Yes. Share your goals and deadlines and it will lay out a plan to get you there." },
+    ],
+  },
+  studybuddy: {
+    name: "Study Buddy", color: "#FFA8D0", kicker: "STUDY BUDDY",
+    h1: "Live Study Rooms for Students",
+    tagline: "Study live with classmates over video. Share documents, sync study timers, and work through material together in real time.",
+    features: [
+      { t: "Video study rooms", d: "Jump on camera with classmates and study together from anywhere." },
+      { t: "Shared document viewer", d: "Open the same PDF or notes so everyone's on the same page." },
+      { t: "Synced study timers", d: "Run focus timers together to keep the whole group on rhythm." },
+    ],
+    steps: [
+      { t: "Start a room", d: "Create a study room in one click." },
+      { t: "Invite classmates", d: "Share the room with up to five friends." },
+      { t: "Study together", d: "Share docs, sync timers, and focus as a group." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — live study rooms are free for students on Ace It Galaxy." },
+      { q: "How many people can join a room?", a: "Up to six people can study together in a single room." },
+      { q: "Can we share documents?", a: "Yes. Open a shared PDF or notes so everyone sees the same material." },
+    ],
+  },
+  coursehub: {
+    name: "Course Hub", color: "#6ED9B8", kicker: "COURSE HUB",
+    h1: "Organize All Your Course Materials in One Place",
+    tagline: "Upload your syllabus and course materials once. AI organizes everything into folders and pushes content straight to your flashcards, notes, and simplifier.",
+    features: [
+      { t: "Unlimited nested folders", d: "Organize every class, unit, and topic exactly how your courses are structured." },
+      { t: "Upload anything", d: "Add files, pasted text, links, or audio — it all lives in one hub." },
+      { t: "Send to any tool", d: "Push a document into flashcards, notes, or the simplifier in one click." },
+    ],
+    steps: [
+      { t: "Upload your syllabus", d: "Add your course files and materials." },
+      { t: "AI organizes it", d: "Everything sorts into clean, nested folders." },
+      { t: "Study from one hub", d: "Send materials to any study tool instantly." },
+    ],
+    faqs: [
+      { q: "Is Course Hub free?", a: "Yes — organizing your courses is free for students on Ace It Galaxy." },
+      { q: "What can I upload?", a: "Files, pasted text, links, and audio recordings all live together in one hub." },
+      { q: "Can I send materials to other tools?", a: "Yes. Push any document to flashcards, notes, or the text simplifier in one click." },
+    ],
+  },
+  journal: {
+    name: "Journal", color: "#E8C4F0", kicker: "JOURNAL",
+    h1: "A Reflection Journal for Students",
+    tagline: "Reflect on what you've learned, track your progress, and build the habit of thinking deeply about your studies — with gentle AI prompts whenever you want them.",
+    features: [
+      { t: "Reflection prompts", d: "Optional AI prompts help you think through what you learned each day." },
+      { t: "Track your progress", d: "Look back over time and see how far you've come." },
+      { t: "Private and yours", d: "Your journal is personal — write freely and keep it to yourself." },
+    ],
+    steps: [
+      { t: "Write a reflection", d: "Jot down what you learned or struggled with." },
+      { t: "Look back", d: "Revisit past entries and see your growth." },
+      { t: "Build the habit", d: "Make deep thinking part of how you study." },
+    ],
+    faqs: [
+      { q: "Is the journal free?", a: "Yes — the student journal is free on Ace It Galaxy." },
+      { q: "Is my journal private?", a: "Yes. Your entries are personal to your account and aren't shared." },
+      { q: "Do I have to write every day?", a: "Not at all — journal whenever it helps. The prompts are there when you want them." },
+    ],
+  },
+};
+const SEO_APP_ORDER = ["flashcards","notes","brainmap","simplifier","tracker","assistant","studybuddy","coursehub","journal"];
+
+function SeoGlyph({ appId, color, size = 20 }) {
+  const P = {
+    flashcards: <><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>,
+    notes: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>,
+    brainmap: <><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/></>,
+    simplifier: <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/></>,
+    tracker: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    assistant: <><path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/></>,
+    studybuddy: <><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/></>,
+    coursehub: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+    journal: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>,
+  };
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{P[appId]}</svg>);
+}
+
+function AppSEOLanding({ appId, onEnter, openAuth, onLegal, onHome }) {
+  const c = SEO_CONTENT[appId];
+  useEffect(() => { try { window.scrollTo(0, 0); } catch {} }, [appId]);
+  useEffect(() => {
+    if (!c) return;
+    const prev = document.getElementById("seo-faq-jsonld");
+    if (prev) prev.remove();
+    const el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.id = "seo-faq-jsonld";
+    el.text = JSON.stringify({
+      "@context": "https://schema.org", "@type": "FAQPage",
+      mainEntity: c.faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    });
+    document.head.appendChild(el);
+    return () => { el.remove(); };
+  }, [appId]);
+  if (!c) return null;
+  const accent = c.color;
+  const others = SEO_APP_ORDER.filter(id => id !== appId);
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#06040E", color: "#F7F6F2", minHeight: "100vh", overflowX: "hidden" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        .seo-fade { animation: fade-up 0.7s ease both; }
+        @keyframes fade-up { from { opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+        .seo-btn { transition: transform 0.2s, box-shadow 0.2s; }
+        .seo-btn:hover { transform: translateY(-2px); }
+        .seo-card { transition: transform 0.2s, border-color 0.2s; }
+        .seo-card:hover { transform: translateY(-4px); }
+        .seo-tool:hover { border-color: rgba(255,255,255,0.25) !important; }
+        @media (max-width: 720px) {
+          .seo-hero-title { font-size: 40px !important; }
+          .seo-section { padding: 56px 22px !important; }
+          .seo-grid { grid-template-columns: 1fr !important; }
+          .seo-cta-row { flex-direction: column !important; }
+          .seo-cta-row a, .seo-cta-row button { width: 100% !important; }
+        }
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 500, height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 40px", background: "rgba(6,4,14,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 16, fontWeight: 900, color: "#F5D96A", letterSpacing: 2, textDecoration: "none" }}>ACE IT</a>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.7)" }}>Log in</button>
+          <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 4px 20px rgba(245,200,66,0.3)" }}>Get started free</button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="seo-section" style={{ minHeight: "88vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "120px 40px 72px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", width: 640, height: 640, borderRadius: "50%", background: `radial-gradient(circle, ${accent}14 0%, transparent 70%)`, top: "-8%", left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} />
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} className="seo-fade" style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textDecoration: "none", marginBottom: 22, display: "inline-block" }}>← All 10 study tools</a>
+        <div className="seo-fade" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: 20, padding: "6px 16px", marginBottom: 26 }}>
+          <SeoGlyph appId={appId} color={accent} size={15} />
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: accent }}>{c.kicker}</span>
+        </div>
+        <h1 className="seo-fade seo-hero-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(38px,6vw,72px)", fontWeight: 900, lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 22, maxWidth: 860, color: "#F7F6F2" }}>{c.h1}</h1>
+        <p className="seo-fade" style={{ fontSize: "clamp(16px,2vw,19px)", fontWeight: 300, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, maxWidth: 620, marginBottom: 42 }}>{c.tagline}</p>
+        <div className="seo-fade seo-cta-row" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 12, padding: "16px 40px", fontSize: 17, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 8px 36px rgba(245,200,66,0.4)", fontFamily: "'Montserrat',sans-serif" }}>Get started free →</button>
+          <button onClick={() => onEnter?.()} className="seo-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "16px 34px", fontSize: 16, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.8)" }}>Try {c.name} free</button>
+        </div>
+        <div className="seo-fade" style={{ marginTop: 40, fontSize: 13, color: "rgba(255,255,255,0.5)", display: "flex", gap: 22, justifyContent: "center", flexWrap: "wrap" }}>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> No credit card</span>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> Free for students</span>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> Part of 10 connected tools</span>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 48, color: "#F7F6F2" }}>Why students use {c.name}</h2>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            {c.features.map((f, i) => (
+              <div key={i} className="seo-card" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${accent}22`, borderTop: `3px solid ${accent}`, borderRadius: 16, padding: "30px 26px" }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${accent}18`, border: `1px solid ${accent}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <SeoGlyph appId={appId} color={accent} size={20} />
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: "#F7F6F2", marginBottom: 10, margin: "0 0 10px" }}>{f.t}</h3>
+                <p style={{ fontSize: 14, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, margin: 0 }}>{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 48, color: "#F7F6F2" }}>How it works</h2>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            {c.steps.map((s, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "30px 26px" }}>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 800, color: `${accent}CC`, letterSpacing: 2, marginBottom: 14 }}>STEP 0{i + 1}</div>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: "#F7F6F2", lineHeight: 1.3, margin: "0 0 10px" }}>{s.t}</h3>
+                <p style={{ fontSize: 14, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, margin: 0 }}>{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 44, color: "#F7F6F2" }}>Frequently asked questions</h2>
+          {c.faqs.map((f, i) => (
+            <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "22px 0" }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#F7F6F2", margin: "0 0 8px" }}>{f.q}</h3>
+              <p style={{ fontSize: 15, color: "rgba(247,246,242,0.62)", lineHeight: 1.7, margin: 0 }}>{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CROSS-LINK: the rest of the toolkit */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 900, marginBottom: 12, color: "#F7F6F2" }}>The rest of your toolkit</h2>
+          <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(247,246,242,0.55)", maxWidth: 520, margin: "0 auto 40px", lineHeight: 1.7 }}>{c.name} is one of 10 free tools in Ace It Galaxy — and they all work together.</p>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {others.map(id => {
+              const o = SEO_CONTENT[id];
+              return (
+                <a key={id} href={`/${id}`} className="seo-tool" style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${o.color}22`, borderLeft: `3px solid ${o.color}`, borderRadius: 12, padding: "16px 18px", textDecoration: "none", textAlign: "left" }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: `${o.color}18`, border: `1px solid ${o.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SeoGlyph appId={id} color={o.color} size={17} />
+                  </div>
+                  <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2" }}>{o.name}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="seo-section" style={{ padding: "96px 40px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", top: "50%", left: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", maxWidth: 620, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(30px,4.5vw,52px)", fontWeight: 900, letterSpacing: -1, lineHeight: 1.1, marginBottom: 20, color: "#F7F6F2" }}>Start using {c.name} free.</h2>
+          <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.8, margin: "0 auto 40px", maxWidth: 460 }}>No subscriptions, no paywalls. Create a free account and get all 10 study tools in one place.</p>
+          <div className="seo-cta-row" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 12, padding: "18px 46px", fontSize: 18, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 8px 40px rgba(245,200,66,0.4)", fontFamily: "'Montserrat',sans-serif" }}>Get started free →</button>
+          </div>
+          <div style={{ marginTop: 18, fontSize: 13, color: "rgba(255,255,255,0.45)" }}>No credit card required · Free to use · Start in 30 seconds</div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 14, fontWeight: 900, color: "#F5D96A", letterSpacing: 2, textDecoration: "none" }}>ACE IT</a>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
+        <div style={{ display: "flex", gap: 20 }}>
+          {[["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Contact", "contact"]].map(([l, key]) => (
+            <a key={l} href={key === "contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer", textDecoration: "none" }}
+              onClick={(e) => { if (key === "contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); }}>{l}</a>
+          ))}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 function LandingPage({ onEnter, openAuth, onLegal }) {
   const [scrolled, setScrolled] = useState(false);
   const [showSticky, setShowSticky] = useState(false);
@@ -13009,7 +13375,7 @@ function AceItGalaxyInner() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(() => {
   const path = window.location.pathname.replace("/", "").trim();
-  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker"];
+  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker","coursehub","studybuddy"];
   return validApps.includes(path) ? path : null;
 });
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
@@ -13472,9 +13838,12 @@ Help them see connections ACROSS their apps. For example:
 
   // Show landing page only if no user AND not in the middle of a redirect
   if (showHome && !user) {
+    const seoAppId = currentApp && SEO_CONTENT[currentApp] ? currentApp : null;
     return (
       <>
-        <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />
+        {seoAppId
+          ? <AppSEOLanding appId={seoAppId} onEnter={() => { setShowHome(false); window.history.pushState({ screen: "app", app: seoAppId }, "", `/${seoAppId}`); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} onHome={() => { setCurrentApp(null); window.history.pushState({ screen: "landing" }, "", "/"); }} />
+          : <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />}
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       </>
     );
