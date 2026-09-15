@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component } from "react";
+import { useState, useEffect, useRef, Component, lazy, Suspense } from "react";
 import { auth, db, googleProvider, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import {
@@ -31,6 +31,15 @@ import {
   deleteField,
   limit,
 } from "firebase/firestore";
+
+const StudyBuddyApp = lazy(() => import("./apps/StudyBuddyApp.jsx"));
+function AppChunkFallback() {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "#06040E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 900, color: "#F5C842", letterSpacing: -0.5 }}>Ace It ✦</div>
+    </div>
+  );
+}
 
 // ─── Firestore Sync Layer ──────────────────────────────────────────────────────
 // localStorage = instant cache, Firestore = persistent source of truth
@@ -274,6 +283,94 @@ function OrbitRing({ orbitRadius, highlight }) {
   );
 }
 
+// ── Galaxy app icons (clean SVG line icons) ──────────────────────────────────
+function AppIcon({ appId, size = 20, color = "rgba(255,255,255,0.92)" }) { /* v2 */
+  const s = size;
+  const props = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block", filter: `drop-shadow(0 0 4px ${color}88)` } };
+  switch (appId) {
+    case "flashcards": return (
+      <svg {...props}>
+        <rect x="3" y="5" width="18" height="13" rx="2"/>
+        <path d="M7 9h10M7 13h6"/>
+        <path d="M16 13l2 2 3-3" strokeWidth="1.8"/>
+      </svg>
+    );
+    case "notes": return (
+      <svg {...props}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+        <line x1="8" y1="17" x2="13" y2="17"/>
+      </svg>
+    );
+    case "tracker": return (
+      <svg {...props}>
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+      </svg>
+    );
+    case "brainmap": return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="3"/>
+        <circle cx="4" cy="6" r="2"/>
+        <circle cx="20" cy="6" r="2"/>
+        <circle cx="4" cy="18" r="2"/>
+        <circle cx="20" cy="18" r="2"/>
+        <line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/>
+        <line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/>
+        <line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/>
+        <line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/>
+      </svg>
+    );
+    case "simplifier": return (
+      <svg {...props}>
+        <path d="M4 6h16M4 10h10M4 14h12M4 18h8"/>
+        <circle cx="19" cy="16" r="3"/>
+        <path d="M17.5 14.5l3 3"/>
+      </svg>
+    );
+    case "assistant": return (
+      <svg {...props}>
+        <path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/>
+        <line x1="9" y1="21" x2="15" y2="21"/>
+        <path d="M9.5 10a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/>
+        <circle cx="12" cy="16" r=".5" fill={color}/>
+      </svg>
+    );
+    case "studybuddy": return (
+      <svg {...props}>
+        <circle cx="9" cy="7" r="3"/>
+        <circle cx="15" cy="7" r="3"/>
+        <path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/>
+        <line x1="12" y1="12" x2="12" y2="15"/>
+      </svg>
+    );
+    case "settings": return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    );
+    case "journal": return (
+      <svg {...props}>
+        <path d="M4 4h16v16H4z" rx="2"/>
+        <path d="M8 2v4M16 2v4M4 10h16"/>
+        <path d="M8 14l2 2 4-4"/>
+      </svg>
+    );
+    case "coursehub": return (
+      <svg {...props}>
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+    );
+    default: return <svg {...props}><circle cx="12" cy="12" r="8"/></svg>;
+  }
+}
+
 function Planet({ planet, onClick, isActive }) {
   const angleRef = useRef(-(planet.id * 3.7));
   const lastTimeRef = useRef(null);
@@ -344,16 +441,10 @@ function Planet({ planet, onClick, isActive }) {
           background: "radial-gradient(circle at 65% 68%, rgba(0,0,0,0.25) 0%, transparent 58%)",
           pointerEvents: "none",
         }} />
-        {/* Symbol — clean, not emoji */}
-        <span style={{
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: planet.size * 0.38,
-          color: "rgba(255,255,255,0.9)",
-          lineHeight: 1,
-          position: "relative", zIndex: 1,
-          textShadow: `0 0 8px ${planet.color}`,
-          userSelect: "none",
-        }}>{planet.symbol}</span>
+        {/* App icon */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <AppIcon appId={planet.appId} size={planet.size * 0.44} color="rgba(255,255,255,0.92)" />
+        </div>
 
         {/* Label — always readable, minimal, no pill */}
         <div style={{
@@ -385,217 +476,89 @@ function Planet({ planet, onClick, isActive }) {
 
 // Panel slide-in from left
 function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openAuth, onLogout, recentApps = [], onLaunch }) {
-  const [appsOpen, setAppsOpen] = useState(true);
-  const [userOpen, setUserOpen] = useState(true);
   return (
     <>
       {isOpen && (
         <div onClick={onClose} style={{
           position: "fixed", inset: 0, zIndex: 98,
-          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
+          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)",
         }} />
       )}
       <div style={{
-        position: "fixed", left: 0, top: 0, bottom: 0, width: 280,
-        background: "linear-gradient(160deg, rgba(8,6,22,0.98) 0%, rgba(4,3,14,0.99) 100%)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        position: "fixed", left: 0, top: 0, bottom: 0, width: 260,
+        background: "rgba(6,4,16,0.97)",
+        borderRight: "1px solid rgba(255,255,255,0.07)",
         transform: isOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)",
+        transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         zIndex: 99, display: "flex", flexDirection: "column", overflow: "hidden",
+        backdropFilter: "blur(20px)",
       }}>
-        {/* Top bar */}
-        <div style={{
-          padding: "24px 20px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div>
-            <div style={{
-              fontFamily: "'Montserrat', sans-serif", fontSize: 17, fontWeight: 800,
-              color: "#F5D96A", letterSpacing: 2, textTransform: "uppercase",
-            }}>Ace It</div>
-            <div style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 400,
-              color: "rgba(255,255,255,0.28)", letterSpacing: 4, textTransform: "uppercase",
-              marginTop: 1,
-            }}>Galaxy Platform</div>
-          </div>
-          <button onClick={onClose} style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.35)", width: 30, height: 30,
-            borderRadius: 4, cursor: "pointer", fontSize: 13,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.2s",
-          }}
-            onMouseEnter={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.2)"; e.target.style.color = "#fff"; }}
-            onMouseLeave={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.color = "rgba(255,255,255,0.35)"; }}
-          >✕</button>
+        {/* Header */}
+        <div style={{ padding: "22px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 15, fontWeight: 800, color: "#F5D96A", letterSpacing: 2 }}>ACE IT</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.15s" }}
+            onMouseEnter={e => e.target.style.color = "rgba(255,255,255,0.8)"}
+            onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.3)"}>✕</button>
         </div>
 
-        {/* User Information — collapsible */}
-        <button
-          onClick={() => setUserOpen(o => !o)}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 20px 10px", background: "none", border: "none", cursor: "pointer",
-            transition: "opacity 0.15s",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-        >
-          <span style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600,
-            color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase",
-          }}>User Information</span>
-          <span style={{
-            color: "rgba(255,255,255,0.25)", fontSize: 10, lineHeight: 1,
-            display: "inline-block",
-            transform: userOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.25s ease",
-          }}>▾</span>
-        </button>
-
-        <div style={{
-          overflow: "hidden",
-          maxHeight: userOpen ? "400px" : "0px",
-          transition: "max-height 0.35s ease",
-        }}>
-          <div style={{
-            margin: "0 12px 12px",
-            borderRadius: 6,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            padding: "14px 16px",
-          }}>
-            {user ? (
-              <>
-                {/* Logged-in view */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg, #9B7FFF, #F5D96A)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat', sans-serif", fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.75)" }}>{user.avatar}</div>
-                  <div>
-                    <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{user.name}</div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "#88D8A8", marginTop: 2 }}>● Signed in</div>
-                  </div>
+        {/* User card */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          {user ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg,#9B7FFF,#F5D96A)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat',sans-serif", fontSize: 15, fontWeight: 700, color: "rgba(0,0,0,0.75)" }}>{user.avatar}</div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", fontFamily: "'DM Sans',sans-serif" }}>{user.name}</div>
+                  <div style={{ fontSize: 11, color: "#6ED9B8", marginTop: 2, fontFamily: "'DM Sans',sans-serif" }}>● Active</div>
                 </div>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 12 }} />
-                {[{ label: "Plan", value: "Free Tier" }, { label: "Status", value: "Active" }, { label: "Apps", value: "12 modules" }].map(({ label, value }) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{label}</span>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{value}</span>
-                  </div>
-                ))}
-                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "12px 0" }} />
-                <button onClick={onLogout} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", cursor: "pointer", letterSpacing: 1, transition: "all 0.18s" }}
-                  onMouseEnter={e => { e.target.style.borderColor = "rgba(255,80,80,0.4)"; e.target.style.color = "rgba(255,120,120,0.8)"; }}
-                  onMouseLeave={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.color = "rgba(255,255,255,0.4)"; }}>Sign Out</button>
-              </>
-            ) : (
-              <>
-                {/* Guest view */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👤</div>
-                  <div>
-                    <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>Guest User</div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: "rgba(255,255,255,0.22)", marginTop: 2 }}>Not signed in</div>
-                  </div>
-                </div>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 14 }} />
-                <button onClick={() => { openAuth("login"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "#F5D96A", border: "none", fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.8)", cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", transition: "all 0.18s", marginBottom: 8, boxShadow: "0 4px 16px rgba(245,217,106,0.2)" }}
-                  onMouseEnter={e => { e.target.style.opacity = "0.85"; }} onMouseLeave={e => { e.target.style.opacity = "1"; }}>Log In</button>
-                <button onClick={() => { openAuth("signup"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 4, background: "transparent", border: "1px solid rgba(245,217,106,0.3)", fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(245,217,106,0.7)", cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", transition: "all 0.18s" }}
-                  onMouseEnter={e => { e.target.style.borderColor = "rgba(245,217,106,0.6)"; e.target.style.color = "#F5D96A"; }} onMouseLeave={e => { e.target.style.borderColor = "rgba(245,217,106,0.3)"; e.target.style.color = "rgba(245,217,106,0.7)"; }}>Create Account</button>
-              </>
-            )}
-          </div>
+              </div>
+              <button onClick={onLogout} style={{ width: "100%", padding: "8px 0", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.45)", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(232,93,63,0.1)"; e.currentTarget.style.borderColor = "rgba(232,93,63,0.3)"; e.currentTarget.style.color = "#E85D3F"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 12, fontFamily: "'DM Sans',sans-serif" }}>Not signed in</div>
+              <button onClick={() => { openAuth("login"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 8, background: "#F5D96A", border: "none", fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.8)", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}>Log in</button>
+              <button onClick={() => { openAuth("signup"); onClose(); }} style={{ width: "100%", padding: "9px 0", borderRadius: 8, background: "transparent", border: "1px solid rgba(245,217,106,0.25)", fontSize: 12, fontWeight: 600, color: "rgba(245,217,106,0.65)", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Create account</button>
+            </>
+          )}
         </div>
 
-        {/* Recent Apps */}
-        {recentApps.length > 0 && (
-          <>
-            <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 16px 4px" }} />
-            <div style={{ padding: "10px 20px 6px" }}>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase" }}>Recent</span>
-            </div>
-            <div style={{ padding: "0 10px 8px" }}>
-              {recentApps.map((appId) => {
-                const p = planets.find(pl => pl.appId === appId);
-                if (!p) return null;
-                return (
-                  <button key={appId} onClick={() => { onLaunch && onLaunch(appId); onClose(); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", marginBottom: 1, background: "transparent", border: "none", borderRadius: 4, cursor: "pointer", transition: "all 0.15s", borderLeft: "2px solid transparent" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderLeftColor = p.color; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: `radial-gradient(circle at 35% 35%, ${p.color}cc, ${p.color}55)`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "rgba(0,0,0,0.7)", boxShadow: `0 0 8px ${p.color}44` }}>{p.symbol}</div>
-                    <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.65)", letterSpacing: 0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                    </div>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)" }}>↗</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* Thin divider between sections */}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 16px 4px" }} />
-
-        {/* Section label — collapsible toggle */}
-        <button
-          onClick={() => setAppsOpen(o => !o)}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 20px 10px", background: "none", border: "none", cursor: "pointer",
-            transition: "opacity 0.15s",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-        >
-          <span style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 9, fontWeight: 600,
-            color: "rgba(255,255,255,0.3)", letterSpacing: 3, textTransform: "uppercase",
-          }}>Applications</span>
-          <span style={{
-            color: "rgba(255,255,255,0.25)", fontSize: 10, lineHeight: 1,
-            display: "inline-block",
-            transform: appsOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.25s ease",
-          }}>▾</span>
-        </button>
-
-        {/* Nav list — collapses smoothly */}
-        <div style={{
-          flex: appsOpen ? 1 : 0,
-          overflowY: appsOpen ? "auto" : "hidden",
-          maxHeight: appsOpen ? "10000px" : "0px",
-          transition: "max-height 0.35s ease",
-          padding: appsOpen ? "4px 10px 12px" : "0 10px",
-        }}>
+        {/* Apps list */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 8px" }}>
           {[
-            { label:"Study Tools",       emoji:"📚", ids:["flashcards","notes","brainmap","simplifier"] },
-            { label:"AI Assistants",     emoji:"🤖", ids:["assistant","studybuddy"] },
-            { label:"Personal Growth",   emoji:"🌱", ids:["journal","mentalhealth","flow","careercompass"] },
-            { label:"Knowledge",         emoji:"🌍", ids:["academy","universe","earthrecord"] },
-            { label:"Settings",          emoji:"⚙️", ids:["settings"] },
+            { label: "Study Tools",    ids: ["flashcards","notes","tracker","brainmap","simplifier","coursehub"] },
+            { label: "AI & Social",    ids: ["assistant","studybuddy"] },
+            { label: "Personal",       ids: ["journal","settings"] },
           ].map(cat => {
             const catPlanets = planets.filter(p => cat.ids.includes(p.appId));
             if (!catPlanets.length) return null;
             return (
-              <div key={cat.label} style={{ marginBottom:6 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 10px 4px", opacity:0.5 }}>
-                  <span style={{ fontSize:11 }}>{cat.emoji}</span>
-                  <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.5)", letterSpacing:2, textTransform:"uppercase" }}>{cat.label}</span>
-                </div>
+              <div key={cat.label} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase", padding: "0 8px 8px", fontFamily: "'DM Sans',sans-serif" }}>{cat.label}</div>
                 {catPlanets.map(p => (
                   <button key={p.id} onClick={() => { onLaunch && onLaunch(p.appId); onClose(); }}
-                    style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"8px 10px", marginBottom:1, background:"transparent", border:"none", borderRadius:6, cursor:"pointer", transition:"all 0.15s", borderLeft:"2px solid transparent" }}
-                    onMouseEnter={e => { e.currentTarget.style.background=`rgba(255,255,255,0.05)`; e.currentTarget.style.borderLeftColor=p.color; }}
-                    onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderLeftColor="transparent"; }}>
-                    <div style={{ width:26, height:26, borderRadius:7, background:`linear-gradient(135deg,${p.color}33,${p.glow}18)`, border:`1px solid ${p.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, flexShrink:0 }}>{p.symbol}</div>
-                    <div style={{ textAlign:"left", flex:1, minWidth:0 }}>
-                      <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.75)", letterSpacing:0.2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div>
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "9px 8px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", transition: "background 0.15s", marginBottom: 1 }}
+                    onMouseEnter={e => e.currentTarget.style.background = `${p.color}12`}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: `${p.color}20`, border: `1px solid ${p.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={p.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        {p.appId==="flashcards"&&<><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>}
+                        {p.appId==="notes"&&<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></>}
+                        {p.appId==="tracker"&&<><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>}
+                        {p.appId==="brainmap"&&<><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/></>}
+                        {p.appId==="simplifier"&&<><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/></>}
+                        {p.appId==="assistant"&&<><path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/></>}
+                        {p.appId==="studybuddy"&&<><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/></>}
+                        {p.appId==="journal"&&<><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>}
+                        {p.appId==="settings"&&<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}
+                        {p.appId==="coursehub"&&<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>}
+                      </svg>
                     </div>
-                    <span style={{ fontSize:9, color:"rgba(255,255,255,0.18)" }}>↗</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", fontFamily: "'DM Sans',sans-serif" }}>{p.name}</span>
                   </button>
                 ))}
               </div>
@@ -604,13 +567,8 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: "14px 20px",
-          borderTop: "1px solid rgba(255,255,255,0.04)",
-          fontFamily: "'DM Sans', sans-serif", fontSize: 9,
-          color: "rgba(255,255,255,0.15)", letterSpacing: 1,
-        }}>
-          © 2026 Ace It
+        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.04)", fontSize: 10, color: "rgba(255,255,255,0.12)", fontFamily: "'DM Sans',sans-serif" }}>
+          © 2026 Ace It Galaxy
         </div>
       </div>
     </>
@@ -1687,12 +1645,13 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] })} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
-      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastery = Math.round(newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length/newCards.length*100); updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
+      {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastered = newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length;
+const mastery = newCards.length > 0 ? Math.round(mastered/newCards.length*100) : 0; updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
     </div>
   );
 }
@@ -2083,10 +2042,10 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
           const res = await fetch("/api/claude", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "claude-sonnet-4-5-20250929", max_tokens: 3000,
+              model: "claude-sonnet-4-6", max_tokens: 3000,
               messages: [{ role: "user", content: [
                 { type: "image", source: { type: "base64", media_type: img.mediaType, data: img.base64 } },
-                { type: "text", text: "Extract ALL text from this image exactly as written. Include every word, number, formula, heading, bullet point, and definition. Output only the extracted text, no commentary." }
+                { type: "text", text: "Extract ALL content from this image. Preserve structure: use | to separate table columns, keep bullet points with their symbols, keep formulas in their original notation. Include every word, number, formula, heading, bullet, and definition. Output only the extracted content, no commentary." }
               ]}],
             }),
           });
@@ -2111,12 +2070,12 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
 
       // ── Topic categories ───────────────────────────────────────────
       let topicCategories = ["General"];
-      if (totalChunks > 1) {
+      if (totalChunks >= 1) {
         setQbChunkProgress(p => ({ ...p, step: "Identifying topics and categories…" }));
         const summaryChunk = words.slice(0, 1500).join(" ");
         const catRes = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 400,
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400,
             messages: [{ role: "user", content: `Identify 3-8 main topic categories for organizing flashcards from this material. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2"]}\n\nMaterial:\n${summaryChunk}` }] }),
         });
         const catData = await catRes.json();
@@ -2130,7 +2089,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
         setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
         const res = await fetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 4000,
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 4000,
             messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information as flashcards.
 
 RULES:
@@ -2152,7 +2111,7 @@ ${chunks[ci]}` }] }),
         try {
           const parsed = JSON.parse(clean);
           const chunkCards = (parsed.cards || []).map((c, i) => ({
-            id: Date.now() + ci * 10000 + i,
+            id: Date.now() + ci * 100000 + i * 7 + Math.floor(Math.random() * 100),
             term: c.term || "", definition: c.definition || "",
             topic: c.topic || topicCategories[0] || "General",
             isDuplicate: false,
@@ -2169,10 +2128,10 @@ ${chunks[ci]}` }] }),
         const normalized = card.term.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
         if (termsSeen.has(normalized)) { duplicateIds.add(card.id); duplicateIds.add(termsSeen.get(normalized)); }
         else termsSeen.set(normalized, card.id);
-        const shortKey = normalized.split(" ").slice(0, 5).join(" ");
-        if (shortKey.length > 10) {
-          if (termsSeen.has(shortKey)) duplicateIds.add(card.id);
-          else termsSeen.set(shortKey, card.id);
+        // Only flag near-exact normalized matches to avoid false positives
+        if (normalized.length > 15) {
+          const exactKey = normalized.replace(/\s+/g, " ").trim();
+          if (termsSeen.has(exactKey) && exactKey === normalized) duplicateIds.add(card.id);
         }
       }
 
@@ -2222,7 +2181,7 @@ ${chunks[ci]}` }] }),
         setUserFolders(prev => [...prev, deckFolder, ...subFolders]);
       }
     }
-    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbSource(""); setQbImages([]);
+    setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]);
     setQbChunkProgress({ current: 0, total: 0, step: "" }); setQbOrgChoice(null);
     setQbGenerated(true);
     setTimeout(() => { setTab("cards"); setQbGenerated(false); }, 800);
@@ -2273,7 +2232,7 @@ ${chunks[ci]}` }] }),
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 300,
           messages: [{
             role: "user",
@@ -2320,7 +2279,7 @@ Text: "${text}"`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 150,
           messages: [{
             role: "user",
@@ -2352,7 +2311,7 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 200,
           messages: [{
             role: "user",
@@ -3910,6 +3869,7 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [improving, setImproving]       = useState(false);
   const [improveResult, setImproveResult] = useState(null);
+  const [confirmApply, setConfirmApply]   = useState(false);
   const [shareUrl, setShareUrl]         = useState(null);
   const [shareCopied, setShareCopied]   = useState(false);
 
@@ -3928,13 +3888,13 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
     setImproving(true);
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:4000,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,
           messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.\nRespond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}\nCards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
       const parsed = JSON.parse(txt.replace(/```json|```/g,"").trim());
       setImproveResult(parsed.cards);
-    } catch { alert("Could not improve deck. Please try again."); }
+    } catch { setImproveResult("error"); }
     setImproving(false);
   };
 
@@ -3953,12 +3913,12 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
 body{font-family:Georgia,serif;margin:0;padding:20px;background:#fff}
 h1{font-size:22px;color:#1A1814;margin-bottom:4px}
 .sub{font-size:13px;color:#888;margin-bottom:28px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .card{border:1px solid #ddd;border-top:3px solid ${deck.color};border-radius:8px;padding:16px;page-break-inside:avoid}
 .label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:8px}
 .term{font-size:15px;font-weight:800;color:#1A1814;margin-bottom:10px;min-height:40px}
 .divider{border:none;border-top:1px solid #eee;margin:10px 0}
-.def{font-size:13px;color:#444;line-height:1.6;min-height:40px}
+.def{font-size:13px;color:#444;line-height:1.6;min-height:40px;word-break:break-word;overflow-wrap:break-word}
 @media print{.card{break-inside:avoid}}
 </style></head><body>
 <h1>${deck.title}</h1>
@@ -4185,13 +4145,19 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
       )}
 
       {/* Improve result */}
-      {improveResult && (
+      {improveResult === "error" && (
+        <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:10, padding:"14px 18px", marginBottom:16, fontSize:13, color:"#E85D3F", fontWeight:500, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span>Could not improve deck. Please try again.</span>
+          <button onClick={()=>setImproveResult(null)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#E85D3F" }}>✕</button>
+        </div>
+      )}
+      {improveResult && improveResult !== "error" && (
         <div style={{ background:"#F9F5FF", border:"1.5px solid #9B59B630", borderRadius:14, padding:"20px", marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>✨ AI Improved {improveResult.length} cards</div>
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={()=>setImproveResult(null)} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
-              <button onClick={applyImproved} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
+              <button onClick={()=>{setImproveResult(null);setConfirmApply(false);}} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
+              <button onClick={()=>setConfirmApply(true)} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
             </div>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:280, overflowY:"auto" }}>
@@ -4205,6 +4171,18 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
               </div>
             ))}
           </div>
+          {confirmApply && (
+            <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={()=>setConfirmApply(false)}>
+              <div style={{ background:"#fff", borderRadius:16, padding:"28px 32px", maxWidth:380, width:"90%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+                <div style={{ fontSize:18, fontWeight:800, color:"#1A1814", marginBottom:8 }}>Apply improvements?</div>
+                <div style={{ fontSize:14, color:"#5A5752", marginBottom:24, lineHeight:1.5 }}>This will replace all {deck.cards.length} current cards. This cannot be undone.</div>
+                <div style={{ display:"flex", gap:10 }}>
+                  <button onClick={()=>setConfirmApply(false)} style={{ flex:1, padding:"10px", borderRadius:8, border:"1px solid #D8D5CE", background:"none", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Cancel</button>
+                  <button onClick={applyImproved} style={{ flex:1, padding:"10px", borderRadius:8, border:"none", background:"#2BAE7E", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>Yes, Apply</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -4532,7 +4510,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     try {
       const sample = cards.slice(0,Math.min(10,cards.length));
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:1200,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,
           messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.\nRespond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}\nCards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
@@ -4571,7 +4549,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     setWrittenLoading(true);
     try {
       const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:200,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,
           messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".\nRespond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
       const data = await res.json();
       const txt = data.content?.find(b=>b.type==="text")?.text||"";
@@ -4916,7 +4894,7 @@ const BM_PALETTE = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22",
 const BM_INITIAL_MAPS = [];
 
 // ── BrainMapCanvas — the interactive map editor ───────────────────────────────
-function BrainMapCanvas({ map, onNodesChange, onBack }) {
+function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
   const [nodes,         setNodes]         = useState(map.nodes);
   const [selectedId,    setSelectedId]    = useState(null);
   const [pan,           setPan]           = useState({ x: 0, y: 0 });
@@ -4970,8 +4948,12 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   const selectedNode = nodes.find(n => n.id === selectedId);
 
-  // ── Sync changes up ──
-  useEffect(() => { onNodesChange(nodes, mapTitle); }, [nodes, mapTitle]);
+  // ── Sync changes up (skip initial mount) ──
+  const bmSyncMounted = useRef(false);
+  useEffect(() => {
+    if (!bmSyncMounted.current) { bmSyncMounted.current = true; return; }
+    onNodesChange(nodes, mapTitle);
+  }, [nodes, mapTitle]);
 
   // ── Global mouse events for reliable drag ──
   useEffect(() => {
@@ -4983,17 +4965,43 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       } else if (d.type === "node") {
         const dx = (e.clientX - d.startX) / zoom;
         const dy = (e.clientY - d.startY) / zoom;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) d.hasMoved = true;
         setNodes(ns => ns.map(n => n.id === d.id ? { ...n, x: d.origX + dx, y: d.origY + dy } : n));
       }
     };
-    const onUp = () => { dragRef.current = null; };
+    const onUp = () => {
+      const d = dragRef.current;
+      if (d?.type === "node" && d.hasMoved) {
+        // Push original position to undo history now that drag is complete
+        pushHistory(d.origNodes);
+      }
+      dragRef.current = null;
+    };
     const onKeyDown = (e) => {
-      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault(); handleRedo(); return; }
-      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); handleUndo(); return; }
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z') { e.preventDefault();
+        // Access refs directly to avoid stale closure
+        const next = redoRef.current[redoRef.current.length-1];
+        if (next) { historyRef.current=[...historyRef.current,nodes]; redoRef.current=redoRef.current.slice(0,-1); setNodes(next); setSelectedId(null); }
+        return;
+      }
+      if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault();
+        const prev = historyRef.current[historyRef.current.length-1];
+        if (prev) { redoRef.current=[...redoRef.current,nodes]; historyRef.current=historyRef.current.slice(0,-1); setNodes(prev); setSelectedId(null); }
+        return;
+      }
       if (editingId || e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
       if (e.key==='Tab' && selectedId) { e.preventDefault(); addChild(selectedId); return; }
       if (e.key==='Enter' && selectedId) { e.preventDefault(); const n=nodes.find(x=>x.id===selectedId); if(n) startEditing(n.id,n.label); return; }
-      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') { e.preventDefault(); deleteNode(selectedId); return; }
+      if ((e.key==='Delete'||e.key==='Backspace') && selectedId && selectedId!=='root') {
+        e.preventDefault();
+        const hasChildren = nodes.some(n => n.parentId === selectedId);
+        if (hasChildren) {
+          const label = nodes.find(n=>n.id===selectedId)?.label||'this node';
+          const childCount = (function countAll(id){return nodes.filter(n=>n.parentId===id).reduce((a,n)=>a+1+countAll(n.id),0);})(selectedId);
+          if(!window.confirm(`Delete "${label.replace(/\n/g,' ')}" and its ${childCount} child node${childCount!==1?'s':''}?`)) return;
+        }
+        deleteNode(selectedId); return;
+      }
       if (e.key==='Escape') { setSelectedId(null); setShowAI(false); return; }
       if (e.key==='+'||e.key==='=') { setZoom(z=>Math.min(z*1.15,3)); return; }
       if (e.key==='-') { setZoom(z=>Math.max(z*0.87,0.15)); return; }
@@ -5013,7 +5021,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 
   const onNodeDown = (e, node) => {
     e.stopPropagation();
-    dragRef.current = { type: "node", id: node.id, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y };
+    dragRef.current = { type: "node", id: node.id, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y, origNodes: nodes, hasMoved: false };
   };
 
   const onWheel = (e) => {
@@ -5025,6 +5033,32 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     if (el) el.addEventListener("wheel", onWheel, { passive: false });
     return () => { if (el) el.removeEventListener("wheel", onWheel); };
   }, []);
+
+  // Touch support
+  const lastTouchRef = useRef(null);
+  const onTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      lastTouchRef.current = { x: t.clientX, y: t.clientY, origPanX: pan.x, origPanY: pan.y };
+    }
+  };
+  const onTouchMove = (e) => {
+    if (e.touches.length === 1 && lastTouchRef.current) {
+      e.preventDefault();
+      const t = e.touches[0];
+      setPan({ x: lastTouchRef.current.origPanX + (t.clientX - lastTouchRef.current.x), y: lastTouchRef.current.origPanY + (t.clientY - lastTouchRef.current.y) });
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (lastTouchRef.current?.pinchDist) {
+        setZoom(z => Math.min(Math.max(z * (dist/lastTouchRef.current.pinchDist), 0.15), 3));
+      }
+      if (lastTouchRef.current) lastTouchRef.current.pinchDist = dist;
+    }
+  };
+  const onTouchEnd = () => { lastTouchRef.current = null; };
 
   // ── Node ops ──
   const getNodeById = (id) => nodes.find(n => n.id === id);
@@ -5070,7 +5104,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
   const commitEdit   = () => { if (editingId) { updateNode(editingId, { label: editLabel.trim() || "Topic" }); setEditingId(null); } };
 
   // ── Flash card study ──
-  const studyDecks    = studyNode ? FC_DECKS.filter(d => studyNode.deckIds.includes(d.id)) : [];
+  const studyDecks    = studyNode ? allDecks.filter(d => studyNode.deckIds.includes(d.id)) : [];
   const activeSDeck   = studyDecks[studyDeckIdx];
   const activeSCard   = activeSDeck?.cards[studyCardIdx];
   const totalStudyCards = studyDecks.reduce((a, d) => a + d.cards.length, 0);
@@ -5096,10 +5130,11 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
     const layoutLevel = (parentId, startAngle, sweepAngle, radius) => {
       const kids = children(parentId);
       if(!kids.length) return;
+      if(!positioned.has(parentId)) return; // guard: skip orphaned nodes
       const angleStep = sweepAngle / Math.max(kids.length,1);
+      const {x:px=0, y:py=0} = positioned.get(parentId);
       kids.forEach((kid,i) => {
         const angle = startAngle + angleStep*i + angleStep/2 - sweepAngle/2;
-        const px = positioned.get(parentId)?.x||0, py = positioned.get(parentId)?.y||0;
         positioned.set(kid.id, {x: px+Math.cos(angle)*radius, y: py+Math.sin(angle)*radius});
         layoutLevel(kid.id, angle-sweepAngle/4, sweepAngle/2, radius*0.75);
       });
@@ -5127,7 +5162,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       const newNodes = parsed.nodes.map((item,i) => {
         const angle = (-Math.PI/2)+(i/parsed.nodes.length)*Math.PI*2;
         const dist = parentId==='root'?260:180;
-        return { id:`ai${Date.now()}${i}`, label:item.label, note:item.note||'', x:parent.x+Math.cos(angle)*dist, y:parent.y+Math.sin(angle)*dist, color, parentId, deckIds:[] };
+        return { id:`ai${Date.now()}${i}x${Math.floor(Math.random()*9999)}`, label:item.label, note:item.note||'', x:parent.x+Math.cos(angle)*dist, y:parent.y+Math.sin(angle)*dist, color, parentId, deckIds:[] };
       });
       setNodesWithHistory(ns=>[...ns,...newNodes]);
       setShowAI(false); setAiTopic('');
@@ -5173,7 +5208,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
           {/* AI Expand */}
           <div style={{ position:"relative" }}>
-            <button onClick={()=>setShowAI(a=>!a)} title="AI Expand"
+            <button onClick={()=>{ if(!selectedId){setShowAI(false); return;} setShowAI(a=>!a);}} title="AI Expand — select a node first"
               style={{ background:showAI?"rgba(155,127,255,0.15)":"rgba(255,255,255,0.06)", border:`1px solid ${showAI?"rgba(155,127,255,0.5)":"rgba(255,255,255,0.09)"}`, borderRadius:5, padding:"0 10px", height:26, cursor:"pointer", color:showAI?"#9B7FFF":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
               ✦ AI Expand
             </button>
@@ -5227,8 +5262,8 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
       </div>
 
       {/* ── Canvas area ── */}
-      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab" }}
-        onMouseDown={onCanvasDown}>
+      <div ref={canvasRef} style={{ position:"absolute", top:44, left:0, right:0, bottom:0, cursor:dragRef.current?.type==="pan"?"grabbing":"grab", touchAction:"none" }}
+        onMouseDown={onCanvasDown} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
         {/* Dot grid */}
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}>
@@ -5264,7 +5299,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               const isSel  = n.id === selectedId;
               const lines  = n.label.split("\n");
               const hasCards = n.deckIds.length > 0;
-              const deckCount = FC_DECKS.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0);
+              const deckCount = allDecks.filter(d => n.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0);
 
               return (
                 <g key={n.id} transform={`translate(${n.x - w/2}, ${n.y - h/2})`}
@@ -5352,7 +5387,13 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 8 }}>Branch Color</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {BM_PALETTE.map(c => (
-                  <button key={c} onClick={() => updateNode(selectedNode.id, { color: c })}
+                  <button key={c} onClick={() => {
+                    // Update selected node AND all descendants
+                    const toUpdate = new Set([selectedNode.id]);
+                    const q = [selectedNode.id];
+                    while(q.length){ const cur=q.shift(); nodes.filter(n=>n.parentId===cur).forEach(n=>{toUpdate.add(n.id);q.push(n.id);}); }
+                    setNodesWithHistory(ns=>ns.map(n=>toUpdate.has(n.id)?{...n,color:c}:n));
+                  }}
                     style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: `2.5px solid ${selectedNode.color === c ? "#fff" : "transparent"}`, cursor: "pointer", outline: selectedNode.color === c ? `2px solid ${c}` : "none", outlineOffset: 1.5, transition: "all 0.15s" }} />
                 ))}
               </div>
@@ -5371,7 +5412,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               {selectedNode.deckIds.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 8 }}>
                   {selectedNode.deckIds.map(did => {
-                    const deck = FC_DECKS.find(d => d.id === did);
+                    const deck = allDecks.find(d => d.id === did);
                     if (!deck) return null;
                     return (
                       <div key={did} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", background: "rgba(255,255,255,0.04)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -5383,7 +5424,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
                     );
                   })}
                   <button onClick={() => openStudy(selectedNode)} style={{ padding: "8px", borderRadius: 8, border: "none", background: "#F5C842", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    📇 Study ({FC_DECKS.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + d.cards.length, 0)} cards)
+                    📇 Study ({allDecks.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0)} cards)
                   </button>
                 </div>
               )}
@@ -5392,7 +5433,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
               </button>
               {showDeckPicker && (
                 <div style={{ marginTop: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
-                  {FC_DECKS.map(deck => {
+                  {allDecks.map(deck => {
                     const linked = selectedNode.deckIds.includes(deck.id);
                     return (
                       <div key={deck.id} onClick={() => updateNode(selectedNode.id, { deckIds: linked ? selectedNode.deckIds.filter(i => i !== deck.id) : [...selectedNode.deckIds, deck.id] })}
@@ -5413,7 +5454,11 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
             </div>
 
             {selectedNode.id !== "root" && (
-              <button onClick={() => deleteNode(selectedNode.id)} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
+              <button onClick={() => {
+                const hasKids = nodes.some(n=>n.parentId===selectedNode.id);
+                if(hasKids){const cnt=(function cA(id){return nodes.filter(n=>n.parentId===id).reduce((a,n)=>a+1+cA(n.id),0);})(selectedNode.id);if(!window.confirm(`Delete "${selectedNode.label.replace(/\n/g,' ')}" and its ${cnt} child node${cnt!==1?'s':''}?`))return;}
+                deleteNode(selectedNode.id);
+              }} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; e.currentTarget.style.background = "rgba(232,93,63,0.07)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(232,93,63,0.22)"; e.currentTarget.style.color = "rgba(232,93,63,0.55)"; e.currentTarget.style.background = "transparent"; }}>
                 🗑 Delete Node
@@ -5447,7 +5492,9 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
                     const vH=typeof window!=='undefined'?window.innerHeight-100:800;
                     const vpX=(-(pan.x)-minX-(vW/(2*zoom)))*sc+offX;
                     const vpY=(-(pan.y)-minY-(vH/(2*zoom)))*sc+offY;
-                    return <rect x={vpX} y={vpY} width={(vW/zoom)*sc} height={(vH/zoom)*sc} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
+                    const vpW=Math.min((vW/zoom)*sc, MM_W); const vpH=Math.min((vH/zoom)*sc, MM_H);
+                    const clampedX=Math.max(-PAD,Math.min(vpX,MM_W)); const clampedY=Math.max(-PAD,Math.min(vpY,MM_H));
+                    return <rect x={clampedX} y={clampedY} width={vpW} height={vpH} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.8} rx={1}/>;
                   })()}
                 </g>
               </svg>
@@ -5526,6 +5573,21 @@ function BrainMapCanvas({ map, onNodesChange, onBack }) {
 // ── BrainMapApp — top-level router (home | maps | canvas) ─────────────────────
 function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
   const [view,        setView]       = useState("home");
+  // Read user's actual decks from localStorage (same key as FlashCardsApp)
+  const [userDecks, setUserDecks] = useState(() => {
+    try { const s = localStorage.getItem("tp_fc_decks"); if (s) return JSON.parse(s); } catch {}
+    return FC_DECKS;
+  });
+  // Keep userDecks fresh if localStorage changes (e.g. user creates a deck in another tab)
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "tp_fc_decks") {
+        try { const d = JSON.parse(e.newValue); if (d) setUserDecks(d); } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const [maps,        setMaps]       = useState(() => {
     try { const s = localStorage.getItem("tp_bm_maps"); if (s) return JSON.parse(s); } catch {}
     return BM_INITIAL_MAPS;
@@ -5641,12 +5703,12 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           {/* FC Decks panel */}
           <div style={{ padding: "12px 14px 20px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.22)", marginBottom: 10 }}>Flash Card Decks</div>
-            {FC_DECKS.map(d => (
+            {userDecks.map(d => (
               <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{d.title}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>{d.cardCount} cards · {d.mastery}% mastered</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>{d.cardCount || d.cards?.length || 0} cards · {d.mastery || 0}% mastered</div>
                 </div>
               </div>
             ))}
@@ -5654,7 +5716,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           </div>
         </div>
 
-        <BrainMapCanvas map={activeMap} onNodesChange={onNodesChange} onBack={() => setView("maps")} />
+        <BrainMapCanvas map={activeMap} onNodesChange={onNodesChange} onBack={() => setView("maps")} allDecks={userDecks} />
       </div>
     );
   }
@@ -5776,7 +5838,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               {[
                 [maps.length.toString(), "Brain Maps"],
                 [maps.reduce((a, m) => a + m.nodes.length, 0).toString(), "Total Nodes"],
-                [FC_DECKS.length.toString(), "Linked Decks"],
+                [userDecks.length.toString(), "Linked Decks"],
                 [maps.reduce((a, m) => a + m.nodes.filter(n => n.deckIds?.length > 0).length, 0).toString(), "Nodes with Cards"],
               ].map(([val, lbl], i) => (
                 <div key={lbl} style={{ padding: "22px 0", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
@@ -6002,8 +6064,29 @@ const YT_DETAIL_LEVELS = [
     icon: "🎯",
     label: "Main Topics",
     sublabel: "Important info only",
-    desc: "The key topics, core arguments, and most important takeaways — fast and clean. Perfect for deciding if you need to watch the full video.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a concise overview. Please create a realistic, well-structured response that represents what a typical educational/informative YouTube video about the apparent topic might cover. Format your response as:\n\n**🎯 What This Video Is About**\n[2-3 sentence overview of the likely topic and purpose]\n\n**📌 Main Topics Covered**\n[4-6 bullet points with the key topics]\n\n**💡 Most Important Takeaways**\n[3-4 bullet points with the core insights]\n\nNote: Clarify at the top that this is a simulated summary preview — actual transcript analysis requires backend integration. Keep the response helpful and realistic for the apparent video topic.`,
+    desc: "The key topics, core arguments, and most important takeaways — fast and clean.",
+    prompt: (meta, url) => `A user wants a summary of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot access or watch the video directly. Using the title, channel name, and description above, produce a genuinely useful overview. If the title and channel give clear context, use that to give specific, relevant content — not generic filler.
+
+Format your response as:
+
+**🎯 What This Video Is About**
+[2-3 sentences explaining the video's topic and purpose based on the title/channel]
+
+**📌 Key Topics Covered**
+[4-6 specific bullet points based on what the title/description suggests]
+
+**💡 Most Important Takeaways**
+[3-4 bullet points with the core insights a viewer would gain]
+
+**👀 Worth Watching If...**
+[1-2 sentences on who this video is most useful for]`,
   },
   {
     id: "detailed",
@@ -6011,15 +6094,68 @@ const YT_DETAIL_LEVELS = [
     label: "More Detail",
     sublabel: "Full topic coverage",
     desc: "Everything the video covers, explained clearly. Each topic broken down so you understand the content without needing to watch the full video.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a detailed summary. Please create a comprehensive, well-structured response representing what a typical video on this topic would cover. Format your response as:\n\n**📹 Video Overview**\n[3-4 sentence description]\n\n**📚 Topics Covered In Detail**\n\n[For each of 4-6 major topics, use this format:]\n### [Topic Name]\n[2-3 sentences explaining this topic as it would appear in the video]\n\n**🔑 Key Points to Remember**\n[5-7 bullet points]\n\n**❓ Questions This Video Answers**\n[3-4 questions the video addresses]\n\nNote: Clarify at the top this is a simulated detailed preview — real transcript analysis requires backend integration.`,
+    prompt: (meta, url) => `A user wants a detailed summary of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot watch the video, but use the metadata above to give a detailed, specific response. Draw on your knowledge of the topic suggested by the title and channel. Be specific — not generic.
+
+Format your response as:
+
+**📹 About This Video**
+[3-4 sentences on the topic, based on the title/channel/description]
+
+**📚 Topics Covered In Detail**
+
+[For each of 4-6 major topic areas you'd expect in this video:]
+### [Topic Name]
+[2-3 sentences explaining this topic specifically as it likely appears in this video]
+
+**🔑 Key Points to Remember**
+[5-7 specific bullet points]
+
+**❓ Questions This Video Answers**
+[3-4 specific questions the video likely addresses]`,
   },
   {
     id: "breakdown",
     icon: "📖",
     label: "Full Breakdown",
     sublabel: "Everything, organized",
-    desc: "A complete, organized breakdown of everything talked about — structured like study notes. Chapters, concepts, examples, and conclusions all laid out clearly.",
-    prompt: (title, url) => `A YouTube video was submitted with URL: ${url}. The user wants a complete structured breakdown. Please create a thorough, organized response like detailed study notes for what a video on this topic would cover. Format as:\n\n**📹 Video Summary**\n[Overview paragraph]\n\n**⏱ Content Structure (Estimated)**\n[List 5-7 sections with time estimates like "0:00 – 2:30 · Introduction"]\n\n**📖 Complete Breakdown**\n\n[For each section:]\n### Section [#]: [Section Title] (~timestamp)\n**What's covered:** [2-3 sentences]\n**Key concepts:** [bullet points]\n**Important details:** [specific points]\n\n**✅ Summary & Conclusions**\n[What the video concludes or recommends]\n\n**🎓 Study Notes Version**\n[5-8 bullet points formatted as study notes]\n\nNote: Clarify at the top this is a simulated breakdown — real transcript analysis requires backend integration.`,
+    desc: "A complete, organized breakdown of everything talked about — structured like study notes.",
+    prompt: (meta, url) => `A user wants a full study-guide breakdown of this YouTube video.
+
+Video URL: ${url}
+${meta.title ? `Video Title: ${meta.title}` : ""}
+${meta.channel ? `Channel: ${meta.channel}` : ""}
+${meta.description ? `Description: ${meta.description}` : ""}
+
+You cannot watch the video, but use the metadata above to produce the most comprehensive study guide possible. Draw on your knowledge of this topic. Be specific and detailed — not generic.
+
+Format as:
+
+**📹 Video Overview**
+[3-4 sentences on what this video covers, based on the title and channel]
+
+**⏱ Likely Content Structure**
+[List 5-7 sections this video probably covers with estimated timestamps like "0:00 – 2:30 · Introduction"]
+
+**📖 Full Topic Breakdown**
+
+[For each section:]
+### Section [#]: [Section Title]
+**What's covered:** [2-3 specific sentences]
+**Key concepts:** [bullet points]
+**Important details:** [specific points to remember]
+
+**✅ Summary & Conclusions**
+[What this video likely concludes or recommends]
+
+**🎓 Study Notes**
+[6-8 bullet points formatted as study notes a student would actually use]`,
   },
 ];
 
@@ -6047,9 +6183,11 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const [ytError, setYtError]         = useState("");
   const [tsMenuOpen, setTsMenuOpen]   = useState(false);
   const [outputExpanded, setOutputExpanded] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const wordCount = inputText.trim().split(/\s+/).filter(Boolean).length;
   const outputRef = useRef(null);
   useEffect(()=>{try{localStorage.setItem("tp_simplifier_history",JSON.stringify(history));}catch{}},[history]);
+  useEffect(()=>()=>{window.speechSynthesis?.cancel();},[]);
 
   const ytId = getYoutubeId(ytUrl);
   const isValidYt = !!ytId;
@@ -6071,8 +6209,8 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1000,
+          model: "claude-sonnet-4-6",
+          max_tokens: 1500,
           system: aiContext || "You are a helpful text simplification assistant.",
           messages: [{ role: "user", content: buildPrompt() }],
         }),
@@ -6080,7 +6218,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
       setOutputText(result);
-      setHistory(h => [{id:Date.now(),tool:activeTool,level,input:inputText,inputPreview:inputText.slice(0,80)+(inputText.length>80?"…":""),output:result,ts:new Date().toISOString(),type:"text"},...h.slice(0,19)]);
+      setHistory(h => [{id:Date.now(),tool:activeTool,level,mode,input:inputText,inputPreview:inputText.slice(0,80)+(inputText.length>80?"…":""),output:result,ts:new Date().toISOString(),type:"text"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -6088,15 +6226,49 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
     }
   };
 
+  // Fetch YouTube title + channel via oEmbed (no API key needed)
+  const fetchYoutubeMeta = async (url) => {
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (!res.ok) return {};
+      const data = await res.json();
+      return { title: data.title || "", channel: data.author_name || "", description: "" };
+    } catch { return {}; }
+  };
+
+  const handleYoutubeProcessWithLevel = async (levelId) => {
+    if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
+    setYtError(""); setError(""); setOutputText(""); setLoading(true);
+    setYtLoadStep(1);
+    const meta = await fetchYoutubeMeta(ytUrl);
+    await new Promise(r => setTimeout(r, 400));
+    setYtLoadStep(2);
+    await new Promise(r => setTimeout(r, 600));
+    setYtLoadStep(3);
+    const cfg = YT_DETAIL_LEVELS.find(d => d.id === levelId);
+    try {
+      const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: cfg.prompt(meta, ytUrl) }] }),
+      });
+      const data = await res.json();
+      const result = data.content?.find(b => b.type === "text")?.text || "";
+      const preview = meta.title ? `${meta.title} — ${ytUrl}` : ytUrl;
+      setOutputText(result);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:preview,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
+    } catch (e) { setError("Something went wrong. Please try again."); }
+    finally { setLoading(false); setYtLoadStep(4); setTimeout(() => setYtLoadStep(0), 500); }
+  };
+
   const handleYoutubeProcess = async () => {
     if (!isValidYt) { setYtError("Please paste a valid YouTube URL."); return; }
     setYtError(""); setError(""); setOutputText(""); setLoading(true);
 
-    // Animated multi-step loading
     setYtLoadStep(1);
-    await new Promise(r => setTimeout(r, 1100));
+    const meta = await fetchYoutubeMeta(ytUrl);
+    await new Promise(r => setTimeout(r, 400));
     setYtLoadStep(2);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 600));
     setYtLoadStep(3);
 
     const cfg = YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel);
@@ -6105,15 +6277,16 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1500,
-          messages: [{ role: "user", content: cfg.prompt("", ytUrl) }],
+          model: "claude-sonnet-4-6",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: cfg.prompt(meta, ytUrl) }],
         }),
       });
       const data = await res.json();
       const result = data.content?.find(b => b.type === "text")?.text || "";
+      const preview = meta.title ? `${meta.title} — ${ytUrl}` : ytUrl;
       setOutputText(result);
-      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:ytUrl,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
+      setHistory(h => [{id:Date.now(),tool:cfg.label,level:"video",input:ytUrl,inputPreview:preview,output:result,ts:new Date().toISOString(),type:"youtube"},...h.slice(0,19)]);
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -6304,7 +6477,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 color: inputMode === m.id ? "#1A1814" : "rgba(247,246,242,0.45)",
               }}>
               <span style={{ fontSize: 15 }}>{m.icon}</span> {m.label}
-              {m.id === "youtube" && <span style={{ background: "#2BAE7E", color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>New</span>}
+
             </button>
           ))}
         </div>
@@ -6322,7 +6495,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>What should I do?</div>
                 <div className="ts-tools-grid" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {TS_TOOLS.map(t => (
-                    <button key={t.id} onClick={() => setActiveTool(t.id)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
+                    <button key={t.id} onClick={() => { setActiveTool(t.id); setOutputText(""); }} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: `1.5px solid ${activeTool === t.id ? accentColor : "#ECEAE4"}`, background: activeTool === t.id ? accentColor : "#fff", fontSize: 13, fontWeight: activeTool === t.id ? 700 : 500, color: activeTool === t.id ? "#fff" : "#5A5752", cursor: "pointer", transition: "all 0.18s" }}>
                       <span>{t.emoji}</span> {t.label}
                     </button>
                   ))}
@@ -6332,7 +6505,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Reading Level</div>
                 <div className="ts-levels-grid" style={{ display: "flex", gap: 8 }}>
                   {READING_LEVELS.map(l => (
-                    <button key={l.id} onClick={() => setLevel(l.id)} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
+                    <button key={l.id} onClick={() => { setLevel(l.id); setOutputText(""); }} title={l.desc} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 14px", borderRadius: 9, border: `1.5px solid ${level === l.id ? "#1A1814" : "#ECEAE4"}`, background: level === l.id ? "#1A1814" : "#fff", cursor: "pointer", transition: "all 0.18s" }}>
                       <span style={{ fontSize: 16 }}>{l.emoji}</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: level === l.id ? "#F7F6F2" : "#5A5752" }}>{l.label}</span>
                     </button>
@@ -6352,7 +6525,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                   placeholder="Paste your complex text here…&#10;&#10;Academic papers, legal documents, medical reports, technical manuals — anything confusing."
                   style={{ flex: 1, padding: "18px 20px", fontSize: 15, lineHeight: 1.7, color: "#1A1814", border: "none", outline: "none", resize: "none", fontFamily: "'DM Sans', sans-serif", background: "transparent", minHeight: 280 }} />
                 <div style={{ padding: "12px 18px", background: "#FAFAF8", borderTop: "1px solid #F0EDE8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: wordCount > 0 ? "#5A5752" : "#C8C5BE", fontWeight: 500 }}>{wordCount} word{wordCount !== 1 ? "s" : ""}</span>
+                  <span style={{ fontSize: 11, color: wordCount > 800 ? "#E85D3F" : wordCount > 0 ? "#5A5752" : "#C8C5BE", fontWeight: 500 }}>{wordCount} word{wordCount !== 1 ? "s" : ""}{wordCount > 800 ? " · output may be cut short" : ""}</span>
                   <button onClick={handleSimplify} disabled={loading || !inputText.trim()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 22px", borderRadius: 8, border: "none", background: inputText.trim() ? accentColor : "#ECEAE4", color: inputText.trim() ? "#fff" : "#A8A59E", fontSize: 13, fontWeight: 700, cursor: inputText.trim() ? "pointer" : "default", transition: "all 0.2s" }}
                     onMouseEnter={e => { if (inputText.trim() && !loading) e.currentTarget.style.opacity = "0.88"; }}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -6537,7 +6710,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                 <div style={{ padding: "16px 22px", borderTop: "1px solid #F0EDE8", background: "#FAFAF8", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: "#8C8880", fontWeight: 600 }}>Try a different detail level:</span>
                   {YT_DETAIL_LEVELS.filter(d => d.id !== ytDetailLevel).map(dl => (
-                    <button key={dl.id} onClick={() => { setYtDetailLevel(dl.id); setTimeout(handleYoutubeProcess, 50); }}
+                    <button key={dl.id} onClick={() => { setYtDetailLevel(dl.id); setTimeout(() => handleYoutubeProcessWithLevel(dl.id), 0); }}
                       style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${accentColor}44`, background: "#fff", fontSize: 12, fontWeight: 700, color: accentColor, cursor: "pointer", transition: "all 0.15s" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "#F0FDF8"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
@@ -6579,7 +6752,14 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ padding: "20px 22px 16px", borderBottom: "1px solid #ECEAE4", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, margin: 0 }}>Saved History</h3>
               <div style={{display:"flex",gap:8}}>
-                {history.length>0&&<button onClick={()=>{ if(window.confirm("Clear all history?")) setHistory([]); }} style={{background:"none",border:"1px solid #FECACA",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#E85D3F"}}>Clear All</button>}
+                {history.length>0&&(!confirmClear
+  ? <button onClick={()=>setConfirmClear(true)} style={{background:"none",border:"1px solid #FECACA",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#E85D3F"}}>Clear All</button>
+  : <div style={{display:"flex",gap:6,alignItems:"center"}}>
+      <span style={{fontSize:11,color:"#E85D3F",fontWeight:600}}>Sure?</span>
+      <button onClick={()=>{setHistory([]);setConfirmClear(false);}} style={{background:"#E85D3F",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:700,color:"#fff"}}>Yes</button>
+      <button onClick={()=>setConfirmClear(false)} style={{background:"none",border:"1px solid #ECEAE4",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#8C8880"}}>No</button>
+    </div>
+)}
                 <button onClick={() => setHistoryOpen(false)} style={{ background: "#F7F6F2", border: "none", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 13, color: "#8C8880" }}>✕</button>
               </div>
             </div>
@@ -6593,7 +6773,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
               ) : history.map((h, i) => (
                 <div key={h.id||i} style={{ borderRadius: 12, border: "1.5px solid #ECEAE4", marginBottom: 12, overflow:"hidden" }}>
                   <div style={{padding:"12px 14px",background:"#F7F6F2",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
-                    onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input); setActiveTool(h.tool); } setOutputText(h.output); setHistoryOpen(false); }}>
+                    onClick={() => { if (h.type === "youtube") { setInputMode("youtube"); setYtUrl(h.input); } else { setInputMode("text"); setInputText(h.input); setActiveTool(h.tool); if(h.mode) setMode(h.mode); } setOutputText(h.output); setHistoryOpen(false); }}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
                         {h.type==="youtube"&&<span style={{fontSize:10,background:"#FF000015",color:"#CC0000",fontWeight:700,padding:"1px 6px",borderRadius:4}}>▶ YT</span>}
@@ -6799,7 +6979,7 @@ function FloatingAssistant({ avatar, visible, user, onOpen }) {
       const floatSystem = aiContext
         ? aiContext + "\n\nIMPORTANT: You are in the floating mini-assistant. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations."
         : `You are the Ace It AI assistant. The user's name is ${user?.name||"there"}. Keep responses concise (2-4 sentences). Help with studying, flashcards, brain maps, planning, motivation.`;
-      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
+      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
       setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
     } catch { setMessages(h => [...h, { role:"assistant", content:"Connection error. Please try again." }]); }
@@ -7093,8 +7273,14 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   const [view, setView]               = useState("home");
   // ── Chat history system ──────────────────────────────────────────────────────
   const newConvo = () => ({ id: Date.now(), title: "New Chat", messages: [], createdAt: new Date() });
-  const [conversations, setConversations] = useState([newConvo()]);
-  const [activeConvoId, setActiveConvoId] = useState(conversations[0].id);
+  const [conversations, setConversations] = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_convos"); if (s) { const p = JSON.parse(s); if (p.length) return p; } } catch {}
+    return [newConvo()];
+  });
+  const [activeConvoId, setActiveConvoId] = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_active_convo"); if (s) return parseInt(s); } catch {}
+    return null;
+  });
   const [renamingId, setRenamingId]       = useState(null);
   const [renameVal, setRenameVal]         = useState("");
   const [chatSidebarOpen, setChatSidebarOpen] = useState(true);
@@ -7121,16 +7307,10 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   const deleteConvo = (id) => {
     setConversations(cs => {
       const remaining = cs.filter(c => c.id !== id);
-      if (remaining.length === 0) { const c = newConvo(); return [c]; }
-      return remaining;
+      const final = remaining.length === 0 ? [newConvo()] : remaining;
+      if (activeConvoId === id) setActiveConvoId(final[0].id);
+      return final;
     });
-    if (activeConvoId === id) {
-      setConversations(cs => {
-        const remaining = cs.filter(c => c.id !== id);
-        if (remaining.length) setActiveConvoId(remaining[0].id);
-        return cs;
-      });
-    }
   };
 
   const renameConvo = (id, title) => {
@@ -7159,14 +7339,12 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   };
   // ─────────────────────────────────────────────────────────────────────────────
   const [loading, setLoading]         = useState(false);
-  const [goals, setGoals]             = useState([
+  const PA_DEFAULT_GOALS = [
     { id: 1, text: "Complete my first flashcard deck",    done: false, priority: "high"   },
     { id: 2, text: "Try all three study modes",           done: false, priority: "medium" },
     { id: 3, text: "Study at least 30 min every day",    done: false, priority: "medium" },
-  ]);
-  const [newGoal, setNewGoal]         = useState("");
-  const [newGoalPriority, setNewGoalPriority] = useState("medium");
-  const [planDays, setPlanDays]       = useState([
+  ];
+  const PA_DEFAULT_PLAN = [
     { day:"Monday",    tasks:["Create your first deck", "Explore Flash Cards app"],  done:[false,false] },
     { day:"Tuesday",   tasks:["Try Quick Build mode", "Study your deck"],             done:[false,false] },
     { day:"Wednesday", tasks:["Build a Brain Map", "Link decks to nodes"],           done:[false,false] },
@@ -7174,7 +7352,17 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
     { day:"Friday",    tasks:["Full deck review", "Practice test mode"],              done:[false,false] },
     { day:"Saturday",  tasks:["Rest or light review"],                               done:[false]       },
     { day:"Sunday",    tasks:["Plan your week ahead"],                               done:[false]       },
-  ]);
+  ];
+  const [goals, setGoals]             = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_goals"); if (s) return JSON.parse(s); } catch {}
+    return PA_DEFAULT_GOALS;
+  });
+  const [newGoal, setNewGoal]         = useState("");
+  const [newGoalPriority, setNewGoalPriority] = useState("medium");
+  const [planDays, setPlanDays]       = useState(() => {
+    try { const s = localStorage.getItem("tp_pa_plan"); if (s) return JSON.parse(s); } catch {}
+    return PA_DEFAULT_PLAN;
+  });
   const [addingTaskDay, setAddingTaskDay] = useState(null);
   const [newTask, setNewTask]             = useState("");
   // Local avatar draft (pending save)
@@ -7184,6 +7372,27 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
   useEffect(() => { setDraftAvatar(avatar && avatar.skinColor ? avatar : { ...AV_DEFAULT }); }, [avatar]);
+  // Persist goals and plan
+  const paGoalsMounted = useRef(false);
+  useEffect(() => {
+    if (!paGoalsMounted.current) { paGoalsMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_goals", JSON.stringify(goals)); } catch {}
+  }, [goals]);
+  const paPlanMounted = useRef(false);
+  useEffect(() => {
+    if (!paPlanMounted.current) { paPlanMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_plan", JSON.stringify(planDays)); } catch {}
+  }, [planDays]);
+  // Persist conversations
+  const paConvoMounted = useRef(false);
+  useEffect(() => {
+    if (!paConvoMounted.current) { paConvoMounted.current = true; return; }
+    try { localStorage.setItem("tp_pa_convos", JSON.stringify(conversations.slice(0, 50))); } catch {}
+  }, [conversations]);
+  // Persist active convo id
+  useEffect(() => {
+    if (activeConvoId) try { localStorage.setItem("tp_pa_active_convo", String(activeConvoId)); } catch {}
+  }, [activeConvoId]);
 
   const systemPrompt = aiContext || `You are Ace It Assistant — an intelligent, warm, and motivating AI study companion. The user's name is ${user?.name || "there"}. Be encouraging, specific, and genuinely helpful.`;
 
@@ -7227,8 +7436,8 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1000,
+          model: "claude-sonnet-4-6",
+          max_tokens: 2000,
           system: typeof activePrompt === "string" ? activePrompt.slice(0, 10000) : "You are a helpful study assistant.",
           messages: newMsgs.map(m => ({ role: m.role, content: String(m.content) })),
         }),
@@ -8016,6 +8225,12 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
 
   const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const passStrength = (p) => {
     if (!p) return 0;
     let s = 0;
@@ -8099,7 +8314,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div role="dialog" aria-modal="true" aria-label={mode === "login" ? "Sign in" : "Create account"} style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,8,24,0.75)", backdropFilter: "blur(8px)", zIndex: 0 }} />
       <div style={{ position: "relative", zIndex: 1, width: "min(90vw,860px)", maxHeight: "95vh", display: "flex", flexDirection: "row", borderRadius: 20, overflow: "auto", boxShadow: "0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)", animation: "modalIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards" }}>
         <style>{`@media(max-width:640px){.auth-left-panel{display:none!important}.auth-right-panel{border-radius:20px!important;width:100%!important}}`}</style>
@@ -8133,7 +8348,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
 
         {/* RIGHT */}
         <div className="auth-right-panel" style={{ flex: 1, background: "#fff", padding: "40px 44px", display: "flex", flexDirection: "column", position: "relative", overflowY: "auto", maxHeight: "90vh" }}>
-          <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
+          <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
           {step === "success" ? (
@@ -8172,25 +8387,25 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Full Name</label>
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
+                    <label htmlFor="auth-name" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Full Name</label>
+                    <input id="auth-name" autoComplete="name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Larry Johnson" style={inputStyle("name")}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.name ? "#E85D3F" : "#E8E5E0"} />
                     {errors.name && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.name}</div>}
                   </div>
                 )}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Email Address</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
+                  <label htmlFor="auth-email" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Email Address</label>
+                  <input id="auth-email" autoComplete="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle("email")}
                     onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.email ? "#E85D3F" : "#E8E5E0"} />
                   {errors.email && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.email}</div>}
                 </div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752" }}>Password</label>
+                    <label htmlFor="auth-password" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752" }}>Password</label>
                     {mode === "login" && <span onClick={handleForgotPassword} style={{ fontSize: 11, color: "#4F6EF7", cursor: "pointer", fontWeight: 600 }}>{loading ? "Sending…" : "Forgot password?"}</span>}
                   </div>
                   <div style={{ position: "relative" }}>
-                    <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
+                    <input id="auth-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.password ? "#E85D3F" : "#E8E5E0"} />
                     <button onClick={() => setShowPass(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
@@ -8206,9 +8421,9 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                 </div>
                 {mode === "signup" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6 }}>Confirm Password</label>
+                    <label htmlFor="auth-confirm" style={{ fontSize: 12, fontWeight: 700, color: "#5A5752", display: "block", marginBottom: 6, textAlign: "left" }}>Confirm Password</label>
                     <div style={{ position: "relative" }}>
-                      <input type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
+                      <input id="auth-confirm" autoComplete="new-password" type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
                         onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.confirm ? "#E85D3F" : "#E8E5E0"} />
                       <button onClick={() => setShowConf(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showConf ? "🙈" : "👁"}</button>
                     </div>
@@ -8294,10 +8509,16 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   const [chatInput, setChatInput]     = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [showChat, setShowChat]       = useState(false);
+  const [notesMsg, setNotesMsg]       = useState("");
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState(null); // folder id
 
   const fileInputRef  = useRef(null);
   const recognitionRef = useRef(null);
   const editorRef     = useRef(null);
+
+  // Stop recording on unmount
+  useEffect(() => () => { recognitionRef.current?.stop(); }, []);
 
   const notesMounted = useRef(false);
   useEffect(() => { if (!notesMounted.current) { notesMounted.current = true; return; } try { localStorage.setItem("tp_notes", JSON.stringify(notes)); } catch {} tpSync("tp_notes", notes); }, [notes]);
@@ -8341,7 +8562,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   // Recording
   const toggleRecording = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Your browser doesn't support recording. Try Chrome."); return; }
+    if (!SR) { setNotesMsg("Recording not supported in this browser. Try Chrome."); return; }
     if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); return; }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
@@ -8385,8 +8606,9 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   const renderContent = (text) => {
     if (!text) return null;
     return text.split("\n").map((line, i) => {
-      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
+      if (line.startsWith("### ")) return <h3 key={i} style={{ fontSize:14, fontWeight:800, color:"#1A1814", margin:"10px 0 4px" }}>{line.slice(4)}</h3>;
       if (line.startsWith("## ")) return <h2 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", margin:"12px 0 5px" }}>{line.slice(3)}</h2>;
+      if (line.startsWith("# "))  return <h1 key={i} style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", margin:"14px 0 6px" }}>{line.slice(2)}</h1>;
       if (line.startsWith("- "))  return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18 }}>{line.slice(2)}</li>;
       if (/^\d+\.\s/.test(line)) return <li key={i} style={{ fontSize:14, color:"#1A1814", lineHeight:1.8, marginLeft:18, listStyleType:"decimal" }}>{line.replace(/^\d+\.\s/,"")}</li>;
       const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
@@ -8414,7 +8636,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:2000,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:2000,
           system:"You are an expert study coach helping students master their course material.",
           messages:[{role:"user", content:prompts[mode]}] }),
       });
@@ -8439,7 +8661,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
         : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:4000,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:4000,
           system:`You are an expert academic note-taker. Create comprehensive study notes always including:\n# Chapter/Topic Overview\n## Learning Objectives\n## Key Concepts\n## Key Terms & Definitions\n## Detailed Notes\n## Summary\n## Study Tips\nUse clear headings, bullet points, bold key terms. Make it excellent.`,
           messages:[{ role:"user", content:userContent }] }),
       });
@@ -8491,7 +8713,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
 
   const fetchYouTube = (url) => {
     const videoId = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
-    if (!videoId) { alert("Invalid YouTube URL"); return; }
+    if (!videoId) { setNotesMsg("Invalid YouTube URL. Please paste a full YouTube link."); return; }
     setUploadText(`YouTube Video: ${url}\nVideo ID: ${videoId}\n\nGenerate comprehensive study notes based on this educational video.`);
     if (!uploadTitle) setUploadTitle("YouTube Notes");
   };
@@ -8505,7 +8727,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     try {
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-5-20250929", max_tokens:800,
+        body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:800,
           system:`You are a helpful study tutor. Answer questions based on these notes plus your knowledge. Be concise.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
           messages:[...chatMessages, userMsg].map(m=>({role:m.role,content:m.content})) }),
       });
@@ -8720,7 +8942,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                     </div>
                     <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10 }}>
                       <span style={{ fontSize:10,color:"#C8B88A" }}>{n.wordCount} words</span>
-                      <button onClick={e=>{e.stopPropagation();alert("Turn into Course — coming soon to Academy! 🎓");}}
+                      <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
                         style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}10`,border:`1px solid ${NC}30`,borderRadius:10,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
                         onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
@@ -8792,7 +9014,19 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
 
               {/* New folder */}
               <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${NL}66` }}>
-                {addingFolder ? (
+                {confirmDeleteFolder && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setConfirmDeleteFolder(null)}>
+            <div style={{background:"#fff",borderRadius:14,padding:"24px 28px",maxWidth:340,width:"90%",boxShadow:"0 16px 48px rgba(0,0,0,0.18)"}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:8}}>Delete folder?</div>
+              <div style={{fontSize:13,color:"#5A5752",marginBottom:20}}>"{folders.find(f=>f.id===confirmDeleteFolder)?.name}" will be deleted. Notes inside will stay.</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setConfirmDeleteFolder(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #D8D5CE",background:"none",fontSize:13,fontWeight:600,cursor:"pointer",color:"#5A5752"}}>Cancel</button>
+                <button onClick={()=>{deleteFolderDeep(active.id,confirmDeleteFolder);setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {addingFolder ? (
                   <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
                     onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
                     style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:`1.5px solid ${NC}`, background:"#FDFCF7", fontSize:12, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
@@ -8882,7 +9116,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                             style={{ fontSize:10, fontWeight:700, color:"#8C7A4A", background:`${NL}22`, border:"none", borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
                             ✏️ Edit
                           </button>
-                          <button onClick={e=>{e.stopPropagation();alert("Coming soon to Academy! 🎓");}}
+                          <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓"); setTimeout(()=>setNotesMsg(""),3000);}}
                             style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}10`, border:`1px solid ${NC}30`, borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
                             🎓 Course
                           </button>
@@ -9052,10 +9286,13 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                   ✺ → Brain Map
                 </button>
               </>}
-              <button onClick={()=>{ if(window.confirm("Delete this note?")) deleteNote(activeNote.id); }}
-                style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                🗑
-              </button>
+              {!confirmDeleteNote
+              ? <button onClick={()=>setConfirmDeleteNote(true)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>🗑</button>
+              : <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                  <span style={{ fontSize:11, color:"#E85D3F", fontWeight:600 }}>Delete?</span>
+                  <button onClick={()=>{deleteNote(activeNote.id);setConfirmDeleteNote(false);}} style={{ padding:"5px 10px", borderRadius:6, border:"none", background:"#E85D3F", fontSize:11, fontWeight:700, cursor:"pointer", color:"#fff" }}>Yes</button>
+                  <button onClick={()=>setConfirmDeleteNote(false)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #ECEAE4", background:"transparent", fontSize:11, cursor:"pointer", color:"#8C8880" }}>No</button>
+                </div>}
             </div>
           </div>
 
@@ -9214,7 +9451,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
               ✏️ Edit This Note
             </button>
-            <button onClick={()=>{alert("Turn into Course — coming soon to Academy! 🎓");}}
+            <button onClick={()=>{setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
               style={{ padding:"12px 24px", borderRadius:10, border:`1.5px solid ${NC}30`, background:`${NC}10`, color:NC, fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
@@ -9378,7 +9615,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               💬 Chat
             </button>
             {activeNote && (
-              <button onClick={()=>{if(window.confirm("Delete this note?"))deleteNote(activeNote.id);}}
+              <button onClick={()=>setConfirmDeleteNote(true)}
                 style={{ marginLeft:"auto", padding:"5px 12px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", fontSize:11, fontWeight:600, cursor:"pointer", color:"#E85D3F", whiteSpace:"nowrap" }}>
                 🗑 Delete
               </button>
@@ -9490,7 +9727,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                     <div style={{ fontSize:28,marginBottom:8 }}>📁</div>
                     <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:4 }}>{f.name}</div>
                     <div style={{ fontSize:12,color:"#8C7A4A" }}>{count} {count===1?"note":"notes"}</div>
-                    <button onClick={e=>{e.stopPropagation();if(window.confirm(`Delete "${f.name}"?`)){setFolders(prev=>prev.filter(x=>x.id!==f.id));}}}
+                    <button onClick={e=>{e.stopPropagation();setConfirmDeleteFolder(f.id);}}
                       style={{ position:"absolute",top:10,right:10,background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#C8B88A",opacity:0,transition:"opacity 0.15s" }}
                       onMouseEnter={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.color="#E85D3F";}}
                       onMouseLeave={e=>e.currentTarget.style.opacity="0"}>✕</button>
@@ -9534,7 +9771,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   const toggleSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}:t));
   const deleteSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).filter(s=>s.id!==sid)}:t));
   const downloadICS=task=>{const n=new Date(),ds=n.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z",dt=task.date?task.date.replace(/-/g,"")+"T090000Z":ds;const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ace It//EN","BEGIN:VEVENT",`DTSTAMP:${ds}`,`DTSTART:${dt}`,`SUMMARY:${task.title}${task.course?` (${task.course})`:""}`,`DESCRIPTION:Priority: ${task.priority}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");const a=document.createElement("a");a.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);a.download=task.title.replace(/\s+/g,"-")+".ics";a.click();};
-  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
+  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
   const importAITasks=ts=>{ts.forEach(t=>addTask({title:t.title,date:t.date||"",course:t.course||"",priority:t.priority||"medium",notes:t.notes||""}));setShowAIImport(false);setAIImportImg(null);setAIImportResult(null);};
   const sortTasks=arr=>{const s=[...arr],p={high:0,medium:1,low:2};if(sortBy==="priority")s.sort((a,b)=>(p[a.priority]||1)-(p[b.priority]||1));else if(sortBy==="date")s.sort((a,b)=>!a.date&&!b.date?0:!a.date?1:!b.date?-1:new Date(a.date)-new Date(b.date));else if(sortBy==="course")s.sort((a,b)=>(a.course||"").localeCompare(b.course||""));else s.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));return s;};
   const todayStr=new Date().toISOString().split("T")[0];
@@ -9872,7 +10109,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           max_tokens: 500,
           system: `You are a warm, empathetic journal companion inside the Ace It Journal app. The user has shared a journal entry with you. Your role is to:
 - Reflect back what you heard with genuine understanding — not just repeating their words but showing you truly understood what they were feeling
@@ -10313,7 +10550,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                 {(() => { const c = J_CATEGORIES.find(x => x.id === activeEntry.category); return c ? <span style={{ fontSize:11, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{c.emoji} {c.label}</span> : null; })()}
               </div>
             </div>
-            <button onClick={() => { if (window.confirm("Delete this entry?")) deleteEntry(activeEntry.id); }}
+            <button onClick={() => { setConfirmDeleteEntry(true); }}
               style={{ background:"none", border:`1px solid #FECACA`, borderRadius:7, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#E85D3F", flexShrink:0 }}>
               🗑 Delete
             </button>
@@ -10448,7 +10685,7 @@ function PrivacyPolicyPage({ onBack }) {
         {[
           {
             title: "1. Who We Are",
-            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.app and any associated services.`
+            body: `Ace It ("we," "us," or "our") is an AI-powered educational platform that helps students and lifelong learners create flashcards, take notes, build brain maps, and track their progress. This Privacy Policy explains how we collect, use, and protect your information when you use our platform at aceitgalaxy.com and any associated services.`
           },
           {
             title: "2. Information We Collect",
@@ -10720,455 +10957,632 @@ We aim to respond to all inquiries within 30 days.`
   );
 }
 
+// ─── Per-app SEO landing pages (shown to logged-out visitors on app routes) ───
+const SEO_CONTENT = {
+  flashcards: {
+    name: "Flash Cards", color: "#C8B8FF", kicker: "AI FLASHCARDS",
+    h1: "Free AI Flashcard Generator",
+    tagline: "Turn any notes, textbook chapter, or PDF into a complete flashcard deck in seconds — then study it with spaced repetition until it sticks. No card limits, no paywalls, free for students.",
+    features: [
+      { t: "Generate decks instantly", d: "Paste text or upload a file and AI writes accurate question-and-answer cards for you — no more typing decks by hand." },
+      { t: "Spaced repetition built in", d: "Cards you miss come back more often, so your time goes to what you haven't mastered yet." },
+      { t: "Organized by class", d: "Group decks into folders by course, and pull them into brain maps or notes whenever you need them." },
+    ],
+    steps: [
+      { t: "Upload your material", d: "Drop in notes, a textbook passage, or a PDF." },
+      { t: "AI builds the deck", d: "A full set of study-ready cards appears in seconds." },
+      { t: "Study until mastered", d: "Quiz yourself with spaced repetition and watch your mastery climb." },
+    ],
+    faqs: [
+      { q: "Is the flashcard generator really free?", a: "Yes. Every study tool on Ace It Galaxy is free for students, with no card limits or paywalls." },
+      { q: "What can I make flashcards from?", a: "Paste your notes or a textbook passage, or upload a PDF or document — AI turns any of it into a study-ready deck." },
+      { q: "Do I need an account?", a: "You can try it without signing up. Create a free account to save your decks and sync them across devices." },
+    ],
+  },
+  notes: {
+    name: "Notes", color: "#F0D080", kicker: "AI NOTES",
+    h1: "AI Note-Taking for Students",
+    tagline: "Record lectures, upload slides, or paste your own notes and let AI turn them into clean, organized study notes — structured, summarized, and ready to review.",
+    features: [
+      { t: "Record & transcribe lectures", d: "Capture a lecture live and get an organized transcript you can actually study from." },
+      { t: "Clean up any input", d: "Messy notes, slides, or uploads become clear, structured study notes automatically." },
+      { t: "Send notes to flashcards", d: "Turn any note into a flashcard deck with one click and study it right away." },
+    ],
+    steps: [
+      { t: "Capture anything", d: "Record, upload, or paste your material." },
+      { t: "AI organizes it", d: "Everything becomes clean, structured notes." },
+      { t: "Review and reuse", d: "Study your notes or turn them into cards." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — AI note-taking is free for students on Ace It Galaxy, with no subscription." },
+      { q: "Can it record and transcribe lectures?", a: "Yes. Record a lecture in the app and AI turns it into organized notes you can review later." },
+      { q: "Can I turn notes into flashcards?", a: "Absolutely — send any note straight to the flashcard generator in one click." },
+    ],
+  },
+  brainmap: {
+    name: "Brain Map", color: "#F0A8C0", kicker: "BRAIN MAP",
+    h1: "Free Online Mind Map Maker",
+    tagline: "Build visual mind maps that connect ideas and reveal the big picture. Attach flashcard decks to any node and study straight from the map.",
+    features: [
+      { t: "Unlimited nodes & nesting", d: "Branch out as far as your subject goes — there are no limits on how deep your map gets." },
+      { t: "Attach decks to concepts", d: "Pin a flashcard deck to any node and study a topic without leaving the map." },
+      { t: "Works on any device", d: "Pinch-to-zoom and drag on your phone, tablet, or laptop." },
+    ],
+    steps: [
+      { t: "Start a central idea", d: "Drop your main topic in the middle." },
+      { t: "Branch out concepts", d: "Add and connect related ideas visually." },
+      { t: "Attach decks and study", d: "Pin flashcards to nodes and review from the map." },
+    ],
+    faqs: [
+      { q: "Is the mind map maker free?", a: "Yes — building brain maps is completely free for students, with unlimited nodes." },
+      { q: "Can I attach flashcards to a node?", a: "Yes. Attach any deck to any concept and study it directly from your map." },
+      { q: "Does it work on a phone or tablet?", a: "Yes — the map supports pinch-to-zoom and touch, so it works on any device." },
+    ],
+  },
+  simplifier: {
+    name: "Text Simplifier", color: "#6ED9B8", kicker: "TEXT SIMPLIFIER",
+    h1: "AI Text Simplifier & YouTube Summarizer",
+    tagline: "Paste a dense passage or a YouTube link and get a clear, structured version you can actually understand — at the reading level that works for you.",
+    features: [
+      { t: "Simplify any passage", d: "Turn confusing academic text into plain language without losing the meaning." },
+      { t: "Summarize YouTube videos", d: "Drop in a video link and get a structured summary of what it covers." },
+      { t: "Adjustable reading level", d: "Choose how simple you want it — from quick overview to detailed breakdown." },
+    ],
+    steps: [
+      { t: "Paste text or a link", d: "Add any passage or a YouTube URL." },
+      { t: "AI simplifies it", d: "Get a clear, structured version in seconds." },
+      { t: "Read and understand", d: "Study it at a level that makes sense to you." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — the text simplifier is free for students on Ace It Galaxy." },
+      { q: "Does it work on YouTube videos?", a: "Yes. Paste a YouTube link and AI returns a structured summary of the video." },
+      { q: "Can I change how simple the output is?", a: "Yes — pick a reading level so the result matches how much detail you want." },
+    ],
+  },
+  tracker: {
+    name: "Tracker", color: "#7FB8F0", kicker: "TRACKER",
+    h1: "Free Student Planner & Assignment Tracker",
+    tagline: "Your planner, calendar, and to-do list in one place. Track assignments, deadlines, and exams so nothing slips through the cracks.",
+    features: [
+      { t: "Every deadline in one view", d: "See all your assignments and due dates across every class at a glance." },
+      { t: "Calendar + to-do together", d: "Plan on a calendar and check items off a list in the same place." },
+      { t: "Never miss an assignment", d: "Keep due dates front and center so nothing sneaks up on you." },
+    ],
+    steps: [
+      { t: "Add your assignments", d: "Enter due dates for every class." },
+      { t: "See what's due", d: "View everything on a calendar or list." },
+      { t: "Check it off", d: "Mark work done and stay ahead." },
+    ],
+    faqs: [
+      { q: "Is the planner free?", a: "Yes — the student planner and assignment tracker are free on Ace It Galaxy." },
+      { q: "Can I see a calendar view?", a: "Yes. Your assignments show up on a calendar and as a to-do list." },
+      { q: "Does it sync across devices?", a: "With a free account, your tracker syncs everywhere you log in." },
+    ],
+  },
+  assistant: {
+    name: "Personal Assistant", color: "#90C8F8", kicker: "PERSONAL ASSISTANT",
+    h1: "Your Personal AI Study Assistant",
+    tagline: "An AI tutor that knows what you're working on. Ask questions, build study plans, and get help staying on track across every tool in the platform.",
+    features: [
+      { t: "Answers your questions", d: "Get clear explanations for anything you're studying, any time." },
+      { t: "Builds study plans", d: "Tell it your goals and it maps out what to study and when." },
+      { t: "Knows your work", d: "It sees your decks, notes, and coursework, so its help is actually about your classes." },
+    ],
+    steps: [
+      { t: "Ask anything", d: "Bring a question, a topic, or a goal." },
+      { t: "Get a plan", d: "Receive a personalized study plan or answer." },
+      { t: "Stay on track", d: "Check in across every app as you go." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — your AI study assistant is free for students on Ace It Galaxy." },
+      { q: "How is it different from a generic chatbot?", a: "It's connected to your own decks, notes, and coursework, so its answers and study plans are tailored to what you're actually studying." },
+      { q: "Can it build me a study plan?", a: "Yes. Share your goals and deadlines and it will lay out a plan to get you there." },
+    ],
+  },
+  studybuddy: {
+    name: "Study Buddy", color: "#FFA8D0", kicker: "STUDY BUDDY",
+    h1: "Live Study Rooms for Students",
+    tagline: "Study live with classmates over video. Share documents, sync study timers, and work through material together in real time.",
+    features: [
+      { t: "Video study rooms", d: "Jump on camera with classmates and study together from anywhere." },
+      { t: "Shared document viewer", d: "Open the same PDF or notes so everyone's on the same page." },
+      { t: "Synced study timers", d: "Run focus timers together to keep the whole group on rhythm." },
+    ],
+    steps: [
+      { t: "Start a room", d: "Create a study room in one click." },
+      { t: "Invite classmates", d: "Share the room with up to five friends." },
+      { t: "Study together", d: "Share docs, sync timers, and focus as a group." },
+    ],
+    faqs: [
+      { q: "Is it free?", a: "Yes — live study rooms are free for students on Ace It Galaxy." },
+      { q: "How many people can join a room?", a: "Up to six people can study together in a single room." },
+      { q: "Can we share documents?", a: "Yes. Open a shared PDF or notes so everyone sees the same material." },
+    ],
+  },
+  coursehub: {
+    name: "Course Hub", color: "#6ED9B8", kicker: "COURSE HUB",
+    h1: "Organize All Your Course Materials in One Place",
+    tagline: "Upload your syllabus and course materials once. AI organizes everything into folders and pushes content straight to your flashcards, notes, and simplifier.",
+    features: [
+      { t: "Unlimited nested folders", d: "Organize every class, unit, and topic exactly how your courses are structured." },
+      { t: "Upload anything", d: "Add files, pasted text, links, or audio — it all lives in one hub." },
+      { t: "Send to any tool", d: "Push a document into flashcards, notes, or the simplifier in one click." },
+    ],
+    steps: [
+      { t: "Upload your syllabus", d: "Add your course files and materials." },
+      { t: "AI organizes it", d: "Everything sorts into clean, nested folders." },
+      { t: "Study from one hub", d: "Send materials to any study tool instantly." },
+    ],
+    faqs: [
+      { q: "Is Course Hub free?", a: "Yes — organizing your courses is free for students on Ace It Galaxy." },
+      { q: "What can I upload?", a: "Files, pasted text, links, and audio recordings all live together in one hub." },
+      { q: "Can I send materials to other tools?", a: "Yes. Push any document to flashcards, notes, or the text simplifier in one click." },
+    ],
+  },
+  journal: {
+    name: "Journal", color: "#E8C4F0", kicker: "JOURNAL",
+    h1: "A Reflection Journal for Students",
+    tagline: "Reflect on what you've learned, track your progress, and build the habit of thinking deeply about your studies — with gentle AI prompts whenever you want them.",
+    features: [
+      { t: "Reflection prompts", d: "Optional AI prompts help you think through what you learned each day." },
+      { t: "Track your progress", d: "Look back over time and see how far you've come." },
+      { t: "Private and yours", d: "Your journal is personal — write freely and keep it to yourself." },
+    ],
+    steps: [
+      { t: "Write a reflection", d: "Jot down what you learned or struggled with." },
+      { t: "Look back", d: "Revisit past entries and see your growth." },
+      { t: "Build the habit", d: "Make deep thinking part of how you study." },
+    ],
+    faqs: [
+      { q: "Is the journal free?", a: "Yes — the student journal is free on Ace It Galaxy." },
+      { q: "Is my journal private?", a: "Yes. Your entries are personal to your account and aren't shared." },
+      { q: "Do I have to write every day?", a: "Not at all — journal whenever it helps. The prompts are there when you want them." },
+    ],
+  },
+};
+const SEO_APP_ORDER = ["flashcards","notes","brainmap","simplifier","tracker","assistant","studybuddy","coursehub","journal"];
+
+function SeoGlyph({ appId, color, size = 20 }) {
+  const P = {
+    flashcards: <><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>,
+    notes: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>,
+    brainmap: <><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/></>,
+    simplifier: <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/></>,
+    tracker: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    assistant: <><path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/></>,
+    studybuddy: <><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/></>,
+    coursehub: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+    journal: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>,
+  };
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{P[appId]}</svg>);
+}
+
+function AppSEOLanding({ appId, onEnter, openAuth, onLegal, onHome }) {
+  const c = SEO_CONTENT[appId];
+  useEffect(() => { try { window.scrollTo(0, 0); } catch {} }, [appId]);
+  useEffect(() => {
+    if (!c) return;
+    const prev = document.getElementById("seo-faq-jsonld");
+    if (prev) prev.remove();
+    const el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.id = "seo-faq-jsonld";
+    el.text = JSON.stringify({
+      "@context": "https://schema.org", "@type": "FAQPage",
+      mainEntity: c.faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    });
+    document.head.appendChild(el);
+    return () => { el.remove(); };
+  }, [appId]);
+  if (!c) return null;
+  const accent = c.color;
+  const others = SEO_APP_ORDER.filter(id => id !== appId);
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#06040E", color: "#F7F6F2", minHeight: "100vh", overflowX: "hidden" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        .seo-fade { animation: fade-up 0.7s ease both; }
+        @keyframes fade-up { from { opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+        .seo-btn { transition: transform 0.2s, box-shadow 0.2s; }
+        .seo-btn:hover { transform: translateY(-2px); }
+        .seo-card { transition: transform 0.2s, border-color 0.2s; }
+        .seo-card:hover { transform: translateY(-4px); }
+        .seo-tool:hover { border-color: rgba(255,255,255,0.25) !important; }
+        @media (max-width: 720px) {
+          .seo-hero-title { font-size: 40px !important; }
+          .seo-section { padding: 56px 22px !important; }
+          .seo-grid { grid-template-columns: 1fr !important; }
+          .seo-cta-row { flex-direction: column !important; }
+          .seo-cta-row a, .seo-cta-row button { width: 100% !important; }
+        }
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 500, height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 40px", background: "rgba(6,4,14,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 16, fontWeight: 900, color: "#F5D96A", letterSpacing: 2, textDecoration: "none" }}>ACE IT</a>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.7)" }}>Log in</button>
+          <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 4px 20px rgba(245,200,66,0.3)" }}>Get started free</button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="seo-section" style={{ minHeight: "88vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "120px 40px 72px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", width: 640, height: 640, borderRadius: "50%", background: `radial-gradient(circle, ${accent}14 0%, transparent 70%)`, top: "-8%", left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} />
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} className="seo-fade" style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textDecoration: "none", marginBottom: 22, display: "inline-block" }}>← All 10 study tools</a>
+        <div className="seo-fade" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: 20, padding: "6px 16px", marginBottom: 26 }}>
+          <SeoGlyph appId={appId} color={accent} size={15} />
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: accent }}>{c.kicker}</span>
+        </div>
+        <h1 className="seo-fade seo-hero-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(38px,6vw,72px)", fontWeight: 900, lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 22, maxWidth: 860, color: "#F7F6F2" }}>{c.h1}</h1>
+        <p className="seo-fade" style={{ fontSize: "clamp(16px,2vw,19px)", fontWeight: 300, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, maxWidth: 620, marginBottom: 42 }}>{c.tagline}</p>
+        <div className="seo-fade seo-cta-row" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 12, padding: "16px 40px", fontSize: 17, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 8px 36px rgba(245,200,66,0.4)", fontFamily: "'Montserrat',sans-serif" }}>Get started free →</button>
+          <button onClick={() => onEnter?.()} className="seo-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "16px 34px", fontSize: 16, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.8)" }}>Try {c.name} free</button>
+        </div>
+        <div className="seo-fade" style={{ marginTop: 40, fontSize: 13, color: "rgba(255,255,255,0.5)", display: "flex", gap: 22, justifyContent: "center", flexWrap: "wrap" }}>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> No credit card</span>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> Free for students</span>
+          <span><span style={{ color: "#6ED9B8" }}>✓</span> Part of 10 connected tools</span>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 48, color: "#F7F6F2" }}>Why students use {c.name}</h2>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            {c.features.map((f, i) => (
+              <div key={i} className="seo-card" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${accent}22`, borderTop: `3px solid ${accent}`, borderRadius: 16, padding: "30px 26px" }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${accent}18`, border: `1px solid ${accent}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <SeoGlyph appId={appId} color={accent} size={20} />
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: "#F7F6F2", marginBottom: 10, margin: "0 0 10px" }}>{f.t}</h3>
+                <p style={{ fontSize: 14, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, margin: 0 }}>{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 48, color: "#F7F6F2" }}>How it works</h2>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            {c.steps.map((s, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "30px 26px" }}>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 800, color: `${accent}CC`, letterSpacing: 2, marginBottom: 14 }}>STEP 0{i + 1}</div>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: "#F7F6F2", lineHeight: 1.3, margin: "0 0 10px" }}>{s.t}</h3>
+                <p style={{ fontSize: 14, color: "rgba(247,246,242,0.62)", lineHeight: 1.75, margin: 0 }}>{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth: 780, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, textAlign: "center", marginBottom: 44, color: "#F7F6F2" }}>Frequently asked questions</h2>
+          {c.faqs.map((f, i) => (
+            <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "22px 0" }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#F7F6F2", margin: "0 0 8px" }}>{f.q}</h3>
+              <p style={{ fontSize: 15, color: "rgba(247,246,242,0.62)", lineHeight: 1.7, margin: 0 }}>{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CROSS-LINK: the rest of the toolkit */}
+      <section className="seo-section" style={{ padding: "88px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 900, marginBottom: 12, color: "#F7F6F2" }}>The rest of your toolkit</h2>
+          <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(247,246,242,0.55)", maxWidth: 520, margin: "0 auto 40px", lineHeight: 1.7 }}>{c.name} is one of 10 free tools in Ace It Galaxy — and they all work together.</p>
+          <div className="seo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {others.map(id => {
+              const o = SEO_CONTENT[id];
+              return (
+                <a key={id} href={`/${id}`} className="seo-tool" style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${o.color}22`, borderLeft: `3px solid ${o.color}`, borderRadius: 12, padding: "16px 18px", textDecoration: "none", textAlign: "left" }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: `${o.color}18`, border: `1px solid ${o.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SeoGlyph appId={id} color={o.color} size={17} />
+                  </div>
+                  <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 800, color: "#F7F6F2" }}>{o.name}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="seo-section" style={{ padding: "96px 40px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", top: "50%", left: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", maxWidth: 620, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(30px,4.5vw,52px)", fontWeight: 900, letterSpacing: -1, lineHeight: 1.1, marginBottom: 20, color: "#F7F6F2" }}>Start using {c.name} free.</h2>
+          <p style={{ fontSize: 17, fontWeight: 300, color: "rgba(247,246,242,0.55)", lineHeight: 1.8, margin: "0 auto 40px", maxWidth: 460 }}>No subscriptions, no paywalls. Create a free account and get all 10 study tools in one place.</p>
+          <div className="seo-cta-row" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => openAuth("signup")} className="seo-btn" style={{ background: "linear-gradient(135deg,#F5C842,#E8A82A)", border: "none", borderRadius: 12, padding: "18px 46px", fontSize: 18, fontWeight: 800, cursor: "pointer", color: "#1A1814", boxShadow: "0 8px 40px rgba(245,200,66,0.4)", fontFamily: "'Montserrat',sans-serif" }}>Get started free →</button>
+          </div>
+          <div style={{ marginTop: 18, fontSize: 13, color: "rgba(255,255,255,0.45)" }}>No credit card required · Free to use · Start in 30 seconds</div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 14, fontWeight: 900, color: "#F5D96A", letterSpacing: 2, textDecoration: "none" }}>ACE IT</a>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
+        <div style={{ display: "flex", gap: 20 }}>
+          {[["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Contact", "contact"]].map(([l, key]) => (
+            <a key={l} href={key === "contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer", textDecoration: "none" }}
+              onClick={(e) => { if (key === "contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); }}>{l}</a>
+          ))}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 function LandingPage({ onEnter, openAuth, onLegal }) {
-  const [scrolled, setScrolled]     = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [showSticky, setShowSticky] = useState(false);
-  const [quizStep, setQuizStep]     = useState(0);
-  const [quizAnswer, setQuizAnswer] = useState(null);
-  const heroRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const onScroll = () => {
       setScrolled(window.scrollY > 40);
-      setShowSticky(window.scrollY > window.innerHeight * 0.8);
+      setShowSticky(window.scrollY > window.innerHeight * 0.7);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const QUIZ_OPTIONS = [
-    { id:"student",  emoji:"🎓", label:"Student",          sub:"I\'m in school and need to study smarter" },
-    { id:"career",   emoji:"🚀", label:"Career Builder",   sub:"I\'m upskilling or changing careers" },
-    { id:"curious",  emoji:"🌍", label:"Lifelong Learner",  sub:"I just love learning new things" },
-    { id:"adhd",     emoji:"⚡", label:"Neurodiverse",      sub:"I need tools that work with my brain" },
+  const APPS = [
+    { appId:"flashcards",  name:"Flash Cards",        color:"#C8B8FF", desc:"AI generates a full flashcard deck from any text, notes, or textbook in seconds. Study with spaced repetition until you master it." },
+    { appId:"notes",       name:"Notes",              color:"#F0D080", desc:"Write, record lectures, and upload materials. AI turns everything into clean, organized study notes instantly." },
+    { appId:"brainmap",    name:"Brain Map",          color:"#F0A8C0", desc:"Build visual mind maps to connect ideas and see the big picture. Attach flashcard decks directly to any concept." },
+    { appId:"simplifier",  name:"Text Simplifier",    color:"#6ED9B8", desc:"Paste any complex passage or YouTube link and get a simplified, structured version you can actually understand." },
+    { appId:"tracker",     name:"Tracker",            color:"#6ED9B8", desc:"Your planner, calendar, and to-do list in one place. Never miss a deadline or forget an assignment again." },
+    { appId:"assistant",   name:"Personal Assistant", color:"#90C8F8", desc:"Your AI study guide. Answers questions, builds study plans, and helps you stay on track across every app." },
+    { appId:"studybuddy",  name:"Study Buddy",        color:"#FFA8D0", desc:"Study live with classmates over video. Share documents, sync timers, and collaborate in real time." },
+    { appId:"coursehub",   name:"Course Hub",         color:"#6ED9B8", desc:"Upload your syllabus and course materials once. AI organizes everything and keeps your coursework in one place." },
+    { appId:"journal",     name:"Journal",            color:"#E8C4F0", desc:"Reflect on what you've learned, track your progress, and build the habit of thinking deeply about your studies." },
+    { appId:"settings",    name:"Settings",           color:"#B8C8E8", desc:"Customize your experience, manage your account, and personalize Ace It Galaxy to fit how you learn best." },
   ];
 
-  const QUIZ_RESULTS = {
-    student:  { headline:"You need Flash Cards + Notes", desc:"Record your lectures, auto-generate flashcards from your notes, and study with spaced repetition. Students cut their prep time by up to 80%.", apps:["Flash Cards","Notes","Brain Map"] },
-    career:   { headline:"You need Career Compass + Studio", desc:"Map your path, close skill gaps, and learn real-world skills that actually get you hired. Everything you need to make your move.", apps:["Career Compass","Studio","Personal Assistant"] },
-    curious:  { headline:"You need Universe + Earth\'s Record", desc:"Dive into any topic, explore the world\'s knowledge, and build your own personal knowledge library — without the noise of the internet.", apps:["Universe","Earth\'s Record","Text Simplifier"] },
-    adhd:     { headline:"You need Flow + Study Buddy", desc:"Chunked learning, focus timers, burnout detection, and an AI study partner that adapts to your pace and celebrates every win.", apps:["Flow","Study Buddy","Mental Health"] },
+  const ICON_PATHS = {
+    flashcards: <><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>,
+    notes: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>,
+    brainmap: <><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/></>,
+    simplifier: <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/></>,
+    tracker: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    assistant: <><path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/></>,
+    studybuddy: <><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/></>,
+    coursehub: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+    journal: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
   };
+
+  const Icon = ({ appId, color, size = 20 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {ICON_PATHS[appId]}
+    </svg>
+  );
 
   return (
     <div style={{ fontFamily:"'DM Sans', sans-serif", background:"#06040E", color:"#F7F6F2", minHeight:"100vh", overflowX:"hidden" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
       <style>{`
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; } body, h1, h2, h3, p { color: inherit; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        @keyframes lp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes lp-fade { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lp-glow { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        @keyframes lp-pulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.08)} }
-        .lp-fade { animation: lp-fade 0.7s ease both; }
-        .lp-app-card:hover { transform: translateY(-6px) !important; box-shadow: 0 20px 50px rgba(0,0,0,0.35) !important; }
-        .lp-app-card { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
-        .lp-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(245,200,66,0.5) !important; }
-        .lp-cta-btn { transition: all 0.2s ease; }
-        /* ── MOBILE ── */
-        @media (max-width: 768px) {
-          .lp-nav-links { display: none !important; }
-          .lp-nav { padding: 0 20px !important; }
-          .lp-hero { padding: 100px 20px 60px !important; }
-          .lp-hero h1 { font-size: 38px !important; letter-spacing: -1px !important; }
-          .lp-hero p { font-size: 15px !important; }
-          .lp-cta-row { flex-direction: column !important; align-items: stretch !important; }
-          .lp-cta-row button { width: 100% !important; }
-          .lp-stats { flex-wrap: wrap !important; }
-          .lp-stats > div { min-width: 40% !important; flex: 1 !important; padding: 16px 12px !important; }
-          .lp-section { padding: 60px 20px !important; }
-          .lp-quiz-grid { grid-template-columns: 1fr !important; }
-          .lp-compare { overflow-x: auto !important; }
-          .lp-compare table { min-width: 560px !important; }
-          .lp-footer { flex-direction: column !important; text-align: center !important; gap: 16px !important; padding: 24px 20px !important; }
-          .lp-sticky { padding: 12px 20px !important; }
-          .lp-sticky-actions { flex-direction: column !important; gap: 8px !important; }
-          .lp-how-grid { grid-template-columns: 1fr !important; }
-          .lp-feat-grid { grid-template-columns: 1fr 1fr !important; }
+        @keyframes fade-up { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes pulse-glow { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        .fade-up { animation: fade-up 0.7s ease both; }
+        .lp-btn-primary { transition: transform 0.2s, box-shadow 0.2s; }
+        .lp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(245,200,66,0.5) !important; }
+        .lp-app-card { transition: transform 0.2s, border-color 0.2s; }
+        .lp-app-card:hover { transform: translateY(-4px); }
+        .lp-nav-link { opacity:0.5; transition:opacity 0.15s; cursor:pointer; }
+        .lp-nav-link:hover { opacity:1; }
+        @media (max-width:768px) {
+          .lp-nav-links { display:none !important; }
+          .lp-hero-title { font-size: 36px !important; }
+          .lp-hero-sub { font-size: 16px !important; }
+          .lp-cta-row { flex-direction:column !important; }
+          .lp-cta-row button { width:100% !important; }
+          .lp-section { padding: 64px 24px !important; }
+          .lp-steps-grid { grid-template-columns: 1fr !important; }
           .lp-apps-grid { grid-template-columns: 1fr !important; }
+          .lp-pain-grid { grid-template-columns: 1fr !important; }
+          .lp-footer { padding-bottom: 176px !important; }
         }
-        @media (max-width: 480px) {
-          .lp-stats > div { min-width: 45% !important; }
-          .lp-feat-grid { grid-template-columns: 1fr !important; }
-          .lp-hero h1 { font-size: 32px !important; }
-          .lp-nav-auth .lp-login-btn { display: none !important; }
-        }
-        .lp-nav-link { opacity: 0.55; transition: opacity 0.18s; cursor: pointer; }
-        .lp-nav-link:hover { opacity: 1; }
-        .lp-step-card:hover { transform: translateY(-4px) !important; }
-        .lp-step-card { transition: transform 0.2s ease; }
       `}</style>
 
-      {/* ── STICKY NAV ── */}
-      <nav className="lp-nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 48px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat', sans-serif", fontSize:15, fontWeight:800, letterSpacing:0.5, color:"#F7F6F2" }}>Ace It</span>
-        </div>
-        <div className="lp-nav-links" style={{ display:"flex", gap:32, alignItems:"center" }}>
-          {[["Features","features"],["Apps","apps"],["How It Works","howitworks"],["Compare","compare"]].map(([l, id]) => (
-            <span key={l} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2" }}
-              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })}>
-              {l}
-            </span>
+      {/* ── NAV ── */}
+      <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:60, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 40px", background: scrolled ? "rgba(6,4,14,0.97)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none", transition:"all 0.3s" }}>
+        <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:16, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
+        <div className="lp-nav-links" style={{ display:"flex", gap:32 }}>
+          {[["What It Is","what"],["How It Works","how"],["The Apps","apps"]].map(([l,id]) => (
+            <a key={l} href={`#${id}`} className="lp-nav-link" style={{ fontSize:14, fontWeight:500, color:"#F7F6F2", textDecoration:"none" }}
+              onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior:"smooth" }); }}>{l}</a>
           ))}
         </div>
-        <div className="lp-nav-auth" style={{ display:"flex", gap:10 }}>
-          <button className="lp-login-btn" onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.18s" }}
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={() => openAuth("login")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.65)", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>Log In</button>
-          <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>
-            Get Started Free
-          </button>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}>Log in</button>
+          <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:8, padding:"8px 20px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 4px 20px rgba(245,200,66,0.3)" }}>Get started free</button>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="lp-hero" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", width:800, height:800, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.07) 0%, transparent 70%)", top:"-15%", left:"-10%", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"0%", right:"-5%", pointerEvents:"none" }} />
+      <section id="what" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"120px 40px 80px", position:"relative", overflow:"hidden" }}>
+        {/* Background glow */}
+        <div style={{ position:"absolute", width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(155,127,255,0.08) 0%, transparent 70%)", top:"-10%", left:"-5%", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", bottom:"5%", right:"-5%", pointerEvents:"none" }} />
 
-        {/* Badge */}
-        <div className="lp-fade" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.12)", border:"1px solid rgba(232,93,63,0.35)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
-          <span style={{ width:7, height:7, borderRadius:"50%", background:"#E85D3F", animation:"lp-glow 2s infinite", display:"inline-block" }} />
-          <span style={{ fontSize:12, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#FF8A6A" }}>Early Access — Free While We Launch</span>
+        {/* Label */}
+        <div className="fade-up" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"6px 18px", marginBottom:28 }}>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Free for students · 10 AI-powered tools</span>
         </div>
 
-        {/* Apple mascot + headline */}
-        <div className="lp-fade" style={{ animationDelay:"0.05s", fontSize:72, marginBottom:8, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
-
-        <h1 className="lp-fade" style={{ animationDelay:"0.1s", fontFamily:"'Playfair Display', serif", fontSize:"clamp(44px, 6.5vw, 86px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:20, maxWidth:860, color:"#F7F6F2" }}>
-          The smartest student<br/>
-          in the room is <em style={{ color:"#F5C842", fontStyle:"italic" }}>you.</em>
+        {/* Headline */}
+        <h1 className="fade-up lp-hero-title" style={{ animationDelay:"0.08s", fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,6vw,80px)", fontWeight:900, lineHeight:1.05, letterSpacing:-2, marginBottom:24, maxWidth:820, color:"#F7F6F2" }}>
+          Everything you need to<br/>ace any class —<br/><em style={{ color:"#F5C842", fontStyle:"italic" }}>in one place.</em>
         </h1>
 
-        <p className="lp-fade" style={{ animationDelay:"0.18s", fontSize:"clamp(16px,2vw,19px)", fontWeight:300, color:"rgba(247,246,242,0.5)", lineHeight:1.8, maxWidth:580, marginBottom:40 }}>
-          Ace It is your all-in-one AI study platform. Upload notes, record lectures, build flashcards, map concepts, and get an AI tutor that actually understands your coursework.
+        {/* Subheadline */}
+        <p className="fade-up lp-hero-sub" style={{ animationDelay:"0.15s", fontSize:"clamp(16px,2vw,20px)", fontWeight:300, color:"rgba(247,246,242,0.55)", lineHeight:1.8, maxWidth:560, marginBottom:48 }}>
+          Stop juggling five different apps, expensive tutors, and scattered notes. Ace It Galaxy puts AI flashcards, mind maps, a personal assistant, live study rooms, and more — all in one free platform built for students.
         </p>
 
-        {/* Social proof */}
-        <div className="lp-fade" style={{ animationDelay:"0.22s", display:"inline-flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:30, padding:"8px 20px", marginBottom:32 }}>
-          <div style={{ display:"flex" }}>
-            {["#C8B8FF","#F0D080","#F0A8C0","#6ED9B8","#90C8F8"].map((c, i) => (
-              <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:`linear-gradient(135deg, ${c}88, ${c})`, border:"2px solid #06040E", marginLeft: i===0?0:-8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#1A1814", zIndex:5-i }}>
-                {["S","M","J","A","R"][i]}
+        {/* CTAs */}
+        <div className="fade-up lp-cta-row" style={{ animationDelay:"0.2s", display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:48 }}>
+          <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:12, padding:"16px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.4)", fontFamily:"'Montserrat',sans-serif" }}>
+            Get started free →
+          </button>
+          <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"16px 36px", fontSize:16, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)", transition:"all 0.2s" }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}>
+            Explore the platform
+          </button>
+        </div>
+
+        {/* Trust line */}
+        <div className="fade-up" style={{ animationDelay:"0.25s", fontSize:13, color:"rgba(255,255,255,0.5)", display:"flex", gap:24, justifyContent:"center", flexWrap:"wrap" }}>
+          {["No credit card required","Free to use","10 tools included"].map(t => (
+            <span key={t} style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ color:"#6ED9B8" }}>✓</span> {t}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* ── THE PROBLEM ── */}
+      <section style={{ padding:"80px 40px", borderTop:"1px solid rgba(255,255,255,0.05)", background:"rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth:960, margin:"0 auto" }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,3.5vw,42px)", fontWeight:900, textAlign:"center", marginBottom:48, color:"#F7F6F2" }}>
+            Sound familiar?
+          </h2>
+          <div className="lp-pain-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+            {[
+              { icon:"😩", title:"Scattered everywhere", desc:"Your notes are in one app, flashcards in another, your planner somewhere else, and your tutor costs $80/hr." },
+              { icon:"⏱", title:"Running out of time", desc:"You spend more time organizing your study tools than actually studying. There has to be a better way." },
+              { icon:"💸", title:"Paying for everything", desc:"Quizlet charges. Chegg charges. Tutors charge. AI tools charge. It adds up fast — especially when you're a student." },
+            ].map(p => (
+              <div key={p.title} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:"28px 24px" }}>
+                <div style={{ fontSize:32, marginBottom:16 }}>{p.icon}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#F7F6F2", marginBottom:10 }}>{p.title}</div>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{p.desc}</p>
               </div>
             ))}
           </div>
-          <span style={{ fontSize:13, fontWeight:600, color:"rgba(247,246,242,0.65)" }}>Join students already studying smarter</span>
-          <span style={{ fontSize:13, color:"#F5C842" }}>🍎</span>
-        </div>
-
-        {/* CTAs */}
-        <div className="lp-fade" style={{ animationDelay:"0.28s", display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginBottom:52 }}>
-          <div className="lp-cta-row" style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent:"center" }}>
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.35, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"17px 40px", fontSize:17, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 36px rgba(245,200,66,0.45)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                🍎 Claim Free Access
-              </button>
-            </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"17px 36px", fontSize:16, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              See the Platform ✦
-            </button>
+          <div style={{ textAlign:"center", marginTop:40, fontSize:18, fontWeight:600, color:"rgba(255,255,255,0.7)" }}>
+            Ace It Galaxy solves all three. <span style={{ color:"#F5C842" }}>For free.</span>
           </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.08)", border:"1px solid rgba(232,93,63,0.2)", borderRadius:20, padding:"5px 16px" }}>
-            <span style={{ fontSize:13 }}>⏳</span>
-            <span style={{ fontSize:12, color:"#FF8A6A", fontWeight:600 }}>Free during launch — paid plans coming soon.</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            {["✓ No credit card","✓ Start in 30 seconds","✓ Cancel anytime"].map((t, i) => (
-              <span key={i} style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontWeight:500 }}>{t}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="lp-fade lp-stats" style={{ animationDelay:"0.35s", display:"flex", gap:0, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, overflow:"hidden" }}>
-          {[["15+","Learning Apps"],["AI","Powered"],["Free","To Start"],["∞","Curiosity"]].map(([value, label], i, arr) => (
-            <div key={label} style={{ padding:"20px 36px", textAlign:"center", borderRight: i < arr.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", marginBottom:4 }}>{value}</div>
-              <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.35)", letterSpacing:1.5, textTransform:"uppercase" }}>{label}</div>
-            </div>
-          ))}
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="howitworks" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1000, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:64 }}>
+      <section id="how" className="lp-section" style={{ padding:"100px 40px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:960, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:60 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>How It Works</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Study smarter in 3 steps.</h2>
-            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.75, maxWidth:480, margin:"0 auto" }}>No learning curve. Just better results from day one.</p>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, color:"#F7F6F2" }}>Up and studying in 3 steps.</h2>
           </div>
-          <div className="lp-how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
+          <div className="lp-steps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
             {[
-              { step:"01", icon:"📤", color:"#C8B8FF", glow:"#9B7FFF", title:"Upload Anything", desc:"Drop in your textbook pages, lecture slides, handwritten notes, a YouTube video, or any website. Ace It reads it all." },
-              { step:"02", icon:"🤖", color:"#F0D080", glow:"#D4A830", title:"AI Builds Your Notes", desc:"In seconds, AI generates comprehensive study notes — chapter overviews, key terms, learning objectives, summaries, and study tips." },
-              { step:"03", icon:"🎓", color:"#6ED9B8", glow:"#2BAE7E", title:"Study & Master It", desc:"Use flashcards, quizzes, brain maps, and your AI tutor to drill the material until it sticks. Chat with your notes anytime." },
+              { num:"01", color:"#C8B8FF", title:"Upload your material", desc:"Drop in your textbook pages, lecture notes, a syllabus, or anything you're studying. Ace It reads it all." },
+              { num:"02", color:"#F5C842", title:"AI builds your tools", desc:"In seconds, AI generates flashcards, study notes, a brain map, and a personalized study plan — automatically." },
+              { num:"03", color:"#6ED9B8", title:"Study and master it", desc:"Use every tool in the galaxy — quiz yourself, map concepts, chat with your AI tutor, and study live with friends." },
             ].map(s => (
-              <div key={s.step} className="lp-step-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:`radial-gradient(circle, ${s.glow}33 0%, ${s.color}11 70%)`, border:`1.5px solid ${s.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{s.icon}</div>
-                  <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2 }}>STEP {s.step}</span>
-                </div>
+              <div key={s.num} style={{ background:"rgba(255,255,255,0.02)", border:`1px solid ${s.color}22`, borderTop:`3px solid ${s.color}`, borderRadius:16, padding:"32px 28px" }}>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:800, color:`${s.color}88`, letterSpacing:2, marginBottom:16 }}>STEP {s.num}</div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{s.title}</div>
-                <p style={{ fontSize:14, color:"rgba(247,246,242,0.5)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
+                <p style={{ fontSize:14, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" className="lp-section" style={{ padding:"80px 48px", background:"rgba(255,255,255,0.01)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1000, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:56 }}>
+      {/* ── THE APPS ── */}
+      <section id="apps" className="lp-section" style={{ padding:"100px 40px", borderTop:"1px solid rgba(255,255,255,0.05)", background:"rgba(255,255,255,0.01)" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:60 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Features</span>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>10 Apps Included</span>
             </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Everything a serious student needs.</h2>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Your entire study toolkit.</h2>
+            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.6)", maxWidth:480, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own. Every app works better together.</p>
           </div>
-          <div className="lp-feat-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14 }}>
-            {[
-              { icon:"🎙", title:"Record & Transcribe", desc:"Record any lecture. AI transcribes every word and turns it into structured notes instantly." },
-              { icon:"📇", title:"AI Flashcards", desc:"Paste any content and AI generates a full flashcard deck. Study with 9 modes including spaced repetition." },
-              { icon:"🧠", title:"Brain Mapping", desc:"Build visual mind maps and attach flashcard decks directly to any topic node." },
-              { icon:"💬", title:"Chat with Notes", desc:"Ask your notes anything. Your AI tutor answers based on your specific course content." },
-              { icon:"📺", title:"YouTube to Notes", desc:"Paste any YouTube lecture URL and get comprehensive study notes in seconds." },
-              { icon:"🎯", title:"Exam Prep", desc:"AI identifies what you're most likely to be tested on and creates quizzes from your notes." },
-              { icon:"🔤", title:"Text Simplifier", desc:"Paste any complex passage and get it simplified to your exact reading level." },
-              { icon:"📊", title:"Progress Tracking", desc:"Track your mastery across all decks and subjects. Know exactly what needs more work." },
-            ].map(f => (
-              <div key={f.title} style={{ background:"rgba(255,255,255,0.025)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, padding:"22px 20px" }}>
-                <div style={{ fontSize:28, marginBottom:12 }}>{f.icon}</div>
-                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2", marginBottom:8 }}>{f.title}</div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ALL APPS ── */}
-      <section id="apps" className="lp-section" style={{ padding:"100px 48px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:64 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>15 Apps</span>
-            </div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(30px,4vw,50px)", fontWeight:900, letterSpacing:-1, marginBottom:14 }}>Your entire learning universe.</h2>
-            <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", maxWidth:500, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own — and works better together.</p>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
-            {LANDING_APPS.map((app) => (
-              <div key={app.name} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
+          <div className="lp-apps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
+            {APPS.map(app => (
+              <div key={app.appId} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-                  <div style={{ width:38, height:38, borderRadius:"50%", background:`radial-gradient(circle, ${app.glow}44 0%, ${app.color}22 70%)`, border:`1.5px solid ${app.color}44`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <span style={{ fontSize:17, color:app.color }}>{app.icon}</span>
+                  <div style={{ width:36, height:36, borderRadius:9, background:`${app.color}18`, border:`1px solid ${app.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <Icon appId={app.appId} color={app.color} size={18} />
                   </div>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#F7F6F2" }}>{app.name}</div>
+                  <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2", margin:0 }}>{app.name}</h3>
                 </div>
-                <p style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.7, margin:0 }}>{app.desc}</p>
+                <p style={{ fontSize:13, color:"rgba(247,246,242,0.62)", lineHeight:1.75, margin:0 }}>{app.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── QUIZ ── */}
-      <section style={{ padding:"100px 48px", background:"rgba(255,255,255,0.015)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth:720, margin:"0 auto", textAlign:"center" }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Find Your Path</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,42px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>What kind of learner are you?</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7, marginBottom:44 }}>Answer one question and we'll show you exactly which apps are built for you.</p>
-
-          {quizStep === 0 && (
-            <button onClick={() => setQuizStep(1)} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"16px 36px", fontSize:16, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-              Take the 10-Second Quiz →
-            </button>
-          )}
-
-          {quizStep === 1 && (
-            <div className="lp-quiz-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, textAlign:"left" }}>
-              {QUIZ_OPTIONS.map(opt => (
-                <div key={opt.id} onClick={() => { setQuizAnswer(opt.id); setQuizStep(2); }}
-                  style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"22px 22px", cursor:"pointer", transition:"all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(245,200,66,0.5)"; e.currentTarget.style.background="rgba(245,200,66,0.06)"; e.currentTarget.style.transform="translateY(-3px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.08)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.transform="none"; }}>
-                  <div style={{ fontSize:32, marginBottom:10 }}>{opt.emoji}</div>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#F7F6F2", marginBottom:6 }}>{opt.label}</div>
-                  <div style={{ fontSize:13, color:"rgba(247,246,242,0.45)", lineHeight:1.5 }}>{opt.sub}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {quizStep === 2 && quizAnswer && (() => {
-            const result = QUIZ_RESULTS[quizAnswer];
-            const option = QUIZ_OPTIONS.find(o => o.id === quizAnswer);
-            return (
-              <div style={{ background:"rgba(255,255,255,0.04)", border:"1.5px solid rgba(245,200,66,0.25)", borderRadius:18, padding:"36px 36px", textAlign:"left", position:"relative", overflow:"hidden" }}>
-                <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg, transparent, #F5C842, transparent)" }} />
-                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"4px 14px", marginBottom:16 }}>
-                  <span>{option.emoji}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase" }}>{option.label}</span>
-                </div>
-                <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#F7F6F2", marginBottom:12, lineHeight:1.3 }}>{result.headline}</h3>
-                <p style={{ fontSize:15, color:"rgba(247,246,242,0.55)", lineHeight:1.75, marginBottom:24 }}>{result.desc}</p>
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:28 }}>
-                  {result.apps.map(app => (
-                    <span key={app} style={{ background:"rgba(245,200,66,0.1)", border:"1px solid rgba(245,200,66,0.25)", borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:"#F5C842" }}>🍎 {app}</span>
-                  ))}
-                </div>
-                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-                  <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:9, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 20px rgba(245,200,66,0.35)" }}>
-                    Get Started Free →
-                  </button>
-                  <button onClick={() => { setQuizStep(1); setQuizAnswer(null); }} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", borderRadius:9, padding:"13px 22px", fontSize:13, cursor:"pointer", color:"rgba(255,255,255,0.5)", transition:"all 0.15s" }}
-                    onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.5)";e.currentTarget.style.borderColor="rgba(255,255,255,0.12)";}}>
-                    ← Try Again
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </section>
-
-      {/* ── COMPARISON TABLE ── */}
-      <section id="compare" className="lp-section" style={{ padding:"100px 48px", maxWidth:900, margin:"0 auto" }}>
-        <div style={{ textAlign:"center", marginBottom:56 }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(110,217,184,0.08)", border:"1px solid rgba(110,217,184,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-            <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6ED9B8" }}>Why Switch</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(26px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:12 }}>Ace It vs everything else.</h2>
-          <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.7 }}>You don't need five apps. You need one.</p>
-        </div>
-        <div className="lp-compare" style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"separate", borderSpacing:0, fontSize:14 }}>
-            <thead>
-              <tr>
-                <th style={{ padding:"14px 20px", textAlign:"left", color:"rgba(255,255,255,0.4)", fontWeight:600, fontSize:12, letterSpacing:1, textTransform:"uppercase", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>Feature</th>
-                {[{ name:"Ace It 🍎", highlight:true },{ name:"Quizlet", highlight:false },{ name:"Anki", highlight:false },{ name:"ChatGPT", highlight:false }].map(col => (
-                  <th key={col.name} style={{ padding:"14px 20px", textAlign:"center", fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color: col.highlight ? "#F5C842" : "rgba(255,255,255,0.35)", borderBottom: col.highlight ? "2px solid #F5C84266" : "1px solid rgba(255,255,255,0.07)", background: col.highlight ? "rgba(245,200,66,0.04)" : "transparent", minWidth:110 }}>
-                    {col.highlight && <div style={{ fontSize:10, fontWeight:700, color:"#F5C842", letterSpacing:1.5, textTransform:"uppercase", marginBottom:4 }}>★ Best</div>}
-                    {col.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["AI note generation from uploads", "🍎","✕","✕","~"],
-                ["Lecture recording + transcription","🍎","✕","✕","✕"],
-                ["Chat with your notes",            "🍎","✕","✕","✓"],
-                ["AI flashcard generation",          "🍎","✓","✕","✓"],
-                ["Brain mapping",                   "🍎","✕","✕","✕"],
-                ["Spaced repetition",               "🍎","✓","✓","✕"],
-                ["YouTube to notes",                "🍎","✕","✕","✓"],
-                ["Mental health tools",             "🍎","✕","✕","✕"],
-                ["Career planning",                 "🍎","✕","✕","✕"],
-                ["Free to start",                   "🍎","~","✓","~"],
-              ].map(([feature, tp, quizlet, anki, gpt], i) => (
-                <tr key={feature} style={{ background: i%2===0 ? "rgba(255,255,255,0.01)" : "transparent" }}>
-                  <td style={{ padding:"13px 20px", color:"rgba(247,246,242,0.6)", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>{feature}</td>
-                  {[tp, quizlet, anki, gpt].map((val, ci) => (
-                    <td key={ci} style={{ padding:"13px 20px", textAlign:"center", borderBottom:"1px solid rgba(255,255,255,0.04)", background: ci===0 ? "rgba(245,200,66,0.03)" : "transparent", fontSize:16 }}>
-                      {val === "🍎" ? <span style={{ fontSize:18 }}>🍎</span>
-                       : val === "✓" ? <span style={{ color:"#2BAE7E", fontSize:18 }}>✓</span>
-                       : val === "~" ? <span style={{ color:"rgba(255,255,255,0.25)", fontSize:12 }}>Partial</span>
-                       : <span style={{ color:"rgba(255,255,255,0.15)", fontSize:18 }}>✕</span>}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ textAlign:"center", marginTop:36 }}>
-          <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:10, padding:"14px 34px", fontSize:15, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 6px 28px rgba(245,200,66,0.35)" }}>
-            Switch to Ace It — Free While It Lasts →
-          </button>
         </div>
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section style={{ padding:"100px 48px", textAlign:"center", position:"relative", overflow:"hidden", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.07) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
-        <div style={{ position:"relative", maxWidth:680, margin:"0 auto" }}>
-          <div style={{ fontSize:64, marginBottom:16, animation:"lp-float 4s ease-in-out infinite" }}>🍎</div>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,93,63,0.1)", border:"1px solid rgba(232,93,63,0.3)", borderRadius:20, padding:"6px 18px", marginBottom:24 }}>
-            <span style={{ fontSize:13 }}>⏳</span>
-            <span style={{ fontSize:12, fontWeight:700, color:"#FF8A6A", letterSpacing:1, textTransform:"uppercase" }}>Free During Launch — Paid Plans Coming Soon</span>
-          </div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(34px,5vw,62px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20 }}>
-            The future of learning is yours.
+      <section style={{ padding:"100px 40px", textAlign:"center", borderTop:"1px solid rgba(255,255,255,0.05)", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", maxWidth:640, margin:"0 auto" }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,5vw,60px)", fontWeight:900, letterSpacing:-1.5, lineHeight:1.1, marginBottom:20, color:"#F7F6F2" }}>
+            The future of learning<br/>is <em style={{ color:"#F5C842", fontStyle:"italic" }}>yours.</em>
           </h2>
-          <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:520, margin:"0 auto 44px" }}>
-            Ace It is completely free while we're in early launch. Founding members who sign up now will be taken care of when paid plans arrive. Don't miss your window.
+          <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:480, margin:"0 auto 44px" }}>
+            10 AI-powered study tools, completely free. No subscriptions, no paywalls, no excuses. Just you, your goals, and everything you need to reach them.
           </p>
-          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", inset:-4, borderRadius:14, background:"linear-gradient(135deg, #F5C842, #E8A82A)", opacity:0.3, animation:"lp-pulse 2.5s ease-in-out infinite", filter:"blur(10px)", zIndex:0 }} />
-              <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ position:"relative", zIndex:1, background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:12, padding:"18px 44px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.35)", fontFamily:"'Montserrat',sans-serif", letterSpacing:0.5 }}>
-                🍎 Claim My Free Account →
-              </button>
-            </div>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, padding:"18px 40px", fontSize:17, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.75)", transition:"all 0.2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.4)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.75)";}}>
-              See the Platform
+          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:20 }}>
+            <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:12, padding:"18px 48px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.4)", fontFamily:"'Montserrat',sans-serif" }}>
+              Get started free →
             </button>
           </div>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>No credit card required · Cancel anytime</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.45)" }}>No credit card required · Free to use · Start in 30 seconds</div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"32px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #F5D96A, #E8A82A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🍎</div>
-          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:0.5 }}>Ace It</span>
-        </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>© 2026 Ace It · All learning, one platform.</div>
+      <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"28px 40px 96px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+        <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
         <div style={{ display:"flex", gap:20 }}>
           {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
-            <span key={l} style={{ fontSize:12, color:"rgba(255,255,255,0.25)", cursor:"pointer", transition:"color 0.15s" }}
-              onClick={()=>{ if(key==="contact") window.location.href="mailto:hello@aceitgalaxy.com"; else { onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); } }}
-              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
-              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>{l}</span>
+            <a key={l} href={key==="contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize:12, color:"rgba(255,255,255,0.55)", cursor:"pointer", transition:"color 0.15s", textDecoration:"none" }}
+              onClick={(e) => { if(key==="contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); }}
+              onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.85)"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}>{l}</a>
           ))}
         </div>
       </footer>
 
-      {/* ── STICKY CTA BAR ── */}
+      {/* ── STICKY CTA ── */}
       {showSticky && (
-        <div className="lp-sticky" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(232,93,63,0.25)", padding:"14px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"lp-fade 0.3s ease both" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontSize:20 }}>🍎</span>
-            <div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Free while we launch — paid plans coming soon.</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>Sign up now and lock in free access before pricing goes live.</div>
-            </div>
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(245,200,66,0.15)", padding:"14px 40px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"fade-up 0.3s ease both" }}>
+          <div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Ready to study smarter?</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>10 AI tools, completely free. No credit card needed.</div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
-            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.18s" }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.6)";}}>
-              See Platform
+            <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.15s" }}
+              onMouseEnter={e=>{e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor="rgba(255,255,255,0.35)";}}
+              onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";}}>
+              Explore first
             </button>
-            <button onClick={() => openAuth("signup")} className="lp-cta-btn" style={{ background:"linear-gradient(135deg, #F5C842, #E8A82A)", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 16px rgba(245,200,66,0.4)" }}>
-              🍎 Claim Free Access →
+            <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:800, cursor:"pointer", color:"#1A1814", fontFamily:"'Montserrat',sans-serif", boxShadow:"0 4px 16px rgba(245,200,66,0.35)" }}>
+              Get started free →
             </button>
           </div>
         </div>
@@ -11212,545 +11626,6 @@ class AppErrorBoundary extends Component {
 }
 
 
-// ─── Study Buddy App ─────────────────────────────────────────────────────────
-function StudyBuddyApp({ onBack, user, openAuth }) {
-  const SB = '#FFA8D0';
-  const [view,         setView]         = useState('lobby');
-  const [rooms,        setRooms]        = useState([]);
-  const [searchQ,      setSearchQ]      = useState('');
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true, maxParticipants:6 });
-  const [showJoin,     setShowJoin]     = useState(false);
-  const [joinInput,    setJoinInput]    = useState('');
-  const [joining,      setJoining]      = useState(false);
-  const [activeRoom,   setActiveRoom]   = useState(null);
-  const [roomCode,     setRoomCode]     = useState('');
-  const [participants, setParticipants] = useState({});
-  const [messages,     setMessages]     = useState([]);
-  const [newMsg,       setNewMsg]       = useState('');
-  const [timerSecs,    setTimerSecs]    = useState(25*60);
-  const [timerOn,      setTimerOn]      = useState(false);
-  const [timerMode,    setTimerMode]    = useState('focus');
-  const [showChat,     setShowChat]     = useState(true);
-  const [localStream,  setLocalStream]  = useState(null);
-  const [remoteStreams,setRemoteStreams] = useState({});
-  const [videoOn,      setVideoOn]      = useState(true);
-  const [audioOn,      setAudioOn]      = useState(true);
-  const [mediaError,   setMediaError]   = useState(null);
-  const [studyView,    setStudyView]    = useState('video');
-  const [docPages,     setDocPages]     = useState([]);
-  const [docPage,      setDocPage]      = useState(0);
-  const [docName,      setDocName]      = useState('');
-  const [docUploading, setDocUploading] = useState(false);
-  const [sharedDocs,   setSharedDocs]   = useState({}); // {uid: {url,name,isPDF,uploaderName}}
-  const [activeDocUid, setActiveDocUid] = useState(null); // whose doc is being viewed
-  const [viewingPages, setViewingPages] = useState([]); // rendered pages of active doc
-  const [errMsg,       setErrMsg]       = useState('');
-  const [roomLocked,   setRoomLocked]   = useState(false);
-  const [pinnedMsg,    setPinnedMsg]    = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
-
-  const localVidRef    = useRef(null);
-  const remoteVidRefs  = useRef({});
-  const peerConns      = useRef({});
-  const localStreamRef = useRef(null);
-  const participantsRef  = useRef({});
-  const activeRoomRef  = useRef(null);
-  const unsubRooms     = useRef(null);
-  const unsubRoom      = useRef(null);
-  const unsubMsgs      = useRef(null);
-  const unsubSigs      = useRef(null);
-  const timerRef       = useRef(null);
-  const msgEndRef      = useRef(null);
-  const processedSigs    = useRef(new Set());
-  const iceCandidateQueue = useRef({});
-  const joinedAt          = useRef(0);
-  const healthRef         = useRef(null);
-
-  const ICE_CONFIG = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
-    ]
-  };
-
-  useEffect(()=>{
-    try{
-      const q=query(collection(db,'studyRooms'),orderBy('createdAt','desc'),limit(50));
-      unsubRooms.current=onSnapshot(q,async snap=>{
-        const now=Date.now(), fresh=[], stale=[];
-        snap.docs.forEach(d=>{
-          const data=d.data(), parts=Object.keys(data.participants||{}).length;
-          const created=data.createdAt?.toDate?.()||new Date();
-          if(parts===0&&(now-created.getTime())>2*60*60*1000) stale.push(d.id);
-          else fresh.push({id:d.id,...data});
-        });
-        setRooms(fresh);
-        stale.forEach(async id=>{try{await deleteDoc(doc(db,'studyRooms',id));}catch{}});
-      },()=>{});
-    }catch{}
-    return()=>{unsubRooms.current?.();};
-  },[]);
-
-  useEffect(()=>{msgEndRef.current?.scrollIntoView({behavior:'smooth'});},[messages]);
-  useEffect(()=>{if(localVidRef.current&&localStream)localVidRef.current.srcObject=localStream;},[localStream]);
-  useEffect(()=>{Object.entries(remoteStreams).forEach(([uid,stream])=>{const el=remoteVidRefs.current[uid];if(el&&el.srcObject!==stream){el.srcObject=stream;el.play().catch(()=>{});}});},[remoteStreams]);
-  useEffect(()=>{
-    if(timerOn){timerRef.current=setInterval(()=>{setTimerSecs(s=>{if(s<=1){clearInterval(timerRef.current);setTimerOn(false);const next=timerMode==='focus'?'break':'focus';setTimerMode(next);return next==='focus'?25*60:5*60;}return s-1;});},1000);}
-    else clearInterval(timerRef.current);
-    return()=>clearInterval(timerRef.current);
-  },[timerOn,timerMode]);
-  useEffect(()=>()=>{doLeave(true);unsubRooms.current?.();},[]);
-
-  const makePC = (roomId, targetUid) => {
-    const old = peerConns.current[targetUid];
-    if (old) { try { old.close(); } catch {} }
-    const pc = new RTCPeerConnection(ICE_CONFIG);
-    peerConns.current[targetUid] = pc;
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => { try { pc.addTrack(t, localStreamRef.current); } catch {} });
-    }
-    const remoteStream = new MediaStream();
-    pc.ontrack = e => {
-      const track = e.track;
-      remoteStream.getTracks().filter(t => t.kind === track.kind).forEach(t => remoteStream.removeTrack(t));
-      remoteStream.addTrack(track);
-      setRemoteStreams(prev => ({ ...prev, [targetUid]: remoteStream }));
-      track.onunmute = () => setRemoteStreams(prev => ({ ...prev, [targetUid]: remoteStream }));
-    };
-    pc.onicecandidate = async e => {
-      if (!e.candidate) return;
-      try { await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'ice-candidate',data:JSON.stringify(e.candidate),ts:serverTimestamp()}); } catch {}
-    };
-    pc.onconnectionstatechange = () => {
-      const s = pc.connectionState;
-      if (s === 'failed') {
-        pc.restartIce();
-        setTimeout(() => { if (peerConns.current[targetUid]===pc && pc.connectionState==='failed') connectToPeer(roomId,targetUid); }, 4000);
-      }
-      if (s === 'disconnected') {
-        setTimeout(() => { if (peerConns.current[targetUid]===pc && (pc.connectionState==='disconnected'||pc.connectionState==='failed')) connectToPeer(roomId,targetUid); }, 8000);
-      }
-      if (s === 'closed') {
-        setRemoteStreams(prev => { const n={...prev}; delete n[targetUid]; return n; });
-        if (peerConns.current[targetUid]===pc) delete peerConns.current[targetUid];
-      }
-    };
-    return pc;
-  };
-
-  const sendOffer = async (roomId, targetUid) => {
-    if (user.uid > targetUid) return;
-    const existing = peerConns.current[targetUid];
-    if (existing) {
-      const cs = existing.connectionState;
-      if (cs==='connected'||cs==='connecting') return;
-      try { existing.close(); } catch {}
-      delete peerConns.current[targetUid];
-    }
-    const pc = makePC(roomId, targetUid);
-    try {
-      const offer = await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
-      await pc.setLocalDescription(offer);
-      await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:targetUid,type:'offer',data:JSON.stringify(pc.localDescription),ts:serverTimestamp()});
-    } catch(e) { console.error('[WebRTC] sendOffer:',e.message); }
-  };
-
-  const connectToPeer = async (roomId, targetUid) => {
-    if (user.uid < targetUid) {
-      await sendOffer(roomId, targetUid);
-    } else {
-      const existing = peerConns.current[targetUid];
-      if (!existing || existing.connectionState==='failed' || existing.connectionState==='closed') {
-        makePC(roomId, targetUid);
-      }
-    }
-  };
-
-  const handleSignal = async (roomId, sig, sigId) => {
-    if (sigId && processedSigs.current.has(sigId)) return;
-    if (sigId) processedSigs.current.add(sigId);
-    const { from, type, data } = sig;
-    if (from === user.uid) return;
-    const sigTime = sig.ts?.toMillis?.() || (sig.ts?.seconds ? sig.ts.seconds*1000 : 0);
-    if (sigTime > 0 && sigTime < joinedAt.current - 5000) return;
-    let pc = peerConns.current[from];
-    if (!pc || pc.connectionState==='closed') pc = makePC(roomId, from);
-    try {
-      if (type==='offer') {
-        await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data)));
-        const queued = iceCandidateQueue.current[from]||[];
-        for (const cand of queued) { try { await pc.addIceCandidate(cand); } catch {} }
-        iceCandidateQueue.current[from] = [];
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await addDoc(collection(db,'studyRooms',roomId,'signals'),{from:user.uid,to:from,type:'answer',data:JSON.stringify(pc.localDescription),ts:serverTimestamp()});
-      } else if (type==='answer') {
-        if (pc.signalingState==='have-local-offer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data)));
-          const queued = iceCandidateQueue.current[from]||[];
-          for (const cand of queued) { try { await pc.addIceCandidate(cand); } catch {} }
-          iceCandidateQueue.current[from] = [];
-        }
-      } else if (type==='ice-candidate') {
-        const candidate = new RTCIceCandidate(JSON.parse(data));
-        if (pc.remoteDescription) { try { await pc.addIceCandidate(candidate); } catch {} }
-        else { if (!iceCandidateQueue.current[from]) iceCandidateQueue.current[from]=[]; iceCandidateQueue.current[from].push(candidate); }
-      }
-    } catch(e) { console.error('[WebRTC] handleSignal:',type,from.slice(-4),e.message); }
-  };
-
-  const startMedia = async () => {
-    setMediaError(null);
-    const attempts = [
-      {video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},
-      {video:true,audio:true},
-      {video:false,audio:true},
-    ];
-    for (let i=0; i<attempts.length; i++) {
-      try {
-        const s = await navigator.mediaDevices.getUserMedia(attempts[i]);
-        localStreamRef.current=s; setLocalStream(s);
-        if (i===2) setMediaError('Camera unavailable — audio only.');
-        return s;
-      } catch(e) {
-        if (i===attempts.length-1) setMediaError(e.name==='NotAllowedError' ? 'Camera & mic blocked. Tap 🔒 in address bar → Allow → rejoin.' : 'Could not access camera.');
-      }
-    }
-    return null;
-  };
-
-  const renderPDFFromUrl=async(url)=>{
-    try{
-      const res=await fetch(url);
-      const arrayBuffer=await res.arrayBuffer();
-      if(!window['pdfjs-dist/build/pdf']){
-        await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-      }
-      const lib=window['pdfjs-dist/build/pdf'];
-      lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      const pdf=await lib.getDocument({data:arrayBuffer}).promise;
-      const pages=[];
-      for(let p=1;p<=Math.min(pdf.numPages,30);p++){
-        const page=await pdf.getPage(p);
-        const viewport=page.getViewport({scale:1.5});
-        const canvas=document.createElement('canvas');
-        canvas.width=viewport.width;canvas.height=viewport.height;
-        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-        pages.push(canvas.toDataURL('image/jpeg',0.75));
-      }
-      setDocPages(pages);setDocPage(0);
-    }catch(e){console.error('PDF URL render error:',e);}
-  };
-
-  const renderPDFDoc=async(file)=>{
-    setDocUploading(true);
-    try{
-      const arrayBuffer=await file.arrayBuffer();
-      const pdfjsLib=window['pdfjs-dist/build/pdf'];
-      if(!pdfjsLib){
-        // Load PDF.js dynamically
-        await new Promise((res,rej)=>{
-          const s=document.createElement('script');
-          s.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
-          s.onload=res;s.onerror=rej;document.head.appendChild(s);
-        });
-        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      }
-      const lib=window['pdfjs-dist/build/pdf'];
-      lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      const pdf=await lib.getDocument({data:arrayBuffer}).promise;
-      const pages=[];
-      const maxPages=Math.min(pdf.numPages,30);
-      for(let p=1;p<=maxPages;p++){
-        const page=await pdf.getPage(p);
-        const viewport=page.getViewport({scale:1.5});
-        const canvas=document.createElement('canvas');
-        canvas.width=viewport.width;canvas.height=viewport.height;
-        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-        pages.push(canvas.toDataURL('image/jpeg',0.75));
-      }
-      setDocPages(pages);setDocPage(0);setDocName(file.name);setStudyView('doc');
-      // Also upload to storage and share URL + pages with room
-      await uploadStudyDoc(file);
-    }catch(e){console.error('PDF render error:',e);}
-    setDocUploading(false);
-  };
-
-  const uploadStudyDoc=async(file)=>{
-    if(!file||!activeRoom)return;
-    setDocUploading(true);
-    try{
-      const storageRef=ref(storage,`studyRooms/${activeRoom.id}/studyDoc_${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef,file);
-      const url=await getDownloadURL(storageRef);
-      const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
-      await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`studyDocs.${user.uid}`]:{url,name:file.name,isPDF,uploadedBy:user.uid,uploaderName:user.name||'Someone',uploadedAt:Date.now()}});
-      setSharedDocs(prev=>({...prev,[user.uid]:{url,name:file.name,isPDF,uploadedBy:user.uid,uploaderName:user.name||'Someone'}}));
-      setActiveDocUid(user.uid);
-      setDocPages(existing=>existing.length>1?existing:[url]);
-      setDocPage(0);setStudyView('doc');
-    }catch(e){console.error('Upload error:',e.message);}
-    setDocUploading(false);
-  };
-
-  const enterRoom=async(room)=>{
-    if(!user){openAuth('login');return;}
-    if(room.isLocked&&room.host!==user.uid){setErrMsg('This room is locked.');return;}
-    const currentCount=Object.keys(room.participants||{}).length;
-    if(room.maxParticipants&&currentCount>=room.maxParticipants&&room.host!==user.uid){setErrMsg(`This room is full (${currentCount}/${room.maxParticipants} people).`);return;}
-    setJoining(true);setErrMsg('');
-    try{
-      const up=updateDoc(doc(db,'studyRooms',room.id),{[`participants.${user.uid}`]:{name:user.name||'User',avatar:user.avatar||'?',uid:user.uid,joinedAt:new Date().toISOString()}});
-      await Promise.race([up,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out.')),8000))]);
-      setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);
-      joinedAt.current = Date.now();setView('room');setJoining(false);
-      healthRef.current=setInterval(()=>{
-        const rId=activeRoomRef.current?.id;
-        if(!rId)return;
-        Object.entries(peerConns.current).forEach(([uid,pc])=>{
-          const s=pc.connectionState;
-          if(s==='failed'||s==='closed'||s==='disconnected'){console.log('[health] reconnect',uid.slice(-4));connectToPeer(rId,uid);}
-        });
-        Object.keys(participantsRef.current||{}).forEach(uid=>{
-          if(uid!==user.uid&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed')){console.log('[health] missing peer',uid.slice(-4));connectToPeer(rId,uid);}
-        });
-      },6000);
-      await startMedia();
-      try{unsubRoom.current=onSnapshot(doc(db,'studyRooms',room.id),snap=>{if(!snap.exists()){doLeave(true);return;}const d=snap.data();const parts=d.participants||{};setParticipants(parts);participantsRef.current=parts;setRoomLocked(d.isLocked||false);if(d.timerOn!==undefined)setTimerOn(d.timerOn);if(d.timerSecs!==undefined)setTimerSecs(d.timerSecs);if(d.timerMode!==undefined)setTimerMode(d.timerMode);if(d.pinnedMsg!==undefined)setPinnedMsg(d.pinnedMsg||null);
-          if(d.studyDocs){
-            setSharedDocs(prev=>{
-              const incoming=d.studyDocs||{};
-              // Load pages for newly added docs
-              Object.entries(incoming).forEach(([uid,docInfo])=>{
-                if(!prev[uid]&&docInfo.url&&uid!==user.uid){
-                  // New doc from another user - auto-switch to it if no doc selected
-                  setActiveDocUid(aid=>aid||uid);
-                }
-              });
-              return incoming;
-            });
-          }Object.keys(parts).forEach(uid=>{if(uid!==user.uid&&localStreamRef.current&&(!peerConns.current[uid]||peerConns.current[uid].connectionState==='failed'||peerConns.current[uid].connectionState==='closed'))connectToPeer(room.id,uid);});},()=>{});}catch{}
-      try{const mq=query(collection(db,'studyRooms',room.id,'messages'),orderBy('ts','asc'));unsubMsgs.current=onSnapshot(mq,snap=>{setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});}catch{}
-      try{const sq=collection(db,'studyRooms',room.id,'signals');unsubSigs.current=onSnapshot(sq,snap=>{snap.docChanges().forEach(c=>{if(c.type==='added'){const sig=c.doc.data();if(sig.to===user.uid)handleSignal(room.id,sig,c.doc.id);}});},()=>{});}catch{}
-      try{const snap2=await getDoc(doc(db,'studyRooms',room.id));Object.keys(snap2.data()?.participants||{}).forEach(uid=>{if(uid!==user.uid)connectToPeer(room.id,uid);});}catch{}
-    }catch(e){setErrMsg(e.message||'Failed to join.');setJoining(false);}
-  };
-
-  const createRoom=async()=>{
-    if(!user){openAuth('login');return;}
-    if(!createForm.title.trim()||!createForm.subject.trim())return;
-    setJoining(true);setErrMsg('');
-    try{
-      const code=createForm.isPublic?'':Math.random().toString(36).substr(2,6).toUpperCase();
-      const addP=addDoc(collection(db,'studyRooms'),{title:createForm.title.trim(),subject:createForm.subject.trim(),host:user.uid,hostName:user.name,isPublic:createForm.isPublic,code,maxParticipants:Math.min(createForm.maxParticipants||6,6),isLocked:false,participants:{},createdAt:serverTimestamp(),timerOn:false,timerSecs:25*60,timerMode:'focus',pinnedMsg:null});
-      const ref=await Promise.race([addP,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firestore timed out.')),8000))]);
-      const room={id:ref.id,...createForm,code,host:user.uid,hostName:user.name,participants:{},isLocked:false};
-      setShowCreate(false);if(!createForm.isPublic)setRoomCode(code);setCreateForm({title:'',subject:'',isPublic:true,maxParticipants:6});
-      await enterRoom(room);
-    }catch(e){setErrMsg(e.message||'Failed to create room.');setJoining(false);}
-  };
-
-  const joinByCode=async()=>{
-    if(!user){openAuth('login');return;}if(joinInput.length<6)return;setErrMsg('');
-    try{const q=query(collection(db,'studyRooms'),where('code','==',joinInput.trim().toUpperCase()));const snap=await getDocs(q);if(snap.empty){setErrMsg('Room not found.');return;}setShowJoin(false);setJoinInput('');await enterRoom({id:snap.docs[0].id,...snap.docs[0].data()});}
-    catch{setErrMsg('Could not find that room.');}
-  };
-
-  const doLeave=async(silent=false)=>{
-    localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
-    Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
-    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
-    if(!silent&&activeRoomRef.current&&user){try{await updateDoc(doc(db,'studyRooms',activeRoomRef.current.id),{[`participants.${user.uid}`]:deleteField()});const snap=await getDoc(doc(db,'studyRooms',activeRoomRef.current.id));if(snap.exists()&&Object.keys(snap.data()?.participants||{}).length===0)await deleteDoc(doc(db,'studyRooms',activeRoomRef.current.id));}catch{}}
-    setActiveRoom(null);activeRoomRef.current=null;setMessages([]);setParticipants({});setTimerSecs(25*60);setTimerOn(false);setTimerMode('focus');setRoomCode('');setView('lobby');setPinnedMsg(null);setDocPages([]);setDocName('');setDocPage(0);setStudyView('video');setSharedDocs({});setActiveDocUid(null);setViewingPages([]);
-  };
-
-  const sendMsg=async()=>{if(!newMsg.trim()||!activeRoom)return;const t=newMsg.trim();setNewMsg('');try{await addDoc(collection(db,'studyRooms',activeRoom.id,'messages'),{text:t,userId:user.uid,userName:user.name,avatar:user.avatar,ts:serverTimestamp(),reactions:{}});}catch{}};
-  const syncTimer=async(u)=>{if(!activeRoom)return;try{await updateDoc(doc(db,'studyRooms',activeRoom.id),u);}catch{}};
-  const toggleVideo=()=>{const t=localStreamRef.current?.getVideoTracks()[0];if(t){t.enabled=!videoOn;setVideoOn(!videoOn);}};
-
-  // Load pages when active doc changes or when doc data arrives
-  useEffect(()=>{
-    if(!activeDocUid||!sharedDocs[activeDocUid])return;
-    const docInfo=sharedDocs[activeDocUid];
-    if(!docInfo.url)return;
-    // Only reload if pages are empty (avoid re-rendering on unrelated sharedDocs changes)
-    setDocPages(existing=>{
-      if(existing.length>0)return existing;
-      if(docInfo.isPDF){
-        setTimeout(()=>renderPDFFromUrl(docInfo.url),0);
-      } else {
-        setTimeout(()=>setDocPages([docInfo.url]),0);
-      }
-      return existing;
-    });
-  },[activeDocUid, sharedDocs]);
-
-  // Attach local stream to video element whenever stream changes
-  useEffect(()=>{
-    if(localVidRef.current && localStream){
-      localVidRef.current.srcObject=localStream;
-      localVidRef.current.play().catch(()=>{});
-    }
-  },[localStream]);
-  const toggleAudio=()=>{const t=localStreamRef.current?.getAudioTracks()[0];if(t){t.enabled=!audioOn;setAudioOn(!audioOn);}};
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
-  const partList=Object.values(participants);
-  const otherStreams=Object.entries(remoteStreams);
-  const isHost=activeRoom&&user&&activeRoom.host===user.uid;
-
-  if(view==='room'&&activeRoom) return(
-    <div style={{position:'fixed',inset:0,background:'#060412',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",color:'#F7F6F2'}}>
-      {roomCode&&isHost&&(<div style={{background:`${SB}18`,borderBottom:`1px solid ${SB}30`,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}><span style={{fontSize:12,color:SB,fontWeight:600}}>🔒 Room code: <strong style={{fontFamily:'monospace',letterSpacing:4,fontSize:14}}>{roomCode}</strong></span><button onClick={()=>setRoomCode('')} style={{background:'none',border:'none',cursor:'pointer',color:SB,fontSize:16}}>✕</button></div>)}
-      {pinnedMsg&&(<div style={{background:'rgba(245,200,66,0.1)',borderBottom:'1px solid rgba(245,200,66,0.2)',padding:'8px 16px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}><span>📌</span><span style={{fontSize:12,color:'rgba(245,200,66,0.9)',fontWeight:600}}>{pinnedMsg.userName}:</span><span style={{fontSize:12,color:'rgba(247,246,242,0.8)'}}>{pinnedMsg.text}</span></div>)}
-      <div style={{height:52,background:'rgba(6,4,18,0.98)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 12px',gap:8,flexShrink:0}}>
-        <button onClick={()=>doLeave()} style={{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:7,padding:'5px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.45)',flexShrink:0}}>← Leave</button>
-        <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:'#F7F6F2',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeRoom.title}</div><div style={{fontSize:10,color:SB,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>{activeRoom.subject} · {partList.length} studying{roomLocked?' · 🔒':''}</div></div>
-        <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'5px 10px',flexShrink:0}}>
-          <div style={{fontSize:9,fontWeight:700,color:timerMode==='focus'?SB:'#6ED9B8',letterSpacing:1,textTransform:'uppercase'}}>{timerMode==='focus'?'Focus':'Break'}</div>
-          <div style={{fontFamily:'monospace',fontSize:16,fontWeight:800,color:timerOn?'#F7F6F2':'rgba(255,255,255,0.35)',minWidth:46}}>{fmt(timerSecs)}</div>
-          <button onClick={()=>{const n=!timerOn;setTimerOn(n);syncTimer({timerOn:n,timerSecs,timerMode});}} style={{background:timerOn?'rgba(232,93,63,0.15)':'rgba(255,165,128,0.15)',border:`1px solid ${timerOn?'rgba(232,93,63,0.4)':'rgba(255,165,128,0.4)'}`,borderRadius:5,padding:'2px 8px',fontSize:10,fontWeight:700,cursor:'pointer',color:timerOn?'#E85D3F':'#FFA880'}}>{timerOn?'Pause':'Start'}</button>
-          <button onClick={()=>{setTimerOn(false);const s=timerMode==='focus'?25*60:5*60;setTimerSecs(s);syncTimer({timerOn:false,timerSecs:s,timerMode});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'rgba(255,255,255,0.2)'}}>↺</button>
-        </div>
-        <button onClick={()=>setShowChat(c=>!c)} style={{background:showChat?`${SB}18`:'rgba(255,255,255,0.05)',border:`1px solid ${showChat?SB+'50':'rgba(255,255,255,0.09)'}`,borderRadius:7,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',color:showChat?SB:'rgba(255,255,255,0.4)'}}>💬</button>
-        <div style={{display:'flex',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:7,padding:2,gap:2,flexShrink:0}}>
-          <button onClick={()=>setStudyView('video')} style={{background:studyView==='video'?SB:'transparent',border:'none',borderRadius:5,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:studyView==='video'?'#1A1814':'rgba(255,255,255,0.4)',transition:'all 0.15s'}}>📹 Video</button>
-          <button onClick={()=>setStudyView('doc')} style={{background:studyView==='doc'?SB:'transparent',border:'none',borderRadius:5,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',color:studyView==='doc'?'#1A1814':'rgba(255,255,255,0.4)',transition:'all 0.15s'}}>📄 Doc</button>
-        </div>
-      </div>
-      <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
-        {studyView==='doc'&&(
-          <div style={{flex:1,background:'#0D0B1A',display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
-            {/* Tabs bar */}
-            <div style={{background:'rgba(255,255,255,0.03)',borderBottom:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',padding:'0 8px',gap:4,flexShrink:0,overflowX:'auto',minHeight:44}}>
-              {Object.entries(sharedDocs).map(([uid,docInfo])=>(
-                <div key={uid} onClick={()=>{setActiveDocUid(uid);setDocPage(0);setDocPages([]);}}
-                  style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:7,cursor:'pointer',background:activeDocUid===uid?SB+'25':'transparent',border:`1px solid ${activeDocUid===uid?SB+'60':'transparent'}`,flexShrink:0,maxWidth:180,transition:'all 0.15s'}}>
-                  <div style={{width:20,height:20,borderRadius:'50%',background:SB+'40',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:SB,flexShrink:0}}>{docInfo.uploaderName?.[0]||'?'}</div>
-                  <span style={{fontSize:11,fontWeight:600,color:activeDocUid===uid?SB:'rgba(255,255,255,0.5)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{docInfo.name}</span>
-                  {uid===user.uid&&<button onClick={async e=>{e.stopPropagation();try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`studyDocs.${user.uid}`]:deleteField()});setSharedDocs(prev=>{const n={...prev};delete n[user.uid];return n;});if(activeDocUid===user.uid){setActiveDocUid(null);setDocPages([]);}}catch(err){console.error(err);}}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:12,padding:'0 2px',flexShrink:0,lineHeight:1}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'}>✕</button>}
-                </div>
-              ))}
-              <label style={{background:SB,border:'none',borderRadius:7,padding:'5px 12px',fontSize:11,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1,display:'flex',alignItems:'center',gap:5,flexShrink:0,marginLeft:'auto'}}>
-                {docUploading?'Uploading…':'📎 Upload'}
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,image/*,application/pdf" style={{display:'none'}} disabled={docUploading} onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){await renderPDFDoc(f);}else{await uploadStudyDoc(f);}}e.target.value='';}}/>
-              </label>
-              {(()=>{const activeDoc=sharedDocs[activeDocUid];if(!activeDoc||!docPages.length)return null;return(<div style={{display:'flex',alignItems:'center',gap:6,padding:'0 8px',flexShrink:0}}>
-                <button onClick={()=>setDocPage(p=>Math.max(0,p-1))} disabled={docPage===0} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===0?0.3:1}}>‹</button>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>{docPage+1}/{docPages.length}</span>
-                <button onClick={()=>setDocPage(p=>Math.min(docPages.length-1,p+1))} disabled={docPage===docPages.length-1} style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.6)',opacity:docPage===docPages.length-1?0.3:1}}>›</button>
-              </div>);})()}
-            </div>
-            {/* Doc content */}
-            <div style={{flex:1,overflow:'auto',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:16}}>
-              {docPages.length>0
-                ?<img src={docPages[docPage]} alt={`Page ${docPage+1}`} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',borderRadius:8,boxShadow:'0 4px 32px rgba(0,0,0,0.5)'}}/>
-                :<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16,color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{fontSize:52}}>📄</div>
-                  <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.4)'}}>No document yet</div>
-                  <p style={{fontSize:13,textAlign:'center',maxWidth:280,lineHeight:1.6}}>Upload a PDF or image to share with your study group.</p>
-                  <label style={{background:SB,border:'none',borderRadius:9,padding:'10px 24px',fontSize:13,fontWeight:700,cursor:docUploading?'default':'pointer',color:'#1A1814',opacity:docUploading?0.6:1}}>
-                    {docUploading?'Uploading…':'📎 Upload Document'}
-                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,image/*,application/pdf" style={{display:'none'}} disabled={docUploading} onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){await renderPDFDoc(f);}else{await uploadStudyDoc(f);}}e.target.value='';}}/>
-                  </label>
-                </div>
-              }
-            </div>
-          </div>
-        )}
-        {studyView==='video'&&(
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#04020C',position:'relative',minHeight:0}}>
-          {(()=>{
-            const allParts=partList.filter(p=>p.uid!==user?.uid);
-            const total=1+allParts.length;
-            const cols=total===1?1:total===2?2:total<=4?2:3;
-            const rows=Math.ceil(total/cols);
-            const Tile=({children,border,label,sublabel,camOff,muted})=>(
-              <div style={{position:'relative',background:'#111020',borderRadius:10,overflow:'hidden',border:`2px solid ${border||'rgba(255,255,255,0.08)'}`,display:'flex',alignItems:'center',justifyContent:'center',minHeight:0,minWidth:0}}>
-                {children}
-                {camOff&&<div style={{position:'absolute',inset:0,background:'#0D0B1E',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.5)',fontWeight:800}}>{sublabel||'?'}</div></div>}
-                <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,0.75))',padding:'20px 10px 7px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <span style={{fontSize:11,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'70%'}}>{label}</span>
-                  <div style={{display:'flex',gap:3,flexShrink:0}}>
-                    {muted&&<span style={{background:'rgba(232,93,63,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>🔇</span>}
-                    {camOff&&<span style={{background:'rgba(60,60,80,0.9)',borderRadius:4,padding:'1px 5px',fontSize:9,fontWeight:700}}>CAM OFF</span>}
-                  </div>
-                </div>
-              </div>
-            );
-            return(
-              <div style={{flex:1,display:'grid',gap:5,padding:8,gridTemplateColumns:`repeat(${cols},1fr)`,gridTemplateRows:`repeat(${rows},1fr)`,overflow:'hidden',boxSizing:'border-box'}}>
-                <Tile border={`2px solid ${SB}70`} label={`${user?.name||'You'} (you)${false?' 🖥️':''}`} sublabel={user?.avatar||user?.name?.[0]} camOff={!videoOn} muted={!audioOn}>
-                  {localStream?<video ref={el=>{localVidRef.current=el;if(el&&localStream&&el.srcObject!==localStream){el.srcObject=localStream;el.play().catch(()=>{});}}} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,transform:'scaleX(-1)'}}/>:<div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:SB,fontWeight:800}}>{user?.avatar||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.5)',textAlign:'center',maxWidth:160,lineHeight:1.4}}>{mediaError||'Starting camera…'}</span>
-                        {mediaError&&<button onClick={async()=>{setMediaError(null);const s=await startMedia();if(s&&activeRoom)joinRoom(activeRoom);}} style={{marginTop:8,background:'#F5C842',border:'none',borderRadius:8,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>🔄 Retry Camera</button>}
-                      </div>}
-                </Tile>
-                {otherStreams.map(([uid,stream])=>{const p=participants[uid];const attachRef=(el)=>{if(el&&el.srcObject!==stream){remoteVidRefs.current[uid]=el;el.srcObject=stream;el.play().catch(()=>{});}};return(<Tile key={uid} label={`${p?.name||'User'}${p?.uid===activeRoom?.host?' 👑':''}`} sublabel={p?.avatar||p?.name?.[0]}><video ref={attachRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/></Tile>);})}
-                {allParts.filter(p=>!remoteStreams[p.uid]).map(p=>(<Tile key={p.uid||p.name} label={`${p.name||'User'}${p.uid===activeRoom?.host?' 👑':''}`} sublabel={p.avatar||p.name?.[0]} camOff><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><div style={{width:56,height:56,borderRadius:'50%',background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'rgba(255,255,255,0.4)',fontWeight:800}}>{p.avatar||p.name?.[0]||'?'}</div><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:SB,animation:'pulse 1.4s ease-in-out infinite'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>Connecting…</span></div><button onClick={()=>connectToPeer(activeRoom.id,p.uid)} style={{background:`rgba(255,165,208,0.12)`,border:`1px solid ${SB}40`,borderRadius:6,padding:'4px 12px',fontSize:10,fontWeight:700,cursor:'pointer',color:SB}}>↺ Reconnect</button></div></Tile>))}
-              </div>
-            );
-          })()}
-          {mediaError&&<div style={{padding:'8px 14px',background:'rgba(232,93,63,0.1)',borderTop:'1px solid rgba(232,93,63,0.2)',fontSize:11,color:'#E85D3F',display:'flex',gap:6,alignItems:'center',flexShrink:0}}><span>⚠️</span><span>{mediaError}</span></div>}
-          <div style={{height:56,background:'rgba(6,4,18,0.96)',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',gap:12,flexShrink:0}}>
-            <button onClick={toggleAudio} style={{width:42,height:42,borderRadius:'50%',background:audioOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${audioOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{audioOn?'🎙️':'🔇'}</button>
-            <button onClick={toggleVideo} style={{width:42,height:42,borderRadius:'50%',background:videoOn?'rgba(255,255,255,0.08)':'rgba(232,93,63,0.2)',border:`1px solid ${videoOn?'rgba(255,255,255,0.12)':'rgba(232,93,63,0.5)'}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{videoOn?'📹':'📷'}</button>
-            <button onClick={()=>doLeave()} style={{padding:'9px 24px',borderRadius:20,background:'rgba(232,93,63,0.15)',border:'1px solid rgba(232,93,63,0.4)',fontSize:13,fontWeight:700,cursor:'pointer',color:'#E85D3F'}}>Leave Room</button>
-          </div>
-        </div>
-        )}
-        {showChat&&(<div style={{width:290,borderLeft:'1px solid rgba(255,255,255,0.07)',display:'flex',flexDirection:'column',background:'rgba(5,3,14,0.99)',flexShrink:0}}>
-          <div style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-            <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:7}}>In this room ({partList.length})</div>
-            <div style={{display:'flex',flexDirection:'column',gap:4}}>
-              {partList.map(p=>(<div key={p.uid||p.name} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 6px',borderRadius:7}}><div style={{width:22,height:22,borderRadius:'50%',background:`${SB}35`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{p.avatar||p.name?.[0]||'?'}</div><span style={{fontSize:11,color:'rgba(255,255,255,0.7)',fontWeight:600}}>{p.name}{p.uid===user?.uid?' (you)':''}{p.uid===activeRoom.host?' 👑':''}</span>{isHost&&p.uid!==user?.uid&&(<button onClick={async()=>{try{await updateDoc(doc(db,'studyRooms',activeRoom.id),{[`participants.${p.uid}`]:deleteField()});}catch{}}} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'rgba(232,93,63,0.4)',fontSize:12,padding:'2px 4px'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='rgba(232,93,63,0.4)'}>✕</button>)}</div>))}
-            </div>
-          </div>
-          <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
-            {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0',color:'rgba(255,255,255,0.2)',fontSize:12}}>No messages yet — say hello! 👋</div>}
-            {messages.map(m=>(<div key={m.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}><div style={{width:26,height:26,borderRadius:'50%',background:`${SB}25`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:SB,flexShrink:0}}>{m.avatar||m.userName?.[0]||'?'}</div><div style={{flex:1,minWidth:0}}><div style={{fontSize:10,fontWeight:700,color:m.userId===user?.uid?SB:'rgba(255,255,255,0.45)',marginBottom:2}}>{m.userId===user?.uid?'You':m.userName}</div><div style={{fontSize:13,color:'rgba(247,246,242,0.82)',lineHeight:1.5,wordBreak:'break-word'}}>{m.text}</div></div></div>))}
-            <div ref={msgEndRef}/>
-          </div>
-          <div style={{padding:10,borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8}}>
-            <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}e.stopPropagation();}} placeholder="Say something…" style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/>
-            <button onClick={sendMsg} style={{background:SB,border:'none',borderRadius:8,width:36,cursor:'pointer',fontSize:16,color:'#1A1814',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
-          </div>
-        </div>)}
-      </div>
-    </div>
-  );
-
-  return(
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:'#060412',minHeight:'100vh',color:'#F7F6F2'}}>
-      <style>{`@keyframes sb-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}@media(max-width:768px){.sb-nav{padding:0 12px!important}.sb-lobby{padding:16px 12px!important}.sb-rooms{grid-template-columns:1fr!important}}`}</style>
-      <nav style={{position:'sticky',top:0,zIndex:100,height:56,background:'rgba(6,4,18,0.97)',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',padding:'0 20px',gap:12,backdropFilter:'blur(10px)'}}>
-        <button onClick={onBack} style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>← Galaxy</button>
-        <div style={{display:'flex',alignItems:'center',gap:9}}><div style={{width:30,height:30,borderRadius:8,background:SB,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>❋</div><span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#F7F6F2'}}><span style={{color:SB}}>Ace It</span> Study Buddy</span></div>
-        <div style={{marginLeft:'auto'}}>{user?<div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.6)'}}>{user.name}</div>:<button onClick={()=>openAuth('login')} style={{background:SB,border:'none',borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Log In to Study</button>}</div>
-      </nav>
-      <div style={{maxWidth:1000,margin:'0 auto',padding:'40px 24px 80px',animation:'sb-fade 0.4s ease both'}}>
-        <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:`${SB}15`,border:`1px solid ${SB}30`,borderRadius:20,padding:'5px 16px',fontSize:11,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:SB,marginBottom:20}}>❋ Virtual Study Rooms</div>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(32px,5vw,52px)',fontWeight:900,color:'#F7F6F2',lineHeight:1.1,marginBottom:14,letterSpacing:-1}}>Find your study crew</h1>
-          <p style={{fontSize:16,color:'rgba(247,246,242,0.4)',maxWidth:480,margin:'0 auto 32px',lineHeight:1.7}}>Join a room, turn on your camera, and study together — just like the library, but from anywhere.</p>
-          <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowCreate(true);}} style={{background:SB,border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>+ Create a Study Room</button>
-            <button onClick={()=>{if(!user){openAuth('login');return;}setShowJoin(true);}} style={{background:'transparent',border:`1px solid ${SB}50`,borderRadius:9,padding:'12px 22px',fontSize:14,fontWeight:500,cursor:'pointer',color:SB}}>🔒 Join Private Room</button>
-          </div>
-        </div>
-        {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
-        <div style={{position:'relative',marginBottom:28}}><span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.3,pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…" style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/></div>
-        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length,full=r.maxParticipants&&count>=r.maxParticipants;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${full?'rgba(232,93,63,0.5)':SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0}}>{r.isLocked&&<span title="Locked" style={{fontSize:11}}>🔒</span>}<div style={{display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'2px 7px'}}><span style={{width:5,height:5,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.45)'}}>{count}{r.maxParticipants?`/${r.maxParticipants}`:''}</span></div></div></div><div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'2px 9px',fontSize:10,fontWeight:700,color:SB,marginBottom:10}}>{r.subject}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginBottom:12}}>Host: {r.hostName||'Anonymous'}</div><button onClick={()=>enterRoom(r)} disabled={joining||full||r.isLocked} style={{width:'100%',padding:'8px',borderRadius:8,border:'none',background:full||r.isLocked?'rgba(255,255,255,0.06)':SB,fontSize:12,fontWeight:700,cursor:joining||full||r.isLocked?'default':'pointer',color:full||r.isLocked?'rgba(255,255,255,0.25)':'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':full?'Room Full':r.isLocked?'🔒 Locked':'Join Room →'}</button></div>);})}</div>)}
-      </div>
-      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>❋</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>{errMsg&&<div style={{background:'rgba(232,93,63,0.12)',border:'1px solid rgba(232,93,63,0.3)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'#E85D3F',marginBottom:16,wordBreak:'break-word'}}>{errMsg}</div>}<input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginBottom:24}}>{[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}</div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button></div></div></div>)}
-      {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>🔒</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>{errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}<input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/><div style={{display:'flex',gap:10}}><button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button></div></div></div>)}
-    </div>
-  );
-}
-
 // ─── Course Hub App ────────────────────────────────────────────────────────────
 function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const CH = '#6ED9B8';
@@ -11760,8 +11635,16 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [chMenuOpen, setChMenuOpen] = useState(false);
   const [active,     setActive]     = useState(null);
   const [showAddDoc, setShowAddDoc] = useState(false);
+  const [addContentType, setAddContentType] = useState(null); // 'text'|'file'|'link'|'audio'
   const [docName,    setDocName]    = useState('');
   const [docText,    setDocText]    = useState('');
+  const [linkUrl,    setLinkUrl]    = useState('');
+  const [linkTitle,  setLinkTitle]  = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob,   setAudioBlob]   = useState(null);
+  const [audioTranscribing, setAudioTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef   = useRef([]);
   const [fileUploading, setFileUploading] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [generating, setGenerating] = useState(null);
@@ -11782,9 +11665,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const [editCourseForm, setEditCourseForm] = useState({name:'',subject:'',color:''});
   const [expandedFolders, setExpandedFolders] = useState({});
   const [dragDocId,   setDragDocId]   = useState(null);
+  const [sendToMenu,  setSendToMenu]  = useState(null);
+  const [sendingTo,   setSendingTo]   = useState(null);
   const [assignDocId, setAssignDocId] = useState(null); // doc being assigned to folder
+  const [chConfirmDelete, setChConfirmDelete] = useState(false);
 
-  useEffect(()=>{localStorage.setItem('tp_courses',JSON.stringify(courses));tpSync('tp_courses',courses);},[courses]);
+  const chMounted = useRef(false);
+  useEffect(()=>{if(!chMounted.current){chMounted.current=true;return;}localStorage.setItem('tp_courses',JSON.stringify(courses));tpSync('tp_courses',courses);},[courses]);
 
   const updateCourse=(id,changes)=>{setCourses(cs=>cs.map(c=>c.id===id?{...c,...changes}:c));setActive(a=>a?.id===id?{...a,...changes}:a);};
   const coursesRef=useRef(courses);
@@ -11819,6 +11706,66 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   },[view,active]);
   const deleteCourse=(id)=>{setCourses(cs=>cs.filter(c=>c.id!==id));setView('home');setActive(null);};
 
+  // Recursive folder helpers
+  const getFolderPath=(folders,folderId)=>{
+    if(!folderId) return [];
+    const path=[];let current=folderId;const visited=new Set();
+    while(current&&!visited.has(current)){visited.add(current);const folder=folders.find(f=>f.id===current);if(!folder)break;path.unshift(folder);current=folder.parentId;}
+    return path;
+  };
+  const getDescendantFolderIds=(folders,folderId)=>{
+    const result=[];const queue=[folderId];
+    while(queue.length){const id=queue.shift();folders.filter(f=>f.parentId===id).forEach(f=>{result.push(f.id);queue.push(f.id);});}
+    return result;
+  };
+  const getDocCount=(folders,documents,folderId)=>{
+    const descendants=getDescendantFolderIds(folders,folderId);
+    const allIds=new Set([folderId,...descendants]);
+    return documents.filter(d=>allIds.has(d.folderId)).length;
+  };
+  const deleteFolderDeep=(courseId,folderId)=>{
+    const descendants=getDescendantFolderIds(active?.folders||[],folderId);
+    const toDelete=new Set([folderId,...descendants]);
+    const updatedDocs=(active?.documents||[]).map(d=>toDelete.has(d.folderId)?{...d,folderId:null}:d);
+    const updatedFolders=(active?.folders||[]).filter(f=>!toDelete.has(f.id));
+    updateCourse(courseId,{folders:updatedFolders,documents:updatedDocs});
+    // Clear expanded state for deleted folders so sidebar re-renders correctly
+    setExpandedFolders(ef=>{const next={...ef};toDelete.forEach(id=>delete next[id]);return next;});
+    if(toDelete.has(activeFolderId)) setActiveFolderId(null);
+  };
+  const sendToApp=async(appId,sourceType,sourceId)=>{
+    if(!user){openAuth('login');return;}
+    setSendingTo(appId);setSendToMenu(null);
+    try{
+      let docs=[];let sourceName='';
+      if(sourceType==='doc'){const doc=(active.documents||[]).find(d=>d.id===sourceId);if(!doc){setSendingTo(null);return;}docs=[doc];sourceName=doc.name;}
+      else{const descendants=getDescendantFolderIds(active.folders||[],sourceId);const allIds=new Set([sourceId,...descendants]);docs=(active.documents||[]).filter(d=>allIds.has(d.folderId));sourceName=(active.folders||[]).find(f=>f.id===sourceId)?.name||'Folder';}
+      const allText=docs.map(d=>'['+d.name+']\n'+(d.content||'')).join('\n\n').slice(0,12000);
+      if(!allText.trim()){setSendingTo(null);setGenResult({type:'error',msg:'No text content found.'});return;}
+      if(appId==='flashcards'){
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:'Create flashcards. Return ONLY JSON: {"cards":[{"term":"...","definition":"..."}]}\n\n'+allText}]})});
+        const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
+        const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+        if(parsed.cards?.length>0){const deck={id:'deck_'+Date.now(),title:sourceName,subject:active.subject||active.name,color:active.color,description:'From '+active.name,tags:[],courseId:active.id,cards:parsed.cards.map((card,i)=>({id:i+1,term:card.term,definition:card.definition,hint:'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()};const existing=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,deck]));tpSync('tp_fc_decks',[...existing,deck]);setGenResult({type:'send-cards',count:parsed.cards.length,app:'flashcards',name:sourceName});}
+      } else if(appId==='notes'){
+        const note={id:`note_${Date.now()}`,title:sourceName,content:allText,folder:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        const existing=JSON.parse(localStorage.getItem('tp_notes')||'[]');localStorage.setItem('tp_notes',JSON.stringify([...existing,note]));tpSync('tp_notes',[...existing,note]);
+        setGenResult({type:'send-notes',app:'notes',name:sourceName});
+      } else if(appId==='simplifier'){
+        localStorage.setItem('ch_pending_simplify',allText.slice(0,5000));launchApp('simplifier');return;
+      }
+    }catch(e){setGenResult({type:'error',msg:'Failed to send. Please try again.'});}
+    setSendingTo(null);
+  };
+
+  const renameFolder=(courseId,folderId,name)=>{
+    if(!name?.trim())return;
+    updateCourse(courseId,{folders:(active?.folders||[]).map(f=>f.id===folderId?{...f,name:name.trim()}:f)});
+  };
+  const renameDoc=(courseId,docId,name)=>{
+    if(!name?.trim())return;
+    updateCourse(courseId,{documents:(active?.documents||[]).map(d=>d.id===docId?{...d,name:name.trim()}:d)});
+  };
   const addFolder=(courseId,name,parentId=null)=>{
     if(!name.trim())return;
     const folder={id:`folder_${Date.now()}`,name:name.trim(),parentId,createdAt:new Date().toISOString()};
@@ -11841,11 +11788,62 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
   const createCourse=()=>{
     if(!createForm.name.trim())return;
     if(courses.some(c=>c.name.trim().toLowerCase()===createForm.name.trim().toLowerCase())){
-      alert(`A course named "${createForm.name.trim()}" already exists. Please use a different name.`);
+      setErrMsg(`A course named "${createForm.name.trim()}" already exists.`);
+      setTimeout(()=>setErrMsg(""),4000);
       return;
     }
     const c={id:`course_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,...createForm,name:createForm.name.trim(),documents:[],flashDeckIds:[],brainMapIds:[],createdAt:new Date().toISOString()};
     setCourses(cs=>[...cs,c]);setActive(c);setView('course');setShowCreate(false);setCreateForm({name:'',subject:'',color:CH,description:''});
+  };
+
+  const startRecording=async()=>{
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mr=new MediaRecorder(stream);
+      mediaRecorderRef.current=mr;
+      audioChunksRef.current=[];
+      mr.ondataavailable=e=>audioChunksRef.current.push(e.data);
+      mr.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        const blob=new Blob(audioChunksRef.current,{type:'audio/webm'});
+        setAudioBlob(blob);
+        setIsRecording(false);
+        // Transcribe using Web Speech API simulation — store as placeholder
+        setDocText('[Audio recorded — transcription coming soon. Save to add the audio note.]');
+        setDocName(docName||`Audio Note ${new Date().toLocaleTimeString()}`);
+      };
+      mr.start();
+      setIsRecording(true);
+    }catch(e){setErrMsg('Microphone access denied. Please allow microphone access and try again.');}
+  };
+  const stopRecording=()=>{mediaRecorderRef.current?.stop();};
+
+  const fetchLinkContent=async()=>{
+    if(!linkUrl.trim())return;
+    setFileUploading(true);
+    try{
+      const isYT=linkUrl.includes('youtube.com')||linkUrl.includes('youtu.be');
+      if(isYT){
+        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+            messages:[{role:'user',content:`This YouTube URL was added to a course: ${linkUrl}\nWrite a brief description of what this video likely covers based on the URL. Keep it to 2-3 sentences.`}]})});
+        const data=await res.json();
+        const desc=data.content?.find(b=>b.type==='text')?.text||'';
+        setDocText(`[YouTube Video]\nURL: ${linkUrl}\n\n${desc}`);
+        setDocName(linkTitle||'YouTube Video');
+      } else {
+        setDocText(`[Web Link]\nURL: ${linkUrl}\nTitle: ${linkTitle||linkUrl}`);
+        setDocName(linkTitle||linkUrl.replace(/https?:\/\//,'').split('/')[0]);
+      }
+      setFileUploaded(true);
+    }catch(e){setErrMsg('Could not fetch link. Saved as reference.');}
+    setFileUploading(false);
+  };
+
+  const resetAddModal=()=>{
+    setShowAddDoc(false);setAddContentType(null);setDocName('');setDocText('');
+    setLinkUrl('');setLinkTitle('');setFileUploading(false);setFileUploaded(false);
+    setAudioBlob(null);setIsRecording(false);setAudioTranscribing(false);
   };
 
   const addDocument=(overrideName=null,overrideContent=null)=>{
@@ -11941,7 +11939,15 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     if(!active?.documents?.length){setErrMsg('Add at least one document first.');return;}
     if(!user){openAuth('login');return;}
     setGenerating('cards');setGenResult(null);setErrMsg('');
-    const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
+    // Only use docs from current folder (and subfolders) if inside a folder
+    let docsToUse=active.documents||[];
+    if(activeFolderId){
+      const descendants=getDescendantFolderIds(active.folders||[],activeFolderId);
+      const folderIds=new Set([activeFolderId,...descendants]);
+      docsToUse=docsToUse.filter(d=>folderIds.has(d.folderId));
+    }
+    if(!docsToUse.length){setErrMsg('No documents in this folder. Add documents first.');setGenerating(null);return;}
+    const allText=docsToUse.map(d=>'['+d.name+']\n'+d.content).join('\n\n');
     const totalChars=allText.length;
     try{
       setGenProgress('📖 Reading your document and planning study structure…');
@@ -12058,6 +12064,50 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     setGenerating(null);
   };
 
+  // Recursive sidebar folder tree — uses expandedFolders state (no hooks needed)
+  const renderSidebarFolder=(folder,depth=0)=>{
+    const children=(active.folders||[]).filter(f=>f.parentId===folder.id);
+    const docCount=(active.documents||[]).filter(d=>d.folderId===folder.id).length;
+    const isActive=activeFolderId===folder.id;
+    const isOpen=expandedFolders[folder.id]!==false; // default open
+    return(
+      <div key={folder.id}>
+        <div style={{display:'flex',alignItems:'center',paddingLeft:depth*12}}>
+          {children.length>0
+            ?<button onClick={e=>{e.stopPropagation();setExpandedFolders(ef=>({...ef,[folder.id]:!isOpen}));}} style={{background:'none',border:'none',cursor:'pointer',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',color:'#A8A59E',fontSize:10,flexShrink:0}}>{isOpen?'▼':'▶'}</button>
+            :<div style={{width:18,flexShrink:0}}/>
+          }
+          <button onClick={()=>setActiveFolderId(folder.id)} style={{flex:1,display:'flex',alignItems:'center',gap:8,padding:'7px 8px',borderRadius:8,border:'none',background:isActive?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',minWidth:0}}>
+            <span style={{fontSize:13}}>{isOpen&&children.length>0?'📂':'📁'}</span>
+            <span style={{fontSize:12,fontWeight:isActive?700:500,color:isActive?active.color:'#3A3530',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{folder.name}</span>
+            {docCount>0&&<span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{docCount}</span>}
+          </button>
+        </div>
+        {isOpen&&children.length>0&&children.map(child=>renderSidebarFolder(child,depth+1))}
+      </div>
+    );
+  };
+
+  // Send To dropdown renderer
+  const renderSendToDropdown=(sourceType,sourceId)=>(
+    <div style={{position:'absolute',top:'100%',right:0,zIndex:200,background:'#fff',border:'1px solid #ECEAE4',borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,0.12)',padding:'6px',minWidth:180,marginTop:4}}>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',padding:'4px 10px 6px'}}>Send to...</div>
+      {[
+        {id:'flashcards',label:'Flash Cards',icon:'🃏',color:'#C8B8FF'},
+        {id:'notes',label:'Notes',icon:'📄',color:'#F0D080'},
+        {id:'simplifier',label:'Text Simplifier',icon:'🔍',color:'#6ED9B8'},
+      ].map(app=>(
+        <button key={app.id} onClick={()=>{sendToApp(app.id,sourceType,sourceId);setSendToMenu(null);}}
+          style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}
+          onMouseEnter={e=>e.currentTarget.style.background=app.color+'20'}
+          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+          <span style={{fontSize:16}}>{app.icon}</span>
+          <span style={{fontSize:13,fontWeight:500,color:'#1A1814'}}>{app.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if(view==='course'&&active) return(
     <div style={{fontFamily:"'DM Sans',sans-serif",background:'#F7F6F2',minHeight:'100vh',color:'#1A1814',display:'flex',flexDirection:'column'}}>
       <style>{`@keyframes ch-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.ch-folder-tile:hover{border-color:var(--ac)!important;background:var(--ac-light)!important;}.ch-doc-row:hover{background:#F7F6F2!important;}@media(max-width:768px){.ch-layout{flex-direction:column!important}.ch-sidebar{width:100%!important;border-right:none!important;border-bottom:1px solid #ECEAE4!important;max-height:200px!important}}`}</style>
@@ -12084,27 +12134,146 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         <span style={{fontSize:13,fontWeight:600,color:'#8C8880',cursor:'pointer',whiteSpace:'nowrap'}} onClick={()=>{setView('home');setActive(null);setActiveFolderId(null);}}>Course Hub</span>
         <span style={{color:'#C8C4BE',fontSize:12}}>›</span>
         <span style={{fontSize:13,fontWeight:700,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{active.name}</span>
-        {activeFolderId&&<><span style={{color:'#C8C4BE',fontSize:12}}>›</span><span style={{fontSize:13,fontWeight:700,color:active.color,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(active.folders||[]).find(f=>f.id===activeFolderId)?.name}</span></>}
+        {activeFolderId&&getFolderPath(active.folders||[],activeFolderId).map((folder,idx,arr)=>(
+          <span key={folder.id} style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{color:'#C8C4BE',fontSize:12}}>›</span>
+            <span onClick={()=>setActiveFolderId(folder.id)} style={{fontSize:13,fontWeight:idx===arr.length-1?700:500,color:idx===arr.length-1?active.color:'#8C8880',cursor:'pointer',whiteSpace:'nowrap'}}>{folder.name}</span>
+          </span>
+        ))}
       </nav>
 
       {showAddDoc&&(
-        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);setFileUploaded(false);}}>
-          <div style={{background:'#fff',borderRadius:18,padding:'32px',width:520,maxWidth:'94vw',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:6}}>Add Document</h3>
-            <p style={{fontSize:13,color:'#8C8880',marginBottom:20}}>{activeFolderId?`Adding to folder: ${(active.folders||[]).find(f=>f.id===activeFolderId)?.name}`:'Upload a file or paste content.'}</p>
-            <label style={{display:'block',border:`2px dashed ${active.color}`,borderRadius:12,padding:'20px',textAlign:'center',cursor:'pointer',background:active.color+'08',marginBottom:16}} onMouseEnter={e=>e.currentTarget.style.background=active.color+'15'} onMouseLeave={e=>e.currentTarget.style.background=active.color+'08'}>
-              <input type="file" accept=".pdf,.txt,.md,image/*" style={{display:'none'}} onChange={async e=>{const file=e.target.files?.[0];if(file)handleFileUpload(file);e.target.value='';}}/>
-              {fileUploading?<><div style={{width:28,height:28,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 8px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading file…</div></>:<><div style={{fontSize:32,marginBottom:6}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Upload PDF, image, or text file</div><div style={{fontSize:11,color:'#8C8880',marginTop:3}}>PDF, PNG, JPG, TXT, MD supported</div></>}
-            </label>
-            <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'8px 0'}}>— or paste text below —</div>
-            <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…" onKeyDown={e=>e.stopPropagation()} style={{width:'100%',minHeight:160,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>{setShowAddDoc(false);setDocName('');setDocText('');setFileUploading(false);setFileUploaded(false);}} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
-              <button onClick={()=>{const name=(docName).trim()||`Document ${(active.documents?.length||0)+1}`;const content=docText.trim();if(!content&&!fileUploaded)return;const d={id:`doc_${Date.now()}`,name,content,folderId:activeFolderId||null,addedAt:new Date().toISOString()};updateCourse(active.id,{documents:[...(active.documents||[]),d]});setDocName('');setDocText('');setShowAddDoc(false);setFileUploading(false);setFileUploaded(false);}} disabled={fileUploading||(!docText.trim()&&!fileUploaded&&!docName.trim())} style={{flex:2,padding:'11px',borderRadius:10,border:'none',background:(docText.trim()||fileUploaded)?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(docText.trim()||fileUploaded)?'pointer':'default',color:(docText.trim()||fileUploaded)?'#1A1814':'#A8A59E'}}>
-                {fileUploading?'Processing file…':'Save Document'}
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(10px)'}} onClick={resetAddModal}>
+          <div style={{background:'#fff',borderRadius:20,padding:'28px 32px',width:540,maxWidth:'94vw',maxHeight:'92vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814'}}>
+                {addContentType?{text:'Paste Text',file:'Upload File',link:'Add Link',audio:'Record Audio'}[addContentType]:'Add Content'}
+              </h3>
+              <button onClick={addContentType?()=>setAddContentType(null):resetAddModal} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:8,width:30,height:30,cursor:'pointer',fontSize:14,color:'#8C8880'}}>
+                {addContentType?'←':'✕'}
               </button>
             </div>
+            <p style={{fontSize:13,color:'#8C8880',marginBottom:20}}>
+              {activeFolderId?`Adding to: ${(active.folders||[]).find(f=>f.id===activeFolderId)?.name}`:'Choose how to add content'}
+            </p>
+
+            {/* Type picker */}
+            {!addContentType&&(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:8}}>
+                {[
+                  {id:'file',icon:'📎',label:'Upload File',desc:'PDF, image, TXT, MD'},
+                  {id:'text',icon:'✏️',label:'Paste Text',desc:'Notes, chapters, content'},
+                  {id:'link',icon:'🔗',label:'Add Link',desc:'YouTube, article, website'},
+                  {id:'audio',icon:'🎙️',label:'Record Audio',desc:'Lecture, voice notes'},
+                ].map(t=>(
+                  <button key={t.id} onClick={()=>setAddContentType(t.id)}
+                    style={{display:'flex',alignItems:'center',gap:12,padding:'16px',borderRadius:14,border:'1.5px solid #ECEAE4',background:'#fff',cursor:'pointer',textAlign:'left',transition:'all 0.15s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
+                    <span style={{fontSize:28}}>{t.icon}</span>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>{t.label}</div>
+                      <div style={{fontSize:11,color:'#A8A59E',marginTop:2}}>{t.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* File upload */}
+            {addContentType==='file'&&(
+              <>
+                <label style={{display:'block',border:`2px dashed ${active.color}`,borderRadius:12,padding:'28px 20px',textAlign:'center',cursor:'pointer',background:active.color+'08',marginBottom:16}}
+                  onMouseEnter={e=>e.currentTarget.style.background=active.color+'15'}
+                  onMouseLeave={e=>e.currentTarget.style.background=active.color+'08'}>
+                  <input type="file" accept=".pdf,.txt,.md,image/*" style={{display:'none'}} onChange={async e=>{const file=e.target.files?.[0];if(file)handleFileUpload(file);e.target.value='';}}/>
+                  {fileUploading
+                    ?<><div style={{width:32,height:32,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 10px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading file…</div></>
+                    :fileUploaded
+                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534'}}>File ready — give it a name below</div></>
+                      :<><div style={{fontSize:36,marginBottom:8}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Click to upload</div><div style={{fontSize:11,color:'#8C8880',marginTop:4}}>PDF, PNG, JPG, TXT, MD supported</div></>
+                  }
+                </label>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Text paste */}
+            {addContentType==='text'&&(
+              <>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <textarea value={docText} onChange={e=>setDocText(e.target.value)} placeholder="Paste your notes, textbook chapters, syllabus, or any course content here…" onKeyDown={e=>e.stopPropagation()} style={{width:'100%',minHeight:200,padding:'10px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',resize:'vertical',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif",lineHeight:1.6}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Link */}
+            {addContentType==='link'&&(
+              <>
+                <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="Paste URL (YouTube, article, website…)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:10,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                <input value={linkTitle} onChange={e=>setLinkTitle(e.target.value)} placeholder="Title (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+                {!fileUploaded&&<button onClick={fetchLinkContent} disabled={!linkUrl.trim()||fileUploading} style={{width:'100%',padding:'10px',borderRadius:9,border:'none',background:linkUrl.trim()?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:linkUrl.trim()?'pointer':'default',color:linkUrl.trim()?'#1A1814':'#A8A59E',marginBottom:16}}>
+                  {fileUploading?'Fetching…':'Preview Link'}
+                </button>}
+                {fileUploaded&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:9,padding:'10px 14px',marginBottom:16,fontSize:12,color:'#166534'}}>✓ Link ready to save</div>}
+              </>
+            )}
+
+            {/* Audio */}
+            {addContentType==='audio'&&(
+              <>
+                <div style={{textAlign:'center',padding:'24px 20px',background:'#F7F6F2',borderRadius:14,marginBottom:12}}>
+                  {isRecording
+                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:24}}>🎙️</div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#E85D3F',marginBottom:12}}>Recording…</div>
+                      <button onClick={stopRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#E85D3F',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>Stop Recording</button></>
+                    :audioBlob
+                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
+                      :<><div style={{fontSize:40,marginBottom:10}}>🎙️</div>
+                        <div style={{fontSize:13,fontWeight:600,color:'#1A1814',marginBottom:4}}>Record a lecture or voice note</div>
+                        <div style={{fontSize:11,color:'#8C8880',marginBottom:14}}>Requires microphone access</div>
+                        <button onClick={startRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Start Recording</button></>
+                  }
+                </div>
+                <div style={{textAlign:'center',fontSize:12,color:'#A8A59E',margin:'4px 0 10px'}}>— or upload an audio file —</div>
+                <label style={{display:'block',border:'1.5px dashed #ECEAE4',borderRadius:10,padding:'12px',textAlign:'center',cursor:'pointer',marginBottom:12,transition:'all 0.15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=active.color}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>
+                  <input type="file" accept="audio/*" style={{display:'none'}} onChange={e=>{
+                    const file=e.target.files?.[0];
+                    if(!file)return;
+                    setDocName(docName||file.name.replace(/\.[^.]+$/,''));
+                    setDocText(`[Audio File: ${file.name}]`);
+                    setAudioBlob(file);
+                    e.target.value='';
+                  }}/>
+                  <span style={{fontSize:12,fontWeight:600,color:'#6B6860'}}>📂 Upload audio file (MP3, M4A, WAV…)</span>
+                </label>
+                <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Recording name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
+              </>
+            )}
+
+            {/* Footer buttons */}
+            {addContentType&&(
+              <div style={{display:'flex',gap:10}}>
+                <button onClick={resetAddModal} style={{flex:1,padding:'11px',borderRadius:10,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>Cancel</button>
+                <button
+                  onClick={()=>{
+                    const name=(docName).trim()||`Document ${(active.documents?.length||0)+1}`;
+                    const content=docText.trim()||(addContentType==='link'?`[Link] ${linkUrl}`:addContentType==='audio'?'[Audio Note]':'');
+                    if(!content&&!fileUploaded&&!audioBlob)return;
+                    const d={id:`doc_${Date.now()}`,name,content,type:addContentType,url:addContentType==='link'?linkUrl:null,folderId:activeFolderId||null,addedAt:new Date().toISOString()};
+                    updateCourse(active.id,{documents:[...(active.documents||[]),d]});
+                    resetAddModal();
+                  }}
+                  disabled={fileUploading||isRecording||(addContentType==='text'&&!docText.trim())||(addContentType==='file'&&!fileUploaded)||(addContentType==='link'&&!fileUploaded&&!linkUrl.trim())||(addContentType==='audio'&&!audioBlob)}
+                  style={{flex:2,padding:'11px',borderRadius:10,border:'none',fontSize:13,fontWeight:700,cursor:'pointer',
+                    background:((addContentType==='text'&&docText.trim())||(addContentType==='file'&&fileUploaded)||(addContentType==='link'&&(fileUploaded||linkUrl.trim()))||(addContentType==='audio'&&audioBlob))?active.color:'#ECEAE4',
+                    color:((addContentType==='text'&&docText.trim())||(addContentType==='file'&&fileUploaded)||(addContentType==='link'&&(fileUploaded||linkUrl.trim()))||(addContentType==='audio'&&audioBlob))?'#1A1814':'#A8A59E'}}>
+                  Save Content
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -12163,40 +12332,22 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{fontSize:11,color:'#A8A59E'}}>{(active.folders||[]).length} folders</div>
               </div>
             </button>
-            {(active.folders||[]).filter(f=>!f.parentId).map(folder=>(
-              <button key={folder.id} onClick={()=>setActiveFolderId(folder.id)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,border:'none',background:activeFolderId===folder.id?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',marginBottom:2}}>
-                <div style={{width:28,height:28,borderRadius:7,background:activeFolderId===folder.id?active.color+'40':'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>📁</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{folder.name}</div>
-                  <div style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===folder.id).length} docs</div>
-                </div>
-              </button>
-            ))}
+            {(active.folders||[]).filter(f=>!f.parentId).map(folder=>renderSidebarFolder(folder,0))}
             {(active.folders||[]).length===0&&<div style={{fontSize:12,color:'#A8A59E',padding:'8px 12px',lineHeight:1.5}}>No folders yet. Create one to organize your documents.</div>}
           </div>
-          <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4',display:'flex',flexDirection:'column',gap:8}}>
-            <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',borderRadius:9,border:'1px dashed #ECEAE4',background:'transparent',cursor:'pointer',color:'#6B6860',fontSize:12,fontWeight:600}} onMouseEnter={e=>e.currentTarget.style.borderColor=active.color} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>📁 New Folder</button>
-            <button onClick={()=>{if(window.confirm('Delete this course and all its content?'))deleteCourse(active.id);}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:'transparent',cursor:'pointer',color:'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>Delete course</button>
+          <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4'}}>
+            <button onClick={()=>{if(chConfirmDelete){deleteCourse(active.id);setChConfirmDelete(false);}else{setChConfirmDelete(true);setTimeout(()=>setChConfirmDelete(false),4000);}}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:chConfirmDelete?'rgba(232,93,63,0.1)':'transparent',cursor:'pointer',color:chConfirmDelete?'#E85D3F':'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>{if(!chConfirmDelete)e.currentTarget.style.color='#D8D5CE';}}>{chConfirmDelete?'⚠️ Tap again to confirm':'Delete course'}</button>
           </div>
         </div>
 
         <div style={{flex:1,overflowY:'auto',padding:'28px 28px 80px',minWidth:0}}>
-          <div style={{marginBottom:24}}>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:4}}>{active.subject||'Course'}</div>
-            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap',marginBottom:14}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,color:'#1A1814',margin:0}}>{active.name}</h2>
-              <div style={{display:'flex',gap:8}}>
-                <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
-                <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
-              </div>
-            </div>
-            <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-              {[['Documents',(active.documents||[]).length],['Folders',(active.folders||[]).length],['Flash Decks',(active.flashDeckIds||[]).length]].map(([label,val])=>(
-                <div key={label} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:10,padding:'8px 14px',textAlign:'center'}}>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814'}}>{val}</div>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#A8A59E'}}>{label}</div>
-                </div>
-              ))}
+          <div style={{marginBottom:24,textAlign:'center'}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:8}}>{active.subject||'Course'}</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:900,color:'#1A1814',margin:'0 0 16px'}}>{active.name}</h2>
+            <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+              <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
+              <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',whiteSpace:'nowrap'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#1A1814';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>+ New Folder</button>
+              <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
             </div>
           </div>
 
@@ -12225,7 +12376,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
                             <div style={{position:'absolute',top:8,right:8,display:'flex',gap:4}}>
                               <button onClick={e=>{e.stopPropagation();setEditingFolder(folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:2}} onMouseEnter={e=>e.currentTarget.style.color=active.color} onMouseLeave={e=>e.currentTarget.style.color='#A8A59E'}>✏️</button>
-                              <button onClick={e=>{e.stopPropagation();deleteFolder(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
+                              <button onClick={e=>{e.stopPropagation();const cnt=getDocCount(active.folders||[],active.documents||[],folder.id);if(cnt>0&&!window.confirm(`Delete "${folder.name}" and ${cnt} document(s) inside?`))return;deleteFolderDeep(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
                             </div>
                             <div style={{fontSize:40,marginBottom:8}}>📁</div>
                             {editingFolder===folder.id
@@ -12256,12 +12407,15 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                             <div style={{width:36,height:36,borderRadius:9,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
                             <div style={{flex:1,minWidth:0}}>
-                              {editingDoc===d.id
-                                ?<input autoFocus defaultValue={d.name}
-                                  onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')renameDoc(active.id,d.id,e.target.value);if(e.key==='Escape')setEditingDoc(null);}}
-                                  onBlur={e=>renameDoc(active.id,d.id,e.target.value)}
-                                  style={{width:'100%',padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
-                                :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} onDoubleClick={()=>setEditingDoc(d.id)}>{d.name}</div>}
+                              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                {editingDoc===d.id
+                                  ?<input autoFocus defaultValue={d.name}
+                                    onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}if(e.key==='Escape')setEditingDoc(null);}}
+                                    onBlur={e=>{renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}}
+                                    style={{flex:1,padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
+                                  :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}} onDoubleClick={()=>setEditingDoc(d.id)} title="Double-click to rename">{d.name}</div>}
+                                <button onClick={()=>setEditingDoc(id=>id===d.id?null:d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#C8C4BE',padding:'0 2px',flexShrink:0}} title="Rename">✏️</button>
+                              </div>
                               <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                             </div>
                             {(active.folders||[]).length>0&&<select onChange={e=>{if(e.target.value)assignDocToFolder(active.id,d.id,e.target.value);}} defaultValue="" style={{padding:'4px 8px',borderRadius:6,border:'1px solid #ECEAE4',background:'#fff',fontSize:11,color:'#6B6860',cursor:'pointer'}}><option value="">Move to folder…</option>{(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>📁 {f.name}</option>)}</select>}
@@ -12285,13 +12439,19 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
                   <button onClick={()=>setActiveFolderId(null)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>← All Folders</button>
                   <div style={{width:32,height:32,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📁</div>
-                  <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814'}}>{folder?.name}</span>
+                  {editingFolder===activeFolderId
+                    ?<input autoFocus defaultValue={folder?.name}
+                        onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}if(e.key==='Escape')setEditingFolder(null);}}
+                        onBlur={e=>{renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}}
+                        style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',border:'none',borderBottom:`2px solid ${active.color}`,outline:'none',background:'transparent',minWidth:120}}/>
+                    :<span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',cursor:'pointer'}} onDoubleClick={()=>setEditingFolder(activeFolderId)} title="Double-click to rename">{folder?.name}</span>}
+                  <button onClick={()=>setEditingFolder(ef=>ef===activeFolderId?null:activeFolderId)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#A8A59E',padding:'2px 4px'}} title="Rename folder">✏️</button>
                 </div>
                 {subFolders.length===0&&folderDocs.length===0?(
                   <div style={{textAlign:'center',padding:'50px 20px',background:'#fff',borderRadius:16,border:'1px solid #ECEAE4'}}>
                     <div style={{fontSize:40,marginBottom:10}}>📂</div>
                     <div style={{fontSize:15,fontWeight:700,color:'#1A1814',marginBottom:6}}>This folder is empty</div>
-                    <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Click <strong>+ Add Document</strong> above to add content here.</p>
+                    <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Use the <strong>New Folder</strong> tile or <strong>+ Add Document</strong> button above to add content.</p>
                   </div>
                 ):(
                   <>
@@ -12299,15 +12459,29 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                       <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:12}}>Subfolders</div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:12,marginBottom:24}}>
                         {subFolders.map(sub=>(
-                          <div key={sub.id} onClick={()=>setActiveFolderId(sub.id)}
-                            style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'18px 16px',cursor:'pointer',textAlign:'center',transition:'all 0.15s'}}
+                          <div key={sub.id} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:14,padding:'18px 16px',textAlign:'center',transition:'all 0.15s',position:'relative'}}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
-                            <div style={{fontSize:32,marginBottom:8}}>📁</div>
-                            <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
-                            <div style={{fontSize:11,color:'#A8A59E'}}>{(active.documents||[]).filter(d=>d.folderId===sub.id).length} docs</div>
+                            <div onClick={()=>setActiveFolderId(sub.id)} style={{cursor:'pointer'}}>
+                              <div style={{fontSize:32,marginBottom:8}}>📁</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
+                              <div style={{fontSize:11,color:'#A8A59E'}}>{getDocCount(active.folders||[],active.documents||[],sub.id)} docs</div>
+                            </div>
+                            <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8,position:'relative'}}>
+                              <button onClick={e=>{e.stopPropagation();setSendToMenu(sm=>sm?.id===sub.id?null:{type:'folder',id:sub.id});}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>Send ↗</button>
+                              <button onClick={e=>{e.stopPropagation();if(window.confirm('Delete "'+sub.name+'" and all its contents?'))deleteFolderDeep(active.id,sub.id);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#D8D5CE'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
+                              {sendToMenu?.id===sub.id&&renderSendToDropdown("folder",sub.id)}
+                            </div>
                           </div>
                         ))}
+                        {/* New Subfolder tile */}
+                        <div onClick={()=>{setFolderForm({name:'',parentId:activeFolderId});setShowFolderModal(true);}}
+                          style={{background:'transparent',border:'2px dashed #ECEAE4',borderRadius:14,padding:'18px 16px',textAlign:'center',cursor:'pointer',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:110}}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='transparent';}}>
+                          <div style={{fontSize:28,marginBottom:8,color:'#C8C4BE'}}>+</div>
+                          <div style={{fontSize:12,fontWeight:600,color:'#A8A59E'}}>New Folder</div>
+                        </div>
                       </div>
                     </>)}
                     {folderDocs.length>0&&(<>
@@ -12319,10 +12493,21 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                               onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                               <div style={{width:36,height:36,borderRadius:9,background:active.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.name}</div>
+                                {editingDoc===d.id
+                                  ?<input autoFocus defaultValue={d.name} id={`doc-rename-${d.id}`}
+                                      onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameDoc(active.id,d.id,e.target.value||d.name);setEditingDoc(null);}if(e.key==='Escape')setEditingDoc(null);}}
+                                      style={{width:'100%',padding:'2px 6px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
+                                  :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}} onDoubleClick={()=>setEditingDoc(d.id)} title="Double-click to rename">{d.name}</div>}
                                 <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                               </div>
+                              {editingDoc===d.id
+                                ?<button onMouseDown={e=>{e.preventDefault();const inp=document.getElementById(`doc-rename-${d.id}`);if(inp)renameDoc(active.id,d.id,inp.value||d.name);setEditingDoc(null);}} style={{background:active.color,border:'none',borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontWeight:700,color:'#1A1814',flexShrink:0}}>Save</button>
+                                :<button onClick={()=>setEditingDoc(d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#C8C4BE',flexShrink:0,padding:'0 2px'}} title="Rename">✏️</button>}
                               <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>{expandedDoc===d.id?'▲ Hide':'▼ View'}</button>
+                              <div style={{position:'relative',flexShrink:0}}>
+                                <button onClick={()=>setSendToMenu(sm=>sm?.id===d.id?null:{type:'doc',id:d.id})} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',fontSize:11,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>Send ↗</button>
+                                {sendToMenu?.id===d.id&&renderSendToDropdown("doc",d.id)}
+                              </div>
                               <button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,color:'#D8D5CE',flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
                             </div>
                             {expandedDoc===d.id&&(
@@ -12346,9 +12531,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {errMsg&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:'#E85D3F',display:'flex',justifyContent:'space-between'}}>{errMsg}<button onClick={()=>setErrMsg('')} style={{background:'none',border:'none',cursor:'pointer',color:'#E85D3F',fontSize:14}}>✕</button></div>}
             {genProgress&&<div style={{fontSize:12,color:active.color,marginBottom:10,fontWeight:600}}>{genProgress}</div>}
             {genResult?.type==='cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#166534'}}>✓ Created {genResult.count} decks · {genResult.total} cards! <button onClick={()=>launchApp('flashcards')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Flash Cards →</button></div>}
+            {genResult?.type==='send-cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#166534',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" → {genResult.count} flashcards created!</span><button onClick={()=>launchApp('flashcards')} style={{background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
+            {genResult?.type==='send-notes'&&<div style={{background:'#FFF9E6',border:'1px solid #F0D080',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#8B6914',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" sent to Notes!</span><button onClick={()=>launchApp('notes')} style={{background:'none',border:'none',cursor:'pointer',color:'#8B6914',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
+            {genResult?.type==='error'&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#E85D3F'}}>{genResult.msg}</div>}
+            {sendingTo&&<div style={{background:'#EEF2FF',border:'1px solid #C7D2FE',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#4338CA'}}>⏳ Sending to {sendingTo}…</div>}
             {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#9B1446'}}>✓ Brain map created! <button onClick={()=>launchApp('brainmap')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              <button onClick={generateFlashCards} disabled={generating==='cards'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?active.color:'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#1A1814':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <button onClick={generateFlashCards} disabled={generating==='cards'} style={{padding:'12px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
                 {generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:<>🃏 Generate Flash Cards</>}
               </button>
               <button onClick={generateBrainMap} disabled={generating==='map'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?'#F0A8C0':'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#9B1446':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
@@ -12504,14 +12693,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         {courses.length===0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>{[['1','Upload','Paste notes, syllabus, or textbook chapters.','📄'],['2','Generate','AI creates flash cards and brain maps from your content.','✦'],['3','Study','Use your generated content across all apps.','🚀']].map(([n,title,desc,icon])=>(<div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}><div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div><div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#166534',marginBottom:6}}>Step {n}</div><div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div></div>))}</div>)}
 
       </div>
-      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'#fff',borderRadius:18,padding:'36px',width:440,maxWidth:'94vw',animation:'ch-fade 0.2s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>◎</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814',marginBottom:6}}>Create a Course</h3><p style={{fontSize:13,color:'#8C8880',marginBottom:24,lineHeight:1.6}}>Give your course a name. You will add documents after.</p><input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createCourse();e.stopPropagation();}} placeholder="Course name e.g. Biology 101" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology, Math, History" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><textarea value={createForm.description} onChange={e=>setCreateForm(f=>({...f,description:e.target.value}))} placeholder="Description (optional)" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'none',minHeight:72,marginBottom:16,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><div style={{marginBottom:20}}><div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#8C8880',marginBottom:8}}>Color</div><div style={{display:'flex',gap:8}}>{PALETTE.map(col=>(<button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>))}</div></div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button><button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button></div></div></div>)}
+      {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'#fff',borderRadius:18,padding:'36px',width:440,maxWidth:'94vw',animation:'ch-fade 0.2s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>◎</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814',marginBottom:6}}>Create a Course</h3><p style={{fontSize:13,color:'#8C8880',marginBottom:24,lineHeight:1.6}}>Give your course a name. You will add documents after.</p><input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createCourse();e.stopPropagation();}} placeholder="Course name e.g. Biology 101" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology, Math, History" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><textarea value={createForm.description} onChange={e=>setCreateForm(f=>({...f,description:e.target.value}))} placeholder="Description (optional)" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'none',minHeight:72,marginBottom:16,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><div style={{marginBottom:20}}><div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#8C8880',marginBottom:8}}>Color</div><div style={{display:'flex',gap:8}}>{PALETTE.map(col=>(<button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>))}</div></div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button><button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button></div></div></div>)}
     </div>
   );
 }
 
 // ─── Galaxy Homepage ──────────────────────────────────────────────────────────
 function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus }) {
-  const canvasRef=useRef(null),labelsRef=useRef(null),animRef=useRef(null);
+  const canvasRef=useRef(null),labelsRef=useRef(null),iconsRef=useRef(null),animRef=useRef(null);
   const stateRef=useRef({hov:null,T:0,last:0,searchQ:'',speedMult:1,planets:PLANETS.map((p,i)=>({...p,angle:(i/PLANETS.length)*Math.PI*2-Math.PI/2}))});
   const [selectedApp,setSelectedApp]=useState(null);
   const [searchQ,setSearchQ]=useState('');
@@ -12522,28 +12711,69 @@ function GalaxyHomepage({ user, openAuth, launchApp, setSidebarOpen, syncStatus 
   useEffect(()=>{
     const canvas=canvasRef.current,labelWrap=labelsRef.current;
     if(!canvas||!labelWrap)return;
-    const ctx=canvas.getContext('2d'),state=stateRef.current,labelEls={};
-    state.planets.forEach(p=>{const el=document.createElement('div');el.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';el.textContent=p.name;labelWrap.appendChild(el);labelEls[p.appId]=el;});
+    const ctx=canvas.getContext('2d'),state=stateRef.current,labelEls={},iconEls={};
+    const iconWrap=iconsRef.current;
+    // Icon SVG paths for each app
+    const ICON_PATHS={
+      flashcards:'<rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/><path d="M16 13l2 2 3-3"/>',
+      notes:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+      tracker:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="12" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="16" cy="14" r="1" fill="rgba(255,255,255,0.9)"/><circle cx="8" cy="18" r="1" fill="rgba(255,255,255,0.9)"/>',
+      brainmap:'<circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="9.5" y1="10.5" x2="5.5" y2="7.5"/><line x1="14.5" y1="10.5" x2="18.5" y2="7.5"/><line x1="9.5" y1="13.5" x2="5.5" y2="16.5"/><line x1="14.5" y1="13.5" x2="18.5" y2="16.5"/>',
+      simplifier:'<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/><line x1="4" y1="18" x2="10" y2="18"/><circle cx="19" cy="16" r="3"/><line x1="17.5" y1="14.5" x2="20.5" y2="17.5"/>',
+      assistant:'<path d="M12 2a8 8 0 0 1 8 8c0 3-1.6 5.6-4 7.1V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.9A8 8 0 0 1 12 2z"/><line x1="9" y1="21" x2="15" y2="21"/>',
+      studybuddy:'<circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/>',
+      settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+      journal:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+      coursehub:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'
+    };
+    state.planets.forEach(p=>{
+      // Label
+      const lbl=document.createElement('div');
+      lbl.style.cssText='position:absolute;top:0;left:0;white-space:nowrap;font-family:sans-serif;font-weight:600;font-size:13px;color:rgba(247,246,242,0.92);will-change:transform;pointer-events:none;text-align:center;transition:color 0.2s';
+      lbl.textContent=p.name;labelWrap.appendChild(lbl);labelEls[p.appId]=lbl;
+      // Icon
+      if(iconWrap&&ICON_PATHS[p.appId]){
+        const s=p.size||48;const sz=Math.round(s*0.44);
+        const ic=document.createElement('div');
+        ic.style.cssText=`position:absolute;top:0;left:0;pointer-events:none;will-change:transform;transition:opacity 0.2s;`;
+        ic.innerHTML=`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 3px rgba(255,255,255,0.4))">${ICON_PATHS[p.appId]}</svg>`;
+        iconWrap.appendChild(ic);iconEls[p.appId]=ic;
+      }
+    });
     function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;setIsMobile(canvas.width<520);}
     resize();window.addEventListener('resize',resize);
     const CX=()=>canvas.width/2,CY=()=>canvas.height*0.48,RX=()=>canvas.width*0.40,RY=()=>canvas.height*0.21,BASE_R=26,SPD=0.0014;
     function smooth(x){return x*x*(3-2*x);}
     function getPos(p){const sinA=Math.sin(p.angle),depth=smooth((sinA+1)*0.5),scale=0.85+depth*0.30;return{x:CX()+RX()*Math.cos(p.angle),y:CY()+RY()*sinA,scale,depth,sinA,r:BASE_R*scale};}
     function drawCenter(){const x=CX(),y=CY(),T=state.T;ctx.textAlign='center';ctx.textBaseline='middle';for(let i=0;i<3;i++){const pr=52+i*24+4*Math.sin(T*1.1+i*1.2);ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(245,200,66,${0.07-i*0.018})`;ctx.lineWidth=0.9;ctx.stroke();}ctx.beginPath();ctx.moveTo(x-90,y);ctx.lineTo(x-58,y);ctx.moveTo(x+58,y);ctx.lineTo(x+90,y);ctx.strokeStyle='rgba(245,200,66,0.18)';ctx.lineWidth=1;ctx.stroke();[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{const bx=x+sx*60,by=y+sy*28;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+sx*12,by);ctx.lineTo(bx+sx*12,by+sy*7);ctx.strokeStyle='rgba(245,200,66,0.15)';ctx.lineWidth=1;ctx.stroke();});ctx.font='14px sans-serif';ctx.fillStyle='rgba(245,200,66,0.3)';ctx.fillText('✦',x,y-38);ctx.font='900 54px sans-serif';ctx.fillStyle='#F5C842';ctx.fillText('ACE IT',x,y+2);ctx.font='600 11px sans-serif';ctx.fillStyle='rgba(245,200,66,0.32)';ctx.fillText('G  A  L  A  X  Y',x,y+30);ctx.textAlign='left';ctx.textBaseline='alphabetic';}
-    function drawPlanet(p){const pos=getPos(p),isH=state.hov===p,r=pos.r*(isH?1.12:1),hasSearch=state.searchQ.length>0,matches=hasSearch&&p.name.toLowerCase().includes(state.searchQ),bodyAlpha=hasSearch?(matches?1:0.2):1,T=state.T;if(matches&&hasSearch){const pulse=0.55+0.45*Math.sin(T*3);ctx.globalAlpha=pulse*0.65;ctx.beginPath();ctx.arc(pos.x,pos.y,r+18,0,Math.PI*2);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}if(isH){ctx.beginPath();ctx.arc(pos.x,pos.y,r+16,0,Math.PI*2);ctx.strokeStyle=p.color+'40';ctx.lineWidth=1.2;ctx.stroke();for(let i=0;i<6;i++){const ang=i*Math.PI/3+T*0.6;ctx.beginPath();ctx.moveTo(pos.x+Math.cos(ang)*(r+10),pos.y+Math.sin(ang)*(r+10));ctx.lineTo(pos.x+Math.cos(ang)*(r+16),pos.y+Math.sin(ang)*(r+16));ctx.strokeStyle=p.color+'90';ctx.lineWidth=1.5;ctx.stroke();}}ctx.globalAlpha=bodyAlpha;ctx.beginPath();ctx.arc(pos.x,pos.y,r+5,0,Math.PI*2);ctx.fillStyle=p.color+'18';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();ctx.beginPath();ctx.arc(pos.x-r*0.25,pos.y-r*0.28,r*0.27,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.38,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.28)';ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.arc(pos.x,pos.y,r*0.1,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fill();ctx.globalAlpha=1;}
-    function frame(ts){const dt=state.last?Math.min((ts-state.last)/16.67,2):1;state.last=ts;state.T+=0.016*dt;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);drawCenter();sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);if(state.hov)drawPlanet(state.hov);state.planets.forEach(p=>{const el=labelEls[p.appId];if(!el)return;const pos=getPos(p);el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;el.style.opacity='1';el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';el.style.zIndex=state.hov===p?'10':'1';});animRef.current=requestAnimationFrame(frame);}
+    function drawPlanet(p){const pos=getPos(p),isH=state.hov===p,r=pos.r*(isH?1.12:1),hasSearch=state.searchQ.length>0,matches=hasSearch&&p.name.toLowerCase().includes(state.searchQ),bodyAlpha=hasSearch?(matches?1:0.2):1,T=state.T;if(matches&&hasSearch){const pulse=0.55+0.45*Math.sin(T*3);ctx.globalAlpha=pulse*0.65;ctx.beginPath();ctx.arc(pos.x,pos.y,r+18,0,Math.PI*2);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}if(isH){ctx.beginPath();ctx.arc(pos.x,pos.y,r+16,0,Math.PI*2);ctx.strokeStyle=p.color+'40';ctx.lineWidth=1.2;ctx.stroke();for(let i=0;i<6;i++){const ang=i*Math.PI/3+T*0.6;ctx.beginPath();ctx.moveTo(pos.x+Math.cos(ang)*(r+10),pos.y+Math.sin(ang)*(r+10));ctx.lineTo(pos.x+Math.cos(ang)*(r+16),pos.y+Math.sin(ang)*(r+16));ctx.strokeStyle=p.color+'90';ctx.lineWidth=1.5;ctx.stroke();}}ctx.globalAlpha=bodyAlpha;ctx.beginPath();ctx.arc(pos.x,pos.y,r+5,0,Math.PI*2);ctx.fillStyle=p.color+'18';ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();ctx.beginPath();ctx.arc(pos.x-r*0.25,pos.y-r*0.28,r*0.27,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fill();
+ctx.globalAlpha=1;}
+    function frame(ts){const dt=state.last?Math.min((ts-state.last)/16.67,2):1;state.last=ts;state.T+=0.016*dt;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#04020C';ctx.fillRect(0,0,canvas.width,canvas.height);const g=ctx.createRadialGradient(CX()*0.5,CY(),0,CX()*0.5,CY(),canvas.width*0.6);g.addColorStop(0,'rgba(65,25,140,0.09)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(CX(),CY());ctx.beginPath();ctx.ellipse(0,0,RX(),RY(),0,0,Math.PI*2);ctx.strokeStyle='rgba(180,160,255,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,10]);ctx.stroke();ctx.setLineDash([]);ctx.restore();state.planets.forEach(p=>{if(p!==state.hov)p.angle+=SPD*state.speedMult*dt;});const sorted=[...state.planets].sort((a,b)=>getPos(a).depth-getPos(b).depth);sorted.filter(p=>p!==state.hov&&getPos(p).sinA<=0).forEach(drawPlanet);drawCenter();sorted.filter(p=>p!==state.hov&&getPos(p).sinA>0).forEach(drawPlanet);if(state.hov)drawPlanet(state.hov);state.planets.forEach(p=>{
+      const el=labelEls[p.appId];if(!el)return;
+      const pos=getPos(p);
+      el.style.transform=`translate(calc(${pos.x}px - 50%), ${pos.y+pos.r+7}px)`;
+      el.style.opacity='1';
+      el.style.color=state.hov===p?p.color:'rgba(247,246,242,0.92)';
+      el.style.zIndex=state.hov===p?'10':'1';
+      const ic=iconEls[p.appId];if(!ic)return;
+      const sz=ic.querySelector('svg')?.width?.baseVal?.value||20;
+      ic.style.transform=`translate(calc(${pos.x}px - 50%), calc(${pos.y}px - 50%))`;
+      ic.style.opacity=state.hov===p?'1':'0.85';
+      ic.style.zIndex=state.hov===p?'11':'2';
+    });animRef.current=requestAnimationFrame(frame);}
     animRef.current=requestAnimationFrame(frame);
     function onMouseMove(e){const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;let found=null;for(const p of state.planets){const pos=getPos(p);if(Math.hypot(mx-pos.x,my-pos.y)<pos.r+10){found=p;break;}}state.hov=found;canvas.style.cursor=found?'pointer':'default';}
     function onMouseLeave(){state.hov=null;canvas.style.cursor='default';}
     function onClick(){if(state.hov)setSelectedApp({...state.hov});}
     canvas.addEventListener('mousemove',onMouseMove);canvas.addEventListener('mouseleave',onMouseLeave);canvas.addEventListener('click',onClick);
-    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());};
+    return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',onMouseMove);canvas.removeEventListener('mouseleave',onMouseLeave);canvas.removeEventListener('click',onClick);Object.values(labelEls).forEach(el=>el.remove());Object.values(iconEls).forEach(el=>el.remove());};
   },[]);
   const navBtn={borderRadius:7,padding:'7px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",whiteSpace:'nowrap'};
   return(
     <div style={{position:'fixed',inset:0,background:'#04020C',overflow:'hidden',fontFamily:"'DM Sans',sans-serif"}}>
       {!isMobile&&<canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>}
       {!isMobile&&<div ref={labelsRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:2}}/>}
+      {!isMobile&&<div ref={iconsRef} style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:3}}/>}
       {isMobile&&(<div style={{position:'absolute',top:58,left:0,right:0,bottom:0,overflowY:'auto',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,alignContent:'start'}}>{PLANETS.map(app=>(<div key={app.appId} onClick={()=>setSelectedApp({...app})} style={{background:'rgba(255,255,255,0.04)',border:`1px solid ${app.color}28`,borderRadius:13,padding:'14px 12px',cursor:'pointer'}}><div style={{fontSize:22,marginBottom:7}}>{app.symbol}</div><div style={{fontSize:11,fontWeight:700,color:app.color,marginBottom:3}}>{app.name}</div><div style={{fontSize:9.5,color:'rgba(247,246,242,0.32)',lineHeight:1.4}}>{app.desc}</div></div>))}</div>)}
       <nav style={{position:'absolute',top:0,left:0,right:0,height:56,display:'flex',alignItems:'center',padding:'0 12px',gap:8,zIndex:20,background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)'}}>
         <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
@@ -12576,10 +12806,84 @@ function AceItGalaxyInner() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(() => {
   const path = window.location.pathname.replace("/", "").trim();
-  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker"];
+  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker","coursehub","studybuddy"];
   return validApps.includes(path) ? path : null;
 });
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
+
+  // Structured data (JSON-LD) per page for rich search results
+  useEffect(() => {
+    const existing = document.getElementById("page-jsonld");
+    if (existing) existing.remove();
+    if (!currentApp) return;
+    const appData = {
+      flashcards: { name:"AI Flashcard Generator", desc:"Create AI-powered flashcards from any text. Free for students." },
+      notes:      { name:"AI Note Taking App", desc:"AI-powered notes for students. Upload anything and get organized study notes." },
+      brainmap:   { name:"Mind Mapping Tool", desc:"Free visual mind mapping for students. Connect concepts and build brain maps." },
+      simplifier: { name:"Text Simplifier", desc:"Simplify complex text and YouTube videos with AI. Free for students." },
+      tracker:    { name:"Assignment Tracker", desc:"Free student planner and assignment tracker. Never miss a deadline." },
+      assistant:  { name:"AI Study Assistant", desc:"Personal AI tutor and study guide. Free for students." },
+      studybuddy: { name:"Study Buddy", desc:"Live study rooms for students. Study with friends in real time." },
+      coursehub:  { name:"Course Hub", desc:"Organize all your course materials in one place. Free for students." },
+      journal:    { name:"Student Journal", desc:"Reflection journal to track learning progress. Free for students." },
+    };
+    const app = appData[currentApp];
+    if (!app) return;
+    const script = document.createElement("script");
+    script.id = "page-jsonld";
+    script.type = "application/ld+json";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": `Ace It Galaxy — ${app.name}`,
+      "url": `https://aceitgalaxy.com/${currentApp}`,
+      "description": app.desc,
+      "applicationCategory": "EducationApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    });
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [currentApp]);
+
+  // Dynamic page title for SEO
+  useEffect(() => {
+    const titles = {
+      flashcards: "Flash Cards — Ace It Galaxy | Free AI Flashcard Generator",
+      notes:      "Notes — Ace It Galaxy | AI-Powered Note Taking",
+      brainmap:   "Brain Map — Ace It Galaxy | Visual Mind Mapping Tool",
+      simplifier: "Text Simplifier — Ace It Galaxy | Simplify Any Text with AI",
+      tracker:    "Tracker — Ace It Galaxy | Student Assignment & Deadline Tracker",
+      assistant:  "Personal Assistant — Ace It Galaxy | Your AI Study Guide",
+      studybuddy: "Study Buddy — Ace It Galaxy | Live Study Rooms for Students",
+      coursehub:  "Course Hub — Ace It Galaxy | Organize All Your Courses",
+      journal:    "Journal — Ace It Galaxy | Student Reflection Journal",
+      settings:   "Settings — Ace It Galaxy",
+    };
+    document.title = currentApp
+      ? (titles[currentApp] || "Ace It Galaxy — Free AI Study Platform")
+      : "Ace It Galaxy — Free AI Study Platform for Students";
+    // Update meta description per page
+    const descs = {
+      flashcards: "Free AI flashcard generator. Paste any text and get a full flashcard deck in seconds. Study with spaced repetition on Ace It Galaxy.",
+      notes:      "AI-powered note taking for students. Upload lectures, textbooks, and materials — AI organizes everything into clean study notes.",
+      brainmap:   "Free visual mind mapping tool for students. Build brain maps, connect concepts, and attach flashcard decks to any node.",
+      simplifier: "Simplify any complex text or YouTube video instantly. Free AI text simplifier built for students on Ace It Galaxy.",
+      tracker:    "Free student assignment tracker and planner. Never miss a deadline. Manage all your courses and due dates in one place.",
+      assistant:  "Your personal AI study assistant. Get answers, build study plans, and stay on track with Ace It Galaxy's AI tutor.",
+      studybuddy: "Study live with classmates in real-time video rooms. Share documents and collaborate with Study Buddy on Ace It Galaxy.",
+      coursehub:  "Upload your course materials once and AI organizes everything. Free course management for students.",
+      journal:    "Student reflection journal. Track your progress, build study habits, and think deeply about what you're learning.",
+    };
+    const desc = currentApp ? descs[currentApp] : "Ace It Galaxy gives every student AI-powered flashcards, mind maps, notes, a personal assistant, live study rooms, and more — all free.";
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", desc);
+
+    // Update canonical URL dynamically per page
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = currentApp ? `https://aceitgalaxy.com/${currentApp}` : 'https://aceitgalaxy.com';
+  }, [currentApp]);
   const [legalPage, setLegalPage]     = useState(() => {
     const path = window.location.pathname;
     if (path === "/privacy") return "privacy";
@@ -12863,18 +13167,19 @@ Help them see connections ACROSS their apps. For example:
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
         const userData = { uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() };
+        // Read cached UID BEFORE overwriting so we can detect account switch
+        const cachedUser = localStorage.getItem("tp_user");
+        const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
+        if (cachedUid && cachedUid !== firebaseUser.uid) {
+          // Different user logged in — clear previous user's data
+          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses","tp_pa_convos","tp_pa_goals","tp_pa_plan"].forEach(k => {
+            try { localStorage.removeItem(k); } catch {}
+          });
+        }
         try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
-        // Clear any previous user localStorage data before loading new user data
-        const cachedUser = localStorage.getItem("tp_user");
-        const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
-        if (cachedUid && cachedUid !== firebaseUser.uid) {
-          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses"].forEach(k => {
-            try { localStorage.removeItem(k); } catch {}
-          });
-        }
         // Load all Firestore data on login
         fsLoadAll(firebaseUser.uid).then(() => {
           // Force re-render so apps pick up new localStorage values
@@ -12964,9 +13269,12 @@ Help them see connections ACROSS their apps. For example:
 
   // Show landing page only if no user AND not in the middle of a redirect
   if (showHome && !user) {
+    const seoAppId = currentApp && SEO_CONTENT[currentApp] ? currentApp : null;
     return (
       <>
-        <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />
+        {seoAppId
+          ? <AppSEOLanding appId={seoAppId} onEnter={() => { setShowHome(false); window.history.pushState({ screen: "app", app: seoAppId }, "", `/${seoAppId}`); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} onHome={() => { setCurrentApp(null); window.history.pushState({ screen: "landing" }, "", "/"); }} />
+          : <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />}
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       </>
     );
@@ -12997,7 +13305,7 @@ Help them see connections ACROSS their apps. For example:
   if (currentApp === 'journal')    return <>{<JournalApp user={user} openAuth={openAuth} onBack={goHome} aiContext={aiContext} />}{floating(true)}</>;
   if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />}{floating(true)}</>;
   if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
-  if (currentApp === 'studybuddy') return <StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} />;
+  if (currentApp === 'studybuddy') return <Suspense fallback={<AppChunkFallback />}><StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} /></Suspense>;
   if (currentApp === 'coursehub')  return <CourseHubApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />;
   if (currentApp) { const planet = PLANETS.find(p => p.appId === currentApp); if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>; }
 
