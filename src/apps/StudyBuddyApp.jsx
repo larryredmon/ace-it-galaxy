@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { db, storage } from "../firebase";
+import { db, storage, app } from "../firebase";
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot,
   serverTimestamp, deleteField, getDoc, getDocs, query, orderBy, limit, where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getDatabase, ref as rtdbRef, set as rtdbSet, remove as rtdbRemove, onValue, onDisconnect } from "firebase/database";
+const rtdb = getDatabase(app);
+
+// ── Study Buddy presence tuning ───────────────────────────────────────────────
+const NEW_ROOM_GRACE_MS = 120000; // don't auto-close a room younger than this
+const JOIN_GRACE_MS     = 15000;  // wait this long before treating a Firestore participant as gone
 
 function StudyBuddyApp({ onBack, user, openAuth }) {
   const SB = '#FFA8D0';
   const [view,         setView]         = useState('lobby');
   const [rooms,        setRooms]        = useState([]);
+  const [presenceMap,  setPresenceMap]  = useState({});
   const [searchQ,      setSearchQ]      = useState('');
   const [showCreate,   setShowCreate]   = useState(false);
   const [createForm,   setCreateForm]   = useState({ title:'', subject:'', isPublic:true, maxParticipants:6 });
@@ -60,6 +67,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   const iceCandidateQueue = useRef({});
   const joinedAt          = useRef(0);
   const healthRef         = useRef(null);
+  const presenceRef       = useRef(null);
+  const unsubPresence     = useRef(null);
 
   const ICE_CONFIG = {
     iceServers: [
@@ -74,20 +83,25 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
   useEffect(()=>{
     try{
       const q=query(collection(db,'studyRooms'),orderBy('createdAt','desc'),limit(50));
-      unsubRooms.current=onSnapshot(q,async snap=>{
-        const now=Date.now(), fresh=[], stale=[];
-        snap.docs.forEach(d=>{
-          const data=d.data(), parts=Object.keys(data.participants||{}).length;
-          const created=data.createdAt?.toDate?.()||new Date();
-          if(parts===0&&(now-created.getTime())>2*60*60*1000) stale.push(d.id);
-          else fresh.push({id:d.id,...data});
-        });
-        setRooms(fresh);
-        stale.forEach(async id=>{try{await deleteDoc(doc(db,'studyRooms',id));}catch{}});
-      },()=>{});
+      unsubRooms.current=onSnapshot(q,snap=>{setRooms(snap.docs.map(d=>({id:d.id,...d.data()})));},()=>{});
     }catch{}
     return()=>{unsubRooms.current?.();};
   },[]);
+  // Live presence for the lobby — who is actually connected right now (Realtime DB)
+  useEffect(()=>{
+    let unsub=null;
+    try{ unsub=onValue(rtdbRef(rtdb,'presence'),snap=>setPresenceMap(snap.val()||{}),()=>{}); }catch{}
+    return()=>{try{unsub&&unsub();}catch{}};
+  },[]);
+  // Auto-close any room with nobody connected (after a short grace for brand-new rooms)
+  useEffect(()=>{
+    const now=Date.now();
+    rooms.forEach(r=>{
+      const activeCount=Object.keys(presenceMap[r.id]||{}).length;
+      const created=r.createdAt?.toDate?.()?.getTime?.()||now;
+      if(activeCount===0 && (now-created)>NEW_ROOM_GRACE_MS){ deleteDoc(doc(db,'studyRooms',r.id)).catch(()=>{}); }
+    });
+  },[rooms,presenceMap]);
 
   useEffect(()=>{msgEndRef.current?.scrollIntoView({behavior:'smooth'});},[messages]);
   useEffect(()=>{if(localVidRef.current&&localStream)localVidRef.current.srcObject=localStream;},[localStream]);
@@ -308,6 +322,27 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
       setActiveRoom(room);activeRoomRef.current=room;setRoomLocked(room.isLocked||false);
       joinedAt.current = Date.now();setView('room');setJoining(false);
       await startMedia();
+      // ── Realtime presence: server removes me automatically if my tab closes / crashes ──
+      try{
+        const pRef=rtdbRef(rtdb,`presence/${room.id}/${user.uid}`);
+        await rtdbSet(pRef,{uid:user.uid,at:Date.now()});
+        onDisconnect(pRef).remove();
+        presenceRef.current=pRef;
+        unsubPresence.current=onValue(rtdbRef(rtdb,`presence/${room.id}`),snap=>{
+          const present=snap.val()||{}; const rid=activeRoomRef.current?.id; if(!rid)return;
+          const now=Date.now(), parts=participantsRef.current||{};
+          // Drop anyone still listed in Firestore who is no longer connected
+          Object.entries(parts).forEach(([uid,pp])=>{
+            const joined=pp.joinedAt?Date.parse(pp.joinedAt):0;
+            if(!present[uid] && (now-joined)>JOIN_GRACE_MS){
+              updateDoc(doc(db,'studyRooms',rid),{[`participants.${uid}`]:deleteField(),[`studyDocs.${uid}`]:deleteField()}).catch(()=>{});
+              const pc=peerConns.current[uid]; if(pc){try{pc.close();}catch{} delete peerConns.current[uid];}
+            }
+          });
+          // Nobody connected anymore → close the room
+          if(Object.keys(present).length===0){ deleteDoc(doc(db,'studyRooms',rid)).catch(()=>{}); }
+        },()=>{});
+      }catch{}
       healthRef.current=setInterval(()=>{
         const rId=activeRoomRef.current?.id;
         if(!rId)return;
@@ -364,7 +399,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     screenStreamRef.current?.getTracks().forEach(t=>t.stop());screenStreamRef.current=null;setScreenSharing(false);
     localStreamRef.current?.getTracks().forEach(t=>t.stop());localStreamRef.current=null;setLocalStream(null);
     Object.values(peerConns.current).forEach(pc=>pc.close());peerConns.current={};setRemoteStreams({});
-    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
+    unsubRoom.current?.();unsubMsgs.current?.();unsubSigs.current?.();unsubPresence.current?.();unsubPresence.current=null;clearInterval(timerRef.current);clearInterval(healthRef.current);processedSigs.current.clear();iceCandidateQueue.current={};joinedAt.current=0;
+    if(presenceRef.current){try{onDisconnect(presenceRef.current).cancel();}catch{}try{rtdbRemove(presenceRef.current);}catch{}presenceRef.current=null;}
     if(!silent&&activeRoomRef.current&&user){
       const roomId=activeRoomRef.current.id;
       try{
@@ -575,7 +611,7 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
         </div>
         {errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:9,padding:'10px 16px',fontSize:13,color:'#E85D3F',marginBottom:20,textAlign:'center'}}>{errMsg}</div>}
         <div style={{position:'relative',marginBottom:28}}><span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:14,opacity:0.3,pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search by subject — Biology, Calculus, Spanish…" style={{width:'100%',padding:'12px 16px 12px 42px',background:'rgba(255,255,255,0.05)',border:'1.5px solid rgba(255,255,255,0.1)',borderRadius:10,fontSize:14,color:'#F7F6F2',outline:'none',fontFamily:"'DM Sans',sans-serif",boxSizing:'border-box'}}/></div>
-        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(r.participants||{}).length,full=r.maxParticipants&&count>=r.maxParticipants;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${full?'rgba(232,93,63,0.5)':SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0}}>{r.isLocked&&<span title="Locked" style={{fontSize:11}}>🔒</span>}<div style={{display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'2px 7px'}}><span style={{width:5,height:5,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.45)'}}>{count}{r.maxParticipants?`/${r.maxParticipants}`:''}</span></div></div></div><div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'2px 9px',fontSize:10,fontWeight:700,color:SB,marginBottom:10}}>{r.subject}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginBottom:12}}>Host: {r.hostName||'Anonymous'}</div><button onClick={()=>enterRoom(r)} disabled={joining||full||r.isLocked} style={{width:'100%',padding:'8px',borderRadius:8,border:'none',background:full||r.isLocked?'rgba(255,255,255,0.06)':SB,fontSize:12,fontWeight:700,cursor:joining||full||r.isLocked?'default':'pointer',color:full||r.isLocked?'rgba(255,255,255,0.25)':'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':full?'Room Full':r.isLocked?'🔒 Locked':'Join Room →'}</button></div>);})}</div>)}
+        {filteredRooms.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'rgba(255,255,255,0.25)'}}><div style={{fontSize:48,marginBottom:16}}>📚</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{searchQ?'No rooms match that subject':'No study rooms open right now'}</div><p style={{fontSize:14,maxWidth:340,margin:'0 auto',lineHeight:1.7}}>{searchQ?'Try a different search or create a room.':'Be the first — create a room and others will find you.'}</p></div>):(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>{filteredRooms.map(r=>{const count=Object.keys(presenceMap[r.id]||{}).length,full=r.maxParticipants&&count>=r.maxParticipants;return(<div key={r.id} style={{background:'rgba(255,255,255,0.03)',border:`1.5px solid ${SB}22`,borderTop:`3px solid ${full?'rgba(232,93,63,0.5)':SB}`,borderRadius:14,padding:'20px',transition:'all 0.2s'}} onMouseEnter={e=>e.currentTarget.style.background=`${SB}08`} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:16,fontWeight:800,color:'#F7F6F2',fontFamily:"'Playfair Display',serif",flex:1,paddingRight:8}}>{r.title}</div><div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0}}>{r.isLocked&&<span title="Locked" style={{fontSize:11}}>🔒</span>}<div style={{display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.05)',borderRadius:6,padding:'2px 7px'}}><span style={{width:5,height:5,borderRadius:'50%',background:count>0?'#2BAE7E':'rgba(255,255,255,0.2)',display:'inline-block'}}/><span style={{fontSize:10,color:'rgba(255,255,255,0.45)'}}>{count}{r.maxParticipants?`/${r.maxParticipants}`:''}</span></div></div></div><div style={{display:'inline-block',background:`${SB}18`,border:`1px solid ${SB}30`,borderRadius:6,padding:'2px 9px',fontSize:10,fontWeight:700,color:SB,marginBottom:10}}>{r.subject}</div><div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginBottom:12}}>Host: {r.hostName||'Anonymous'}</div><button onClick={()=>enterRoom(r)} disabled={joining||full||r.isLocked} style={{width:'100%',padding:'8px',borderRadius:8,border:'none',background:full||r.isLocked?'rgba(255,255,255,0.06)':SB,fontSize:12,fontWeight:700,cursor:joining||full||r.isLocked?'default':'pointer',color:full||r.isLocked?'rgba(255,255,255,0.25)':'#1A1814',opacity:joining?0.5:1}}>{joining?'Joining…':full?'Room Full':r.isLocked?'🔒 Locked':'Join Room →'}</button></div>);})}</div>)}
       </div>
       {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:420,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>❋</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Create a Study Room</h3>{errMsg&&<div style={{background:'rgba(232,93,63,0.12)',border:'1px solid rgba(232,93,63,0.3)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'#E85D3F',marginBottom:16,wordBreak:'break-word'}}>{errMsg}</div>}<input value={createForm.title} onChange={e=>setCreateForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.stopPropagation()} placeholder="Room name e.g. Bio 101 Midterm Prep" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:12,boxSizing:'border-box'}}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createRoom();e.stopPropagation();}} placeholder="Subject e.g. Biology, Calculus, Spanish" style={{width:'100%',padding:'12px 14px',border:'1.5px solid rgba(255,255,255,0.12)',borderRadius:9,fontSize:14,color:'#F7F6F2',fontFamily:"'DM Sans',sans-serif",outline:'none',background:'rgba(255,255,255,0.05)',marginBottom:16,boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginBottom:24}}>{[true,false].map(pub=>(<button key={String(pub)} onClick={()=>setCreateForm(f=>({...f,isPublic:pub}))} style={{flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${createForm.isPublic===pub?SB:'rgba(255,255,255,0.1)'}`,background:createForm.isPublic===pub?`${SB}18`:'transparent',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.isPublic===pub?SB:'rgba(255,255,255,0.4)'}}>{pub?'🌐 Public':'🔒 Private'}</button>))}</div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={createRoom} disabled={!createForm.title.trim()||!createForm.subject.trim()||joining} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.title.trim()&&createForm.subject.trim()?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:createForm.title.trim()&&createForm.subject.trim()?'#1A1814':'rgba(255,255,255,0.2)'}}>{joining?'Creating…':'Create Room →'}</button></div></div></div>)}
       {showJoin&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(10px)'}} onClick={()=>{setShowJoin(false);setErrMsg('');}}><div style={{background:'rgba(10,8,24,0.99)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:18,padding:'36px',width:380,animation:'sb-fade 0.22s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>🔒</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#F7F6F2',marginBottom:6}}>Join Private Room</h3>{errMsg&&<div style={{background:'rgba(232,93,63,0.1)',border:'1px solid rgba(232,93,63,0.25)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E85D3F',marginBottom:14}}>{errMsg}</div>}<input value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())} onKeyDown={e=>{if(e.key==='Enter')joinByCode();e.stopPropagation();}} placeholder="e.g. A1B2C3" maxLength={6} style={{width:'100%',padding:'14px',border:`1.5px solid ${SB}50`,borderRadius:9,fontSize:22,fontWeight:800,color:SB,fontFamily:'monospace',letterSpacing:6,outline:'none',background:`${SB}08`,textAlign:'center',boxSizing:'border-box',marginBottom:16}}/><div style={{display:'flex',gap:10}}><button onClick={()=>{setShowJoin(false);setErrMsg('');}} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',fontSize:13,fontWeight:600,cursor:'pointer',color:'rgba(255,255,255,0.4)'}}>Cancel</button><button onClick={joinByCode} disabled={joinInput.length<6} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:joinInput.length>=6?SB:'rgba(255,255,255,0.07)',fontSize:13,fontWeight:700,cursor:'pointer',color:joinInput.length>=6?'#1A1814':'rgba(255,255,255,0.2)'}}>Join Room →</button></div></div></div>)}
