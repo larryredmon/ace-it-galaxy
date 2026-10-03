@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { guard } from "./_lib/guard.js";
 
 export const config = {
   api: {
@@ -10,6 +11,9 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const user = await guard(req, res);
+  if (!user) return;
 
   try {
     const apiKey = process.env.ANTHROPIC_KEY;
@@ -72,6 +76,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Upload error:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Upload failed. Please try again." });
   }
 }
