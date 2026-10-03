@@ -33,6 +33,35 @@ import {
 } from "firebase/firestore";
 
 const StudyBuddyApp = lazy(() => import("./apps/StudyBuddyApp.jsx"));
+// ── AI requests: send the student's login token; the server enforces login + a daily cap ──
+function aiNotify(reason, message) {
+  window.dispatchEvent(new CustomEvent("ace-ai-blocked", { detail: { reason, message } }));
+}
+async function aiFetch(url, options = {}) {
+  const u = auth.currentUser;
+  if (!u) {
+    aiNotify("login", "Sign up free (or log in) to use the AI features.");
+    return new Response(JSON.stringify({ error: { type: "login_required", message: "Please sign in to use AI features." } }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
+  const token = await u.getIdToken();
+  const res = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+  if (res.status === 401 || res.status === 429 || res.status === 503) {
+    let message = "";
+    try { message = (await res.clone().json())?.error?.message || ""; } catch {}
+    aiNotify(res.status === 401 ? "login" : res.status === 429 ? "limit" : "unavailable", message);
+  }
+  return res;
+}
+function AiNotice({ message, onClose }) {
+  return (
+    <div role="status" style={{ position:"fixed", left:"50%", bottom:24, transform:"translateX(-50%)", zIndex:100001, maxWidth:"min(440px, calc(100vw - 32px))", display:"flex", alignItems:"center", gap:12, padding:"12px 14px", borderRadius:14, background:"#0F1B33", color:"#F7F6F2", boxShadow:"0 12px 40px rgba(0,0,0,0.35)", border:"1px solid rgba(245,200,66,0.35)", fontFamily:"'DM Sans',sans-serif", fontSize:13, lineHeight:1.5 }}>
+      <img src="/mascots/ace-head.webp" alt="" width={32} height={32} style={{ width:32, height:32, borderRadius:"50%", background:"#fff", flexShrink:0 }} />
+      <div style={{ flex:1 }}>{message}</div>
+      <button onClick={onClose} aria-label="Dismiss" style={{ background:"none", border:"none", color:"rgba(255,255,255,0.5)", fontSize:16, cursor:"pointer", lineHeight:1 }}>✕</button>
+    </div>
+  );
+}
+
 function AppChunkFallback() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#06040E", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2039,7 +2068,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
         for (let i = 0; i < qbImages.length; i++) {
           setQbChunkProgress({ current: i+1, total: qbImages.length, step: `Reading image ${i+1} of ${qbImages.length}…` });
           const img = qbImages[i];
-          const res = await fetch("/api/claude", {
+          const res = await aiFetch("/api/claude", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "claude-sonnet-4-6", max_tokens: 3000,
@@ -2073,7 +2102,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
       if (totalChunks >= 1) {
         setQbChunkProgress(p => ({ ...p, step: "Identifying topics and categories…" }));
         const summaryChunk = words.slice(0, 1500).join(" ");
-        const catRes = await fetch("/api/claude", {
+        const catRes = await aiFetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400,
             messages: [{ role: "user", content: `Identify 3-8 main topic categories for organizing flashcards from this material. Respond ONLY with JSON: {"topics":["Topic 1","Topic 2"]}\n\nMaterial:\n${summaryChunk}` }] }),
@@ -2087,7 +2116,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
       const allCards = [];
       for (let ci = 0; ci < chunks.length; ci++) {
         setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
-        const res = await fetch("/api/claude", {
+        const res = await aiFetch("/api/claude", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 4000,
             messages: [{ role: "user", content: `You are an expert flashcard creator for a ${qbSource || "study"} source. Extract EVERY testable piece of information as flashcards.
@@ -2228,7 +2257,7 @@ ${chunks[ci]}` }] }),
     window.getSelection()?.removeAllRanges();
     setAutoCardLoading(true);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2275,7 +2304,7 @@ Text: "${text}"`,
     setImprovingTerm(true);
     setPendingTermPrev(pendingTerm);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2307,7 +2336,7 @@ Rules:
     setImprovingDef(true);
     setPendingDefPrev(pendingDef);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3887,7 +3916,7 @@ function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, o
     if (improving) return;
     setImproving(true);
     try {
-      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      const res = await aiFetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,
           messages:[{role:"user",content:`Review these flashcards and improve them. Fix vague definitions, split cards that cover two concepts, combine cards that are too similar, and make terms more precise.\nRespond ONLY with JSON: {"cards":[{"id":"original_id_or_new","term":"...","definition":"...","change":"improved|split|merged|new|unchanged"},...]}\nCards:\n${JSON.stringify(deck.cards.map(c=>({id:c.id,term:c.term,definition:c.definition})))}`}]})});
       const data = await res.json();
@@ -4509,7 +4538,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     setTfLoading(true);
     try {
       const sample = cards.slice(0,Math.min(10,cards.length));
-      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      const res = await aiFetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,
           messages:[{role:"user",content:`Create 10 true/false statements from these flashcards. 5 true, 5 false (plausible but wrong). Mix them randomly.\nRespond ONLY with JSON: {"statements":[{"text":"...","isTrue":true,"explanation":"..."}]}\nCards:\n${sample.map(c=>`${c.term}: ${c.definition}`).join("\n")}`}]})});
       const data = await res.json();
@@ -4548,7 +4577,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     if (!writtenInput.trim()) return;
     setWrittenLoading(true);
     try {
-      const res = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      const res = await aiFetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,
           messages:[{role:"user",content:`Grade this flashcard answer. Term: "${card.term}". Correct: "${card.definition}". Student: "${writtenInput}".\nRespond ONLY with JSON: {"grade":"correct"|"close"|"wrong","feedback":"one short sentence"}`}]})});
       const data = await res.json();
@@ -5147,7 +5176,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
   const aiExpand = async (parentId, topic) => {
     setAiLoading(true);
     try {
-      const res = await fetch('/api/claude', {
+      const res = await aiFetch('/api/claude', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600,
           messages:[{role:'user', content:`Generate 5-7 key subtopics for a brain map node about "${topic}". Respond ONLY with JSON: {"nodes":[{"label":"short 1-4 word label","note":"one sentence"},...]}. No duplicates.`}]
@@ -6205,7 +6234,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
     setLoading(true); setError(""); setOutputText("");
     if (onLevelChange) onLevelChange(level);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -6248,7 +6277,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
     setYtLoadStep(3);
     const cfg = YT_DETAIL_LEVELS.find(d => d.id === levelId);
     try {
-      const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" },
+      const res = await aiFetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: cfg.prompt(meta, ytUrl) }] }),
       });
       const data = await res.json();
@@ -6273,7 +6302,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
 
     const cfg = YT_DETAIL_LEVELS.find(d => d.id === ytDetailLevel);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -6982,9 +7011,9 @@ function FloatingAssistant({ avatar, visible, user, onOpen, aiContext }) {
     setLoading(true);
     try {
       const floatSystem = (aiContext ? aiContext + "\n\n" : `The user's name is ${user?.name||"there"}.\n\n`) + ACE_PERSONA + "\n\nIMPORTANT: You are in the floating mini-chat. Keep all responses to 2-4 sentences max — concise and actionable. The user can open the full assistant for deeper conversations.";
-      const res  = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
+      const res  = await aiFetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:400, system: floatSystem, messages: history.map(m=>({role:m.role,content:m.content})) }) });
       const data = await res.json();
-      setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || "Sorry, try again." }]);
+      setMessages(h => [...h, { role:"assistant", content: data.content?.find(b=>b.type==="text")?.text || data.error?.message || "Sorry, try again." }]);
     } catch { setMessages(h => [...h, { role:"assistant", content:"Connection error. Please try again." }]); }
     finally { setLoading(false); }
   };
@@ -7431,7 +7460,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
     const activePrompt  = systemPrompt + behaviorAddOn;
 
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -8633,7 +8662,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
       explain:    `Explain the main concepts in these notes in plain, simple language with real-world examples. Make it click.\n\n${content}`,
     };
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:2000,
           system:"You are an expert study coach helping students master their course material.",
@@ -8658,7 +8687,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
         ? [{ type:"image", source:{ type:"base64", media_type:"image/jpeg", data:imageData } },
            { type:"text", text:`Create comprehensive study notes from this image${titleHint?` (Topic: ${titleHint})`:""}.${objectives?`\nObjectives: ${objectives}`:""}`}]
         : `Create comprehensive study notes from the following content${titleHint?` (Topic: ${titleHint})`:""}.\n${objectives?`Objectives: ${objectives}\n`:""}\nContent:\n\n${text?.slice(0,12000)}`;
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:4000,
           system:`You are an expert academic note-taker. Create comprehensive study notes always including:\n# Chapter/Topic Overview\n## Learning Objectives\n## Key Concepts\n## Key Terms & Definitions\n## Detailed Notes\n## Summary\n## Study Tips\nUse clear headings, bullet points, bold key terms. Make it excellent.`,
@@ -8724,7 +8753,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
     const userMsg = { role:"user", content:text };
     setChatMessages(prev => [...prev, userMsg]); setChatInput(""); setChatLoading(true);
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:800,
           system:`You are a helpful study tutor. Answer questions based on these notes plus your knowledge. Be concise.\n\n=== NOTES ===\n${content.slice(0,8000)}`,
@@ -9254,7 +9283,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                   const btn=document.getElementById("note-fc-btn");
                   if(btn){btn.textContent="Generating…";btn.disabled=true;}
                   try{
-                    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,messages:[{role:"user",content:"Create flashcards from these notes: \""+activeNote.title+"\". Extract every key term, definition, concept, fact.\nRespond ONLY with JSON: {\"cards\":[{\"term\":\"...\",\"definition\":\"...\",\"hint\":\"optional\"},...]}\n\nNotes:\n"+(activeNote.content?.slice(0,4000)||"")}]})});
+                    const res=await aiFetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,messages:[{role:"user",content:"Create flashcards from these notes: \""+activeNote.title+"\". Extract every key term, definition, concept, fact.\nRespond ONLY with JSON: {\"cards\":[{\"term\":\"...\",\"definition\":\"...\",\"hint\":\"optional\"},...]}\n\nNotes:\n"+(activeNote.content?.slice(0,4000)||"")}]})});
                     const data=await res.json();
                     const txt=data.content?.find(b=>b.type==="text")?.text||"";
                     const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
@@ -9770,7 +9799,7 @@ function TrackerApp({ onBack, user, openAuth }) {
   const toggleSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}:t));
   const deleteSubtask=(tid,sid)=>setTasks(p=>p.map(t=>t.id===tid?{...t,subtasks:(t.subtasks||[]).filter(s=>s.id!==sid)}:t));
   const downloadICS=task=>{const n=new Date(),ds=n.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z",dt=task.date?task.date.replace(/-/g,"")+"T090000Z":ds;const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ace It//EN","BEGIN:VEVENT",`DTSTAMP:${ds}`,`DTSTART:${dt}`,`SUMMARY:${task.title}${task.course?` (${task.course})`:""}`,`DESCRIPTION:Priority: ${task.priority}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");const a=document.createElement("a");a.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);a.download=task.title.replace(/\s+/g,"-")+".ics";a.click();};
-  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
+  const handleAIImport=async()=>{if(!aiImportImg)return;setAIImporting(true);setAIImportResult(null);try{const res=await aiFetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:aiImportImg.type,data:aiImportImg.data}},{type:"text",text:'Extract ALL tasks, assignments and deadlines. Respond ONLY with JSON: {"tasks":[{"title":"...","date":"YYYY-MM-DD or empty","priority":"high|medium|low","course":"or empty","notes":"extra details"}]}'}]}]})});const data=await res.json();const txt=data.content?.find(b=>b.type==="text")?.text||"";const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());setAIImportResult(parsed.tasks||[]);}catch(e){console.error(e);setAIImportResult([]);}setAIImporting(false);};
   const importAITasks=ts=>{ts.forEach(t=>addTask({title:t.title,date:t.date||"",course:t.course||"",priority:t.priority||"medium",notes:t.notes||""}));setShowAIImport(false);setAIImportImg(null);setAIImportResult(null);};
   const sortTasks=arr=>{const s=[...arr],p={high:0,medium:1,low:2};if(sortBy==="priority")s.sort((a,b)=>(p[a.priority]||1)-(p[b.priority]||1));else if(sortBy==="date")s.sort((a,b)=>!a.date&&!b.date?0:!a.date?1:!b.date?-1:new Date(a.date)-new Date(b.date));else if(sortBy==="course")s.sort((a,b)=>(a.course||"").localeCompare(b.course||""));else s.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));return s;};
   const todayStr=new Date().toISOString().split("T")[0];
@@ -10104,7 +10133,7 @@ function JournalApp({ onBack, user, openAuth, aiContext }) {
     setShowAiPanel(true);
     setAiReflection("");
     try {
-      const res = await fetch("/api/claude", {
+      const res = await aiFetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -11753,7 +11782,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       const allText=docs.map(d=>'['+d.name+']\n'+(d.content||'')).join('\n\n').slice(0,12000);
       if(!allText.trim()){setSendingTo(null);setGenResult({type:'error',msg:'No text content found.'});return;}
       if(appId==='flashcards'){
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:'Create flashcards. Return ONLY JSON: {"cards":[{"term":"...","definition":"..."}]}\n\n'+allText}]})});
+        const res=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:'Create flashcards. Return ONLY JSON: {"cards":[{"term":"...","definition":"..."}]}\n\n'+allText}]})});
         const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
         const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
         if(parsed.cards?.length>0){const deck={id:'deck_'+Date.now(),title:sourceName,subject:active.subject||active.name,color:active.color,description:'From '+active.name,tags:[],courseId:active.id,cards:parsed.cards.map((card,i)=>({id:i+1,term:card.term,definition:card.definition,hint:'',mastery:0,dueDate:null})),cardCount:parsed.cards.length,mastery:0,isPublic:false,author:user?.name||'You',createdAt:new Date().toISOString()};const existing=JSON.parse(localStorage.getItem('tp_fc_decks')||'[]');localStorage.setItem('tp_fc_decks',JSON.stringify([...existing,deck]));tpSync('tp_fc_decks',[...existing,deck]);setGenResult({type:'send-cards',count:parsed.cards.length,app:'flashcards',name:sourceName});}
@@ -11834,7 +11863,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     try{
       const isYT=linkUrl.includes('youtube.com')||linkUrl.includes('youtu.be');
       if(isYT){
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        const res=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
             messages:[{role:'user',content:`This YouTube URL was added to a course: ${linkUrl}\nWrite a brief description of what this video likely covers based on the URL. Keep it to 2-3 sentences.`}]})});
         const data=await res.json();
@@ -11919,7 +11948,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         let binary='';
         for(let i=0;i<uint8.length;i++){binary+=String.fromCharCode(uint8[i]);}
         const base64=btoa(binary);
-        const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+        const res=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
             messages:[{role:'user',content:[
               {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
@@ -11961,7 +11990,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const totalChars=allText.length;
     try{
       setGenProgress('📖 Reading your document and planning study structure…');
-      const blueprintRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+      const blueprintRes=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
           messages:[{role:'user',content:'Analyze this study material and list ALL chapters/levels/sections as flashcard decks. Return ONLY valid JSON like this example:\n{"courseName":"Course Name","hasHierarchy":true,"folders":[{"id":"f1","name":"Level 01 Introduction","parentId":null,"decks":[{"id":"d1","name":"Real Estate Basics","topics":["topic1"]},{"id":"d2","name":"Real Estate Law","topics":["topic2"]}]},{"id":"f2","name":"Level 02 Real Property","parentId":null,"decks":[{"id":"d3","name":"Land and Property","topics":["topic1"]}]}],"flatDecks":[]}\n\nIMPORTANT: Find ALL levels and ALL chapters. Create one deck per chapter. No markdown. No explanation. Only the JSON object.\n\nDocument:\n'+allText.slice(0,12000)}]})});
       const bpData=await blueprintRes.json();
@@ -12015,7 +12044,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
         else{const chunk=Math.floor(totalChars/Math.max(totalDecks,1));relevantText=allText.slice(i*chunk,i*chunk+6000);}
         try{relevantText=relevantText.replace(/[\uD800-\uDFFF]/g,'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').slice(0,4000);}catch{relevantText=relevantText.slice(0,4000);}
         try{
-                const cardRes=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+                const cardRes=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,
 
             messages:[{role:'user',content:'Create comprehensive flashcards for: "'+dp.name+'"\nCourse: '+active.name+'\nKey topics: '+topicHints+'\n\nRules:\n- Include EVERY testable fact, definition, concept, formula, key term\n- Each card tests ONE specific thing\n- Do NOT skip anything that could appear on a test\n\nRespond ONLY with JSON:\n{"cards":[{"term":"...","definition":"...","hint":"optional"},...]}'+'\n\nContent:\n'+relevantText}]})});
@@ -12054,7 +12083,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const allText=active.documents.map(d=>`[${d.name}]\n${d.content}`).join('\n\n');
     try{
       setGenProgress('Building brain map structure…');
-      const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.\nRespond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.\nMaterial:\n${allText.slice(0,4000)}`}]})});
+      const res=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:`Create a hierarchical brain map for course: "${active.name}". Root = course name. 4-7 main branches, each with 3-5 children.\nRespond ONLY with JSON: {"root":"${active.name}","branches":[{"label":"Main Topic","children":[{"label":"Subtopic","note":"brief desc"},...]},...]}.\nMaterial:\n${allText.slice(0,4000)}`}]})});
       const data=await res.json();const txt=data.content?.find(b=>b.type==='text')?.text||'';
       const parsed=JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
       const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
@@ -12909,6 +12938,19 @@ function AceItGalaxyInner() {
   });
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+  const [aiNotice, setAiNotice] = useState(null);
+  useEffect(() => {
+    let timer;
+    const onBlocked = (e) => {
+      const { reason, message } = e.detail || {};
+      if (reason === "login") { setAuthMode("signup"); setShowAuth(true); }
+      setAiNotice(message || (reason === "limit" ? "You've reached today's AI limit. It resets at midnight Central time." : "AI is temporarily unavailable. Please try again soon."));
+      clearTimeout(timer);
+      timer = setTimeout(() => setAiNotice(null), 7000);
+    };
+    window.addEventListener("ace-ai-blocked", onBlocked);
+    return () => { window.removeEventListener("ace-ai-blocked", onBlocked); clearTimeout(timer); };
+  }, []);
   const [recentApps, setRecentApps] = useState([]);
   const [avatar, setAvatar]         = useState(null);
   const [showFloating, setShowFloating] = useState(true);
@@ -13307,6 +13349,7 @@ Help them see connections ACROSS their apps. For example:
 
   const aiContext = (() => { try { return buildAIContext(); } catch { return ""; } })();
   const floating = (show) => show && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={() => launchApp("assistant")} aiContext={aiContext} />;
+  const screen = (() => {
 
   if (currentApp === 'flashcards') return <>{<FlashCardsApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} onDeckCreated={trackDeckCreated} launchApp={launchApp} />}{floating(true)}</>;
   if (currentApp === 'simplifier') return <>{<TextSimplifierApp user={user} openAuth={openAuth} onLogout={handleLogout} onBack={goHome} aiContext={aiContext} onLevelChange={trackReadingLevel} />}{floating(true)}</>;
@@ -13325,5 +13368,13 @@ Help them see connections ACROSS their apps. For example:
       {showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} planets={PLANETS} onSelect={(p)=>{launchApp(p.appId);setSidebarOpen(false);}} activePlanet={activePlanet} user={user} openAuth={openAuth} onLogout={handleLogout} recentApps={recentApps} onLaunch={(appId)=>{launchApp(appId);setSidebarOpen(false);}} />
       {showFloating && <FloatingAssistant avatar={avatar} visible={showFloating} user={user} onOpen={()=>launchApp("assistant")} aiContext={aiContext} />}</>
+  );
+  })();
+  return (
+    <>
+      {screen}
+      {currentApp && showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
+      {aiNotice && <AiNotice message={aiNotice} onClose={()=>setAiNotice(null)} />}
+    </>
   );
 }
