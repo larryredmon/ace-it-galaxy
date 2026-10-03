@@ -116,6 +116,37 @@ async function fsWrite(uid, fsKey, field, data) {
   }
 }
 
+// Save every synced app's local data to Firestore right now. Returns false if any write fails.
+async function tpFlushToCloud(uid) {
+  if (!uid || !db) return true;
+  const byDoc = {};
+  for (const [lsKey, { fsKey, field }] of Object.entries(TP_SYNC_KEYS)) {
+    try {
+      const raw = localStorage.getItem(lsKey);
+      if (raw == null) continue;
+      (byDoc[fsKey] ||= {})[field] = stripImages(JSON.parse(raw));
+    } catch {}
+  }
+  const writes = Object.entries(byDoc).map(([fsKey, fields]) =>
+    setDoc(doc(db, "users", uid, "appdata", fsKey), { ...fields, updatedAt: serverTimestamp() }, { merge: true }));
+  if (!writes.length) return true;
+  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000));
+  try { await Promise.race([Promise.all(writes), timeout]); return true; }
+  catch (e) { console.warn("[logout] cloud save failed:", e?.message); return false; }
+}
+
+// Remove all of a student's study data from this browser (used on logout and account switch).
+function tpClearLocalData() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("tp_") || k.startsWith("ch_"))) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+  } catch {}
+}
+
 // Migrate guest (localStorage-only) data into Firebase on first login/signup
 async function fsMigrateGuestData(uid) {
   if (!uid || !db) return;
@@ -13176,6 +13207,11 @@ Help them see connections ACROSS their apps. For example:
 
   const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
   const handleAuth = (userData) => {
+    // If this browser still holds a different student's data, wipe it before anything is merged.
+    try {
+      const prevUid = JSON.parse(localStorage.getItem("tp_user") || "null")?.uid;
+      if (prevUid && userData.uid && prevUid !== userData.uid) tpClearLocalData();
+    } catch {}
     try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
     window.history.pushState({ screen: "galaxy" }, "", "/");
@@ -13185,9 +13221,14 @@ Help them see connections ACROSS their apps. For example:
     }
   };
   const handleLogout = async () => {
+    // Save the latest work to the cloud, then clear this browser so the next person can't see it.
+    const uid = auth.currentUser?.uid || (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
+    if (uid) {
+      const saved = await tpFlushToCloud(uid);
+      if (!saved && !window.confirm("Some of your latest changes haven't been saved to the cloud yet (check your connection). Log out anyway? Unsaved changes on this device will be lost.")) return;
+    }
     try { await signOut(auth); } catch {}
-    try { localStorage.removeItem("tp_user"); } catch {}
-    // Data intentionally kept in localStorage on logout so users never lose work
+    tpClearLocalData();
     setUser(null); setShowHome(true); setCurrentApp(null);
     window.history.pushState({ app: null }, "", "/");
   };
