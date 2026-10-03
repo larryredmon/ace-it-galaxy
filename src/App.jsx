@@ -119,6 +119,7 @@ async function fsWrite(uid, fsKey, field, data) {
 // Save every synced app's local data to Firestore right now. Returns false if any write fails.
 async function tpFlushToCloud(uid) {
   if (!uid || !db) return true;
+  if (uid !== tpCloudReadyUid) return false; // never overwrite the cloud with data that wasn't loaded from it
   const byDoc = {};
   for (const [lsKey, { fsKey, field }] of Object.entries(TP_SYNC_KEYS)) {
     try {
@@ -175,17 +176,24 @@ async function fsMigrateGuestData(uid) {
   }
 }
 
+// Cloud sync is only allowed after this user's data has been loaded from Firestore successfully.
+// Until then, local data may be empty or stale, and syncing it would overwrite the cloud copy.
+let tpCloudReadyUid = null;
+
 // Load all app data from Firestore → populate localStorage
 async function fsLoadAll(uid) {
   if (!uid || !db) return;
+  tpCloudReadyUid = null;
   const fsKeys = ["flashcards", "notes", "brainmaps", "tracker", "journal", "courses"];
   const results = {};
+  let failed = false;
   await Promise.all(fsKeys.map(async (fsKey) => {
     try {
       const snap = await getDoc(doc(db, "users", uid, "appdata", fsKey));
       if (snap.exists()) results[fsKey] = snap.data();
-    } catch {}
+    } catch (e) { failed = true; console.warn("[fsLoadAll]", fsKey, e?.message); }
   }));
+  if (failed) throw new Error("cloud load failed");
 
   // Populate localStorage from Firestore data
   const mapping = [
@@ -209,6 +217,7 @@ async function fsLoadAll(uid) {
       } catch {}
     }
   }
+  tpCloudReadyUid = uid;
   return results;
 }
 
@@ -12970,6 +12979,7 @@ function AceItGalaxyInner() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [aiNotice, setAiNotice] = useState(null);
+  const [cloudLoading, setCloudLoading] = useState(false);
   useEffect(() => {
     let timer;
     const onBlocked = (e) => {
@@ -13206,6 +13216,20 @@ Help them see connections ACROSS their apps. For example:
   };
 
   const openAuth  = (mode = "login") => { setAuthMode(mode); setShowAuth(true); };
+  // Load the student's cloud data before any app opens, so apps never start from an empty list.
+  const loadCloudData = (uid) => {
+    setCloudLoading(true);
+    let done = false;
+    const finish = (ok) => {
+      if (done) return; done = true;
+      setCloudLoading(false);
+      setUser(u => u ? { ...u } : u);
+      if (!ok) setAiNotice("Couldn't load your saved work from the cloud. Changes on this device won't be saved until you reload the page.");
+    };
+    const timer = setTimeout(() => finish(false), 15000);
+    return fsLoadAll(uid).then(() => { clearTimeout(timer); finish(true); }).catch(() => { clearTimeout(timer); finish(false); });
+  };
+
   const handleAuth = (userData) => {
     // If this browser still holds a different student's data, wipe it before anything is merged.
     try {
@@ -13217,7 +13241,8 @@ Help them see connections ACROSS their apps. For example:
     window.history.pushState({ screen: "galaxy" }, "", "/");
     // Load Firestore data on auth (non-blocking)
     if (userData.uid) {
-      fsMigrateGuestData(userData.uid).then(()=>fsLoadAll(userData.uid)).catch(()=>{});
+      setCloudLoading(true);
+      fsMigrateGuestData(userData.uid).catch(()=>{}).then(()=>loadCloudData(userData.uid));
     }
   };
   const handleLogout = async () => {
@@ -13274,10 +13299,7 @@ Help them see connections ACROSS their apps. For example:
         setShowHome(false);
         setShowAuth(false);
         // Load all Firestore data on login
-        fsLoadAll(firebaseUser.uid).then(() => {
-          // Force re-render so apps pick up new localStorage values
-          setUser(u => u ? { ...u } : u);
-        }).catch(() => {});
+        loadCloudData(firebaseUser.uid);
         // Enrich with Firestore name in background
         getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
           if (snap.exists() && snap.data().name) {
@@ -13304,6 +13326,7 @@ Help them see connections ACROSS their apps. For example:
       if (!mapping) return;
       const uid = (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
       if (!uid) return;
+      if (uid !== tpCloudReadyUid) return; // cloud data not loaded yet: don't overwrite it
       setSyncStatus("saving");
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       fsWrite(uid, mapping.fsKey, mapping.field, data).then(() => {
@@ -13350,7 +13373,7 @@ Help them see connections ACROSS their apps. For example:
   }, []); // eslint-disable-line
 
   // Show splash while Firebase resolves auth state
-  if (authLoading) return (
+  if (authLoading || cloudLoading) return (
     <div style={{ position:"fixed", inset:0, background:"#06040E", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#F5C842", letterSpacing:-0.5 }}>Ace It ✦</div>
     </div>
