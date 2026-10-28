@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, Component, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, Component, lazy, Suspense, Fragment } from "react";
 import { auth, db, googleProvider, storage } from "./firebase";
+import { cloudSync } from "./cloudSync";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import {
   createUserWithEmailAndPassword,
@@ -70,160 +71,11 @@ function AppChunkFallback() {
   );
 }
 
-// ─── Firestore Sync Layer ──────────────────────────────────────────────────────
-// localStorage = instant cache, Firestore = persistent source of truth
-// All writes: localStorage first (instant) → Firestore background (no blocking)
-
-const TP_SYNC_KEYS = {
-  "tp_fc_decks":      { fsKey: "flashcards", field: "decks" },
-  "tp_fc_folders":    { fsKey: "flashcards", field: "folders" },
-  "tp_notes":         { fsKey: "notes",      field: "notes" },
-  "tp_note_folders":  { fsKey: "notes",      field: "folders" },
-  "tp_bm_maps":       { fsKey: "brainmaps",  field: "maps" },
-  "tp_tracker_tasks": { fsKey: "tracker",    field: "tasks" },
-  "tp_journal":       { fsKey: "journal",    field: "entries" },
-  "tp_courses":       { fsKey: "courses",    field: "courses" },
-};
-
-// Strip base64 images before Firestore (documents have 1MB limit)
-function stripImages(data) {
-  if (!Array.isArray(data)) return data;
-  return data.map(item => {
-    if (!item || typeof item !== "object") return item;
-    const stripped = { ...item };
-    // Strip base64 card images from flash card decks
-    if (stripped.cards) {
-      stripped.cards = stripped.cards.map(c => {
-        if (c.image && c.image.startsWith("data:")) {
-          return { ...c, image: null };
-        }
-        return c;
-      });
-    }
-    // Strip note content that might have embedded images
-    return stripped;
-  });
-}
-
-// Write one field to Firestore (background, never blocks UI)
-async function fsWrite(uid, fsKey, field, data) {
-  if (!uid || !db) return;
-  try {
-    const ref = doc(db, "users", uid, "appdata", fsKey);
-    await setDoc(ref, { [field]: stripImages(data), updatedAt: serverTimestamp() }, { merge: true });
-  } catch (e) {
-    console.warn(`[tpSync] Firestore write failed (${fsKey}.${field}):`, e?.message);
-  }
-}
-
-// Save every synced app's local data to Firestore right now. Returns false if any write fails.
-async function tpFlushToCloud(uid) {
-  if (!uid || !db) return true;
-  if (uid !== tpCloudReadyUid) return false; // never overwrite the cloud with data that wasn't loaded from it
-  const byDoc = {};
-  for (const [lsKey, { fsKey, field }] of Object.entries(TP_SYNC_KEYS)) {
-    try {
-      const raw = localStorage.getItem(lsKey);
-      if (raw == null) continue;
-      (byDoc[fsKey] ||= {})[field] = stripImages(JSON.parse(raw));
-    } catch {}
-  }
-  const writes = Object.entries(byDoc).map(([fsKey, fields]) =>
-    setDoc(doc(db, "users", uid, "appdata", fsKey), { ...fields, updatedAt: serverTimestamp() }, { merge: true }));
-  if (!writes.length) return true;
-  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000));
-  try { await Promise.race([Promise.all(writes), timeout]); return true; }
-  catch (e) { console.warn("[logout] cloud save failed:", e?.message); return false; }
-}
-
-// Remove all of a student's study data from this browser (used on logout and account switch).
-function tpClearLocalData() {
-  try {
-    const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && (k.startsWith("tp_") || k.startsWith("ch_"))) keys.push(k);
-    }
-    keys.forEach(k => localStorage.removeItem(k));
-  } catch {}
-}
-
-// Migrate guest (localStorage-only) data into Firebase on first login/signup
-async function fsMigrateGuestData(uid) {
-  if (!uid || !db) return;
-  const mapping = [
-    ["tp_fc_decks","flashcards","decks"],["tp_fc_folders","flashcards","folders"],
-    ["tp_notes","notes","notes"],["tp_note_folders","notes","folders"],
-    ["tp_bm_maps","brainmaps","maps"],["tp_tracker_tasks","tracker","tasks"],
-    ["tp_journal","journal","entries"],["tp_courses","courses","courses"],
-  ];
-  for (const [lsKey, fsKey, field] of mapping) {
-    try {
-      const localRaw=localStorage.getItem(lsKey); if(!localRaw) continue;
-      const localData=JSON.parse(localRaw);
-      if(!Array.isArray(localData)||localData.length===0) continue;
-      const ref=doc(db,"users",uid,"appdata",fsKey);
-      const snap=await getDoc(ref);
-      if(snap.exists()){
-        const existing=snap.data()[field];
-        if(Array.isArray(existing)&&existing.length>0){
-          const existingIds=new Set(existing.map(x=>x.id));
-          const newItems=localData.filter(x=>!existingIds.has(x.id));
-          if(newItems.length>0){const merged=[...existing,...newItems];await setDoc(ref,{[field]:stripImages(merged),updatedAt:serverTimestamp()},{merge:true});localStorage.setItem(lsKey,JSON.stringify(merged));}
-        } else { await setDoc(ref,{[field]:stripImages(localData),updatedAt:serverTimestamp()},{merge:true}); }
-      } else { await setDoc(ref,{[field]:stripImages(localData),updatedAt:serverTimestamp()},{merge:true}); }
-    } catch(e){console.warn("[migrate]",lsKey,e?.message);}
-  }
-}
-
-// Cloud sync is only allowed after this user's data has been loaded from Firestore successfully.
-// Until then, local data may be empty or stale, and syncing it would overwrite the cloud copy.
-let tpCloudReadyUid = null;
-
-// Load all app data from Firestore → populate localStorage
-async function fsLoadAll(uid) {
-  if (!uid || !db) return;
-  tpCloudReadyUid = null;
-  const fsKeys = ["flashcards", "notes", "brainmaps", "tracker", "journal", "courses"];
-  const results = {};
-  let failed = false;
-  await Promise.all(fsKeys.map(async (fsKey) => {
-    try {
-      const snap = await getDoc(doc(db, "users", uid, "appdata", fsKey));
-      if (snap.exists()) results[fsKey] = snap.data();
-    } catch (e) { failed = true; console.warn("[fsLoadAll]", fsKey, e?.message); }
-  }));
-  if (failed) throw new Error("cloud load failed");
-
-  // Populate localStorage from Firestore data
-  const mapping = [
-    ["tp_fc_decks",      results.flashcards?.decks],
-    ["tp_fc_folders",    results.flashcards?.folders],
-    ["tp_notes",         results.notes?.notes],
-    ["tp_note_folders",  results.notes?.folders],
-    ["tp_bm_maps",       results.brainmaps?.maps],
-    ["tp_tracker_tasks", results.tracker?.tasks],
-    ["tp_journal",       results.journal?.entries],
-    ["tp_courses",       results.courses?.courses],
-  ];
-
-  for (const [lsKey, value] of mapping) {
-    if (value !== undefined && value !== null) {
-      try {
-        // Only overwrite if Firestore has data AND it's newer than local
-        // (simple strategy: Firestore wins on login)
-        const isNonEmpty = Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0;
-        if (isNonEmpty) { localStorage.setItem(lsKey, JSON.stringify(value)); }
-      } catch {}
-    }
-  }
-  tpCloudReadyUid = uid;
-  return results;
-}
-
-// Dispatch sync event — called by each app after localStorage write
+// ─── Cloud sync ────────────────────────────────────────────────────────────────
+// Apps save to localStorage, then call tpSync(); src/syncCore.js + src/cloudSync.js
+// take care of saving to Firestore safely (load-before-save, merging, any size, retries).
 function tpSync(lsKey, data) {
-  window.dispatchEvent(new CustomEvent("tpSync", { detail: { lsKey, data } }));
+  cloudSync.queue(lsKey, data);
 }
 
 // Refined, curated palette — desaturated sophistication with precise accents
@@ -1712,7 +1564,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       <FCSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} decks={decks} view={view} setView={(v) => { fcNavigate(v); setSidebarOpen(false); setActiveDeck(null); }} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} />
 
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
-      {view === "home"    && <FCHomeView    decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
+      {view === "home"    && <FCHomeView    user={user} decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
       {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
@@ -1726,7 +1578,7 @@ const mastery = newCards.length > 0 ? Math.round(mastered/newCards.length*100) :
 }
 
 // ── Home View ─────────────────────────────────────────────────────────────────
-function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, onQuickBuild }) {
+function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, onQuickBuild, user }) {
   return (
     <div>
       {/* Hero */}
@@ -6255,7 +6107,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const [confirmClear, setConfirmClear] = useState(false);
   const wordCount = inputText.trim().split(/\s+/).filter(Boolean).length;
   const outputRef = useRef(null);
-  useEffect(()=>{try{localStorage.setItem("tp_simplifier_history",JSON.stringify(history));}catch{}},[history]);
+  useEffect(()=>{try{localStorage.setItem("tp_simplifier_history",JSON.stringify(history));}catch{}tpSync("tp_simplifier_history",history);},[history]);
   useEffect(()=>()=>{window.speechSynthesis?.cancel();},[]);
 
   const ytId = getYoutubeId(ytUrl);
@@ -7369,7 +7221,6 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
     const c = newConvo();
     setConversations(cs => [c, ...cs]);
     setActiveConvoId(c.id);
-    setInput("");
   };
 
   const deleteConvo = (id) => {
@@ -7445,17 +7296,20 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
   useEffect(() => {
     if (!paGoalsMounted.current) { paGoalsMounted.current = true; return; }
     try { localStorage.setItem("tp_pa_goals", JSON.stringify(goals)); } catch {}
+    tpSync("tp_pa_goals", goals);
   }, [goals]);
   const paPlanMounted = useRef(false);
   useEffect(() => {
     if (!paPlanMounted.current) { paPlanMounted.current = true; return; }
     try { localStorage.setItem("tp_pa_plan", JSON.stringify(planDays)); } catch {}
+    tpSync("tp_pa_plan", planDays);
   }, [planDays]);
   // Persist conversations
   const paConvoMounted = useRef(false);
   useEffect(() => {
     if (!paConvoMounted.current) { paConvoMounted.current = true; return; }
     try { localStorage.setItem("tp_pa_convos", JSON.stringify(conversations.slice(0, 50))); } catch {}
+    tpSync("tp_pa_convos", conversations.slice(0, 50));
   }, [conversations]);
   // Persist active convo id
   useEffect(() => {
@@ -9089,7 +8943,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               <div style={{fontSize:13,color:"#5A5752",marginBottom:20}}>"{folders.find(f=>f.id===confirmDeleteFolder)?.name}" will be deleted. Notes inside will stay.</div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>setConfirmDeleteFolder(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #D8D5CE",background:"none",fontSize:13,fontWeight:600,cursor:"pointer",color:"#5A5752"}}>Cancel</button>
-                <button onClick={()=>{deleteFolderDeep(active.id,confirmDeleteFolder);setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
+                <button onClick={()=>{const fid=confirmDeleteFolder;setFolders(prev=>prev.filter(f=>f.id!==fid));setNotes(prev=>prev.map(n=>n.folder===fid?{...n,folder:""}:n));if(filterFolder===fid)setFilterFolder("all");setConfirmDeleteFolder(null);}} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#E85D3F",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>Delete</button>
               </div>
             </div>
           </div>
@@ -10618,7 +10472,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                 {(() => { const c = J_CATEGORIES.find(x => x.id === activeEntry.category); return c ? <span style={{ fontSize:11, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{c.emoji} {c.label}</span> : null; })()}
               </div>
             </div>
-            <button onClick={() => { setConfirmDeleteEntry(true); }}
+            <button onClick={() => { if (window.confirm("Delete this journal entry? This can't be undone.")) deleteEntry(activeEntry.id); }}
               style={{ background:"none", border:`1px solid #FECACA`, borderRadius:7, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#E85D3F", flexShrink:0 }}>
               🗑 Delete
             </button>
@@ -12980,6 +12834,7 @@ function AceItGalaxyInner() {
   const [authMode, setAuthMode] = useState("login");
   const [aiNotice, setAiNotice] = useState(null);
   const [cloudLoading, setCloudLoading] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
   useEffect(() => {
     let timer;
     const onBlocked = (e) => {
@@ -13005,7 +12860,7 @@ function AceItGalaxyInner() {
   // reads below (marked with // L2: replace with db.query(...))
   // ─────────────────────────────────────────────────────────────────────────────
 
-  const [userProfile, setUserProfile] = useState(() => {
+  const readUserProfile = () => {
     try {
       const saved = localStorage.getItem("tp_userProfile");
       if (saved) return JSON.parse(saved);
@@ -13027,10 +12882,12 @@ function AceItGalaxyInner() {
       weakSubjects:    [],    // subjects with avg mastery < 40%
       strongSubjects:  [],    // subjects with avg mastery > 80%
     };
-  });
+  };
+  const [userProfile, setUserProfile] = useState(readUserProfile);
 
   useEffect(() => {
     try { localStorage.setItem("tp_userProfile", JSON.stringify(userProfile)); } catch {}
+    tpSync("tp_userProfile", userProfile);
   }, [userProfile]);
 
   // ── Live data readers — these give the AI real-time knowledge of user's content
@@ -13222,38 +13079,43 @@ Help them see connections ACROSS their apps. For example:
     let done = false;
     const finish = (ok) => {
       if (done) return; done = true;
+      if (!ok) cloudSync.reset(); // stop a slow load from landing later; nothing will sync this session
+      setUserProfile(readUserProfile());
+      setDataVersion(v => v + 1);
       setCloudLoading(false);
-      setUser(u => u ? { ...u } : u);
       if (!ok) setAiNotice("Couldn't load your saved work from the cloud. Changes on this device won't be saved until you reload the page.");
     };
-    const timer = setTimeout(() => finish(false), 15000);
-    return fsLoadAll(uid).then(() => { clearTimeout(timer); finish(true); }).catch(() => { clearTimeout(timer); finish(false); });
+    const timer = setTimeout(() => finish(false), 20000);
+    return cloudSync.load(uid)
+      .then(() => { clearTimeout(timer); finish(true); })
+      .catch((e) => { clearTimeout(timer); console.warn("[sync] load failed:", e?.message); finish(false); });
   };
 
   const handleAuth = (userData) => {
     // If this browser still holds a different student's data, wipe it before anything is merged.
     try {
       const prevUid = JSON.parse(localStorage.getItem("tp_user") || "null")?.uid;
-      if (prevUid && userData.uid && prevUid !== userData.uid) tpClearLocalData();
+      if (prevUid && userData.uid && prevUid !== userData.uid) cloudSync.clearLocalData();
     } catch {}
     try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
     window.history.pushState({ screen: "galaxy" }, "", "/");
     // Load Firestore data on auth (non-blocking)
     if (userData.uid) {
-      setCloudLoading(true);
-      fsMigrateGuestData(userData.uid).catch(()=>{}).then(()=>loadCloudData(userData.uid));
+      if (cloudSync.currentUid() !== userData.uid) loadCloudData(userData.uid);
     }
   };
   const handleLogout = async () => {
     // Save the latest work to the cloud, then clear this browser so the next person can't see it.
     const uid = auth.currentUser?.uid || (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
-    if (uid) {
-      const saved = await tpFlushToCloud(uid);
+    if (uid && cloudSync.isReady()) {
+      const saved = await cloudSync.flushNow(10000);
       if (!saved && !window.confirm("Some of your latest changes haven't been saved to the cloud yet (check your connection). Log out anyway? Unsaved changes on this device will be lost.")) return;
     }
     try { await signOut(auth); } catch {}
-    tpClearLocalData();
+    cloudSync.reset({ clearData: true });
+    setUserProfile(readUserProfile());
+    setDataVersion(v => v + 1);
     setUser(null); setShowHome(true); setCurrentApp(null);
     window.history.pushState({ app: null }, "", "/");
   };
@@ -13290,16 +13152,14 @@ Help them see connections ACROSS their apps. For example:
         const cachedUid = cachedUser ? JSON.parse(cachedUser)?.uid : null;
         if (cachedUid && cachedUid !== firebaseUser.uid) {
           // Different user logged in — clear previous user's data
-          ["tp_fc_decks","tp_fc_folders","tp_notes","tp_note_folders","tp_bm_maps","tp_tracker_tasks","tp_journal","tp_courses","tp_pa_convos","tp_pa_goals","tp_pa_plan"].forEach(k => {
-            try { localStorage.removeItem(k); } catch {}
-          });
+          cloudSync.clearLocalData();
         }
         try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
         setUser(userData);
         setShowHome(false);
         setShowAuth(false);
-        // Load all Firestore data on login
-        loadCloudData(firebaseUser.uid);
+        // Load all cloud data on login (once per account per page load)
+        if (cloudSync.currentUid() !== firebaseUser.uid) loadCloudData(firebaseUser.uid);
         // Enrich with Firestore name in background
         getDoc(doc(db, "users", firebaseUser.uid)).then(snap => {
           if (snap.exists() && snap.data().name) {
@@ -13310,34 +13170,32 @@ Help them see connections ACROSS their apps. For example:
           }
         }).catch(() => {});
       } else {
-        // Only clear if we don't have a localStorage backup
-        const cached = localStorage.getItem("tp_user");
-        if (!cached) setUser(null);
+        // Signed out (here, in another tab, or the session ended): never leave
+        // the previous student's work on screen.
+        if (localStorage.getItem("tp_user") || cloudSync.currentUid()) {
+          cloudSync.reset({ clearData: true });
+          setUserProfile(readUserProfile());
+          setDataVersion(v => v + 1);
+          setCurrentApp(null); setShowHome(true);
+        }
+        setUser(null);
       }
       setAuthLoading(false);
     });
 
-    // Listen for tpSync events from any app and write to Firestore
+    // Cloud sync status → header indicator + a notice if saving keeps failing
     const syncTimerRef = { current: null };
-    const handleSyncEvent = (e) => {
-      const { lsKey, data } = e.detail || {};
-      if (!lsKey || !data) return;
-      const mapping = TP_SYNC_KEYS[lsKey];
-      if (!mapping) return;
-      const uid = (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
-      if (!uid) return;
-      if (uid !== tpCloudReadyUid) return; // cloud data not loaded yet: don't overwrite it
-      setSyncStatus("saving");
+    const handleSyncStatus = (e) => {
+      const { status, message } = e.detail || {};
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-      fsWrite(uid, mapping.fsKey, mapping.field, data).then(() => {
-        setSyncStatus("saved");
-        syncTimerRef.current = setTimeout(() => setSyncStatus("idle"), 2500);
-      }).catch(() => {
-        setSyncStatus("error");
-        syncTimerRef.current = setTimeout(() => setSyncStatus("idle"), 3000);
-      });
+      setSyncStatus(status === "saved" ? "saved" : status === "error" ? "error" : "saving");
+      if (status === "saved") syncTimerRef.current = setTimeout(() => setSyncStatus("idle"), 2500);
+      if (status === "error" && message) setAiNotice(message);
     };
-    window.addEventListener("tpSync", handleSyncEvent);
+    // Another device or tab changed the same data: reload the open app with the merged copy
+    const handleSyncReplaced = () => setDataVersion(v => v + 1);
+    window.addEventListener("tp-sync-status", handleSyncStatus);
+    window.addEventListener("tp-sync-replaced", handleSyncReplaced);
 
     // Listen for legal page navigation from modals/nested components
     const handleLegalEvent = (e) => {
@@ -13347,7 +13205,7 @@ Help them see connections ACROSS their apps. For example:
     };
     window.addEventListener("tpLegal", handleLegalEvent);
 
-    return () => { unsub(); window.removeEventListener("tpSync", handleSyncEvent); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
+    return () => { unsub(); window.removeEventListener("tp-sync-status", handleSyncStatus); window.removeEventListener("tp-sync-replaced", handleSyncReplaced); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
   }, []); // eslint-disable-line
 
   // Sync browser back/forward with all navigation layers — MUST be here, before any early returns
@@ -13436,7 +13294,7 @@ Help them see connections ACROSS their apps. For example:
   })();
   return (
     <>
-      {screen}
+      <Fragment key={dataVersion}>{screen}</Fragment>
       {currentApp && showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       {aiNotice && <AiNotice message={aiNotice} onClose={()=>setAiNotice(null)} />}
     </>
