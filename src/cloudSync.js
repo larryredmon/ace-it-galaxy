@@ -5,7 +5,7 @@
 // The old layout (users/{uid}/appdata/{app}) is still read so nothing is lost.
 import { db } from "./firebase";
 import { doc, getDoc, writeBatch, runTransaction } from "firebase/firestore";
-import { createSyncEngine, ConflictError, MAX_BYTES } from "./syncCore";
+import { createSyncEngine, ConflictError, MAX_BYTES, SYNC_KEYS } from "./syncCore";
 
 const LEGACY = {
   tp_fc_decks: ["flashcards", "decks"], tp_fc_folders: ["flashcards", "folders"],
@@ -99,6 +99,16 @@ export const cloudSync = createSyncEngine({
   store: firestoreStore,
   storage: window.localStorage,
   emit: (type, detail) => window.dispatchEvent(new CustomEvent(`tp-sync-${type}`, { detail })),
+});
+
+// Another tab or window changed saved study data: tell the app to reload the open screen.
+let externalTimer = null;
+window.addEventListener("storage", (e) => {
+  if (e.key === "tp_sync_meta") cloudSync.reloadMeta();
+  if (e.key === null || SYNC_KEYS.includes(e.key)) {
+    clearTimeout(externalTimer);
+    externalTimer = setTimeout(() => window.dispatchEvent(new CustomEvent("tp-sync-external")), 300);
+  }
 });
 
 // Best effort: save when the tab is hidden or closed.

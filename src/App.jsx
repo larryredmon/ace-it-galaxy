@@ -13099,7 +13099,7 @@ Help them see connections ACROSS their apps. For example:
     } catch {}
     try { localStorage.setItem("tp_user", JSON.stringify(userData)); } catch {}
     setUser(userData); setShowAuth(false); setShowHome(false);
-    window.history.pushState({ screen: "galaxy" }, "", "/");
+    if (!currentApp) window.history.pushState({ screen: "galaxy" }, "", "/"); // stay put when logging in from inside an app
     // Load Firestore data on auth (non-blocking)
     if (userData.uid) {
       if (cloudSync.currentUid() !== userData.uid) loadCloudData(userData.uid);
@@ -13193,9 +13193,12 @@ Help them see connections ACROSS their apps. For example:
       if (status === "error" && message) setAiNotice(message);
     };
     // Another device or tab changed the same data: reload the open app with the merged copy
+    // …also after every cloud load, and when another tab/window changed saved data
     const handleSyncReplaced = () => setDataVersion(v => v + 1);
     window.addEventListener("tp-sync-status", handleSyncStatus);
     window.addEventListener("tp-sync-replaced", handleSyncReplaced);
+    window.addEventListener("tp-sync-loaded", handleSyncReplaced);
+    window.addEventListener("tp-sync-external", handleSyncReplaced);
 
     // Listen for legal page navigation from modals/nested components
     const handleLegalEvent = (e) => {
@@ -13205,7 +13208,7 @@ Help them see connections ACROSS their apps. For example:
     };
     window.addEventListener("tpLegal", handleLegalEvent);
 
-    return () => { unsub(); window.removeEventListener("tp-sync-status", handleSyncStatus); window.removeEventListener("tp-sync-replaced", handleSyncReplaced); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
+    return () => { unsub(); window.removeEventListener("tp-sync-status", handleSyncStatus); window.removeEventListener("tp-sync-replaced", handleSyncReplaced); window.removeEventListener("tp-sync-loaded", handleSyncReplaced); window.removeEventListener("tp-sync-external", handleSyncReplaced); if (syncTimerRef.current) clearTimeout(syncTimerRef.current); window.removeEventListener("tpLegal", handleLegalEvent); };
   }, []); // eslint-disable-line
 
   // Sync browser back/forward with all navigation layers — MUST be here, before any early returns

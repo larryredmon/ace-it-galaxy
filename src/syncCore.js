@@ -125,6 +125,7 @@ export function createSyncEngine({ store, storage, emit = () => {}, now = () => 
     meta.uid = newUid; saveMeta();
     ready = true;
     if (pending.size) schedule(0);
+    emit("loaded", { changed });
     return { changed };
   }
 
@@ -215,8 +216,14 @@ export function createSyncEngine({ store, storage, emit = () => {}, now = () => 
     meta = { uid: null, keys: {} };
   }
 
+  // Another tab saved: pick up its bookkeeping so the two tabs don't fight.
+  function reloadMeta() {
+    const m = loadMeta();
+    if (uid && m.uid === uid) meta = m;
+  }
+
   return {
-    load, queue, flush, flushNow, reset, clearLocalData,
+    load, queue, flush, flushNow, reset, clearLocalData, reloadMeta,
     isReady: () => ready, currentUid: () => uid, pendingCount: () => pending.size,
   };
 }
