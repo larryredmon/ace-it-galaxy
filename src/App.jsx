@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Component, lazy, Suspense, Fragment } from "react";
-import { auth, db, googleProvider, storage } from "./firebase";
+import { auth, db, googleProvider, appleProvider, APPLE_SIGNIN_ENABLED, storage } from "./firebase";
 import { cloudSync } from "./cloudSync";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import {
@@ -8132,6 +8132,34 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 }
 
 // ─── Auth Modal ──────────────────────────────────────────────────────────────
+// Turn a Firebase user from Google/Apple sign-in into our user object, creating the profile doc if new.
+async function socialUserData(u) {
+  const fallback = (u.email || "").split("@")[0];
+  const nameFromProvider = u.displayName || (fallback.includes("privaterelay") ? "" : fallback);
+  let name = nameFromProvider || "Student";
+  try {
+    const snap = await getDoc(doc(db, "users", u.uid));
+    if (snap.exists() && snap.data().name) name = snap.data().name;
+    else await setDoc(doc(db, "users", u.uid), { name, email: u.email || null, createdAt: serverTimestamp(), plan: "free" }, { merge: true });
+  } catch {}
+  return { uid: u.uid, name, email: u.email || "", avatar: name[0].toUpperCase() };
+}
+
+function socialErrorMessage(err, providerName) {
+  switch (err?.code) {
+    case "auth/account-exists-with-different-credential":
+      return "You already have an account with this email using a different sign-in method. Sign in that way first.";
+    case "auth/unauthorized-domain":
+      return `${providerName} sign-in isn't allowed on this web address yet.`;
+    case "auth/operation-not-allowed":
+      return `${providerName} sign-in isn't turned on yet.`;
+    case "auth/network-request-failed":
+      return "Network error. Check your connection and try again.";
+    default:
+      return `${providerName} sign-in failed. Please try again.`;
+  }
+}
+
 function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [mode, setMode]         = useState(initialMode);
   const [step, setStep]         = useState("form");
@@ -8207,15 +8235,29 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
     }
   };
 
-  const handleGoogle = async () => {
+  // Popup sign-in works in Safari and Chrome even when they block third-party storage
+  // (redirect sign-in often silently fails there). Falls back to redirect if the popup is blocked.
+  const handleSocial = async (provider, providerName) => {
     setLoading(true); setErrors({});
     try {
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, provider);
+      const userData = await socialUserData(result.user);
+      setStep("success");
+      setTimeout(() => onAuth(userData), 900);
     } catch (err) {
-      setErrors({ general: "Google sign in failed. Please try again." });
+      if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request" || err?.code === "auth/user-cancelled") {
+        setLoading(false); return;
+      }
+      if (err?.code === "auth/popup-blocked") {
+        try { await signInWithRedirect(auth, provider); return; } catch (e2) { err = e2; }
+      }
+      console.warn("[auth]", providerName, err?.code);
+      setErrors({ general: socialErrorMessage(err, providerName) });
       setLoading(false);
     }
   };
+  const handleGoogle = () => handleSocial(googleProvider, "Google");
+  const handleApple  = () => handleSocial(appleProvider, "Apple");
 
   const handleForgotPassword = async () => {
     if (!email.trim()) { setErrors({ email: "Enter your email above first" }); return; }
@@ -8295,8 +8337,8 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                   onMouseEnter={e => e.currentTarget.style.background = "#F7F6F2"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
                   <span style={{ fontSize: 15, fontWeight: 900 }}>G</span> Continue with Google
                 </button>
-                <button disabled style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: "1.5px solid #1A1814", background: "#1A1814", color: "#F7F6F2", fontSize: 12, fontWeight: 600, cursor: "not-allowed", opacity: 0.5, fontFamily: "'DM Sans', sans-serif" }}>
-                  <span>🍎</span> Continue with Apple
+                <button onClick={APPLE_SIGNIN_ENABLED ? handleApple : undefined} disabled={loading || !APPLE_SIGNIN_ENABLED} title={APPLE_SIGNIN_ENABLED ? "" : "Coming soon"} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 8, border: "1.5px solid #1A1814", background: "#1A1814", color: "#F7F6F2", fontSize: 12, fontWeight: 600, cursor: APPLE_SIGNIN_ENABLED ? "pointer" : "not-allowed", opacity: APPLE_SIGNIN_ENABLED ? 1 : 0.5, fontFamily: "'DM Sans', sans-serif" }}>
+                  {APPLE_SIGNIN_ENABLED ? "Continue with Apple" : "Apple (coming soon)"}
                 </button>
               </div>
 
@@ -13125,27 +13167,17 @@ Help them see connections ACROSS their apps. For example:
     // Set persistence to local so user stays logged in
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // Handle Google redirect result first
+    // Handle a Google/Apple redirect sign-in (only used when a popup was blocked)
     getRedirectResult(auth).then(async (result) => {
-      if (result?.user) {
-        const u = result.user;
-        const displayName = u.displayName || u.email.split("@")[0];
-        try {
-          const snap = await getDoc(doc(db, "users", u.uid));
-          if (!snap.exists()) {
-            await setDoc(doc(db, "users", u.uid), { name: displayName, email: u.email, createdAt: serverTimestamp(), plan: "free" });
-          }
-        } catch {}
-        setUser({ uid: u.uid, name: displayName, email: u.email, avatar: displayName[0].toUpperCase() });
-        setShowHome(false);
-        setShowAuth(false);
-      }
-    }).catch(() => {});
+      if (result?.user) handleAuth(await socialUserData(result.user));
+    }).catch((err) => {
+      if (err?.code) setAiNotice(socialErrorMessage(err, "That"));
+    });
 
     // Listen for auth state changes
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const displayName = firebaseUser.displayName || firebaseUser.email.split("@")[0];
+        const displayName = firebaseUser.displayName || (firebaseUser.email || "").split("@")[0] || "Student";
         const userData = { uid: firebaseUser.uid, name: displayName, email: firebaseUser.email, avatar: displayName[0].toUpperCase() };
         // Read cached UID BEFORE overwriting so we can detect account switch
         const cachedUser = localStorage.getItem("tp_user");
