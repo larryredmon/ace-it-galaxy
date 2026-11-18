@@ -465,7 +465,8 @@ function StudyBuddyApp({ onBack, user, openAuth }) {
     }catch(e){if(e.name!=='NotAllowedError')setMediaError('Screen share failed.');}
   };
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const filteredRooms=rooms.filter(r=>r.isPublic&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
+  const nowMs=Date.now();const isLive=r=>Object.keys(presenceMap[r.id]||{}).length>0||(nowMs-(r.createdAt?.toDate?.()?.getTime?.()||nowMs))<NEW_ROOM_GRACE_MS;
+  const filteredRooms=rooms.filter(r=>r.isPublic&&isLive(r)&&(!searchQ||r.subject?.toLowerCase().includes(searchQ.toLowerCase())||r.title?.toLowerCase().includes(searchQ.toLowerCase())));
   const partList=Object.values(participants);
   const otherStreams=Object.entries(remoteStreams);
   const isHost=activeRoom&&user&&activeRoom.host===user.uid;
