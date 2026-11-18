@@ -1,0 +1,66 @@
+rules_version = '2';
+// Paste this into Firebase console → Firestore Database → Rules → Publish.
+// Kept in the repo so changes are tracked.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── A student's account + all their study data ───────────────────────────
+    // users/{uid} and everything under it (appdata/*, sync/*, sync/*/chunks/*).
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // ── Study Buddy rooms ────────────────────────────────────────────────────
+    match /studyRooms/{roomId} {
+      function signedIn() { return request.auth != null; }
+      function isHost()   { return signedIn() && resource.data.host == request.auth.uid; }
+
+      allow read: if signedIn();
+
+      // You must be the host of a room you create.
+      allow create: if signedIn()
+                    && request.resource.data.host == request.auth.uid;
+
+      // The host can change anything except who the host is.
+      // Everyone else can only join/leave, share docs, and run the shared timer.
+      allow update: if signedIn()
+                    && request.resource.data.host == resource.data.host
+                    && (isHost()
+                        || request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['participants', 'studyDocs', 'timerOn', 'timerSecs',
+                                       'timerMode', 'timerChangedBy', 'pinnedMsg']));
+
+      // Only the host can close a room — unless it's empty (everyone left)
+      // or abandoned (older than 6 hours), so empty rooms still get cleaned up.
+      allow delete: if isHost()
+                    || (signedIn() && resource.data.get('participants', {}).size() == 0)
+                    || (signedIn() && resource.data.createdAt < request.time - duration.value(6, 'h'));
+
+      // Chat: post as yourself only; edit or delete only your own messages
+      // (the host can remove any message).
+      match /messages/{msgId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+        allow update: if signedIn() && resource.data.userId == request.auth.uid
+                      && request.resource.data.userId == request.auth.uid;
+        allow delete: if signedIn()
+                      && (resource.data.userId == request.auth.uid
+                          || get(/databases/$(database)/documents/studyRooms/$(roomId)).data.host == request.auth.uid);
+      }
+
+      // Video-call connection messages: send as yourself; sender or receiver can clean up.
+      match /signals/{sigId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.from == request.auth.uid;
+        allow delete: if signedIn()
+                      && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      }
+    }
+
+    // ── Everything else (including aceUsage daily AI counters) is server-only ─
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

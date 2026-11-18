@@ -7,7 +7,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 export const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 100;
 const TIME_ZONE = "America/Chicago";
 
-function adminApp() {
+export function adminApp() {
   if (getApps().length) return getApps()[0];
   const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || "").trim();
   if (!raw) throw new Error("FIREBASE_SERVICE_ACCOUNT is not set");

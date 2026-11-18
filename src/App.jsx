@@ -12,6 +12,14 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  linkWithCredential,
+  linkWithPopup,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider,
+  GoogleAuthProvider,
+  OAuthProvider,
   browserLocalPersistence,
   setPersistence,
 } from "firebase/auth";
@@ -8160,6 +8168,163 @@ function socialErrorMessage(err, providerName) {
   }
 }
 
+// ── Settings: account, sign-in methods, delete account ─────────────────────────
+function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted }) {
+  const fbUser = auth.currentUser;
+  const [, force] = useState(0);
+  const [msg, setMsg] = useState(null);           // { type: "ok"|"err", text }
+  const [busy, setBusy] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [delPass, setDelPass] = useState("");
+
+  const providers = (fbUser?.providerData || []).map(p => p.providerId);
+  const hasPassword = providers.includes("password");
+  const hasGoogle = providers.includes("google.com");
+  const hasApple = providers.includes("apple.com");
+
+  const card = { background: "#fff", border: "1px solid #E8E5E0", borderRadius: 14, padding: "22px 24px", marginBottom: 18 };
+  const h2 = { fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 800, color: "#1A1814", marginBottom: 14 };
+  const row = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderTop: "1px solid #F0EEE9", flexWrap: "wrap" };
+  const btn = (dark) => ({ padding: "8px 16px", borderRadius: 8, border: dark ? "none" : "1.5px solid #E8E5E0", background: dark ? "#1A1814" : "#fff", color: dark ? "#fff" : "#3A3830", fontSize: 13, fontWeight: 700, cursor: "pointer" });
+
+  if (!user || !fbUser) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ ...card, maxWidth: 420, textAlign: "center" }}>
+          <div style={h2}>Settings</div>
+          <p style={{ fontSize: 14, color: "#5A5752", marginBottom: 18 }}>Sign in to manage your account.</p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button style={btn(false)} onClick={onBack}>← Galaxy</button>
+            <button style={btn(true)} onClick={() => openAuth("login")}>Log in</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const run = async (key, fn) => { setBusy(key); setMsg(null); try { await fn(); } finally { setBusy(""); } };
+
+  const sendVerify = () => run("verify", async () => {
+    try { await sendEmailVerification(fbUser); setMsg({ type: "ok", text: `Verification email sent to ${fbUser.email}. Click the link, then press “I've verified”.` }); }
+    catch (e) { setMsg({ type: "err", text: e?.code === "auth/too-many-requests" ? "Too many emails sent. Wait a few minutes and try again." : "Couldn't send the email. Try again." }); }
+  });
+  const refreshVerify = () => run("refresh", async () => { try { await fbUser.reload(); force(n => n + 1); } catch {} });
+
+  const connectGoogle = () => run("google", async () => {
+    try { await linkWithPopup(fbUser, googleProvider); force(n => n + 1); setMsg({ type: "ok", text: "Google connected. You can now sign in with Google or your password." }); }
+    catch (e) {
+      if (e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request") return;
+      setMsg({ type: "err", text:
+        e?.code === "auth/credential-already-in-use" ? "That Google account is already used by a different Ace It Galaxy account." :
+        e?.code === "auth/requires-recent-login" ? "For your security, log out and back in, then try again." :
+        "Couldn't connect Google. Please try again." });
+    }
+  });
+
+  const deleteAccount = () => run("delete", async () => {
+    if (confirmText.trim().toUpperCase() !== "DELETE") { setMsg({ type: "err", text: "Type DELETE to confirm." }); return; }
+    try {
+      if (hasPassword) {
+        if (!delPass) { setMsg({ type: "err", text: "Enter your password to confirm." }); return; }
+        await reauthenticateWithCredential(fbUser, EmailAuthProvider.credential(fbUser.email, delPass));
+      } else if (hasGoogle) {
+        await reauthenticateWithPopup(fbUser, googleProvider);
+      } else if (hasApple) {
+        await reauthenticateWithPopup(fbUser, appleProvider);
+      }
+    } catch (e) {
+      if (e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request") return;
+      setMsg({ type: "err", text: (e?.code === "auth/wrong-password" || e?.code === "auth/invalid-credential") ? "That password isn't right." : e?.code === "auth/user-mismatch" ? "Please confirm with the same account you're signed in with." : "Couldn't confirm it's you. Please try again." });
+      return;
+    }
+    cloudSync.reset(); // stop any pending saves so nothing is re-created after deletion
+    try {
+      const token = await fbUser.getIdToken(true);
+      const res = await fetch("/api/delete-account", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error?.message || "Couldn't delete your account. Please try again.");
+      await onDeleted();
+    } catch (e) {
+      setMsg({ type: "err", text: `${e.message} Reload the page before trying again.` });
+    }
+  });
+
+  const methods = [
+    { id: "password", label: "Email & password", on: hasPassword },
+    { id: "google", label: "Google", on: hasGoogle },
+    ...(hasApple ? [{ id: "apple", label: "Apple", on: true }] : []),
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", color: "#1A1814" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 20px 80px", textAlign: "left" }}>
+        <button style={{ ...btn(false), marginBottom: 22 }} onClick={onBack}>← Galaxy</button>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 34, fontWeight: 900, marginBottom: 22 }}>Settings</h1>
+
+        {msg && <div role="status" style={{ background: msg.type === "ok" ? "#F0FFF4" : "#FEF2F2", border: `1px solid ${msg.type === "ok" ? "#86EFAC" : "#FECACA"}`, color: msg.type === "ok" ? "#166534" : "#E85D3F", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontSize: 13, fontWeight: 500 }}>{msg.text}</div>}
+
+        <div style={card}>
+          <div style={h2}>Account</div>
+          <div style={row}><span style={{ color: "#8C8880", fontSize: 13 }}>Name</span><span style={{ fontWeight: 600 }}>{user.name}</span></div>
+          <div style={row}>
+            <span style={{ color: "#8C8880", fontSize: 13 }}>Email</span>
+            <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              {fbUser.email || "—"}
+              {hasPassword && (fbUser.emailVerified
+                ? <span style={{ fontSize: 11, color: "#166534", background: "#F0FFF4", border: "1px solid #86EFAC", borderRadius: 20, padding: "2px 8px" }}>Verified</span>
+                : <span style={{ fontSize: 11, color: "#9A6700", background: "#FFF8E1", border: "1px solid #F5C842", borderRadius: 20, padding: "2px 8px" }}>Not verified</span>)}
+            </span>
+          </div>
+          {hasPassword && !fbUser.emailVerified && (
+            <div style={{ ...row, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 13, color: "#5A5752", flex: "1 1 260px", lineHeight: 1.5 }}>Verify your email to protect your account and keep your password working if you also sign in with Google.</span>
+              <span style={{ display: "flex", gap: 8 }}>
+                <button style={btn(true)} disabled={!!busy} onClick={sendVerify}>{busy === "verify" ? "Sending…" : "Send link"}</button>
+                <button style={btn(false)} disabled={!!busy} onClick={refreshVerify}>I've verified</button>
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div style={card}>
+          <div style={h2}>Sign-in methods</div>
+          {methods.map(m => (
+            <div key={m.id} style={row}>
+              <span style={{ fontWeight: 600 }}>{m.label}</span>
+              {m.on ? <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>✓ Connected</span>
+                : m.id === "google" ? <button style={btn(false)} disabled={!!busy} onClick={connectGoogle}>{busy === "google" ? "Connecting…" : "Connect Google"}</button>
+                : <span style={{ fontSize: 13, color: "#8C8880" }}>Not set up</span>}
+            </div>
+          ))}
+          <div style={row}><span style={{ fontSize: 13, color: "#5A5752" }}>Signed in on this device</span><button style={btn(false)} onClick={onLogout}>Log out</button></div>
+        </div>
+
+        <div style={{ ...card, borderColor: "#FECACA" }}>
+          <div style={{ ...h2, color: "#B42318" }}>Delete account</div>
+          <p style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.6, marginBottom: 14 }}>Permanently deletes your account and everything saved in it: flash cards, notes, brain maps, courses, journal, tracker tasks and assistant chats. This can't be undone.</p>
+          {!showDelete ? (
+            <button style={{ ...btn(false), borderColor: "#FECACA", color: "#B42318" }} onClick={() => { setShowDelete(true); setMsg(null); }}>Delete my account…</button>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 360 }}>
+              <label style={{ fontSize: 12, fontWeight: 700 }}>Type DELETE to confirm</label>
+              <input value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" style={{ padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8E5E0", fontSize: 14 }} />
+              {hasPassword ? (<>
+                <label style={{ fontSize: 12, fontWeight: 700 }}>Your password</label>
+                <input type="password" value={delPass} onChange={e => setDelPass(e.target.value)} style={{ padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8E5E0", fontSize: 14 }} />
+              </>) : <span style={{ fontSize: 12, color: "#8C8880" }}>You'll be asked to sign in with {hasGoogle ? "Google" : "Apple"} once more to confirm.</span>}
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button style={{ ...btn(true), background: "#B42318" }} disabled={!!busy} onClick={deleteAccount}>{busy === "delete" ? "Deleting…" : "Permanently delete"}</button>
+                <button style={btn(false)} disabled={!!busy} onClick={() => { setShowDelete(false); setConfirmText(""); setDelPass(""); }}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [mode, setMode]         = useState(initialMode);
   const [step, setStep]         = useState("form");
@@ -8172,8 +8337,29 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  // Google/Apple sign-in for an email that already has a password account: ask for the password once, then connect them
+  const [linkPending, setLinkPending] = useState(null); // { email, credential, providerName }
+  const [linkPass, setLinkPass] = useState("");
 
-  const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); };
+  const switchMode = (m) => { setMode(m); setErrors({}); setPassword(""); setConfirm(""); setResetSent(false); setLinkPending(null); };
+
+  const handleLinkSubmit = async () => {
+    if (!linkPass) { setErrors({ general: "Enter your Ace It Galaxy password." }); return; }
+    setLoading(true); setErrors({});
+    try {
+      const cred = await signInWithEmailAndPassword(auth, linkPending.email, linkPass);
+      try { await linkWithCredential(cred.user, linkPending.credential); } catch (e) { if (e?.code !== "auth/provider-already-linked") throw e; }
+      const userData = await socialUserData(cred.user);
+      setStep("success");
+      setTimeout(() => onAuth(userData), 900);
+    } catch (err) {
+      const msg = (err?.code === "auth/wrong-password" || err?.code === "auth/invalid-credential") ? "That password isn't right. Try again, or use “Forgot password?”."
+                : err?.code === "auth/too-many-requests" ? "Too many attempts. Wait a minute and try again."
+                : "Couldn't connect your accounts. Please try again.";
+      setErrors({ general: msg });
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -8214,6 +8400,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: name });
         await setDoc(doc(db, "users", cred.user.uid), { name, email, createdAt: serverTimestamp(), plan: "free" });
+        sendEmailVerification(cred.user).catch(() => {}); // verified emails can't be taken over by a Google sign-in
         setStep("success");
         setTimeout(() => onAuth({ uid: cred.user.uid, name, email, avatar: name[0].toUpperCase() }), 1400);
       } else {
@@ -8247,6 +8434,15 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
     } catch (err) {
       if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request" || err?.code === "auth/user-cancelled") {
         setLoading(false); return;
+      }
+      if (err?.code === "auth/account-exists-with-different-credential") {
+        const credential = providerName === "Google" ? GoogleAuthProvider.credentialFromError(err) : OAuthProvider.credentialFromError(err);
+        const pendingEmail = err?.customData?.email;
+        if (credential && pendingEmail) {
+          setLinkPending({ email: pendingEmail, credential, providerName });
+          setEmail(pendingEmail); setLinkPass(""); setMode("login"); setLoading(false);
+          return;
+        }
       }
       if (err?.code === "auth/popup-blocked") {
         try { await signInWithRedirect(auth, provider); return; } catch (e2) { err = e2; }
@@ -8315,7 +8511,24 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
           <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 18, right: 18, background: "#F7F6F2", border: "none", borderRadius: 6, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8C8880", display: "flex", alignItems: "center", justifyContent: "center" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#ECEAE4"; }} onMouseLeave={e => { e.currentTarget.style.background = "#F7F6F2"; }}>✕</button>
 
-          {step === "success" ? (
+          {step !== "success" && linkPending ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 10 }}>Connect {linkPending.providerName}</h3>
+              <p style={{ fontSize: 14, color: "#5A5752", lineHeight: 1.6, marginBottom: 20 }}>
+                <strong>{linkPending.email}</strong> already has an Ace It Galaxy account. Enter its password once to connect {linkPending.providerName}. After that, you can sign in either way.
+              </p>
+              {errors.general && <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#E85D3F", fontWeight: 500 }}>{errors.general}</div>}
+              {resetSent && <div style={{ background: "#F0FFF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#166534", fontWeight: 500 }}>✓ Password reset email sent — check your inbox.</div>}
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#3A3830", marginBottom: 6 }}>Password</label>
+              <input type="password" value={linkPass} autoFocus onChange={e => setLinkPass(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleLinkSubmit(); }}
+                placeholder="Your Ace It Galaxy password" style={{ padding: "12px 14px", borderRadius: 8, border: "1.5px solid #E8E5E0", background: "#F7F6F2", fontSize: 14, marginBottom: 10, outline: "none" }} />
+              <button onClick={handleForgotPassword} disabled={loading} style={{ alignSelf: "flex-end", background: "none", border: "none", color: "#4F6EF7", fontSize: 12, fontWeight: 600, cursor: "pointer", marginBottom: 18 }}>Forgot password?</button>
+              <button onClick={handleLinkSubmit} disabled={loading} style={{ padding: "13px 0", borderRadius: 8, border: "none", background: "#1A1814", color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Connecting…" : `Connect ${linkPending.providerName} & sign in`}
+              </button>
+              <button onClick={() => { setLinkPending(null); setErrors({}); }} disabled={loading} style={{ marginTop: 10, background: "none", border: "none", color: "#8C8880", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+            </div>
+          ) : step === "success" ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#2BAE7E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, marginBottom: 24, boxShadow: "0 0 0 8px #2BAE7E18" }}>✓</div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 10 }}>{mode === "login" ? "Welcome back!" : "Account created!"}</h3>
@@ -12781,7 +12994,7 @@ function AceItGalaxyInner() {
   const [activePlanet, setActivePlanet] = useState(null);
   const [currentApp, setCurrentApp] = useState(() => {
   const path = window.location.pathname.replace("/", "").trim();
-  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker","coursehub","studybuddy"];
+  const validApps = ["flashcards","simplifier","brainmap","assistant","journal","notes","tracker","coursehub","studybuddy","settings"];
   return validApps.includes(path) ? path : null;
 });
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
@@ -13147,6 +13360,17 @@ Help them see connections ACROSS their apps. For example:
       if (cloudSync.currentUid() !== userData.uid) loadCloudData(userData.uid);
     }
   };
+  // After the server deleted the account: clear this browser without saving anything back.
+  const handleAccountDeleted = async () => {
+    cloudSync.reset({ clearData: true });
+    try { await signOut(auth); } catch {}
+    try { localStorage.removeItem("tp_user"); } catch {}
+    setUserProfile(readUserProfile());
+    setDataVersion(v => v + 1);
+    setUser(null); setShowHome(true); setCurrentApp(null);
+    window.history.pushState({ app: null }, "", "/");
+    setAiNotice("Your account and all its data have been deleted.");
+  };
   const handleLogout = async () => {
     // Save the latest work to the cloud, then clear this browser so the next person can't see it.
     const uid = auth.currentUser?.uid || (() => { try { return JSON.parse(localStorage.getItem("tp_user"))?.uid; } catch { return null; } })();
@@ -13285,6 +13509,7 @@ Help them see connections ACROSS their apps. For example:
           ? <AppSEOLanding appId={seoAppId} onEnter={() => { setShowHome(false); window.history.pushState({ screen: "app", app: seoAppId }, "", `/${seoAppId}`); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} onHome={() => { setCurrentApp(null); window.history.pushState({ screen: "landing" }, "", "/"); }} />
           : <LandingPage onEnter={() => { setShowHome(false); window.history.pushState({ screen: "galaxy" }, "", "/"); }} openAuth={(mode) => { openAuth(mode); }} onLegal={(page) => setLegalPage(page)} />}
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
+        {aiNotice && <AiNotice message={aiNotice} onClose={()=>setAiNotice(null)} />}
       </>
     );
   }
@@ -13316,6 +13541,7 @@ Help them see connections ACROSS their apps. For example:
   if (currentApp === 'notes')      return <>{<NotesApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />}{floating(true)}</>;
   if (currentApp === 'tracker')    return <>{<TrackerApp user={user} openAuth={openAuth} onBack={goHome} />}{floating(true)}</>;
   if (currentApp === 'studybuddy') return <Suspense fallback={<AppChunkFallback />}><StudyBuddyApp user={user} openAuth={openAuth} onBack={goHome} /></Suspense>;
+  if (currentApp === 'settings')   return <SettingsApp user={user} onBack={goHome} openAuth={openAuth} onLogout={handleLogout} onDeleted={handleAccountDeleted} />;
   if (currentApp === 'coursehub')  return <CourseHubApp user={user} openAuth={openAuth} onBack={goHome} launchApp={launchApp} />;
   if (currentApp) { const planet = PLANETS.find(p => p.appId === currentApp); if (planet) return <>{<AppLanding planet={planet} onBack={goHome} />}{floating(true)}</>; }
 
