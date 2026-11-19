@@ -1,7 +1,7 @@
 import { SEO_CONTENT, SEO_APP_ORDER, PAGE_META, LANDING_FAQS } from "./seo/content.js";
 import { lazy, useRef, useState, useEffect, Component, Suspense, Fragment } from "react";
 import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth, APPLE_SIGNIN_ENABLED, googleProvider, appleProvider } from "./firebase";
+import { db, auth, APPLE_SIGNIN_ENABLED, googleProvider, appleProvider, appCheckHeader } from "./firebase";
 import { signInWithEmailAndPassword, linkWithCredential, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, OAuthProvider, signInWithRedirect, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence, getRedirectResult, onAuthStateChanged } from "firebase/auth";
 import { cloudSync } from "./cloudSync";
 import { AceHead, PA_COLOR, PA_DARK, PA_GLOW, aceRemember, aiFetch, readAceMemory, tpSync, useInstallApp } from "./shared.jsx";
@@ -56,7 +56,7 @@ function FeedbackModal({ source, onClose }) {
   const send = async () => {
     setState("sending");
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers = { "Content-Type": "application/json", ...(await appCheckHeader()) };
       if (auth.currentUser) headers.Authorization = `Bearer ${await auth.currentUser.getIdToken()}`;
       const res = await fetch("/api/feedback", { method: "POST", headers, body: JSON.stringify({ stars, message, page: window.location.pathname, source }) });
       setState(res.ok ? "done" : "error");

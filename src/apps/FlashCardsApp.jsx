@@ -1,13 +1,13 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { FC_DECKS, aiFetch, tpSync } from "../shared.jsx";
-import { auth } from "../firebase";
+import { auth, appCheckHeader } from "../firebase";
 import { STANDARD_SUBJECTS, normalizeSubject, completeCards, MIN_PUBLIC_CARDS } from "../deckRules.js";
 
 // ── Public decks: talk to /api/decks (signed-in actions send the login token) ──
 async function deckApi(body) {
   try {
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json", ...(await appCheckHeader()) };
     const u = auth.currentUser;
     if (u) headers.Authorization = `Bearer ${await u.getIdToken()}`;
     const res = await fetch("/api/decks", { method: "POST", headers, body: JSON.stringify(body) });

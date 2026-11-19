@@ -1,7 +1,7 @@
 // Student feedback: stars + an optional message. Read it in Firebase → Firestore → "feedback".
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { adminApp } from "./_lib/guard.js";
+import { adminApp, checkAppCheck } from "./_lib/guard.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: { message: "Method not allowed" } });
@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   try { app = adminApp(); }
   catch (e) { console.error("feedback setup:", e.message); return res.status(503).json({ error: { message: "Feedback is temporarily unavailable." } }); }
 
+  if (!(await checkAppCheck(req, res))) return;
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
   const stars = Math.round(Number(body.stars));
   const message = String(body.message || "").trim().slice(0, 2000);

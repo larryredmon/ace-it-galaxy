@@ -1,6 +1,6 @@
 // Code shared by the main page and the apps (each app downloads separately).
 import { useState, useEffect } from "react";
-import { auth } from "./firebase";
+import { auth, appCheckHeader } from "./firebase";
 import { cloudSync } from "./cloudSync";
 
 // ── AI requests: send the student's login token; the server enforces login + a daily cap ──
@@ -15,7 +15,7 @@ async function aiFetch(url, options = {}) {
     return new Response(JSON.stringify({ error: { type: "login_required", message: "Please sign in to use AI features." } }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
   const token = await u.getIdToken();
-  const res = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { ...options, headers: { ...(options.headers || {}), ...(await appCheckHeader()), Authorization: `Bearer ${token}` } });
   if (res.status === 401 || res.status === 429 || res.status === 503) {
     let message = "";
     try { message = (await res.clone().json())?.error?.message || ""; } catch {}
