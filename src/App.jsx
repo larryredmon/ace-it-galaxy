@@ -8276,6 +8276,41 @@ function AgeGate({ uid, onConfirmed, onUnderage }) {
   );
 }
 
+// ── Settings page building blocks (module level so typing in forms keeps focus) ──
+const ST_INK = "#1A1814", ST_MUTED = "#6F6B63", ST_LINE = "#ECE9E3";
+const stCard = { background: "#fff", border: `1px solid ${ST_LINE}`, borderRadius: 14, boxShadow: "0 1px 2px rgba(26,24,20,0.04)", overflow: "hidden" };
+const stRow = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "16px 20px", borderTop: `1px solid ${ST_LINE}`, flexWrap: "wrap" };
+const StSection = ({ title, desc, children, danger }) => (
+    <section style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 10, padding: "0 2px" }}>
+        <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 4, color: danger ? "#B42318" : ST_INK }}>{title}</h2>
+        {desc && <p style={{ fontSize: 13, color: ST_MUTED, lineHeight: 1.5 }}>{desc}</p>}
+      </div>
+      <div style={{ ...stCard, borderColor: danger ? "#F3C9C4" : ST_LINE }}>{children}</div>
+    </section>
+  );
+const StRow = ({ label, value, first, children }) => (
+    <div style={{ ...stRow, borderTop: first ? "none" : stRow.borderTop }}>
+      <div style={{ minWidth: 0, flex: "1 1 150px" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: ST_INK }}>{label}</div>
+        {value && <div style={{ fontSize: 13, color: ST_MUTED, marginTop: 3, overflowWrap: "anywhere", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{value}</div>}
+      </div>
+      {children && <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{children}</div>}
+    </div>
+  );
+const StBadge = ({ tone, children }) => {
+  const t = { ok: ["#E9F7EF", "#1E7A46"], warn: ["#FFF6DD", "#8A5A00"], neutral: ["#F1EFEA", ST_MUTED] }[tone];
+    return <span style={{ fontSize: 11, fontWeight: 600, background: t[0], color: t[1], borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}>{children}</span>;
+  };
+const StGoogleG = () => (
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/>
+      <path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/>
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/>
+    </svg>
+  );
+
 // ── Settings: account, sign-in methods, delete account ─────────────────────────
 function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange }) {
   const fbUser = auth.currentUser;
@@ -8298,10 +8333,11 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
   const hasGoogle = providers.includes("google.com");
   const hasApple = providers.includes("apple.com");
 
-  const card = { background: "#fff", border: "1px solid #E8E5E0", borderRadius: 14, padding: "22px 24px", marginBottom: 18 };
-  const h2 = { fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 800, color: "#1A1814", marginBottom: 14 };
-  const row = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderTop: "1px solid #F0EEE9", flexWrap: "wrap" };
-  const btn = (dark) => ({ padding: "8px 16px", borderRadius: 8, border: dark ? "none" : "1.5px solid #E8E5E0", background: dark ? "#1A1814" : "#fff", color: dark ? "#fff" : "#3A3830", fontSize: 13, fontWeight: 700, cursor: "pointer" });
+  const INK = "#1A1814", MUTED = "#6F6B63", LINE = "#ECE9E3";
+  const card = { background: "#fff", border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: "0 1px 2px rgba(26,24,20,0.04)", overflow: "hidden" };
+  const h2 = { fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 700, color: INK, marginBottom: 4 };
+  const row = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "16px 20px", borderTop: `1px solid ${LINE}`, flexWrap: "wrap" };
+  const btn = (dark) => ({ height: 36, padding: "0 14px", borderRadius: 8, border: dark ? `1px solid ${INK}` : `1px solid #DAD6CE`, background: dark ? INK : "#fff", color: dark ? "#fff" : INK, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 });
 
   if (!user || !fbUser) {
     return (
@@ -8424,8 +8460,8 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
     }
   });
 
-  const input = { padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8E5E0", fontSize: 14, width: "100%", boxSizing: "border-box" };
-  const formBox = { display: "flex", flexDirection: "column", gap: 8, padding: "12px 0 6px", borderTop: "1px solid #F0EEE9", maxWidth: 380 };
+  const input = { height: 40, padding: "0 12px", borderRadius: 8, border: "1px solid #DAD6CE", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "'DM Sans', sans-serif", color: INK, background: "#fff" };
+  const formBox = { display: "flex", flexDirection: "column", gap: 10, padding: "4px 20px 20px", maxWidth: 420 };
   const currentPassField = hasPassword
     ? <input type="password" placeholder="Current password" value={fCurrent} onChange={e => setFCurrent(e.target.value)} style={input} autoComplete="current-password" />
     : <span style={{ fontSize: 12, color: "#8C8880" }}>You'll confirm with {hasGoogle ? "Google" : "Apple"} when you save.</span>;
@@ -8436,42 +8472,54 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
     </div>
   );
 
-  const methods = [
-    { id: "password", label: "Email & password", on: hasPassword },
-    { id: "google", label: "Google", on: hasGoogle },
-    ...(hasApple ? [{ id: "apple", label: "Apple", on: true }] : []),
-  ];
+  const initial = (user.name || fbUser.email || "?").trim()[0]?.toUpperCase() || "?";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", color: "#1A1814" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 20px 80px", textAlign: "left" }}>
-        <button style={{ ...btn(false), marginBottom: 22 }} onClick={onBack}>← Galaxy</button>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 34, fontWeight: 900, marginBottom: 22 }}>Settings</h1>
+    <div style={{ minHeight: "100vh", background: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", color: INK, textAlign: "left" }}>
+      {/* Header */}
+      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(10px)", borderBottom: `1px solid ${LINE}` }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", height: 60, padding: "0 20px", display: "flex", alignItems: "center", gap: 14 }}>
+          <button style={{ ...btn(false), height: 32, padding: "0 12px" }} onClick={onBack}>← Galaxy</button>
+          <div style={{ width: 1, height: 22, background: LINE }} />
+          <AceHead size={28} />
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: INK }}>Settings</span>
+        </div>
+      </header>
 
-        {msg && <div role="status" style={{ background: msg.type === "ok" ? "#F0FFF4" : "#FEF2F2", border: `1px solid ${msg.type === "ok" ? "#86EFAC" : "#FECACA"}`, color: msg.type === "ok" ? "#166534" : "#E85D3F", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontSize: 13, fontWeight: 500 }}>{msg.text}</div>}
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px 80px" }}>
+        {msg && <div role="status" style={{ display: "flex", gap: 10, alignItems: "flex-start", background: msg.type === "ok" ? "#E9F7EF" : "#FDECEA", border: `1px solid ${msg.type === "ok" ? "#B7E4C7" : "#F3C9C4"}`, color: msg.type === "ok" ? "#1E7A46" : "#B42318", borderRadius: 10, padding: "12px 14px", marginBottom: 24, fontSize: 13, fontWeight: 500, lineHeight: 1.5 }}>
+          <span aria-hidden="true">{msg.type === "ok" ? "✓" : "!"}</span><span style={{ flex: 1 }}>{msg.text}</span>
+          <button onClick={() => setMsg(null)} aria-label="Dismiss" style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: 14, lineHeight: 1, opacity: 0.6 }}>✕</button>
+        </div>}
 
-        <div style={card}>
-          <div style={h2}>Account</div>
-          <div style={row}>
-            <span style={{ color: "#8C8880", fontSize: 13 }}>Name</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontWeight: 600 }}>{user.name}</span>{editing !== "name" && <button style={btn(false)} onClick={() => openEdit("name")}>Edit</button>}</span>
+        {/* Profile header */}
+        <div style={{ ...card, display: "flex", alignItems: "center", gap: 16, padding: "20px", marginBottom: 32 }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#F5C842,#E8A82A)", color: INK, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, flexShrink: 0 }}>{initial}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 19, fontWeight: 700, color: INK, overflowWrap: "anywhere" }}>{user.name}</div>
+            <div style={{ fontSize: 13, color: MUTED, marginTop: 2, overflowWrap: "anywhere" }}>{fbUser.email || "No email on file"}</div>
           </div>
+        </div>
+
+        <StSection title="Profile" desc="How your name appears across Ace It Galaxy.">
+          <StRow first label="Name" value={user.name}>
+            {editing !== "name" && <button style={btn(false)} onClick={() => openEdit("name")}>Edit</button>}
+          </StRow>
           {editing === "name" && (
             <div style={formBox}>
               <input value={fName} onChange={e => setFName(e.target.value)} placeholder="Your name" style={input} maxLength={60} autoFocus />
-              {formButtons("name", saveName, "Save name")}
+              {formButtons("name", saveName, "Save")}
             </div>
           )}
-          <div style={row}>
-            <span style={{ color: "#8C8880", fontSize: 13 }}>Email</span>
-            <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-              {fbUser.email || "—"}
-              {editing !== "email" && <button style={btn(false)} onClick={() => openEdit("email")}>Change</button>}
-              {hasPassword && (fbUser.emailVerified
-                ? <span style={{ fontSize: 11, color: "#166534", background: "#F0FFF4", border: "1px solid #86EFAC", borderRadius: 20, padding: "2px 8px" }}>Verified</span>
-                : <span style={{ fontSize: 11, color: "#9A6700", background: "#FFF8E1", border: "1px solid #F5C842", borderRadius: 20, padding: "2px 8px" }}>Not verified</span>)}
-            </span>
-          </div>
+        </StSection>
+
+        <StSection title="Sign-in & security" desc="Manage how you sign in and keep your account secure.">
+          <StRow first label="Email" value={<>
+            <span>{fbUser.email || "—"}</span>
+            {hasPassword && (fbUser.emailVerified ? <StBadge tone="ok">Verified</StBadge> : <StBadge tone="warn">Not verified</StBadge>)}
+          </>}>
+            {editing !== "email" && <button style={btn(false)} onClick={() => openEdit("email")}>Change</button>}
+          </StRow>
           {editing === "email" && (
             <div style={formBox}>
               <input type="email" value={fEmail} onChange={e => setFEmail(e.target.value)} placeholder="New email address" style={input} autoFocus />
@@ -8479,66 +8527,60 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
               {formButtons("email", saveEmail, "Send confirmation link")}
             </div>
           )}
-          <div style={row}>
-            <span style={{ color: "#8C8880", fontSize: 13 }}>Password</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontWeight: 600 }}>{hasPassword ? "••••••••" : "Not set"}</span>
-              {editing !== "password" && <button style={btn(false)} onClick={() => openEdit("password")}>{hasPassword ? "Change" : "Add a password"}</button>}
-            </span>
-          </div>
-          {editing === "password" && (
-            <div style={formBox}>
-              {currentPassField}
-              <input type="password" placeholder={hasPassword ? "New password (8+ characters)" : "Password (8+ characters)"} value={fNew} onChange={e => setFNew(e.target.value)} style={input} autoComplete="new-password" />
-              <input type="password" placeholder="Repeat new password" value={fConfirm} onChange={e => setFConfirm(e.target.value)} style={input} autoComplete="new-password" />
-              {formButtons("password", savePassword, hasPassword ? "Change password" : "Add password")}
-            </div>
-          )}
           {hasPassword && !fbUser.emailVerified && (
-            <div style={{ ...row, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 13, color: "#5A5752", flex: "1 1 260px", lineHeight: 1.5 }}>Verify your email to protect your account and keep your password working if you also sign in with Google.</span>
+            <div style={{ margin: "0 20px 16px", background: "#FFF9E8", border: "1px solid #F1DFA6", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, color: "#6B4E00", lineHeight: 1.5, flex: "1 1 240px" }}>Verify your email to protect your account and keep your password working if you also sign in with Google.</span>
               <span style={{ display: "flex", gap: 8 }}>
                 <button style={btn(true)} disabled={!!busy} onClick={sendVerify}>{busy === "verify" ? "Sending…" : "Send link"}</button>
                 <button style={btn(false)} disabled={!!busy} onClick={refreshVerify}>I've verified</button>
               </span>
             </div>
           )}
-        </div>
 
-        <div style={card}>
-          <div style={h2}>Sign-in methods</div>
-          {methods.map(m => (
-            <div key={m.id} style={row}>
-              <span style={{ fontWeight: 600 }}>{m.label}</span>
-              {m.on ? <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>✓ Connected</span>
-                : m.id === "google" ? <button style={btn(false)} disabled={!!busy} onClick={connectGoogle}>{busy === "google" ? "Connecting…" : "Connect Google"}</button>
-                : <span style={{ fontSize: 13, color: "#8C8880" }}>Not set up</span>}
+          <StRow label="Password" value={hasPassword ? "••••••••••" : "Not set — add one to sign in with your email too"}>
+            {editing !== "password" && <button style={btn(false)} onClick={() => openEdit("password")}>{hasPassword ? "Change" : "Add password"}</button>}
+          </StRow>
+          {editing === "password" && (
+            <div style={formBox}>
+              {currentPassField}
+              <input type="password" placeholder={hasPassword ? "New password (8+ characters)" : "Password (8+ characters)"} value={fNew} onChange={e => setFNew(e.target.value)} style={input} autoComplete="new-password" />
+              <input type="password" placeholder="Repeat password" value={fConfirm} onChange={e => setFConfirm(e.target.value)} style={input} autoComplete="new-password" />
+              {formButtons("password", savePassword, hasPassword ? "Change password" : "Add password")}
             </div>
-          ))}
-          <div style={row}><span style={{ fontSize: 13, color: "#5A5752" }}>Signed in on this device</span><button style={btn(false)} onClick={onLogout}>Log out</button></div>
-        </div>
+          )}
 
-        <div style={{ ...card, borderColor: "#FECACA" }}>
-          <div style={{ ...h2, color: "#B42318" }}>Delete account</div>
-          <p style={{ fontSize: 13, color: "#5A5752", lineHeight: 1.6, marginBottom: 14 }}>Permanently deletes your account and everything saved in it: flash cards, notes, brain maps, courses, journal, tracker tasks and assistant chats. This can't be undone.</p>
-          {!showDelete ? (
-            <button style={{ ...btn(false), borderColor: "#FECACA", color: "#B42318" }} onClick={() => { setShowDelete(true); setMsg(null); }}>Delete my account…</button>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 360 }}>
-              <label style={{ fontSize: 12, fontWeight: 700 }}>Type DELETE to confirm</label>
-              <input value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" style={{ padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8E5E0", fontSize: 14 }} />
+          <StRow label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><StGoogleG /> Google</span>} value={hasGoogle ? "You can sign in with your Google account" : "Sign in faster with your Google account"}>
+            {hasGoogle ? <StBadge tone="ok">Connected</StBadge> : <button style={btn(false)} disabled={!!busy} onClick={connectGoogle}>{busy === "google" ? "Connecting…" : "Connect"}</button>}
+          </StRow>
+          {hasApple && <StRow label="Apple" value="You can sign in with your Apple account"><StBadge tone="ok">Connected</StBadge></StRow>}
+        </StSection>
+
+        <StSection title="Session">
+          <StRow first label="Signed in on this device" value="Log out when you're on a shared or public computer.">
+            <button style={btn(false)} onClick={onLogout}>Log out</button>
+          </StRow>
+        </StSection>
+
+        <StSection danger title="Danger zone">
+          <StRow first label="Delete account" value="Permanently deletes your account and everything in it — flash cards, notes, brain maps, courses, journal, tasks and chats. This can't be undone.">
+            {!showDelete && <button style={{ ...btn(false), borderColor: "#F3C9C4", color: "#B42318" }} onClick={() => { setShowDelete(true); setMsg(null); }}>Delete account</button>}
+          </StRow>
+          {showDelete && (
+            <div style={formBox}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: INK }}>Type <strong>DELETE</strong> to confirm</label>
+              <input value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" style={input} autoFocus />
               {hasPassword ? (<>
-                <label style={{ fontSize: 12, fontWeight: 700 }}>Your password</label>
-                <input type="password" value={delPass} onChange={e => setDelPass(e.target.value)} style={{ padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8E5E0", fontSize: 14 }} />
-              </>) : <span style={{ fontSize: 12, color: "#8C8880" }}>You'll be asked to sign in with {hasGoogle ? "Google" : "Apple"} once more to confirm.</span>}
-              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button style={{ ...btn(true), background: "#B42318" }} disabled={!!busy} onClick={deleteAccount}>{busy === "delete" ? "Deleting…" : "Permanently delete"}</button>
+                <label style={{ fontSize: 13, fontWeight: 600, color: INK, marginTop: 4 }}>Your password</label>
+                <input type="password" value={delPass} onChange={e => setDelPass(e.target.value)} style={input} autoComplete="current-password" />
+              </>) : <span style={{ fontSize: 12, color: MUTED }}>You'll be asked to sign in with {hasGoogle ? "Google" : "Apple"} once more to confirm.</span>}
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                <button style={{ ...btn(true), background: "#B42318", borderColor: "#B42318" }} disabled={!!busy} onClick={deleteAccount}>{busy === "delete" ? "Deleting…" : "Permanently delete"}</button>
                 <button style={btn(false)} disabled={!!busy} onClick={() => { setShowDelete(false); setConfirmText(""); setDelPass(""); }}>Cancel</button>
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </StSection>
+      </main>
     </div>
   );
 }
