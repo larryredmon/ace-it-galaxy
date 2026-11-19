@@ -13,6 +13,7 @@ export const SYNC_KEYS = [
   "tp_fc_decks", "tp_fc_folders", "tp_notes", "tp_note_folders", "tp_bm_maps",
   "tp_tracker_tasks", "tp_journal", "tp_courses",
   "tp_pa_convos", "tp_pa_goals", "tp_pa_plan", "tp_simplifier_history", "tp_userProfile",
+  "tp_fc_drafts", "tp_avatar", "tp_fc_streak",
 ];
 const META_KEY = "tp_sync_meta";
 const DEBOUNCE_MS = 1200;
