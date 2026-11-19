@@ -843,7 +843,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
 
       {/* Nav */}
       <nav className="bm-nav" style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {/* Hamburger */}
             <button onClick={() => setSidebarOpen(o => !o)}

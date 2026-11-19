@@ -40,7 +40,10 @@ export default async function handler(req, res) {
       usage.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
     }
-    // 3) The sign-in account itself
+    // 3) Decks they shared publicly (and their ratings/reports)
+    const shared = await db.collection("publicDecks").where("ownerUid", "==", uid).get();
+    for (const d of shared.docs) await db.recursiveDelete(d.ref);
+    // 4) The sign-in account itself
     await getAuth(app).deleteUser(uid);
   } catch (e) {
     console.error("delete-account:", uid, e.message);

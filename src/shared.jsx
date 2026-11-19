@@ -1,4 +1,5 @@
-// Split out of App.jsx so this code only downloads when it is needed.
+// Code shared by the main page and the apps (each app downloads separately).
+import { useState, useEffect } from "react";
 import { auth } from "./firebase";
 import { cloudSync } from "./cloudSync";
 
@@ -83,4 +84,36 @@ function AceHead({ size = 34 }) {
   return <img src="/mascots/ace-head.webp" alt="Ace the owl" width={size} height={size} style={{ width:size, height:size, borderRadius:"50%", display:"block", flexShrink:0, objectFit:"cover", background:"#fff" }} />;
 }
 
-export { aiNotify, aiFetch, tpSync, readAceMemory, writeAceMemory, aceRemember, FC_DECKS, PA_COLOR, PA_GLOW, PA_DARK, AceHead };
+// ── Installable app (PWA) ────────────────────────────────────────────────────
+// "ready": the browser can show its install box; "ios": iPhone/iPad (Share → Add to Home Screen);
+// "installed": already opened as an app; "manual": use the browser menu.
+function installState() {
+  if (typeof window === "undefined") return "manual";
+  const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  if (standalone) return "installed";
+  if (window.__tpInstallPrompt) return "ready";
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  return "manual";
+}
+
+function useInstallApp() {
+  const [state, setState] = useState(installState);
+  useEffect(() => {
+    const update = () => setState(installState());
+    window.addEventListener("tp-install-ready", update);
+    return () => window.removeEventListener("tp-install-ready", update);
+  }, []);
+  const install = async () => {
+    const p = window.__tpInstallPrompt;
+    if (!p) return false;
+    p.prompt();
+    const choice = await p.userChoice.catch(() => null);
+    window.__tpInstallPrompt = null;
+    setState(installState());
+    return choice?.outcome === "accepted";
+  };
+  return { state, install };
+}
+
+export { aiNotify, aiFetch, tpSync, readAceMemory, writeAceMemory, aceRemember, FC_DECKS, PA_COLOR, PA_GLOW, PA_DARK, AceHead, useInstallApp };

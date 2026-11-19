@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { sendEmailVerification, linkWithPopup, reauthenticateWithCredential, EmailAuthProvider, reauthenticateWithPopup, updateProfile, verifyBeforeUpdateEmail, updatePassword, linkWithCredential } from "firebase/auth";
 import { cloudSync } from "../cloudSync";
 import { setDoc, doc } from "firebase/firestore";
-import { AceHead, readAceMemory, writeAceMemory } from "../shared.jsx";
+import { AceHead, readAceMemory, writeAceMemory, useInstallApp } from "../shared.jsx";
 
 // ── Settings page building blocks (module level so typing in forms keeps focus) ──
 const ST_INK = "#1A1814", ST_MUTED = "#6F6B63", ST_LINE = "#ECE9E3";
@@ -50,6 +50,7 @@ const StGoogleG = () => (
 // ── Settings: account, sign-in methods, delete account ─────────────────────────
 function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange }) {
   const fbUser = auth.currentUser;
+  const installApp = useInstallApp();
   const [, force] = useState(0);
   const [msg, setMsg] = useState(null);           // { type: "ok"|"err", text }
   const [busy, setBusy] = useState("");
@@ -317,6 +318,25 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
           ) : aceMem.enabled ? (
             <div style={{ borderTop: `1px solid ${ST_LINE}`, padding: "14px 20px", fontSize: 13, color: ST_MUTED }}>Nothing yet. Chat with Ace and it will start remembering useful things about your studies.</div>
           ) : null}
+        </StSection>
+
+        <StSection title="Get the app" desc="Put Ace It Galaxy on your home screen. It opens full screen, like a regular app.">
+          <StRow first label={installApp.state === "installed" ? "Installed" : "Add to home screen"}
+            value={{
+              installed: "You're using the app version on this device.",
+              ready: "Free, no app store needed.",
+              ios: "Tap the Share button (square with an arrow) in Safari, then \u201cAdd to Home Screen\u201d.",
+              manual: "Open your browser menu and choose \u201cInstall app\u201d or \u201cAdd to Home screen\u201d.",
+            }[installApp.state]}>
+            {installApp.state === "installed" && <StBadge tone="ok">✓ Installed</StBadge>}
+            {installApp.state === "ready" && <button style={btn(true)} onClick={installApp.install}>Install</button>}
+          </StRow>
+        </StSection>
+
+        <StSection title="Help & feedback" desc="Tell us what's working and what isn't. Ace reads every message.">
+          <StRow first label="Send feedback" value="Rate Ace It Galaxy, report a bug or suggest a feature.">
+            <button style={btn(true)} onClick={() => window.dispatchEvent(new CustomEvent("tp-open-feedback", { detail: { source: "settings" } }))}>Send feedback</button>
+          </StRow>
         </StSection>
 
         <StSection title="Session">

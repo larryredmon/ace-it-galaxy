@@ -385,7 +385,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
 
       {/* ── Nav ── */}
       <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={()=>setTsMenuOpen(o=>!o)} style={{background:"none",border:"1px solid #ECEAE4",borderRadius:7,width:34,height:34,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.borderColor="#1A1814"} onMouseLeave={e=>e.currentTarget.style.borderColor="#ECEAE4"}>
               <div style={{width:13,height:1.5,background:"#6B6860",borderRadius:1}}/><div style={{width:9,height:1.5,background:"#6B6860",borderRadius:1,alignSelf:"flex-start",marginLeft:2}}/><div style={{width:13,height:1.5,background:"#6B6860",borderRadius:1}}/>

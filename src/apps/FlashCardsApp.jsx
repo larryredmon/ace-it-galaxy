@@ -1,6 +1,26 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { FC_DECKS, aiFetch, tpSync } from "../shared.jsx";
+import { auth } from "../firebase";
+
+// ── Public decks: talk to /api/decks (signed-in actions send the login token) ──
+async function deckApi(body) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const u = auth.currentUser;
+    if (u) headers.Authorization = `Bearer ${await u.getIdToken()}`;
+    const res = await fetch("/api/decks", { method: "POST", headers, body: JSON.stringify(body) });
+    let data = {}; try { data = await res.json(); } catch { /* empty */ }
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 0, data: { error: { message: "You're offline. Try again in a moment." } } };
+  }
+}
+function deckHash(d) {
+  const str = JSON.stringify([d.title, d.subject, d.description, d.color, (d.cards || []).map(c => [c.term, c.definition])]);
+  let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return String(h);
+}
 
 // ── Study streak: consecutive days with at least one card reviewed ──
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -342,6 +362,60 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
 
   const updateDeck = (id, changes) => setDecks(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
 
+  // Keep shared (public) decks in sync with their public pages: share, update, or stop sharing.
+  const prevDecksRef = useRef(decks);
+  const toUnpublish = useRef(new Set());
+  useEffect(() => {
+    const ids = new Set(decks.map(d => d.id));
+    prevDecksRef.current.forEach(d => { if (d.publicId && !ids.has(d.id)) toUnpublish.current.add(String(d.id)); });
+    prevDecksRef.current = decks;
+    if (!user) return;
+    const t = setTimeout(async () => {
+      for (const deckId of [...toUnpublish.current]) {
+        const r = await deckApi({ action: "unpublish", deckId });
+        if (r.ok) toUnpublish.current.delete(deckId);
+      }
+      for (const d of decks) {
+        if (d.isPublic) {
+          const h = deckHash(d);
+          if (d.publicId && d.publishedHash === h) continue;
+          const r = await deckApi({ action: "publish", deck: { id: String(d.id), title: d.title, subject: d.subject, description: d.description, color: d.color, cards: (d.cards || []).map(c => ({ term: c.term, definition: c.definition })) } });
+          if (r.ok) updateDeck(d.id, { publicId: r.data.id, publicUrl: r.data.url, publishedHash: h, publishError: null });
+          else if (r.status === 400 || r.status === 403) updateDeck(d.id, { isPublic: false, publishedHash: null, publishError: r.data?.error?.message || "Couldn't share this deck." });
+        } else if (d.publicId) {
+          const r = await deckApi({ action: "unpublish", deckId: String(d.id) });
+          if (r.ok) updateDeck(d.id, { publicId: null, publicUrl: null, publishedHash: null });
+        }
+      }
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [decks, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A public deck opened from its Google page (/flashcards?public=…)
+  const [incoming, setIncomingState] = useState(null);
+  const setIncoming = (d) => { setIncomingState(d); if (!d) { try { sessionStorage.removeItem("tp_open_public"); } catch { /* ignore */ } } };
+  useEffect(() => {
+    let id = null;
+    // Kept in sessionStorage until the student chooses, so a screen refresh after sign-in doesn't lose it.
+    try { id = new URLSearchParams(window.location.search).get("public") || sessionStorage.getItem("tp_open_public"); if (id) sessionStorage.setItem("tp_open_public", id); } catch { /* ignore */ }
+    if (!id || !/^[0-9a-f]{12}$/.test(id)) return;
+    if (window.location.search) window.history.replaceState(window.history.state, "", "/flashcards");
+    fetch(`/api/decks?id=${id}`).then(r => r.ok ? r.json() : null).then(j => { if (j?.deck) { setIncoming(j.deck); setView("public"); } else setIncoming(null); }).catch(() => {});
+  }, []);
+
+  // Copy a public deck into the student's own decks (once) and start studying it.
+  const savePublicDeck = (pub) => {
+    const have = decks.find(d => d.sourcePublicId === pub.id);
+    setIncoming(null);
+    if (have) { startStudy(have); return have; }
+    const created = saveDeck({ title: pub.title, subject: pub.subject, description: pub.description, color: pub.color, cards: pub.cards, author: pub.authorName, isPublic: false });
+    const withSource = { ...created, sourcePublicId: pub.id };
+    setDecks(prev => prev.map(d => d.id === created.id ? withSource : d));
+    deckApi({ action: "save", id: pub.id });
+    startStudy(withSource);
+    return withSource;
+  };
+
   const saveDraft = (draft) => {
     setDrafts(prev => {
       const filtered = prev.filter(d => d.id !== draft.id);
@@ -394,7 +468,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
 
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
       <nav style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {/* Hamburger + Back + Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.18s", flexShrink: 0 }}
@@ -409,10 +483,8 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
               onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#8C8880";}}>← Galaxy</button>
             <div style={{ width:1, height:20, background:"#ECEAE4", flexShrink:0 }} />
             <div onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <div style={{ width: 32, height: 32, background: "#1A1814", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "#F7F6F2", fontSize: 16, fontFamily: "'Playfair Display', serif", fontWeight: 900 }}>A</span>
-              </div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814", letterSpacing: -0.5 }}>Ace It</span>
+              <div style={{ width: 32, height: 32, background: "#F5C842", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#1A1814" }}>✦</div>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#C8900A" }}>Ace It</span> Flash Cards</span>
             </div>
           </div>
 
@@ -450,10 +522,10 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
       {view === "home"    && <FCHomeView    user={user} decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => updateDeck(id, { isPublic: !activeDeck.isPublic })} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={decks.find(d => d.id === activeDeck.id) || activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => { const cur = decks.find(d => d.id === id); updateDeck(id, { isPublic: !(cur || activeDeck).isPublic, publishError: null }); }} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
-      {view === "public"  && <FCPublicLibrary allDecks={decks} onStudy={startStudy} onBack={() => fcNavigate("home")} user={user} onRate={(deckId, stars, userId) => { const deck = decks.find(d => d.id === deckId); if (deck) updateDeck(deckId, { ratings: [...(deck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); }} />}
+      {view === "public"  && <FCPublicLibrary user={user} openAuth={openAuth} onBack={() => fcNavigate("home")} onSave={savePublicDeck} incoming={incoming} clearIncoming={() => setIncoming(null)} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
       {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastered = newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length;
 const mastery = newCards.length > 0 ? Math.round(mastered/newCards.length*100) : 0; updateDeck(deckId, { cards: newCards, mastery }); if (activeDeck.id===deckId) setActiveDeck(d=>d?{...d,cards:newCards,mastery}:d); }} />}
@@ -1896,7 +1968,7 @@ Rules:
                       style={{ flex:1, padding:"12px 16px", borderRadius:10, border:`1.5px solid ${isPublic===pub ? (pub?"#2BAE7E":"#4F6EF7") : "#ECEAE4"}`, background: isPublic===pub ? (pub?"#2BAE7E18":"#4F6EF718") : "#fff", cursor:"pointer", transition:"all 0.18s", textAlign:"left" }}>
                       <div style={{ fontSize:18, marginBottom:4 }}>{pub ? "🌐" : "🔒"}</div>
                       <div style={{ fontSize:13, fontWeight:700, color: isPublic===pub ? (pub?"#1A6B4A":"#1A1877") : "#5A5752" }}>{pub ? "Public" : "Private"}</div>
-                      <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? "Visible to everyone in the community" : "Only you can see this deck"}</div>
+                      <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? "Anyone can find and study it (shows your first name)" : "Only you can see this deck"}</div>
                     </button>
                   ))}
                 </div>
@@ -2067,106 +2139,140 @@ Rules:
 
 // ── Library View (hierarchical) ───────────────────────────────────────────────
 // ─── Public Library ────────────────────────────────────────────────────────────
-function FCPublicLibrary({ allDecks, onStudy, onBack, user, onRate }) {
+function FCPublicLibrary({ user, openAuth, onBack, onSave, incoming, clearIncoming }) {
+  const [decks, setDecks] = useState(null);       // null = loading
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("rating"); // rating | newest | cards
-  const [hoveredStars, setHoveredStars] = useState({}); // deckId → star
+  const [sortBy, setSortBy] = useState("rating"); // rating | newest | saves | cards
+  const [hoveredStars, setHoveredStars] = useState({});
+  const [busyId, setBusyId] = useState(null);
+  const [note, setNote] = useState("");
 
-  const publicDecks = allDecks.filter(d => d.isPublic);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/decks?list=1").then(r => r.ok ? r.json() : Promise.reject()).then(j => { if (alive) setDecks(j.decks || []); })
+      .catch(() => { if (alive) { setDecks([]); setLoadError("Couldn't load public decks right now. Check your connection and try again."); } });
+    return () => { alive = false; };
+  }, []);
 
-  const filtered = publicDecks
-    .filter(d => !search.trim() || d.title.toLowerCase().includes(search.toLowerCase()) || (d.subject||"").toLowerCase().includes(search.toLowerCase()) || (d.author||"").toLowerCase().includes(search.toLowerCase()))
+  const q = search.trim().toLowerCase();
+  const filtered = (decks || [])
+    .filter(d => !q || `${d.title} ${d.subject} ${d.description} ${d.authorName}`.toLowerCase().includes(q))
     .sort((a, b) => {
-      if (sortBy === "rating") {
-        const avgA = a.ratings?.length ? a.ratings.reduce((s,r)=>s+r.stars,0)/a.ratings.length : 0;
-        const avgB = b.ratings?.length ? b.ratings.reduce((s,r)=>s+r.stars,0)/b.ratings.length : 0;
-        return avgB - avgA;
-      }
-      if (sortBy === "newest") return new Date(b.createdAt||0) - new Date(a.createdAt||0);
-      if (sortBy === "cards") return (b.cards?.length||0) - (a.cards?.length||0);
+      if (sortBy === "rating") return (b.ratingAvg - a.ratingAvg) || (b.ratingCount - a.ratingCount);
+      if (sortBy === "newest") return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+      if (sortBy === "saves") return (b.saves || 0) - (a.saves || 0);
+      if (sortBy === "cards") return (b.cardCount || 0) - (a.cardCount || 0);
       return 0;
     });
 
-  const StarDisplay = ({ deck }) => {
-    const avg = deck.ratings?.length ? (deck.ratings.reduce((s,r)=>s+r.stars,0)/deck.ratings.length) : 0;
-    const userRating = user ? deck.ratings?.find(r=>r.userId===user.uid)?.stars||0 : 0;
-    const hovered = hoveredStars[deck.id] || 0;
+  const saveAndStudy = async (d) => {
+    setBusyId(d.id);
+    try {
+      const full = d.cards ? d : (await (await fetch(`/api/decks?id=${d.id}`)).json()).deck;
+      if (!full?.cards?.length) throw new Error();
+      onSave(full);
+      clearIncoming && clearIncoming();
+    } catch { setNote("Couldn't open that deck. It may have been removed."); }
+    setBusyId(null);
+  };
+
+  const rate = async (d, stars) => {
+    if (!user) { openAuth && openAuth("login"); return; }
+    const r = await deckApi({ action: "rate", id: d.id, stars });
+    if (r.ok) setDecks(list => list.map(x => x.id === d.id ? { ...x, ratingAvg: r.data.ratingAvg, ratingCount: r.data.ratingCount, myStars: stars } : x));
+    else setNote(r.data?.error?.message || "Couldn't save your rating.");
+  };
+
+  const report = async (d) => {
+    if (!user) { openAuth && openAuth("login"); return; }
+    const reason = window.prompt("What's wrong with this deck? (spam, wrong answers, inappropriate…)");
+    if (reason === null) return;
+    const r = await deckApi({ action: "report", id: d.id, reason });
+    setNote(r.ok ? "Thanks — we'll take a look." : (r.data?.error?.message || "Couldn't send the report."));
+  };
+
+  const Stars = ({ d }) => {
+    const hovered = hoveredStars[d.id] || 0;
+    const shown = hovered || d.myStars || d.ratingAvg;
     return (
       <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-        <div style={{ display:"flex", gap:2 }}>
+        <div style={{ display:"flex", gap:2 }} aria-label={`Rated ${d.ratingAvg || 0} out of 5`}>
           {[1,2,3,4,5].map(s => (
-            <span key={s}
-              onMouseEnter={() => user && setHoveredStars(h=>({...h,[deck.id]:s}))}
-              onMouseLeave={() => setHoveredStars(h=>({...h,[deck.id]:0}))}
-              onClick={e => { e.stopPropagation(); user && onRate && onRate(deck.id, s, user.uid); }}
-              style={{ fontSize:16, cursor:user?"pointer":"default", color: s<=(hovered||userRating||avg) ? "#F5C842" : "#D8D5CE", transition:"color 0.1s" }}>★</span>
+            <button key={s} aria-label={`Rate ${s} star${s>1?"s":""}`}
+              onMouseEnter={() => setHoveredStars(h=>({...h,[d.id]:s}))}
+              onMouseLeave={() => setHoveredStars(h=>({...h,[d.id]:0}))}
+              onClick={e => { e.stopPropagation(); rate(d, s); }}
+              style={{ background:"none", border:"none", padding:0, fontSize:16, cursor:"pointer", color: s <= Math.round(shown) ? "#F5C842" : "#D8D5CE" }}>★</button>
           ))}
         </div>
-        <span style={{ fontSize:11, color:"#8C8880" }}>
-          {avg ? `${avg.toFixed(1)} (${deck.ratings.length})` : "No ratings"}
-        </span>
+        <span style={{ fontSize:11, color:"#8C8880" }}>{d.ratingCount ? `${d.ratingAvg.toFixed(1)} (${d.ratingCount})` : "No ratings yet"}</span>
       </div>
     );
   };
 
   return (
     <div style={{ maxWidth:1000, margin:"0 auto", padding:"40px 24px" }}>
-      {/* Header */}
-      <div style={{ marginBottom:32 }}>
-        <button onClick={onBack} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C8880", marginBottom:20, transition:"all 0.15s" }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#8C8880";}}>← Back</button>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:32, fontWeight:900, letterSpacing:-0.8, marginBottom:8 }}>🌐 Public Library</h1>
-        <p style={{ fontSize:14, color:"#8C8880", lineHeight:1.7 }}>Browse flashcard decks shared by the community. Rate decks to help others find the best ones.</p>
+      <div style={{ marginBottom:28 }}>
+        <button onClick={onBack} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C8880", marginBottom:20 }}>← Back</button>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:32, fontWeight:900, letterSpacing:-0.8, marginBottom:8, color:"#1A1814" }}>Public Library</h1>
+        <p style={{ fontSize:14, color:"#6F6B63", lineHeight:1.7 }}>Decks shared by students. Save one to your library to study it — your copy is private. To share your own, open a deck and click 🔒 Private → 🌐 Public.</p>
       </div>
 
-      {/* Search + sort */}
-      <div style={{ display:"flex", gap:12, marginBottom:28, flexWrap:"wrap" }}>
-        <div style={{ position:"relative", flex:1, minWidth:200 }}>
-          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A8A59E", pointerEvents:"none" }}>🔍</span>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search decks, subjects, authors…"
-            style={{ width:"100%", padding:"10px 14px 10px 36px", borderRadius:10, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
-            onFocus={e=>e.target.style.borderColor="#4F6EF7"} onBlur={e=>e.target.style.borderColor="#ECEAE4"}
-            onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}} />
+      {incoming && (
+        <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap", background:"#fff", border:"1px solid #2BAE7E55", borderLeft:"4px solid #2BAE7E", borderRadius:12, padding:"16px 18px", marginBottom:24 }}>
+          <img src="/mascots/ace-head.webp" alt="" width={40} height={40} />
+          <div style={{ flex:"1 1 220px" }}>
+            <div style={{ fontWeight:700, color:"#1A1814" }}>{incoming.title}</div>
+            <div style={{ fontSize:12, color:"#6F6B63" }}>{incoming.cardCount} cards · shared by {incoming.authorName}</div>
+          </div>
+          <button onClick={() => saveAndStudy(incoming)} disabled={busyId===incoming.id} style={{ background:"#1A1814", color:"#F7F6F2", border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>Save &amp; study</button>
+          <button onClick={clearIncoming} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:8, padding:"10px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#5A5752" }}>Not now</button>
         </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {[["rating","⭐ Top Rated"],["newest","🆕 Newest"],["cards","📇 Most Cards"]].map(([v,label])=>(
+      )}
+
+      <div style={{ display:"flex", gap:12, marginBottom:24, flexWrap:"wrap" }}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search decks, subjects, students…" aria-label="Search public decks"
+          style={{ flex:"1 1 220px", padding:"10px 14px", borderRadius:10, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif" }}
+          onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}} />
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+          {[["rating","Top rated"],["saves","Most saved"],["newest","Newest"],["cards","Most cards"]].map(([v,label])=>(
             <button key={v} onClick={()=>setSortBy(v)}
-              style={{ padding:"10px 16px", borderRadius:10, border:`1.5px solid ${sortBy===v?"#1A1814":"#ECEAE4"}`, background:sortBy===v?"#1A1814":"#fff", color:sortBy===v?"#F7F6F2":"#5A5752", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
-              {label}
-            </button>
+              style={{ padding:"10px 14px", borderRadius:10, border:`1.5px solid ${sortBy===v?"#1A1814":"#ECEAE4"}`, background:sortBy===v?"#1A1814":"#fff", color:sortBy===v?"#F7F6F2":"#5A5752", fontSize:12, fontWeight:600, cursor:"pointer" }}>{label}</button>
           ))}
         </div>
       </div>
+      {note && <div role="status" style={{ fontSize:13, color:"#5A5752", background:"#FFF6DD", border:"1px solid #F5C84266", borderRadius:8, padding:"8px 12px", marginBottom:16 }}>{note}</div>}
 
-      {filtered.length === 0 ? (
-        <div style={{ textAlign:"center", padding:"60px 0", color:"#A8A59E" }}>
-          <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+      {decks === null ? (
+        <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>Loading decks…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#5A5752", marginBottom:8 }}>
-            {publicDecks.length === 0 ? "No public decks yet" : "No results found"}
+            {loadError ? "Couldn't load decks" : (decks.length === 0 ? "No public decks yet" : "No results found")}
           </div>
-          <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>
-            {publicDecks.length === 0 ? "Be the first to share a deck! Open any deck and click 🌐 Public." : "Try a different search term."}
+          <p style={{ fontSize:14, maxWidth:380, margin:"0 auto", lineHeight:1.7 }}>
+            {loadError || (decks.length === 0 ? "Be the first to share one! Open any deck and click 🔒 Private to make it public." : "Try a different search.")}
           </p>
         </div>
       ) : (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:16 }}>
-          {filtered.map(deck => (
-            <div key={deck.id} style={{ background:"#fff", border:"1px solid #ECEAE4", borderTop:`3px solid ${deck.color}`, borderRadius:14, padding:"22px 20px", transition:"all 0.2s", cursor:"pointer" }}
-              onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.08)";e.currentTarget.style.transform="translateY(-2px)";}}
-              onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
-              <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:deck.color, marginBottom:8 }}>{deck.subject}</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", marginBottom:6, lineHeight:1.3 }}>{deck.title}</div>
-              {deck.description && <div style={{ fontSize:12, color:"#8C8880", marginBottom:10, lineHeight:1.5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>{deck.description}</div>}
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                <span style={{ fontSize:11, color:"#A8A59E" }}>{deck.cards?.length||0} cards · by {deck.author||"Anonymous"}</span>
-              </div>
-              <StarDisplay deck={deck} />
-              <button onClick={() => onStudy(deck)}
-                style={{ width:"100%", marginTop:14, padding:"9px 0", borderRadius:8, border:"none", background:"#1A1814", color:"#F7F6F2", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
-                onMouseEnter={e=>e.currentTarget.style.opacity="0.85"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-                Study This Deck →
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))", gap:16 }}>
+          {filtered.map(d => (
+            <div key={d.id} style={{ background:"#fff", border:"1px solid #ECEAE4", borderTop:`3px solid ${d.color}`, borderRadius:14, padding:"20px", display:"flex", flexDirection:"column" }}>
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#6F6B63", marginBottom:8 }}>{d.subject}</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814", marginBottom:6, lineHeight:1.3 }}>{d.title}</div>
+              {d.description && <div style={{ fontSize:12, color:"#6F6B63", marginBottom:10, lineHeight:1.5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>{d.description}</div>}
+              <div style={{ fontSize:11, color:"#8C8880", marginBottom:10 }}>{d.cardCount} cards · by {d.authorName}{d.saves ? ` · saved ${d.saves}×` : ""}</div>
+              <Stars d={d} />
+              <div style={{ flex:1 }} />
+              <button onClick={() => saveAndStudy(d)} disabled={busyId===d.id}
+                style={{ width:"100%", marginTop:14, padding:"9px 0", borderRadius:8, border:"none", background:"#1A1814", color:"#F7F6F2", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                {busyId===d.id ? "Opening…" : "Save & study →"}
               </button>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:10 }}>
+                <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:"#5A5752" }}>Preview ↗</a>
+                <button onClick={() => report(d)} style={{ background:"none", border:"none", fontSize:11, color:"#A8A59E", cursor:"pointer", padding:0 }}>Report</button>
+              </div>
             </div>
           ))}
         </div>
@@ -2691,21 +2797,15 @@ function FCDeckCard({ deck, index, onOpen, onStudy, onDelete }) {
 
 // ── Deck View (overview + card list) ─────────────────────────────────────────
 function FCDeckView({ deck, onBack, onStudy, onDelete, onTogglePublic, onRate, onEdit, onMoveFolder, onImprove, user, userFolders = [], launchApp }) {
+  const [linkCopied, setLinkCopied] = useState(false);
   const [previewCard, setPreviewCard]   = useState(null);
   const [flipped, setFlipped]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [hoveredStar, setHoveredStar]   = useState(0);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [improving, setImproving]       = useState(false);
   const [improveResult, setImproveResult] = useState(null);
   const [confirmApply, setConfirmApply]   = useState(false);
-  const [shareUrl, setShareUrl]         = useState(null);
-  const [shareCopied, setShareCopied]   = useState(false);
 
-  const avgRating = deck.ratings?.length
-    ? (deck.ratings.reduce((a, r) => a + r.stars, 0) / deck.ratings.length).toFixed(1) : null;
-  const userRating = user ? deck.ratings?.find(r => r.userId === user.uid)?.stars || 0 : 0;
-  const ratingCount = deck.ratings?.length || 0;
 
   // Struggling cards — lowest correct rate
   const strugglingCards = [...(deck.cards||[])].filter(c=>(c.timesWrong||0)>0)
@@ -2760,11 +2860,32 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
     setTimeout(()=>win.print(),300);
   };
 
+  // Share = copy the public page link (makes the deck public first if needed).
   const handleShare = () => {
-    const id = deck.id;
-    const url = `${window.location.origin}/?shared=${id}`;
-    setShareUrl(url);
-    navigator.clipboard?.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=>setShareCopied(false),2000);});
+    if (deck.publicUrl) {
+      try { navigator.clipboard.writeText(window.location.origin + deck.publicUrl); } catch { /* ignore */ }
+      setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1600);
+    } else if (!deck.isPublic) {
+      onTogglePublic && onTogglePublic(deck.id);
+    }
+  };
+
+  // Build a brain map from this deck's cards and open Brain Map.
+  const sendToBrainMap = () => {
+          const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
+          const nodes=[{id:"root",label:deck.title,x:0,y:0,color:deck.color,parentId:null,deckIds:[deck.id],note:""}];
+          const groups={};
+          deck.cards.forEach(card=>{const k=card.topic||"General";if(!groups[k])groups[k]=[];groups[k].push(card);});
+          Object.entries(groups).forEach(([topic,cards],gi)=>{
+            const angle=(gi/Math.max(Object.keys(groups).length,1))*Math.PI*2-Math.PI/2;
+            const col=bmPalette[gi%bmPalette.length];
+            const bx=Math.cos(angle)*240,by=Math.sin(angle)*240,bid="b"+gi;
+            nodes.push({id:bid,label:topic,x:bx,y:by,color:col,parentId:"root",deckIds:[deck.id],note:""});
+            cards.slice(0,5).forEach((card,ci)=>{const ca=angle+(ci-(Math.min(cards.length,5)-1)/2)*0.5;nodes.push({id:bid+"c"+ci,label:card.term.slice(0,28),x:bx+Math.cos(ca)*175,y:by+Math.sin(ca)*175,color:col,parentId:bid,deckIds:[],note:card.definition?.slice(0,100)||""});});
+          });
+          const m={id:"map_"+Date.now(),title:deck.title,color:deck.color,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
+          try{const ex=JSON.parse(localStorage.getItem("tp_bm_maps")||"[]");localStorage.setItem("tp_bm_maps",JSON.stringify([...ex,m]));}catch{}
+          launchApp("brainmap");
   };
 
   return (
@@ -2796,18 +2917,7 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
                   </div>
                 ))}
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ display:"flex", gap:3 }}>
-                  {[1,2,3,4,5].map(star=>(
-                    <span key={star} onMouseEnter={()=>setHoveredStar(star)} onMouseLeave={()=>setHoveredStar(0)}
-                      onClick={()=>user&&onRate&&onRate(deck.id,star,user.uid)}
-                      style={{ fontSize:18, cursor:user?"pointer":"default", color:star<=(hoveredStar||userRating)?"#F5C842":"rgba(255,255,255,0.2)", transition:"color 0.1s" }}>★</span>
-                  ))}
-                </div>
-                {avgRating
-                  ? <span style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>{avgRating} ({ratingCount} {ratingCount===1?"rating":"ratings"})</span>
-                  : <span style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>No ratings yet</span>}
-              </div>
+              
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
               <button onClick={onStudy} style={{ background:deck.color, border:"none", borderRadius:10, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", whiteSpace:"nowrap", boxShadow:`0 4px 20px ${deck.color}50` }}>Study Now →</button>
@@ -2847,6 +2957,13 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           title={deck.isPublic?"Click to make private":"Click to make public"}>
           {deck.isPublic?"🌐 Public":"🔒 Private"}
         </button>
+        {deck.isPublic && deck.publicUrl && <>
+          <button onClick={()=>{ try { navigator.clipboard.writeText(window.location.origin + deck.publicUrl); } catch { /* ignore */ } setLinkCopied(true); setTimeout(()=>setLinkCopied(false),1600); }}
+            style={{ background:"#fff", border:"1px solid #2BAE7E", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#1A6B4A" }}>{linkCopied?"✓ Link copied":"🔗 Copy link"}</button>
+          <a href={deck.publicUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, fontWeight:600, color:"#1A6B4A", padding:"8px 4px" }}>View page ↗</a>
+        </>}
+        {deck.isPublic && !deck.publicUrl && <span style={{ fontSize:12, color:"#8C8880", padding:"8px 4px" }}>{user ? "Sharing…" : "Log in to share"}</span>}
+        {deck.publishError && <span role="alert" style={{ fontSize:12, color:"#B42318", padding:"8px 4px" }}>{deck.publishError}</span>}
         <div style={{ height:20, width:1, background:"#ECEAE4", margin:"0 4px" }}/>
         <button onClick={handleImprove} disabled={improving}
           style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:improving?"default":"pointer", color:improving?"#A8A59E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
@@ -2865,12 +2982,12 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
           🖨 Print
         </button>
-        <button onClick={handleShare} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
+        {!deck.isPublic && <button onClick={handleShare} title="Make this deck public and get a link" style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
           onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
           🔗 Share
-        </button>
-        {launchApp&&<button onClick={()=>launchApp("brainmap")} style={{ background:"#fff", border:"1px solid #F0A8C0", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#9B1446", transition:"all 0.15s" }}
+        </button>}
+        {launchApp&&<button onClick={sendToBrainMap} style={{ background:"#fff", border:"1px solid #F0A8C0", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#9B1446", transition:"all 0.15s" }}
           onMouseEnter={e=>e.currentTarget.style.background="#FFF5F8"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
           🧠 Brain Map
         </button>}
@@ -2904,74 +3021,12 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
       <div style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 10, padding: "18px 20px", marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 10 }}>
           <span style={{ fontWeight: 600 }}>Overall Mastery</span>
-          <span style={{ color: deck.color, fontWeight: 700 }}>{deck.mastery}%</span>
+          <span style={{ color: deck.color, fontWeight: 700 }}>{deck.mastery || 0}%</span>
         </div>
         <div style={{ height: 6, background: "#ECEAE4", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${deck.mastery}%`, background: deck.mastery === 100 ? "#2BAE7E" : deck.color, borderRadius: 3 }} />
+          <div style={{ height: "100%", width: `${deck.mastery || 0}%`, background: deck.mastery === 100 ? "#2BAE7E" : deck.color, borderRadius: 3 }} />
         </div>
       </div>
-
-      {/* ── Action strip: Improve / Print / Share ── */}
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        <button onClick={handleImprove} disabled={improving}
-          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:improving?"default":"pointer", color:improving?"#A8A59E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
-          onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
-          onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
-          {improving ? <><span style={{ width:12,height:12,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }} /> Improving…</> : "✨ Improve with AI"}
-        </button>
-        <button onClick={()=>{
-          const csv=["Term,Definition,Hint",...deck.cards.map(c=>`"${(c.term||"").replace(/"/g,'""')}","${(c.definition||"").replace(/"/g,'""')}","${(c.hint||"").replace(/"/g,'""')}"`)] .join("\n");
-          const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=`${deck.title.replace(/\s+/g,"-")}.csv`; a.click();
-        }} style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-          ⬇ Export CSV
-        </button>
-        <button onClick={handlePrint}
-          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";e.currentTarget.style.color="#1A1814";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-          🖨 Print / Export
-        </button>
-        <button onClick={handleShare}
-          style={{ padding:"9px 16px", borderRadius:8, border:"1.5px solid #ECEAE4", background:shareUrl?"#F0FDF4":"#fff", fontSize:12, fontWeight:700, cursor:"pointer", color:shareUrl?"#2BAE7E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
-          onMouseEnter={e=>{if(!shareUrl){e.currentTarget.style.borderColor="#2BAE7E";e.currentTarget.style.color="#2BAE7E";}}}
-          onMouseLeave={e=>{if(!shareUrl){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
-          {shareCopied?"✓ Link Copied!":"🔗 Share Deck"}
-        </button>
-        {launchApp && <button onClick={()=>{
-          const bmPalette=["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2"];
-          const nodes=[{id:"root",label:deck.title,x:0,y:0,color:deck.color,parentId:null,deckIds:[deck.id],note:""}];
-          const groups={};
-          deck.cards.forEach(card=>{const k=card.topic||"General";if(!groups[k])groups[k]=[];groups[k].push(card);});
-          Object.entries(groups).forEach(([topic,cards],gi)=>{
-            const angle=(gi/Math.max(Object.keys(groups).length,1))*Math.PI*2-Math.PI/2;
-            const col=bmPalette[gi%bmPalette.length];
-            const bx=Math.cos(angle)*240,by=Math.sin(angle)*240,bid="b"+gi;
-            nodes.push({id:bid,label:topic,x:bx,y:by,color:col,parentId:"root",deckIds:[deck.id],note:""});
-            cards.slice(0,5).forEach((card,ci)=>{const ca=angle+(ci-(Math.min(cards.length,5)-1)/2)*0.5;nodes.push({id:bid+"c"+ci,label:card.term.slice(0,28),x:bx+Math.cos(ca)*175,y:by+Math.sin(ca)*175,color:col,parentId:bid,deckIds:[],note:card.definition?.slice(0,100)||""});});
-          });
-          const m={id:"map_"+Date.now(),title:deck.title,color:deck.color,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),nodes};
-          try{const ex=JSON.parse(localStorage.getItem("tp_bm_maps")||"[]");localStorage.setItem("tp_bm_maps",JSON.stringify([...ex,m]));}catch{}
-          launchApp("brainmap");
-        }} style={{padding:"9px 16px",borderRadius:8,border:"1.5px solid #F0A8C0",background:"#FFF5F7",fontSize:12,fontWeight:700,cursor:"pointer",color:"#9B1446",display:"flex",alignItems:"center",gap:6,transition:"all 0.15s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="#F0A8C0";e.currentTarget.style.color="#fff";}}
-        onMouseLeave={e=>{e.currentTarget.style.background="#FFF5F7";e.currentTarget.style.color="#9B1446";}}>
-          ✺ Send to Brain Map
-        </button>}
-      </div>
-
-      {/* Share URL box */}
-      {shareUrl && (
-        <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
-          <span style={{ fontSize:13, color:"#166534", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{shareUrl}</span>
-          <button onClick={()=>{navigator.clipboard?.writeText(shareUrl);setShareCopied(true);setTimeout(()=>setShareCopied(false),2000);}}
-            style={{ padding:"5px 12px", borderRadius:7, border:"none", background:"#2BAE7E", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
-            {shareCopied?"Copied!":"Copy"}
-          </button>
-          <button onClick={()=>setShareUrl(null)} style={{ background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#86EFAC" }}>✕</button>
-        </div>
-      )}
 
       {/* Improve result */}
       {improveResult === "error" && (

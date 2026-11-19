@@ -56,6 +56,8 @@ Usage and Analytics: We use privacy-friendly analytics (Vercel Web Analytics) to
 
 Error Reports: If something on the site crashes, your browser sends us an error report containing the error message, the page you were on, and your browser type. Error reports do not include your study content.
 
+Feedback: If you send feedback, we store your rating, your message, the page you were on and, if you're signed in, your account email so we can follow up.
+
 Device Information: We collect basic browser and device information for security and compatibility.`
           },
           {
@@ -70,7 +72,9 @@ Device Information: We collect basic browser and device information for security
 • Send important account-related emails, such as email verification and password resets (not marketing, unless you opt in)
 • Keep your account and the platform secure
 
-We do not sell your data. We do not use your data for advertising. We do not share your personal information with third parties except as described in this policy.`
+We do not sell your data. We do not use your data for advertising. We do not share your personal information with third parties except as described in this policy.
+
+Public Decks: Your flash card decks are private unless you choose to make one public. A public deck — its title, subject, description, cards and your first name — can be seen by anyone, including on its own web page that search engines like Google may show. Other students can save a copy and rate or report it. You can make a deck private again at any time, which removes its public page; copies other students already saved stay in their accounts. Deleting your account removes all of your public decks.`
           },
           {
             title: "4. Third-Party Services",

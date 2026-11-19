@@ -63,3 +63,17 @@ export async function guard(req, res) {
 
   return user;
 }
+
+// Verifies the student's login without counting toward the AI limit (for non-AI actions).
+export async function verifyUser(req, res) {
+  let app;
+  try { app = adminApp(); }
+  catch (e) {
+    console.error("verifyUser setup:", e.message);
+    return fail(res, 503, "unavailable", "This is temporarily unavailable. Please try again later.");
+  }
+  const match = (req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
+  if (!match) return fail(res, 401, "login_required", "Please sign in first.");
+  try { return await getAuth(app).verifyIdToken(match[1]); }
+  catch { return fail(res, 401, "login_required", "Your session expired. Please sign in again."); }
+}
