@@ -4,7 +4,7 @@ import { seoPrerender } from './scripts/seo-prerender.js'
 
 // Split rarely-changing libraries into their own files. Browsers keep them cached
 // between deploys, so returning students only re-download the app code that changed.
-const FIREBASE_CORE = /node_modules[\\/](@firebase[\\/](app|auth|firestore|util|component|logger|webchannel-wrapper)|firebase[\\/](app|auth|firestore)|idb)[\\/]/
+const FIREBASE_CORE = /node_modules[\\/](@firebase[\\/](app|auth|firestore|app-check|util|component|logger|webchannel-wrapper)|firebase[\\/](app|auth|firestore|app-check)|idb)[\\/]/
 const REACT = /node_modules[\\/](react|react-dom|scheduler)[\\/]/
 
 export default defineConfig({

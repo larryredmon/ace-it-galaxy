@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +14,28 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// ── Bot protection (App Check + reCAPTCHA Enterprise) ─────────────────────────
+// Proves requests come from the real Ace It Galaxy site, not a bot script. Turned on by
+// setting VITE_RECAPTCHA_ENTERPRISE_KEY in Vercel. Must start before any other Firebase service.
+const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_KEY;
+let appCheck = null;
+if (RECAPTCHA_KEY && typeof window !== "undefined") {
+  try {
+    // On your own computer (localhost), print a debug token instead of using reCAPTCHA.
+    if (import.meta.env.DEV) self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || true;
+    appCheck = initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_KEY), isTokenAutoRefreshEnabled: true });
+  } catch (e) {
+    console.warn("App Check not started:", e?.message);
+  }
+}
+
+// Header for our own /api calls so the server can check the request came from the site.
+export async function appCheckHeader() {
+  if (!appCheck) return {};
+  try { const { token } = await getToken(appCheck, false); return token ? { "X-Firebase-AppCheck": token } : {}; }
+  catch { return {}; }
+}
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();

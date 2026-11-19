@@ -7,7 +7,7 @@
 //   POST /api/decks {action:"save", id}            count a save (anyone)
 //   POST /api/decks {action:"report", id, reason}  (signed in) hide after 3 reports
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { adminApp, verifyUser } from "./_lib/guard.js";
+import { adminApp, verifyUser, checkAppCheck } from "./_lib/guard.js";
 import { publicIdFor, slugify, clean, looksBad, summary, deckPath, MAX_CARDS } from "./_lib/publicDecks.js";
 import { MIN_PUBLIC_CARDS, normalizeSubject } from "../src/deckRules.js";
 
@@ -43,6 +43,7 @@ export default async function handler(req, res) {
   const action = body.action;
 
   if (action === "save") {
+    if (!(await checkAppCheck(req, res))) return;
     const id = String(body.id || "").slice(0, 20);
     if (!id) return err(res, 400, "Missing deck");
     await col.doc(id).update({ saves: FieldValue.increment(1) }).catch(() => {});
