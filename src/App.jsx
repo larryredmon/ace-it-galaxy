@@ -1931,6 +1931,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [qbDocOpen, setQbDocOpen]       = useState(false);
   const [qbAiCards, setQbAiCards]       = useState([]);
   const [qbAiStep, setQbAiStep]         = useState("input"); // input | generating | review | organize
+  const [qbError, setQbError]           = useState("");
   const [qbChunkProgress, setQbChunkProgress] = useState({ current: 0, total: 0, step: "" });
   const [qbDuplicates, setQbDuplicates] = useState(new Set()); // set of card ids that are duplicates
   const [qbOrgChoice, setQbOrgChoice]   = useState(null); // null | "one" | "organized"
@@ -2007,13 +2008,14 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
 
   const filledCards = cards.filter(c => c.term.trim() || c.definition.trim()).length;
   const canSave = title.trim() && filledCards > 0;
+  const [needsTitle, setNeedsTitle] = useState(false);
 
   const COLORS = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1ABC9C","#E91E8C"];
   const SUBJECTS = ["Science","History","Math","Biology","Chemistry","English","Technology","Art","Music","Other"];
 
   const handleQuickBuild = async () => {
     if (!qbText.trim() && qbImages.length === 0) return;
-    setQbAiStep("generating");
+    setQbAiStep("generating"); setQbError("");
     setQbChunkProgress({ current: 0, total: 0, step: "Analyzing content…" });
 
     try {
@@ -2070,6 +2072,7 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
 
       // ── Process each chunk ─────────────────────────────────────────
       const allCards = [];
+      let lastAiError = "";
       for (let ci = 0; ci < chunks.length; ci++) {
         setQbChunkProgress({ current: ci + 1, total: totalChunks, step: `Reading section ${ci + 1} of ${totalChunks}…` });
         const res = await aiFetch("/api/claude", {
@@ -2091,11 +2094,13 @@ Material (Section ${ci + 1}/${totalChunks}):
 ${chunks[ci]}` }] }),
         });
         const data = await res.json();
+        if (!res.ok) { lastAiError = data?.error?.message || "The AI request failed."; continue; }
         const raw = data.content?.find(b => b.type === "text")?.text || "";
         const clean = raw.replace(/```json|```/g, "").trim();
         try {
-          const parsed = JSON.parse(clean);
-          const chunkCards = (parsed.cards || []).map((c, i) => ({
+          const parsedRaw = JSON.parse(clean);
+          const parsed = Array.isArray(parsedRaw) ? { cards: parsedRaw } : parsedRaw; // accept a bare list of cards too
+          const chunkCards = (parsed.cards || []).filter(c => c && (c.term || c.definition)).map((c, i) => ({
             id: Date.now() + ci * 100000 + i * 7 + Math.floor(Math.random() * 100),
             term: c.term || "", definition: c.definition || "",
             topic: c.topic || topicCategories[0] || "General",
@@ -2103,6 +2108,13 @@ ${chunks[ci]}` }] }),
           }));
           allCards.push(...chunkCards);
         } catch {}
+      }
+
+      // Nothing usable came back: go back to the text (kept as is) and say why, instead of a blank page
+      if (allCards.length === 0) {
+        setQbError(lastAiError || "The AI couldn't find anything to turn into flash cards. Try adding more text, or try again in a moment.");
+        setQbAiStep("input");
+        return;
       }
 
       // ── Duplicate detection ────────────────────────────────────────
@@ -2141,6 +2153,11 @@ ${chunks[ci]}` }] }),
       console.error(err);
       const sentences = qbText.split(/[.!\n]+/).map(s => s.trim()).filter(s => s.length > 20).slice(0, 20);
       const generated = sentences.map((s, i) => ({ id: Date.now() + i, term: s.split(" ").slice(0, 6).join(" "), definition: s, topic: "General", isDuplicate: false }));
+      if (generated.length === 0) {
+        setQbError("Something went wrong while making your cards. Please try again.");
+        setQbAiStep("input");
+        return;
+      }
       setQbAiCards(generated);
       setQbDuplicates(new Set());
       setQbAiStep("review");
@@ -2372,12 +2389,14 @@ Rules:
 
           {/* Save */}
           <button onClick={() => {
+            // Cards filled but no deck name yet: take the student to the name field instead of doing nothing
+            if (filledCards > 0 && !title.trim()) { setTab("details"); setNeedsTitle(true); return; }
             if (!canSave) return;
             const folderKey = selectedCustom
               ? selectedCustom
               : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
             onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic, tags });
-          }} disabled={!canSave} style={{ background: canSave ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: canSave ? "pointer" : "default", color: canSave ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
+          }} disabled={filledCards === 0} title={filledCards > 0 && !title.trim() ? "Give your deck a name first" : ""} style={{ background: filledCards > 0 ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: filledCards > 0 ? "pointer" : "default", color: filledCards > 0 ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
             {isEditing ? `Save Changes (${filledCards} card${filledCards!==1?"s":""})` : `Save Deck ${filledCards > 0 ? `(${filledCards} card${filledCards !== 1 ? "s" : ""})` : ""}`}
@@ -2433,6 +2452,7 @@ Rules:
               <div className="qb-fade">
                 {qbAiStep === "input" && (
                   <>
+                    {qbError && <div role="alert" style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:10, padding:"10px 14px", marginBottom:12, fontSize:13, color:"#B42318", fontWeight:500 }}>{qbError}</div>}
                     <div style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, overflow:"hidden", marginBottom:12 }}>
                       <div style={{ padding:"12px 16px", borderBottom:"1px solid #F0EDE8", display:"flex", alignItems:"center", gap:8 }}>
                         <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase" }}>Your Study Material</span>
@@ -2990,7 +3010,8 @@ Rules:
               {/* Title */}
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Deck Title *</label>
-                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Biology Chapter 3 — Cell Division"
+                {needsTitle && !title.trim() && <div role="alert" style={{ fontSize: 12, fontWeight: 600, color: "#E85D3F", marginBottom: 6 }}>Give your deck a name to save it.</div>}
+                <input value={title} autoFocus={needsTitle} onChange={e => setTitle(e.target.value)} placeholder="e.g. Biology Chapter 3 — Cell Division"
                   style={{ width: "100%", padding: "13px 16px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 16, fontWeight: 600, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", transition: "border-color 0.18s" }}
                   onFocus={e => e.target.style.borderColor = "#1A1814"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
               </div>
@@ -4996,7 +5017,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
     window.addEventListener("mouseup",   onUp);
     window.addEventListener("keydown",   onKeyDown);
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); window.removeEventListener("keydown", onKeyDown); };
-  }, [zoom]);
+  }, [zoom, selectedId, nodes, editingId]); // re-attach so shortcuts (Tab, Enter, Delete, undo) see the current map
 
   const onCanvasDown = (e) => {
     if (e.target === canvasRef.current || e.target.classList.contains("bm-bg") || e.target.tagName === "svg") {
