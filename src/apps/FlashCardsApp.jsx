@@ -403,6 +403,23 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
     fetch(`/api/decks?id=${id}`).then(r => r.ok ? r.json() : null).then(j => { if (j?.deck) { setIncoming(j.deck); setView("public"); } else setIncoming(null); }).catch(() => {});
   }, []);
 
+  // After a student finishes a good private deck, ask once whether to share it publicly.
+  const SHARE_PROMPT_MIN_CARDS = 10;
+  const [sharePrompt, setSharePrompt] = useState(null);   // deck id or null
+  const maybeAskToShare = (deck) => {
+    try { if (localStorage.getItem("tp_share_prompt_off")) return; } catch { /* ignore */ }
+    if (!user || !deck || deck.isPublic || deck.sharePromptAsked) return;
+    const good = (deck.cards || []).filter(c => (c.term || "").trim() && (c.definition || "").trim()).length;
+    if (good < SHARE_PROMPT_MIN_CARDS) return;
+    updateDeck(deck.id, { sharePromptAsked: true });
+    setSharePrompt(deck.id);
+  };
+  const answerSharePrompt = (share, dontAskAgain) => {
+    if (share && sharePrompt != null) updateDeck(sharePrompt, { isPublic: true, publishError: null });
+    if (dontAskAgain) { try { localStorage.setItem("tp_share_prompt_off", "1"); } catch { /* ignore */ } }
+    setSharePrompt(null);
+  };
+
   // Copy a public deck into the student's own decks (once) and start studying it.
   const savePublicDeck = (pub) => {
     const have = decks.find(d => d.sourcePublicId === pub.id);
@@ -520,11 +537,12 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       <FCSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} decks={decks} view={view} setView={(v) => { fcNavigate(v); setSidebarOpen(false); setActiveDeck(null); }} onBack={onBack} user={user} openAuth={openAuth} onLogout={onLogout} />
 
       {/* ── VIEWS ────────────────────────────────────────────────────────── */}
+      {sharePrompt != null && <FCSharePrompt deck={decks.find(d => d.id === sharePrompt)} onAnswer={answerSharePrompt} />}
       {view === "home"    && <FCHomeView    user={user} decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
       {view === "deck"    && activeDeck && <FCDeckView   deck={decks.find(d => d.id === activeDeck.id) || activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => { const cur = decks.find(d => d.id === id); updateDeck(id, { isPublic: !(cur || activeDeck).isPublic, publishError: null }); }} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
-      {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
-      {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
+      {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); maybeAskToShare(newDeck); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
+      {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); const cur = decks.find(d => d.id === deckData.id); if (cur) maybeAskToShare({ ...cur, ...deckData }); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary user={user} openAuth={openAuth} onBack={() => fcNavigate("home")} onSave={savePublicDeck} incoming={incoming} clearIncoming={() => setIncoming(null)} />}
       {view === "setup"   && activeDeck && <FCStudySetup deck={activeDeck} onBack={() => fcNavigate("deck")} onStart={(cfg) => { setStudyConfig(cfg); fcNavigate("study"); }} />}
       {view === "study"   && activeDeck && studyConfig && <FCStudyView deck={activeDeck} config={studyConfig} onBack={() => fcNavigate("setup")} onBackToLibrary={() => fcNavigate("library")} onUpdateCards={(deckId, newCards) => { const mastered = newCards.filter(c=>(c.timesCorrect||0)>0&&(c.timesCorrect||0)/((c.timesCorrect||0)+(c.timesWrong||0))>=0.8).length;
@@ -2139,6 +2157,33 @@ Rules:
 
 // ── Library View (hierarchical) ───────────────────────────────────────────────
 // ─── Public Library ────────────────────────────────────────────────────────────
+function FCSharePrompt({ deck, onAnswer }) {
+  const [dontAsk, setDontAsk] = useState(false);
+  if (!deck) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="fc-share-title" onClick={() => onAnswer(false, dontAsk)}
+      style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(26,24,20,0.45)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:"min(440px, 100%)", background:"#fff", borderRadius:16, padding:"24px 22px", boxShadow:"0 20px 60px rgba(0,0,0,0.25)", textAlign:"left" }}>
+        <div style={{ display:"flex", gap:12, alignItems:"center", marginBottom:12 }}>
+          <img src="/mascots/ace-head.webp" alt="" width={44} height={44} />
+          <div id="fc-share-title" style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#1A1814", lineHeight:1.25 }}>Nice deck! Share it with other students?</div>
+        </div>
+        <p style={{ fontSize:14, color:"#5A5752", lineHeight:1.6, margin:"0 0 6px" }}>
+          <strong>{deck.title}</strong> has {deck.cards?.length || 0} cards. If you share it, anyone can find and study it — including on Google — and save their own copy.
+        </p>
+        <p style={{ fontSize:12, color:"#8C8880", lineHeight:1.5, margin:"0 0 16px" }}>It shows your first name only. You can make it private again anytime from the deck page.</p>
+        <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:12, color:"#6F6B63", marginBottom:16, cursor:"pointer" }}>
+          <input type="checkbox" checked={dontAsk} onChange={e => setDontAsk(e.target.checked)} /> Don't ask me again
+        </label>
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end", flexWrap:"wrap" }}>
+          <button onClick={() => onAnswer(false, dontAsk)} style={{ background:"#fff", border:"1px solid #DAD6CE", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:600, color:"#1A1814", cursor:"pointer" }}>Keep private</button>
+          <button onClick={() => onAnswer(true, dontAsk)} style={{ background:"#2BAE7E", border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>🌐 Share publicly</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FCPublicLibrary({ user, openAuth, onBack, onSave, incoming, clearIncoming }) {
   const [decks, setDecks] = useState(null);       // null = loading
   const [loadError, setLoadError] = useState("");
