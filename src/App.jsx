@@ -64,7 +64,7 @@ function FeedbackModal({ source, onClose }) {
     } catch { setState("error"); }
   };
   const share = async () => {
-    const data = { title: "Ace It Galaxy", text: "Free AI study tools — flash cards, notes, an AI study owl and more.", url: "https://aceitgalaxy.com" };
+    const data = { title: "Ace It Galaxy", text: "Free AI study tools — flash cards, notes, an AI study owl and more.", url: "https://www.aceitgalaxy.com" };
     try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(data.url); setState("copied"); } } catch { /* cancelled */ }
   };
   const ink = "#1A1814", muted = "#6F6B63";
@@ -2402,7 +2402,7 @@ function AceItGalaxyInner() {
   useEffect(() => {
     const key = currentApp || (window.location.pathname === "/privacy" ? "privacy" : window.location.pathname === "/terms" ? "terms" : "/");
     const meta = PAGE_META[key] || PAGE_META["/"];
-    const url = key === "/" ? "https://aceitgalaxy.com/" : `https://aceitgalaxy.com/${key}`;
+    const url = key === "/" ? "https://www.aceitgalaxy.com/" : `https://www.aceitgalaxy.com/${key}`;
     document.title = meta.title;
     const set = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
     set('meta[name="description"]', "content", meta.description);

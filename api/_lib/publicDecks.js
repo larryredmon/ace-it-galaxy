@@ -1,7 +1,7 @@
 // Shared helpers for public flash card decks (pages Google can find).
 import { createHash } from "node:crypto";
 
-export const SITE = "https://aceitgalaxy.com";
+export const SITE = "https://www.aceitgalaxy.com";
 export const MAX_CARDS = 300;
 export const MIN_CARDS_TO_INDEX = 5;
 
