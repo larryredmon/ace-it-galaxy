@@ -337,6 +337,9 @@ function SettingsApp({ user, onBack, openAuth, onLogout, onDeleted, onNameChange
           <StRow first label="Send feedback" value="Rate Ace It Galaxy, report a bug or suggest a feature.">
             <button style={btn(true)} onClick={() => window.dispatchEvent(new CustomEvent("tp-open-feedback", { detail: { source: "settings" } }))}>Send feedback</button>
           </StRow>
+          <StRow label="Email support" value="support@aceitgalaxy.com — for account, privacy or data questions.">
+            <a href="mailto:support@aceitgalaxy.com" style={{ ...btn(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Email us</a>
+          </StRow>
         </StSection>
 
         <StSection title="Session">

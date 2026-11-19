@@ -284,7 +284,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
   ];
 
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#FDFCF7", minHeight:"100vh", color:"#1A1814" }}>
+    <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#F7F6F2", minHeight:"100vh", color:"#1A1814" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <style>{`
         * { box-sizing:border-box; }
@@ -565,7 +565,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
         {addingFolder ? (
                   <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
                     onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
-                    style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:`1.5px solid ${NC}`, background:"#FDFCF7", fontSize:12, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
+                    style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:`1.5px solid ${NC}`, background:"#F7F6F2", fontSize:12, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" }} />
                 ) : (
                   <button onClick={()=>setAddingFolder(true)}
                     style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:`1.5px dashed ${NL}`, background:"transparent", fontSize:12, fontWeight:600, cursor:"pointer", color:"#B8A06A", display:"flex", alignItems:"center", gap:8, transition:"all 0.15s", fontFamily:"'DM Sans',sans-serif" }}
@@ -708,7 +708,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>▶ Paste a YouTube lecture or tutorial URL</div>
                 <div style={{ display:"flex",gap:10 }}>
                   <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)} onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchYouTube(uploadUrl);}} placeholder="https://youtube.com/watch?v=..."
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#F7F6F2",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
                     onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
                   <button onClick={()=>fetchYouTube(uploadUrl)} disabled={!uploadUrl.trim()} style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>Load →</button>
                 </div>
@@ -722,7 +722,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
                 <div style={{ display:"flex",gap:10 }}>
                   <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)} onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}} placeholder="https://example.com/article"
-                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
+                    style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#F7F6F2",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
                     onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
                   <button onClick={()=>fetchWebContent(uploadUrl)} disabled={!uploadUrl.trim()||uploadLoading} style={{ padding:"10px 18px",borderRadius:9,border:"none",background:uploadUrl.trim()?NC:"#E8D8A0",color:uploadUrl.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:uploadUrl.trim()?"pointer":"default" }}>{uploadLoading?"Fetching…":"Load →"}</button>
                 </div>
@@ -1220,7 +1220,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
                   onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter")sendChatMessage();}}
                   placeholder="Ask about your notes…"
-                  style={{ flex:1,padding:"8px 11px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:12,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
+                  style={{ flex:1,padding:"8px 11px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#F7F6F2",fontSize:12,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
                   onFocus={e=>e.target.style.borderColor=NC} onBlur={e=>e.target.style.borderColor=NL} />
                 <button onClick={()=>sendChatMessage()} disabled={!chatInput.trim()||chatLoading}
                   style={{ padding:"8px 14px",borderRadius:8,border:"none",background:chatInput.trim()?NC:"#E8D8A0",color:chatInput.trim()?"#fff":"#B8A06A",fontSize:13,fontWeight:700,cursor:chatInput.trim()?"pointer":"default" }}>↑</button>
@@ -1241,7 +1241,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             <div style={{ background:"#fff",border:`1.5px solid ${NC}`,borderRadius:12,padding:"18px 20px",marginBottom:16,animation:"notes-fade 0.3s ease both" }}>
               <input autoFocus value={newFolder} onChange={e=>setNewFolder(e.target.value)} placeholder="Folder name…"
                 onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&newFolder.trim()){setFolders(prev=>[...prev,{id:`nf-${Date.now()}`,name:newFolder.trim()}]);setNewFolder("");setAddingFolder(false);}if(e.key==="Escape"){setAddingFolder(false);setNewFolder("");}}}
-                style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#FDFCF7",fontSize:14,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }} />
+                style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${NL}`,background:"#F7F6F2",fontSize:14,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box" }} />
               <div style={{ fontSize:11,color:"#B8A06A",marginTop:6 }}>Enter to save · Esc to cancel</div>
             </div>
           )}

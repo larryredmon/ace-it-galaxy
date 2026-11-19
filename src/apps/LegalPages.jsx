@@ -155,7 +155,7 @@ EU/UK Residents (GDPR): You have the right to access, rectify, erase, restrict o
             body: `If you have any questions about this Privacy Policy or wish to exercise your privacy rights, please contact us at:
 
 Ace It
-Email: privacy@aceitgalaxy.com
+Email: support@aceitgalaxy.com
 
 We aim to respond to all privacy inquiries within 30 days.`
           },
@@ -169,7 +169,7 @@ We aim to respond to all privacy inquiries within 30 days.`
         <div style={{ background:"rgba(245,200,66,0.06)", border:"1px solid rgba(245,200,66,0.15)", borderRadius:12, padding:"24px 28px", marginTop:40 }}>
           <div style={{ fontSize:13, fontWeight:700, color:"#F5C842", marginBottom:8 }}>Questions or Concerns?</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>
-            We built Ace It with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>privacy@aceitgalaxy.com</span> — we're a small team and we read every message.
+            We built Ace It with your privacy in mind. If anything in this policy is unclear or you have concerns about your data, reach out to us at <span style={{ color:"#F5C842" }}>support@aceitgalaxy.com</span> — we're a small team and we read every message.
           </div>
         </div>
       </div>
@@ -320,7 +320,7 @@ We may suspend or terminate your access if you violate these Terms, with or with
             body: `If you have any questions about these Terms of Service, please contact us at:
 
 Ace It
-Email: legal@aceitgalaxy.com
+Email: support@aceitgalaxy.com
 
 We aim to respond to all inquiries within 30 days.`
           },

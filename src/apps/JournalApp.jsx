@@ -10,7 +10,7 @@ const J_LIGHT   = "#E8C4F0";
 
 const J_DARK    = "#6A0090";
 
-const J_BG      = "#FDF8FF";
+const J_BG      = "#F7F6F2";
 
 const J_MOODS = [
   { id:"amazing",  emoji:"🤩", label:"Amazing",   color:"#F5C842" },
@@ -208,9 +208,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✍</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Ace It Journal</span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#8C6A9A", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
+          <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#6F6B63", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#8C6A9A";}}>✕</button>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>✕</button>
         </div>
 
         {/* Sidebar body */}
@@ -225,14 +225,14 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                 </div>
                 <div>
                   <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814" }}>{user.name}</div>
-                  <div style={{ fontSize:11, color:"#A88AB8" }}>Free Plan</div>
+                  <div style={{ fontSize:11, color:"#8C8880" }}>Free Plan</div>
                 </div>
               </div>
             ) : (
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:10 }}>Sign in to save your journal</div>
                 <div style={{ display:"flex", gap:8 }}>
-                  <button onClick={() => { openAuth("login"); setSidebarOpen(false); }} style={{ flex:1, padding:"7px 0", borderRadius:7, border:`1px solid ${J_LIGHT}`, background:"#fff", fontSize:11, fontWeight:600, cursor:"pointer", color:"#5A3A6A" }}>Log In</button>
+                  <button onClick={() => { openAuth("login"); setSidebarOpen(false); }} style={{ flex:1, padding:"7px 0", borderRadius:7, border:`1px solid ${J_LIGHT}`, background:"#fff", fontSize:11, fontWeight:600, cursor:"pointer", color:"#3A3830" }}>Log In</button>
                   <button onClick={() => { openAuth("signup"); setSidebarOpen(false); }} style={{ flex:1, padding:"7px 0", borderRadius:7, border:"none", background:J_COLOR, fontSize:11, fontWeight:700, cursor:"pointer", color:"#fff" }}>Sign Up</button>
                 </div>
               </div>
@@ -240,7 +240,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           </div>
 
           {/* Navigation */}
-          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A88AB8", padding:"4px 8px 8px" }}>Navigation</div>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#8C8880", padding:"4px 8px 8px" }}>Navigation</div>
           {[
             { icon:"📖", label:"Home",           v:"home"   },
             { icon:"✍",  label:"Write Entry",    v:"write"  },
@@ -261,7 +261,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
           {/* Categories quick filter */}
           <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${J_LIGHT}66` }}>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A88AB8", padding:"4px 8px 8px" }}>Categories</div>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#8C8880", padding:"4px 8px 8px" }}>Categories</div>
             {J_CATEGORIES.map(({ id, emoji, label }) => {
               const count = id === "all" ? entries.length : entries.filter(e => e.category === id).length;
               return (
@@ -270,8 +270,8 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                   onMouseEnter={e => e.currentTarget.style.background=`${J_COLOR}08`}
                   onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                   <span style={{ fontSize:14 }}>{emoji}</span>
-                  <span style={{ fontSize:12, fontWeight:500, color:"#5A3A6A", flex:1, textAlign:"left" }}>{label}</span>
-                  <span style={{ fontSize:11, color:"#C0A8D0", background:`${J_COLOR}10`, borderRadius:10, padding:"1px 7px", fontWeight:600 }}>{count}</span>
+                  <span style={{ fontSize:12, fontWeight:500, color:"#3A3830", flex:1, textAlign:"left" }}>{label}</span>
+                  <span style={{ fontSize:11, color:"#A8A59E", background:`${J_COLOR}10`, borderRadius:10, padding:"1px 7px", fontWeight:600 }}>{count}</span>
                 </button>
               );
             })}
@@ -280,7 +280,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Mood quick stats */}
           {entries.length > 0 && (
             <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${J_LIGHT}66` }}>
-              <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#A88AB8", padding:"4px 8px 8px" }}>Mood History</div>
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#8C8880", padding:"4px 8px 8px" }}>Mood History</div>
               <div style={{ display:"flex", gap:8, padding:"4px 8px", flexWrap:"wrap" }}>
                 {J_MOODS.map(m => {
                   const count = entries.filter(e => e.mood === m.id).length;
@@ -288,7 +288,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                   return (
                     <div key={m.id} title={`${m.label}: ${count}`} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
                       <span style={{ fontSize:20 }}>{m.emoji}</span>
-                      <span style={{ fontSize:10, color:"#A88AB8", fontWeight:600 }}>{count}</span>
+                      <span style={{ fontSize:10, color:"#8C8880", fontWeight:600 }}>{count}</span>
                     </div>
                   );
                 })}
@@ -302,8 +302,8 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           <button onClick={onBack} style={{ width:"100%", display:"flex", alignItems:"center", gap:11, padding:"9px 12px", borderRadius:8, border:"none", background:"transparent", cursor:"pointer", transition:"all 0.15s", fontFamily:"'DM Sans',sans-serif" }}
             onMouseEnter={e => e.currentTarget.style.background=`${J_COLOR}08`}
             onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-            <span style={{ fontSize:13, color:"#A88AB8" }}>←</span>
-            <span style={{ fontSize:13, fontWeight:500, color:"#8C6A9A" }}>Back to Galaxy</span>
+            <span style={{ fontSize:13, color:"#8C8880" }}>←</span>
+            <span style={{ fontSize:13, fontWeight:500, color:"#6F6B63" }}>Back to Galaxy</span>
           </button>
         </div>
       </div>
@@ -316,12 +316,12 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.background=`${J_COLOR}08`;}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.background="none";}}>
             <div style={{ width:14, height:1.5, background:J_COLOR, borderRadius:1 }} />
-            <div style={{ width:10, height:1.5, background:"#A88AB8", borderRadius:1 }} />
+            <div style={{ width:10, height:1.5, background:"#8C8880", borderRadius:1 }} />
             <div style={{ width:14, height:1.5, background:J_COLOR, borderRadius:1 }} />
           </button>
-          <button onClick={onBack} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C6A9A", transition:"all 0.18s", whiteSpace:"nowrap", flexShrink:0 }}
+          <button onClick={onBack} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#6F6B63", transition:"all 0.18s", whiteSpace:"nowrap", flexShrink:0 }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#8C6A9A";}}>← Galaxy</button>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>← Galaxy</button>
           <div style={{ width:1, height:20, background:J_LIGHT, flexShrink:0 }} />
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
@@ -333,7 +333,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         <div style={{ display:"flex", gap:8 }}>
           {[["📖","home"],["✍","write"],["🗂","browse"]].map(([icon, v]) => (
             <button key={v} onClick={() => setView(v)}
-              style={{ padding:"7px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.18s", background: view===v ? J_COLOR : "transparent", color: view===v ? "#fff" : "#8C6A9A" }}
+              style={{ padding:"7px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.18s", background: view===v ? J_COLOR : "transparent", color: view===v ? "#fff" : "#6F6B63" }}
               onKeyDown={e => { if (e.key===" ") e.preventDefault(); }}>
               {icon} {v.charAt(0).toUpperCase()+v.slice(1)}
             </button>
@@ -341,7 +341,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         </div>
         {user ? (
           <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }} onClick={() => setSidebarOpen(true)}>
-            <span className="j-nav-name" style={{ fontSize:12, fontWeight:700, color:"#5A3A6A" }}>{user.name}</span>
+            <span className="j-nav-name" style={{ fontSize:12, fontWeight:700, color:"#3A3830" }}>{user.name}</span>
             <div style={{ width:30, height:30, borderRadius:"50%", background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"#fff" }}>{user.name?.[0]||"U"}</div>
           </div>
         ) : (
@@ -362,7 +362,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               Hey {user?.name?.split(" ")[0] || "there"} ✍<br/>
               <span style={{ color:J_COLOR }}>What's on your mind?</span>
             </h1>
-            <p style={{ fontSize:15, color:"#8C6A9A", lineHeight:1.7, maxWidth:500 }}>
+            <p style={{ fontSize:15, color:"#6F6B63", lineHeight:1.7, maxWidth:500 }}>
               This is your private space. Write freely, reflect deeply, and track your journey — mental health, daily life, goals, and everything in between.
             </p>
           </div>
@@ -378,7 +378,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               <div key={label} style={{ flex:1, background:"#fff", border:`1px solid ${J_LIGHT}88`, borderRadius:14, padding:"18px 16px", textAlign:"center" }}>
                 <div style={{ fontSize:20, marginBottom:6 }}>{icon}</div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:J_COLOR, marginBottom:3 }}>{value}</div>
-                <div style={{ fontSize:10, fontWeight:700, color:"#A88AB8", textTransform:"uppercase", letterSpacing:1 }}>{label}</div>
+                <div style={{ fontSize:10, fontWeight:700, color:"#8C8880", textTransform:"uppercase", letterSpacing:1 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -393,7 +393,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               <div style={{ fontSize:13, opacity:0.8, lineHeight:1.5 }}>Start with a blank page or get a prompt to spark reflection.</div>
             </div>
             <div style={{ background:"#fff", border:`1.5px solid ${J_LIGHT}`, borderRadius:16, padding:"28px 26px" }}>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"#A88AB8", textTransform:"uppercase", marginBottom:12 }}>Today's Prompt</div>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"#8C8880", textTransform:"uppercase", marginBottom:12 }}>Today's Prompt</div>
               <p style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700, color:"#1A1814", lineHeight:1.6, marginBottom:18 }}>
                 "{J_PROMPTS[new Date().getDay() % J_PROMPTS.length]}"
               </p>
@@ -410,7 +410,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {entries.length > 0 && (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"#A88AB8", textTransform:"uppercase" }}>Recent Entries</div>
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"#8C8880", textTransform:"uppercase" }}>Recent Entries</div>
                 <button onClick={() => setView("browse")} style={{ background:"none", border:"none", fontSize:12, fontWeight:700, color:J_COLOR, cursor:"pointer" }}>See All →</button>
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -427,11 +427,11 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                             {cat && <span style={{ fontSize:10, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{cat.emoji} {cat.label}</span>}
                           </div>
                           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814", marginBottom:4, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{e.title}</div>
-                          <div style={{ fontSize:13, color:"#8C6A9A", lineHeight:1.5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.body.slice(0,120)}{e.body.length>120?"…":""}</div>
+                          <div style={{ fontSize:13, color:"#6F6B63", lineHeight:1.5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.body.slice(0,120)}{e.body.length>120?"…":""}</div>
                         </div>
                         <div style={{ textAlign:"right", flexShrink:0, marginLeft:16 }}>
-                          <div style={{ fontSize:11, color:"#A88AB8" }}>{new Date(e.createdAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
-                          <div style={{ fontSize:10, color:"#C0A8D0", marginTop:2 }}>{e.wordCount} words</div>
+                          <div style={{ fontSize:11, color:"#8C8880" }}>{new Date(e.createdAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
+                          <div style={{ fontSize:10, color:"#A8A59E", marginTop:2 }}>{e.wordCount} words</div>
                         </div>
                       </div>
                     </div>
@@ -442,9 +442,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           )}
 
           {entries.length === 0 && (
-            <div style={{ textAlign:"center", padding:"60px 0", color:"#A88AB8" }}>
+            <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
               <div style={{ fontSize:52, marginBottom:14 }}>📖</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#5A3A6A", marginBottom:8 }}>Your journal is waiting</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#3A3830", marginBottom:8 }}>Your journal is waiting</div>
               <p style={{ fontSize:14, maxWidth:380, margin:"0 auto 24px", lineHeight:1.7 }}>Every journey starts with a single entry. Write your first one — it can be anything at all.</p>
               <button onClick={() => setView("write")} style={{ background:J_COLOR, border:"none", borderRadius:10, padding:"13px 30px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#fff", boxShadow:`0 6px 20px ${J_COLOR}44` }}>Write Your First Entry →</button>
             </div>
@@ -464,7 +464,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               <div style={{ display:"flex", gap:8 }}>
                 <button onClick={usePrompt} style={{ padding:"7px 16px", borderRadius:8, border:"none", background:J_COLOR, color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer" }}>Use This Prompt</button>
                 <button onClick={newPrompt} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${J_COLOR}44`, background:"transparent", color:J_COLOR, fontSize:12, cursor:"pointer" }}>New Prompt</button>
-                <button onClick={() => setShowPrompt(false)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#A88AB8", cursor:"pointer", fontSize:13 }}>✕</button>
+                <button onClick={() => setShowPrompt(false)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#8C8880", cursor:"pointer", fontSize:13 }}>✕</button>
               </div>
             </div>
           )}
@@ -473,7 +473,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
             {/* Mood picker */}
             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-              <span style={{ fontSize:11, fontWeight:700, color:"#A88AB8", letterSpacing:1, textTransform:"uppercase", marginRight:4 }}>Mood</span>
+              <span style={{ fontSize:11, fontWeight:700, color:"#8C8880", letterSpacing:1, textTransform:"uppercase", marginRight:4 }}>Mood</span>
               {J_MOODS.map(m => (
                 <button key={m.id} className="j-mood-btn" onClick={() => setMood(mood === m.id ? null : m.id)} title={m.label}
                   style={{ width:34, height:34, borderRadius:"50%", border:`2px solid ${mood===m.id ? m.color : "transparent"}`, background: mood===m.id ? `${m.color}20` : "#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: mood===m.id ? `0 0 0 3px ${m.color}30` : "none" }}>
@@ -483,19 +483,19 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             </div>
             {/* Category */}
             <select value={category} onChange={e => setCategory(e.target.value)}
-              style={{ padding:"7px 12px", borderRadius:8, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:12, fontWeight:600, color:"#5A3A6A", cursor:"pointer", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
+              style={{ padding:"7px 12px", borderRadius:8, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:12, fontWeight:600, color:"#3A3830", cursor:"pointer", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
               {J_CATEGORIES.filter(c => c.id !== "all").map(c => (
                 <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
               ))}
             </select>
             {/* Prompt button */}
             <button onClick={newPrompt}
-              style={{ padding:"7px 14px", borderRadius:8, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:12, fontWeight:600, color:"#8C6A9A", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}
+              style={{ padding:"7px 14px", borderRadius:8, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:12, fontWeight:600, color:"#6F6B63", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#8C6A9A";}}>
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>
               💡 Get a Prompt
             </button>
-            <div style={{ marginLeft:"auto", fontSize:12, color:"#A88AB8" }}>{wordCount} {wordCount===1?"word":"words"}</div>
+            <div style={{ marginLeft:"auto", fontSize:12, color:"#8C8880" }}>{wordCount} {wordCount===1?"word":"words"}</div>
           </div>
 
           {/* Title */}
@@ -516,17 +516,17 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
                 <div style={{ width:28, height:28, borderRadius:"50%", background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>⊕</div>
                 <span style={{ fontSize:12, fontWeight:700, letterSpacing:1, color:J_COLOR, textTransform:"uppercase" }}>AI Reflection</span>
-                <button onClick={() => setShowAiPanel(false)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#A88AB8", cursor:"pointer", fontSize:13 }}>✕</button>
+                <button onClick={() => setShowAiPanel(false)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#8C8880", cursor:"pointer", fontSize:13 }}>✕</button>
               </div>
               {aiLoading ? (
-                <div style={{ display:"flex", gap:8, alignItems:"center", color:"#A88AB8" }}>
+                <div style={{ display:"flex", gap:8, alignItems:"center", color:"#8C8880" }}>
                   <div style={{ width:8, height:8, borderRadius:"50%", background:J_COLOR, animation:"j-pop 1s infinite" }} />
                   <div style={{ width:8, height:8, borderRadius:"50%", background:J_COLOR, animation:"j-pop 1s 0.2s infinite" }} />
                   <div style={{ width:8, height:8, borderRadius:"50%", background:J_COLOR, animation:"j-pop 1s 0.4s infinite" }} />
                   <span style={{ fontSize:13, marginLeft:4 }}>Reflecting on your entry…</span>
                 </div>
               ) : (
-                <p style={{ fontSize:14, color:"#5A3A6A", lineHeight:1.8, margin:0, whiteSpace:"pre-wrap" }}>{aiReflection}</p>
+                <p style={{ fontSize:14, color:"#3A3830", lineHeight:1.8, margin:0, whiteSpace:"pre-wrap" }}>{aiReflection}</p>
               )}
             </div>
           )}
@@ -534,17 +534,17 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Action bar */}
           <div style={{ display:"flex", gap:10, marginTop:28, paddingTop:20, borderTop:`1px solid ${J_LIGHT}66` }}>
             <button onClick={saveEntry} disabled={!body.trim()}
-              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none", background: saveAnim ? "#2BAE7E" : body.trim() ? J_COLOR : "#E8D8F0", color: body.trim() ? "#fff" : "#A88AB8", fontSize:14, fontWeight:800, cursor: body.trim() ? "pointer" : "default", transition:"all 0.3s", fontFamily:"'DM Sans',sans-serif" }}>
+              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none", background: saveAnim ? "#2BAE7E" : body.trim() ? J_COLOR : "#ECEAE4", color: body.trim() ? "#fff" : "#8C8880", fontSize:14, fontWeight:800, cursor: body.trim() ? "pointer" : "default", transition:"all 0.3s", fontFamily:"'DM Sans',sans-serif" }}>
               {saveAnim ? "✓ Saved!" : "Save Entry"}
             </button>
             <button onClick={getAiReflection} disabled={!body.trim() || aiLoading}
-              style={{ padding:"13px 20px", borderRadius:10, border:`1.5px solid ${J_COLOR}44`, background:"#fff", color: body.trim() ? J_COLOR : "#C0A8D0", fontSize:13, fontWeight:700, cursor: body.trim() && !aiLoading ? "pointer" : "default", transition:"all 0.18s" }}
+              style={{ padding:"13px 20px", borderRadius:10, border:`1.5px solid ${J_COLOR}44`, background:"#fff", color: body.trim() ? J_COLOR : "#A8A59E", fontSize:13, fontWeight:700, cursor: body.trim() && !aiLoading ? "pointer" : "default", transition:"all 0.18s" }}
               onMouseEnter={e => { if (body.trim()) { e.currentTarget.style.background=`${J_COLOR}10`; e.currentTarget.style.borderColor=J_COLOR; } }}
               onMouseLeave={e => { e.currentTarget.style.background="#fff"; e.currentTarget.style.borderColor=`${J_COLOR}44`; }}>
               ⊕ AI Reflect
             </button>
             <button onClick={() => setView("home")}
-              style={{ padding:"13px 18px", borderRadius:10, border:`1px solid ${J_LIGHT}`, background:"transparent", color:"#8C6A9A", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              style={{ padding:"13px 18px", borderRadius:10, border:`1px solid ${J_LIGHT}`, background:"transparent", color:"#6F6B63", fontSize:13, fontWeight:600, cursor:"pointer" }}>
               Cancel
             </button>
           </div>
@@ -554,9 +554,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
       {/* ── ENTRY VIEW ── */}
       {view === "entry" && activeEntry && (
         <div style={{ maxWidth:740, margin:"0 auto", padding:"40px 28px", animation:"j-fade 0.4s ease both" }}>
-          <button onClick={() => setView("browse")} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C6A9A", marginBottom:24, transition:"all 0.15s" }}
+          <button onClick={() => setView("browse")} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#6F6B63", marginBottom:24, transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#8C6A9A";}}>
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>
             ← Back
           </button>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
@@ -564,9 +564,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               {(() => { const m = J_MOODS.find(x => x.id === activeEntry.mood); return m ? <span style={{ fontSize:28, marginBottom:8, display:"block" }}>{m.emoji}</span> : null; })()}
               <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(22px,4vw,32px)", fontWeight:900, color:"#1A1814", lineHeight:1.2, marginBottom:8 }}>{activeEntry.title}</h1>
               <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
-                <span style={{ fontSize:12, color:"#A88AB8" }}>{new Date(activeEntry.createdAt).toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</span>
-                <span style={{ fontSize:10, color:"#C0A8D0" }}>·</span>
-                <span style={{ fontSize:12, color:"#A88AB8" }}>{activeEntry.wordCount} words</span>
+                <span style={{ fontSize:12, color:"#8C8880" }}>{new Date(activeEntry.createdAt).toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</span>
+                <span style={{ fontSize:10, color:"#A8A59E" }}>·</span>
+                <span style={{ fontSize:12, color:"#8C8880" }}>{activeEntry.wordCount} words</span>
                 {(() => { const c = J_CATEGORIES.find(x => x.id === activeEntry.category); return c ? <span style={{ fontSize:11, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{c.emoji} {c.label}</span> : null; })()}
               </div>
             </div>
@@ -588,7 +588,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Search + filter */}
           <div style={{ display:"flex", gap:12, marginBottom:24, flexWrap:"wrap" }}>
             <div style={{ position:"relative", flex:1, minWidth:200 }}>
-              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A88AB8", pointerEvents:"none" }}>🔍</span>
+              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#8C8880", pointerEvents:"none" }}>🔍</span>
               <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search entries…"
                 style={{ width:"100%", padding:"10px 14px 10px 36px", borderRadius:10, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
                 onFocus={e=>e.target.style.borderColor=J_COLOR}
@@ -598,7 +598,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             <div className="j-cats-grid" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {J_CATEGORIES.map(c => (
                 <button key={c.id} onClick={() => setFilterCat(c.id)}
-                  style={{ padding:"8px 14px", borderRadius:20, border:`1.5px solid ${filterCat===c.id ? J_COLOR : J_LIGHT}`, background: filterCat===c.id ? J_COLOR : "#fff", color: filterCat===c.id ? "#fff" : "#8C6A9A", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
+                  style={{ padding:"8px 14px", borderRadius:20, border:`1.5px solid ${filterCat===c.id ? J_COLOR : J_LIGHT}`, background: filterCat===c.id ? J_COLOR : "#fff", color: filterCat===c.id ? "#fff" : "#6F6B63", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s", whiteSpace:"nowrap" }}>
                   {c.emoji} {c.label}
                 </button>
               ))}
@@ -606,9 +606,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           </div>
 
           {filteredEntries.length === 0 ? (
-            <div style={{ textAlign:"center", padding:"60px 0", color:"#A88AB8" }}>
+            <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
               <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#5A3A6A", marginBottom:8 }}>No entries found</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#3A3830", marginBottom:8 }}>No entries found</div>
               <button onClick={() => setView("write")} style={{ background:J_COLOR, border:"none", borderRadius:9, padding:"11px 24px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff", marginTop:8 }}>Write Your First Entry</button>
             </div>
           ) : (
@@ -626,11 +626,11 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
                           {cat && <span style={{ fontSize:11, fontWeight:700, color:J_COLOR, background:`${J_COLOR}12`, padding:"2px 8px", borderRadius:10 }}>{cat.emoji} {cat.label}</span>}
                         </div>
                         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:800, color:"#1A1814", marginBottom:5 }}>{e.title}</div>
-                        <div style={{ fontSize:13, color:"#8C6A9A", lineHeight:1.55, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.body.slice(0,160)}{e.body.length>160?"…":""}</div>
+                        <div style={{ fontSize:13, color:"#6F6B63", lineHeight:1.55, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.body.slice(0,160)}{e.body.length>160?"…":""}</div>
                       </div>
                       <div style={{ textAlign:"right", flexShrink:0, marginLeft:16 }}>
-                        <div style={{ fontSize:12, color:"#A88AB8", fontWeight:600 }}>{new Date(e.createdAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
-                        <div style={{ fontSize:10, color:"#C0A8D0", marginTop:2 }}>{e.wordCount} words</div>
+                        <div style={{ fontSize:12, color:"#8C8880", fontWeight:600 }}>{new Date(e.createdAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
+                        <div style={{ fontSize:10, color:"#A8A59E", marginTop:2 }}>{e.wordCount} words</div>
                       </div>
                     </div>
                   </div>
