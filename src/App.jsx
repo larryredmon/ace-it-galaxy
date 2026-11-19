@@ -1938,7 +1938,7 @@ function AppSEOLanding({ appId, onEnter, openAuth, onLegal, onHome }) {
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           {[["Shared decks", "decks"], ["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Contact", "contact"]].map(([l, key]) => (
-            <a key={l} href={key === "contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer", textDecoration: "none" }}
+            <a key={l} href={key === "contact" ? "mailto:support@aceitgalaxy.com" : `/${key}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer", textDecoration: "none" }}
               onClick={(e) => { if (key === "contact" || key === "decks") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); }}>{l}</a>
           ))}
         </div>
@@ -2211,7 +2211,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
         <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
           {[["Shared decks","decks"],["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
-            <a key={l} href={key==="contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize:12, color:"rgba(255,255,255,0.55)", cursor:"pointer", transition:"color 0.15s", textDecoration:"none" }}
+            <a key={l} href={key==="contact" ? "mailto:support@aceitgalaxy.com" : `/${key}`} style={{ fontSize:12, color:"rgba(255,255,255,0.55)", cursor:"pointer", transition:"color 0.15s", textDecoration:"none" }}
               onClick={(e) => { if(key==="contact"||key==="decks") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.85)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}>{l}</a>

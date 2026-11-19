@@ -837,45 +837,45 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
 
   // ── Home & Maps views (light bg) ──
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0C0B18", minHeight: "100vh", color: "#F7F6F2" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#F7F6F2", minHeight: "100vh", color: "#1A1814" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <style>{`* { box-sizing: border-box; } ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; } @keyframes bm-pop { from { opacity:0; transform:scale(0.9) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } } @keyframes bm-fade { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } } .bm-card { transition: all 0.22s !important; } .bm-card:hover { transform: translateY(-4px) !important; background: rgba(255,255,255,0.07) !important; } @media (max-width: 768px) { .bm-nav-tabs { display: none !important; } .bm-nav { padding: 0 16px !important; } .bm-main { padding: 28px 16px 60px !important; } .bm-hero { padding: 48px 20px 40px !important; } .bm-cards-grid { grid-template-columns: 1fr !important; } .bm-stats-grid { grid-template-columns: 1fr 1fr !important; } .bm-feats-grid { grid-template-columns: 1fr 1fr !important; } } @media (max-width: 480px) { .bm-feats-grid { grid-template-columns: 1fr !important; } }`}</style>
 
       {/* Nav */}
-      <nav className="bm-nav" style={{ background: "rgba(12,11,24,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
+      <nav className="bm-nav" style={{ background: "#fff", borderBottom: "1px solid #ECEAE4", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div style={{ padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {/* Hamburger */}
             <button onClick={() => setSidebarOpen(o => !o)}
-              style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4.5, flexShrink: 0 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
-              <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.7)", borderRadius: 1 }} />
-              <div style={{ width: 10, height: 1.5, background: "rgba(255,255,255,0.4)", borderRadius: 1, alignSelf: "flex-start", marginLeft: 2 }} />
-              <div style={{ width: 14, height: 1.5, background: "rgba(255,255,255,0.7)", borderRadius: 1 }} />
+              style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, width: 36, height: 36, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4.5, flexShrink: 0 }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "#ECEAE4"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "#ECEAE4"}>
+              <div style={{ width: 14, height: 1.5, background: "#5A5752", borderRadius: 1 }} />
+              <div style={{ width: 10, height: 1.5, background: "#5A5752", borderRadius: 1, alignSelf: "flex-start", marginLeft: 2 }} />
+              <div style={{ width: 14, height: 1.5, background: "#5A5752", borderRadius: 1 }} />
             </button>
-            <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Galaxy</button>
-            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)" }} />
+            <button onClick={onBack} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", color: "#6F6B63", transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = "#1A1814"} onMouseLeave={e => e.currentTarget.style.color = "#6F6B63"}>← Galaxy</button>
+            <div style={{ width: 1, height: 18, background: "#fff" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: "#F0A8C0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✺</div>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#F7F6F2" }}><span style={{ color: "#F0A8C0" }}>Ace It</span> Brain Map</span>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#1A1814" }}><span style={{ color: "#B8476E" }}>Ace It</span> Brain Map</span>
             </div>
           </div>
-          <div className="bm-nav-tabs" style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 9, padding: 3, gap: 2 }}>
+          <div className="bm-nav-tabs" style={{ display: "flex", background: "#F1EFEA", borderRadius: 9, padding: 3, gap: 2 }}>
             {[["home","Home"],["maps","All Maps"],["explore","🌐 Explore"]].map(([v,label]) => (
-              <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.13)" : "transparent", color: view === v ? "#F7F6F2" : "rgba(255,255,255,0.4)", transition: "all 0.18s", whiteSpace:"nowrap" }}>{label}</button>
+              <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "#ECEAE4" : "transparent", color: view === v ? "#1A1814" : "#6F6B63", transition: "all 0.18s", whiteSpace:"nowrap" }}>{label}</button>
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#F7F6F2" }}>{user.name}</span>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer" }} onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#1A1814" }}>{user.name}</span>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #F0A8C0, #9B59B6)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, color: "#1A1814", cursor: "pointer" }} onClick={() => setSidebarOpen(true)}>{user.avatar}</div>
               </div>
             ) : (
               <>
-                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "7px 14px", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>Log In</button>
+                <button onClick={() => openAuth("login")} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "7px 14px", fontSize: 12, cursor: "pointer", color: "#3A3830" }}>Log In</button>
                 <button onClick={() => openAuth("signup")} style={{ background: "#F0A8C0", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>Sign Up Free</button>
               </>
             )}
@@ -927,7 +927,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
       {view === "home" && (
         <div>
           {/* Hero */}
-          <div className="bm-hero" style={{ padding: "80px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+          <div className="bm-hero" style={{ padding: "80px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden", background: "#1A1814" }}>
             <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(240,168,192,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(240,168,192,0.1)", border: "1px solid rgba(240,168,192,0.22)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#F0A8C0", marginBottom: 24 }}>
               ✺ Visual Mind Mapping
@@ -947,7 +947,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           </div>
 
           {/* Stats strip */}
-          <div style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ background: "#fff", borderTop: "1px solid #ECEAE4", borderBottom: "1px solid #ECEAE4" }}>
             <div className="bm-stats-grid" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
               {[
                 [maps.length.toString(), "Brain Maps"],
@@ -955,9 +955,9 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                 [userDecks.length.toString(), "Linked Decks"],
                 [maps.reduce((a, m) => a + m.nodes.filter(n => n.deckIds?.length > 0).length, 0).toString(), "Nodes with Cards"],
               ].map(([val, lbl], i) => (
-                <div key={lbl} style={{ padding: "22px 0", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#F0A8C0" }}>{val}</div>
-                  <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textTransform: "uppercase", marginTop: 4 }}>{lbl}</div>
+                <div key={lbl} style={{ padding: "22px 0", textAlign: "center", borderRight: i < 3 ? "1px solid #ECEAE4" : "none" }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#B8476E" }}>{val}</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "#6F6B63", letterSpacing: 1, textTransform: "uppercase", marginTop: 4 }}>{lbl}</div>
                 </div>
               ))}
             </div>
@@ -967,17 +967,17 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Continue Mapping</div>
-                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#F7F6F2", margin: 0 }}>Your Maps</h2>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#6F6B63", marginBottom: 8 }}>Continue Mapping</div>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#1A1814", margin: 0 }}>Your Maps</h2>
               </div>
-              <button onClick={() => setView("maps")} style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#F0A8C0", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>View all →</button>
+              <button onClick={() => setView("maps")} style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#B8476E", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>View all →</button>
             </div>
             <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
               {maps.map(m => (
                 <div key={m.id} className="bm-card" onClick={() => openMap(m)}
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
-                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 20px", cursor: "pointer" }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: "#6F6B63", marginBottom: 18 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {m.nodes.filter(n => n.parentId === "root").slice(0, 5).map(n => (
                       <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
@@ -987,17 +987,17 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               ))}
               {/* New map card */}
               <div onClick={() => setShowNewMap(true)} className="bm-card"
-                style={{ background: "transparent", border: "1.5px dashed rgba(255,255,255,0.12)", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
+                style={{ background: "transparent", border: "1.5px dashed #D8D5CE", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
                 <div style={{ fontSize: 28, opacity: 0.35 }}>+</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>New Brain Map</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#6F6B63" }}>New Brain Map</div>
               </div>
             </div>
           </div>
 
           {/* Features */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "60px 24px" }}>
+          <div style={{ borderTop: "1px solid #ECEAE4", padding: "60px 24px" }}>
             <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#F7F6F2", textAlign: "center", marginBottom: 40 }}>Built for deep understanding</h2>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#1A1814", textAlign: "center", marginBottom: 40 }}>Built for deep understanding</h2>
               <div className="bm-feats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                 {[
                   { emoji: "🧠", title: "Infinite Canvas",       desc: "Pan and zoom freely across an infinite workspace. Your map grows as your ideas do." },
@@ -1007,10 +1007,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                   { emoji: "🔗", title: "Unlimited Connections",  desc: "Build deep hierarchies with unlimited child nodes off any parent branch." },
                   { emoji: "📂", title: "Multiple Maps",         desc: "Create separate maps for every subject, chapter, or project and switch between them instantly." },
                 ].map(f => (
-                  <div key={f.title} style={{ background: "rgba(255,255,255,0.03)", border: "1.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "20px 20px" }}>
+                  <div key={f.title} style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 12, padding: "20px 20px" }}>
                     <div style={{ fontSize: 24, marginBottom: 10 }}>{f.emoji}</div>
-                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{f.title}</div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", lineHeight: 1.6 }}>{f.desc}</div>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, color: "#6F6B63", lineHeight: 1.6 }}>{f.desc}</div>
                   </div>
                 ))}
               </div>
@@ -1024,18 +1024,18 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Your Workspace</div>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#F7F6F2", margin: 0 }}>All Maps</h2>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#6F6B63", marginBottom: 8 }}>Your Workspace</div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#1A1814", margin: 0 }}>All Maps</h2>
             </div>
             <button onClick={() => setShowNewMap(true)} style={{ background: "#F0A8C0", border: "none", borderRadius: 9, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1A1814" }}>+ New Map</button>
           </div>
           <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {maps.map(m => (
               <div key={m.id} className="bm-card"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
+                style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 16px", cursor: "pointer" }}>
                 <div onClick={() => openMap(m)}>
-                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: "#6F6B63", marginBottom: 14 }}>{m.nodes.length} nodes · {m.nodes.filter(n => n.deckIds?.length > 0).length} with flash cards</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
                     {m.nodes.filter(n => n.parentId === "root").slice(0, 6).map(n => (
                       <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
@@ -1043,27 +1043,27 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                   </div>
                 </div>
                 {/* Public/Private toggle + rating */}
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:10, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:10, borderTop:"1px solid #ECEAE4" }}>
                   <button onClick={e => { e.stopPropagation(); updateMap(m.id, { isPublic: !m.isPublic }); }}
-                    style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.15)"}`, background: m.isPublic ? "#2BAE7E18" : "transparent", fontSize:11, fontWeight:700, cursor:"pointer", color: m.isPublic ? "#2BAE7E" : "rgba(255,255,255,0.4)", transition:"all 0.18s" }}>
+                    style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic ? "#2BAE7E" : "#ECEAE4"}`, background: m.isPublic ? "#2BAE7E18" : "transparent", fontSize:11, fontWeight:700, cursor:"pointer", color: m.isPublic ? "#2BAE7E" : "#6F6B63", transition:"all 0.18s" }}>
                     {m.isPublic ? "🌐 Public" : "🔒 Private"}
                   </button>
                   {m.isPublic && (
                     <div style={{ display:"flex", gap:2 }}>
                       {[1,2,3,4,5].map(s => {
                         const avg = m.ratings?.length ? m.ratings.reduce((a,r)=>a+r.stars,0)/m.ratings.length : 0;
-                        return <span key={s} style={{ fontSize:13, color: s<=Math.round(avg) ? "#F5C842" : "rgba(255,255,255,0.15)" }}>★</span>;
+                        return <span key={s} style={{ fontSize:13, color: s<=Math.round(avg) ? "#F5C842" : "#8C8880" }}>★</span>;
                       })}
-                      {m.ratings?.length > 0 && <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginLeft:4 }}>({m.ratings.length})</span>}
+                      {m.ratings?.length > 0 && <span style={{ fontSize:10, color:"#6F6B63", marginLeft:4 }}>({m.ratings.length})</span>}
                     </div>
                   )}
                 </div>
               </div>
             ))}
             <div onClick={() => setShowNewMap(true)} className="bm-card"
-              style={{ background: "transparent", border: "1.5px dashed rgba(255,255,255,0.12)", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
+              style={{ background: "transparent", border: "1.5px dashed #D8D5CE", borderRadius: 14, padding: "24px 22px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 140 }}>
               <div style={{ fontSize: 28, opacity: 0.35 }}>+</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Create New Map</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#6F6B63" }}>Create New Map</div>
             </div>
           </div>
         </div>
@@ -1073,14 +1073,14 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
       {view === "explore" && (
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
           <div style={{ marginBottom: 32 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>Community</div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#F7F6F2", marginBottom: 8 }}>🌐 Public Brain Maps</h2>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7 }}>Browse mind maps shared by the community. Rate maps to help others find the best ones.</p>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#6F6B63", marginBottom: 8 }}>Community</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#1A1814", marginBottom: 8 }}>🌐 Public Brain Maps</h2>
+            <p style={{ fontSize: 14, color: "#6F6B63", lineHeight: 1.7 }}>Browse mind maps shared by the community. Rate maps to help others find the best ones.</p>
           </div>
           {maps.filter(m => m.isPublic).length === 0 ? (
-            <div style={{ textAlign:"center", padding:"60px 0", color:"rgba(255,255,255,0.3)" }}>
+            <div style={{ textAlign:"center", padding:"60px 0", color:"#6F6B63" }}>
               <div style={{ fontSize:40, marginBottom:12 }}>🗺️</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"rgba(255,255,255,0.5)", marginBottom:8 }}>No public maps yet</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#3A3830", marginBottom:8 }}>No public maps yet</div>
               <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>Be the first to share a map! Go to All Maps and click 🔒 Private to make it public.</p>
             </div>
           ) : (
@@ -1090,9 +1090,9 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                 const userRating = user ? m.ratings?.find(r=>r.userId===user.uid)?.stars||0 : 0;
                 return (
                   <div key={m.id} className="bm-card"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 18px" }}>
-                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#F7F6F2", marginBottom: 6 }}>{m.title}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>{m.nodes.length} nodes · by {m.author || user?.name || "Anonymous"}</div>
+                    style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderTop: `3px solid ${m.color}`, borderRadius: 14, padding: "24px 22px 18px" }}>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>{m.title}</div>
+                    <div style={{ fontSize: 12, color: "#6F6B63", marginBottom: 14 }}>{m.nodes.length} nodes · by {m.author || user?.name || "Anonymous"}</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 16 }}>
                       {m.nodes.filter(n => n.parentId === "root").slice(0, 5).map(n => (
                         <div key={n.id} style={{ padding: "3px 9px", borderRadius: 5, background: n.color + "20", border: `1px solid ${n.color}40`, fontSize: 10, fontWeight: 700, color: n.color }}>{n.label.split("\n")[0]}</div>
@@ -1111,10 +1111,10 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                             style={{ fontSize:18, cursor: user ? "pointer" : "default", color: s<=(userRating||Math.round(avg)) ? "#F5C842" : "rgba(255,255,255,0.15)", transition:"color 0.1s" }}>★</span>
                         ))}
                       </div>
-                      <span style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>
+                      <span style={{ fontSize:11, color:"#6F6B63" }}>
                         {avg ? `${avg.toFixed(1)} (${m.ratings.length} ${m.ratings.length===1?"rating":"ratings"})` : "No ratings yet"}
                       </span>
-                      {!user && <span style={{ fontSize:11, color:"rgba(255,255,255,0.25)" }}>· Log in to rate</span>}
+                      {!user && <span style={{ fontSize:11, color:"#8C8880" }}>· Log in to rate</span>}
                     </div>
                     <button onClick={() => openMap(m)}
                       style={{ width:"100%", padding:"9px 0", borderRadius:8, border:"none", background:"#F0A8C0", color:"#1A1814", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
@@ -1131,17 +1131,17 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
 
       {/* ── New map modal ── */}
       {showNewMap && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)" }} onClick={() => setShowNewMap(false)}>
-          <div style={{ background: "rgba(14,12,28,0.99)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18, padding: "40px 38px 34px", width: 420, animation: "bm-pop 0.22s ease both" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(26,24,20,0.45)", backdropFilter: "blur(10px)" }} onClick={() => setShowNewMap(false)}>
+          <div style={{ background: "#fff", border: "1px solid #ECEAE4", borderRadius: 18, padding: "40px 38px 34px", width: 420, animation: "bm-pop 0.22s ease both" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✺</div>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#F7F6F2", marginBottom: 8 }}>New Brain Map</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 26 }}>Give your map a topic to start branching from.</p>
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: "#1A1814", marginBottom: 8 }}>New Brain Map</h3>
+            <p style={{ fontSize: 13, color: "#6F6B63", marginBottom: 26 }}>Give your map a topic to start branching from.</p>
             <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && createMap()} placeholder="e.g. Biology — Chapter 4" autoComplete="off"
-              style={{ width: "100%", padding: "13px 15px", border: "1.5px solid rgba(255,255,255,0.14)", borderRadius: 9, fontSize: 15, fontWeight: 600, color: "#F7F6F2", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "rgba(255,255,255,0.05)", marginBottom: 20, transition: "border-color 0.18s" }}
-              onFocus={e => e.target.style.borderColor = "#F0A8C0"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.14)"} />
+              style={{ width: "100%", padding: "13px 15px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 15, fontWeight: 600, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", marginBottom: 20, transition: "border-color 0.18s" }}
+              onFocus={e => e.target.style.borderColor = "#F0A8C0"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowNewMap(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>Cancel</button>
-              <button onClick={createMap} disabled={!newTitle.trim()} style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: newTitle.trim() ? "#F0A8C0" : "rgba(255,255,255,0.07)", fontSize: 13, fontWeight: 700, cursor: newTitle.trim() ? "pointer" : "default", color: newTitle.trim() ? "#1A1814" : "rgba(255,255,255,0.2)", transition: "all 0.18s" }}>Create Map →</button>
+              <button onClick={() => setShowNewMap(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #ECEAE4", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#6F6B63" }}>Cancel</button>
+              <button onClick={createMap} disabled={!newTitle.trim()} style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: newTitle.trim() ? "#F0A8C0" : "#fff", fontSize: 13, fontWeight: 700, cursor: newTitle.trim() ? "pointer" : "default", color: newTitle.trim() ? "#1A1814" : "#8C8880", transition: "all 0.18s" }}>Create Map →</button>
             </div>
           </div>
         </div>
