@@ -3,7 +3,7 @@ import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth, APPLE_SIGNIN_ENABLED, googleProvider, appleProvider } from "./firebase";
 import { signInWithEmailAndPassword, linkWithCredential, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, OAuthProvider, signInWithRedirect, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence, getRedirectResult, onAuthStateChanged } from "firebase/auth";
 import { cloudSync } from "./cloudSync";
-import { AceHead, PA_COLOR, PA_DARK, PA_GLOW, aceRemember, aiFetch, readAceMemory, tpSync } from "./shared.jsx";
+import { AceHead, PA_COLOR, PA_DARK, PA_GLOW, aceRemember, aiFetch, readAceMemory, tpSync, useInstallApp } from "./shared.jsx";
 
 const FlashCardsApp = lazy(() => import("./apps/FlashCardsApp.jsx"));
 const BrainMapApp = lazy(() => import("./apps/BrainMapApp.jsx"));
@@ -43,6 +43,84 @@ if (typeof window !== "undefined" && !window.__aceErrorHooks) {
   window.__aceErrorHooks = true;
   window.addEventListener("error", (e) => { if (e?.error || e?.message) reportError(e.error || e.message, "window"); });
   window.addEventListener("unhandledrejection", (e) => reportError(e?.reason, "promise"));
+}
+
+// ── Feedback: stars + message, sent to /api/feedback. Open from anywhere with
+//    window.dispatchEvent(new CustomEvent("tp-open-feedback", { detail: { source: "settings" } }))
+function FeedbackModal({ source, onClose }) {
+  const [stars, setStars] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [message, setMessage] = useState("");
+  const [state, setState] = useState("idle"); // idle | sending | done | error
+  const send = async () => {
+    setState("sending");
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (auth.currentUser) headers.Authorization = `Bearer ${await auth.currentUser.getIdToken()}`;
+      const res = await fetch("/api/feedback", { method: "POST", headers, body: JSON.stringify({ stars, message, page: window.location.pathname, source }) });
+      setState(res.ok ? "done" : "error");
+      try { localStorage.setItem("tp_feedback_asked", "1"); } catch { /* ignore */ }
+    } catch { setState("error"); }
+  };
+  const share = async () => {
+    const data = { title: "Ace It Galaxy", text: "Free AI study tools — flash cards, notes, an AI study owl and more.", url: "https://aceitgalaxy.com" };
+    try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(data.url); setState("copied"); } } catch { /* cancelled */ }
+  };
+  const ink = "#1A1814", muted = "#6F6B63";
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Send feedback" onClick={onClose}
+      style={{ position:"fixed", inset:0, zIndex:100002, background:"rgba(6,4,14,0.55)", display:"flex", alignItems:"center", justifyContent:"center", padding:16, fontFamily:"'DM Sans',sans-serif" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:"min(420px, 100%)", background:"#fff", borderRadius:16, padding:"24px 22px", boxShadow:"0 20px 60px rgba(0,0,0,0.3)", textAlign:"left" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
+          <img src="/mascots/ace-head.webp" alt="" width={40} height={40} />
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:17, fontWeight:700, color:ink }}>{state === "done" || state === "copied" ? "Thanks a ton!" : "How's Ace It Galaxy working for you?"}</div>
+            <div style={{ fontSize:13, color:muted }}>{state === "done" || state === "copied" ? "Ace reads every message." : "Your feedback shapes what we build next."}</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{ background:"none", border:"none", fontSize:18, color:muted, cursor:"pointer" }}>✕</button>
+        </div>
+        {state === "done" || state === "copied" ? (
+          <>
+            {stars >= 4 && <p style={{ fontSize:14, color:ink, lineHeight:1.6, margin:"0 0 14px" }}>Know someone who'd like it? Sharing is the biggest help for a free app.</p>}
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+              {stars >= 4 && <button onClick={share} style={{ background:"#F5C842", border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:ink, cursor:"pointer" }}>{state === "copied" ? "✓ Link copied" : "Share with a friend"}</button>}
+              <button onClick={onClose} style={{ background:ink, border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>Done</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display:"flex", gap:6, justifyContent:"center", margin:"6px 0 14px" }}>
+              {[1,2,3,4,5].map(s => (
+                <button key={s} aria-label={`${s} star${s > 1 ? "s" : ""}`} onClick={() => setStars(s)} onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
+                  style={{ background:"none", border:"none", fontSize:34, lineHeight:1, cursor:"pointer", color: s <= (hover || stars) ? "#F5C842" : "#E2DED6", padding:2 }}>★</button>
+              ))}
+            </div>
+            <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={2000} rows={4}
+              placeholder={stars && stars <= 3 ? "What should we fix or add?" : "Anything you love, or wish it did? (optional)"}
+              style={{ width:"100%", boxSizing:"border-box", border:"1px solid #DAD6CE", borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:"inherit", color:ink, resize:"vertical", outline:"none" }} />
+            {state === "error" && <div role="alert" style={{ fontSize:13, color:"#B42318", marginTop:8 }}>Couldn't send. Check your connection and try again.</div>}
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
+              <button onClick={onClose} style={{ background:"#fff", border:"1px solid #DAD6CE", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:600, color:ink, cursor:"pointer" }}>Not now</button>
+              <button onClick={send} disabled={state === "sending" || (!stars && !message.trim())}
+                style={{ background:ink, border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer", opacity: (!stars && !message.trim()) ? 0.4 : 1 }}>{state === "sending" ? "Sending…" : "Send"}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// A one-time, gentle "how's it going?" after a student has used the site on 3 different days.
+function FeedbackNudge({ onRate, onClose }) {
+  return (
+    <div role="status" style={{ position:"fixed", left:"50%", bottom:24, transform:"translateX(-50%)", zIndex:100000, width:"min(420px, calc(100vw - 32px))", display:"flex", alignItems:"center", gap:12, background:"#1A1814", color:"#F7F6F2", borderRadius:14, padding:"12px 14px", boxShadow:"0 12px 40px rgba(0,0,0,0.35)", fontFamily:"'DM Sans',sans-serif", fontSize:14 }}>
+      <img src="/mascots/ace-head.webp" alt="" width={34} height={34} style={{ borderRadius:"50%", background:"#fff", flexShrink:0 }} />
+      <div style={{ flex:1, lineHeight:1.4 }}>Enjoying Ace It Galaxy so far?</div>
+      <button onClick={onRate} style={{ background:"#F5C842", border:"none", borderRadius:8, padding:"8px 12px", fontSize:13, fontWeight:700, color:"#1A1814", cursor:"pointer", whiteSpace:"nowrap" }}>Rate it</button>
+      <button onClick={onClose} aria-label="Dismiss" style={{ background:"none", border:"none", color:"rgba(255,255,255,0.5)", fontSize:16, cursor:"pointer" }}>✕</button>
+    </div>
+  );
 }
 
 function AiNotice({ message, onClose }) {
@@ -388,6 +466,7 @@ function Planet({ planet, onClick, isActive }) {
 
 // Panel slide-in from left
 function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openAuth, onLogout, recentApps = [], onLaunch }) {
+  const installApp = useInstallApp();
   return (
     <>
       {isOpen && (
@@ -477,6 +556,19 @@ function Sidebar({ isOpen, onClose, planets, onSelect, activePlanet, user, openA
             );
           })}
         </div>
+
+        {installApp.state !== "installed" && (
+          <div style={{ padding: "0 12px 10px" }}>
+            <button onClick={async () => { if (installApp.state === "ready") { await installApp.install(); } else { onLaunch && onLaunch("settings"); } onClose(); }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(245,217,106,0.08)", border: "1px solid rgba(245,217,106,0.22)", borderRadius: 10, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", textAlign: "left" }}>
+              <img src="/icons/icon-192.png" alt="" width={28} height={28} style={{ borderRadius: 7 }} />
+              <span>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#F5D96A" }}>Get the app</span>
+                <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Add Ace It to your home screen</span>
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.04)", fontSize: 10, color: "rgba(255,255,255,0.12)", fontFamily: "'DM Sans',sans-serif" }}>
@@ -2041,10 +2133,10 @@ function AppSEOLanding({ appId, onEnter, openAuth, onLegal, onHome }) {
       <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <a href="/" onClick={(e) => { e.preventDefault(); onHome?.(); }} style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 14, fontWeight: 900, color: "#F5D96A", letterSpacing: 2, textDecoration: "none" }}>ACE IT</a>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
-        <div style={{ display: "flex", gap: 20 }}>
-          {[["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Contact", "contact"]].map(([l, key]) => (
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          {[["Shared decks", "decks"], ["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Contact", "contact"]].map(([l, key]) => (
             <a key={l} href={key === "contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer", textDecoration: "none" }}
-              onClick={(e) => { if (key === "contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); }}>{l}</a>
+              onClick={(e) => { if (key === "contact" || key === "decks") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen: `legal-${key}` }, "", `/${key}`); }}>{l}</a>
           ))}
         </div>
       </footer>
@@ -2164,7 +2256,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
 
         {/* Label */}
         <div className="fade-up" style={{ animationDelay:"0s", display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"6px 18px", marginBottom:28 }}>
-          <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Free for students · 10 AI-powered tools</span>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>Free for students · 9 study tools</span>
         </div>
 
         {/* Headline */}
@@ -2191,7 +2283,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
 
         {/* Trust line */}
         <div className="fade-up" style={{ animationDelay:"0.25s", fontSize:13, color:"rgba(255,255,255,0.5)", display:"flex", gap:24, justifyContent:"center", flexWrap:"wrap" }}>
-          {["No credit card required","Free to use","10 tools included"].map(t => (
+          {["No credit card required","Free to use","9 tools included"].map(t => (
             <span key={t} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <span style={{ color:"#6ED9B8" }}>✓</span> {t}
             </span>
@@ -2254,13 +2346,13 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         <div style={{ maxWidth:1100, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:60 }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(245,200,66,0.08)", border:"1px solid rgba(245,200,66,0.2)", borderRadius:20, padding:"5px 16px", marginBottom:20 }}>
-              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>10 Apps Included</span>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#F5C842" }}>9 Study Tools</span>
             </div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:900, letterSpacing:-1, marginBottom:14, color:"#F7F6F2" }}>Your entire study toolkit.</h2>
             <p style={{ fontSize:16, fontWeight:300, color:"rgba(247,246,242,0.6)", maxWidth:480, margin:"0 auto", lineHeight:1.75 }}>Every app works on its own. Every app works better together.</p>
           </div>
           <div className="lp-apps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:14 }}>
-            {APPS.map(app => (
+            {APPS.filter(app => app.appId !== "settings").map(app => (
               <div key={app.appId} className="lp-app-card" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${app.color}22`, borderLeft:`3px solid ${app.color}`, borderRadius:14, padding:"22px 24px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
                   <div style={{ width:36, height:36, borderRadius:9, background:`${app.color}18`, border:`1px solid ${app.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -2283,7 +2375,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
             The future of learning<br/>is <em style={{ color:"#F5C842", fontStyle:"italic" }}>yours.</em>
           </h2>
           <p style={{ fontSize:17, fontWeight:300, color:"rgba(247,246,242,0.45)", lineHeight:1.8, marginBottom:44, maxWidth:480, margin:"0 auto 44px" }}>
-            10 AI-powered study tools, completely free. No subscriptions, no paywalls, no excuses. Just you, your goals, and everything you need to reach them.
+            9 study tools, completely free. No subscriptions, no paywalls, no excuses. Just you, your goals, and everything you need to reach them.
           </p>
           <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:20 }}>
             <button onClick={() => openAuth("signup")} className="lp-btn-primary" style={{ background:"linear-gradient(135deg,#F5C842,#E8A82A)", border:"none", borderRadius:12, padding:"18px 48px", fontSize:18, fontWeight:800, cursor:"pointer", color:"#1A1814", boxShadow:"0 8px 40px rgba(245,200,66,0.4)", fontFamily:"'Montserrat',sans-serif" }}>
@@ -2298,10 +2390,10 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
       <footer className="lp-footer" style={{ borderTop:"1px solid rgba(255,255,255,0.06)", padding:"28px 40px 96px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
         <div style={{ fontFamily:"'Montserrat',sans-serif", fontSize:14, fontWeight:900, color:"#F5D96A", letterSpacing:2 }}>ACE IT</div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>© 2026 Ace It Galaxy · Built for students.</div>
-        <div style={{ display:"flex", gap:20 }}>
-          {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
+        <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+          {[["Shared decks","decks"],["Privacy Policy","privacy"],["Terms of Service","terms"],["Contact","contact"]].map(([l,key]) => (
             <a key={l} href={key==="contact" ? "mailto:hello@aceitgalaxy.com" : `/${key}`} style={{ fontSize:12, color:"rgba(255,255,255,0.55)", cursor:"pointer", transition:"color 0.15s", textDecoration:"none" }}
-              onClick={(e) => { if(key==="contact") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); }}
+              onClick={(e) => { if(key==="contact"||key==="decks") return; e.preventDefault(); onLegal?.(key); window.history.pushState({ screen:`legal-${key}` },"",`/${key}`); }}
               onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.85)"}
               onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}>{l}</a>
           ))}
@@ -2313,7 +2405,7 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:490, background:"rgba(6,4,14,0.97)", backdropFilter:"blur(20px)", borderTop:"1px solid rgba(245,200,66,0.15)", padding:"14px 40px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap", animation:"fade-up 0.3s ease both" }}>
           <div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#F7F6F2" }}>Ready to study smarter?</div>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>10 AI tools, completely free. No credit card needed.</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:2 }}>9 study tools, completely free. No credit card needed.</div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={onEnter} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.6)", transition:"all 0.15s" }}
@@ -2573,6 +2665,27 @@ function AceItGalaxyInner() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [aiNotice, setAiNotice] = useState(null);
+  const [feedbackSource, setFeedbackSource] = useState(null);   // open when set
+  const [showNudge, setShowNudge] = useState(false);
+  useEffect(() => {
+    const open = (e) => { setShowNudge(false); setFeedbackSource(e.detail?.source || "app"); };
+    window.addEventListener("tp-open-feedback", open);
+    return () => window.removeEventListener("tp-open-feedback", open);
+  }, []);
+  // Count the different days a signed-in student uses the site; ask for a rating once, on day 3.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      if (localStorage.getItem("tp_feedback_asked")) return;
+      const today = new Date().toLocaleDateString("en-CA");
+      const days = JSON.parse(localStorage.getItem("tp_active_days") || "[]");
+      if (!days.includes(today)) { days.push(today); localStorage.setItem("tp_active_days", JSON.stringify(days.slice(-10))); }
+      if (days.length >= 3) {
+        const t = setTimeout(() => setShowNudge(true), 45000);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, [user]);
   const [cloudLoading, setCloudLoading] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [ageGateUid, setAgeGateUid] = useState(null);
@@ -3076,6 +3189,8 @@ Help them see connections ACROSS their apps. For example:
       {currentApp && showAuth && <AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth} initialMode={authMode} />}
       {aiNotice && <AiNotice message={aiNotice} onClose={()=>setAiNotice(null)} />}
       {user && ageGateUid === user.uid && <AgeGate uid={ageGateUid} onConfirmed={() => setAgeGateUid(null)} onUnderage={handleUnderage} />}
+      {feedbackSource && <FeedbackModal source={feedbackSource} onClose={() => setFeedbackSource(null)} />}
+      {showNudge && !feedbackSource && !aiNotice && <FeedbackNudge onRate={() => { setShowNudge(false); setFeedbackSource("nudge"); }} onClose={() => { setShowNudge(false); try { localStorage.setItem("tp_feedback_asked", "1"); } catch { /* ignore */ } }} />}
     </>
   );
 }

@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/decks",
+      "destination": "/api/deck-page"
+    },
+    {
+      "source": "/deck/:path",
+      "destination": "/api/deck-page?path=:path"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -18,5 +30,29 @@
     "api/ace.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    }
+  ]
 }
