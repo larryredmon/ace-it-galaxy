@@ -1,8 +1,20 @@
 // Split out of App.jsx so this code only downloads when it is needed.
+import { useEffect } from "react";
+import { PAGE_META } from "../seo/content.js";
+
+function usePageMeta(key) {
+  useEffect(() => {
+    const m = PAGE_META[key];
+    document.title = m.title;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", `https://aceitgalaxy.com/${key}`);
+  }, [key]);
+}
 
 
 // ─── Privacy Policy Page ──────────────────────────────────────────────────────
 function PrivacyPolicyPage({ onBack }) {
+  usePageMeta("privacy");
   const today = "November 19, 2026";
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>
@@ -173,6 +185,7 @@ We aim to respond to all privacy inquiries within 30 days.`
 
 // ─── Terms of Service Page ─────────────────────────────────────────────────────
 function TermsOfServicePage({ onBack }) {
+  usePageMeta("terms");
   const today = "November 19, 2026";
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", background:"#06040E", minHeight:"100vh", color:"#F7F6F2" }}>

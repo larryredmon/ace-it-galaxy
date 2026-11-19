@@ -1,4 +1,5 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/sitemap.xml",
@@ -7,6 +8,10 @@
     {
       "source": "/decks",
       "destination": "/api/deck-page"
+    },
+    {
+      "source": "/decks/:subject",
+      "destination": "/api/deck-page?subject=:subject"
     },
     {
       "source": "/deck/:path",
