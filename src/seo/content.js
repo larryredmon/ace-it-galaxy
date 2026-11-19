@@ -1,6 +1,6 @@
 // Search-engine content shared by the app (client) and the build step that writes
 // a ready-made HTML page for every route (vite.config.js → seoPrerender).
-export const SITE = "https://aceitgalaxy.com";
+export const SITE = "https://www.aceitgalaxy.com";
 
 // Title (≈50–60 characters) and description (≈150–160) for each route.
 export const PAGE_META = {

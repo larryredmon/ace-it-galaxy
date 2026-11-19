@@ -7,7 +7,7 @@ function usePageMeta(key) {
     const m = PAGE_META[key];
     document.title = m.title;
     document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
-    document.querySelector('link[rel="canonical"]')?.setAttribute("href", `https://aceitgalaxy.com/${key}`);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", `https://www.aceitgalaxy.com/${key}`);
   }, [key]);
 }
 

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://aceitgalaxy.com/sitemap.xml
+Sitemap: https://www.aceitgalaxy.com/sitemap.xml
