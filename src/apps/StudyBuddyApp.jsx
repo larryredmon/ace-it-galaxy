@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { db, storage, app } from "../firebase";
+import { db, app } from "../firebase";
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot,
   serverTimestamp, deleteField, getDoc, getDocs, query, orderBy, limit, where,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+const storage = getStorage(app);
 import { getDatabase, ref as rtdbRef, set as rtdbSet, remove as rtdbRemove, onValue, onDisconnect } from "firebase/database";
 const rtdb = getDatabase(app);
 

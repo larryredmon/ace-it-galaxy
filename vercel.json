@@ -14,6 +14,9 @@
     },
     "api/delete-account.js": {
       "maxDuration": 60
+    },
+    "api/ace.js": {
+      "maxDuration": 60
     }
   }
 }
