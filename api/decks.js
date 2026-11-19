@@ -9,6 +9,7 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { adminApp, verifyUser } from "./_lib/guard.js";
 import { publicIdFor, slugify, clean, looksBad, summary, deckPath, MAX_CARDS } from "./_lib/publicDecks.js";
+import { MIN_PUBLIC_CARDS, normalizeSubject } from "../src/deckRules.js";
 
 const MAX_DECKS_PER_STUDENT = 100;
 
@@ -55,14 +56,14 @@ export default async function handler(req, res) {
     const deck = body.deck || {};
     const deckId = clean(deck.id, 40);
     const title = clean(deck.title, 120);
-    const subject = clean(deck.subject, 40) || "Other";
+    const subject = normalizeSubject(clean(deck.subject, 40));
     const description = clean(deck.description, 400);
     const cards = (Array.isArray(deck.cards) ? deck.cards : [])
       .map((c) => ({ term: clean(c?.term, 500), definition: clean(c?.definition, 1500) }))
       .filter((c) => c.term && c.definition)
       .slice(0, MAX_CARDS);
     if (!deckId || !title) return err(res, 400, "Give your deck a title before sharing it.");
-    if (cards.length < 3) return err(res, 400, "Add at least 3 cards with a term and a definition before sharing.");
+    if (cards.length < MIN_PUBLIC_CARDS) return err(res, 400, `Add at least ${MIN_PUBLIC_CARDS} cards with a term and a definition before sharing — this deck has ${cards.length}.`);
     if (looksBad(title, description, subject)) return err(res, 400, "That title or description can't be shared publicly.");
 
     const id = publicIdFor(user.uid, deckId);

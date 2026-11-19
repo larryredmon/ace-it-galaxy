@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 
 export const SITE = "https://www.aceitgalaxy.com";
 export const MAX_CARDS = 300;
-export const MIN_CARDS_TO_INDEX = 5;
+export const MIN_CARDS_TO_INDEX = 10;
 
 // Same deck from the same student always gets the same public id, so re-sharing updates it.
 export function publicIdFor(uid, deckId) {
