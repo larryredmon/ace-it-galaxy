@@ -1,3 +1,4 @@
+import { SEO_CONTENT, SEO_APP_ORDER, PAGE_META, LANDING_FAQS } from "./seo/content.js";
 import { lazy, useRef, useState, useEffect, Component, Suspense, Fragment } from "react";
 import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth, APPLE_SIGNIN_ENABLED, googleProvider, appleProvider } from "./firebase";
@@ -1778,191 +1779,6 @@ const LANDING_STATS = [
 ];
 
 // ─── Per-app SEO landing pages (shown to logged-out visitors on app routes) ───
-const SEO_CONTENT = {
-  flashcards: {
-    name: "Flash Cards", color: "#C8B8FF", kicker: "AI FLASHCARDS",
-    h1: "Free AI Flashcard Generator",
-    tagline: "Turn any notes, textbook chapter, or PDF into a complete flashcard deck in seconds — then study it with spaced repetition until it sticks. No card limits, no paywalls, free for students.",
-    features: [
-      { t: "Generate decks instantly", d: "Paste text or upload a file and AI writes accurate question-and-answer cards for you — no more typing decks by hand." },
-      { t: "Spaced repetition built in", d: "Cards you miss come back more often, so your time goes to what you haven't mastered yet." },
-      { t: "Organized by class", d: "Group decks into folders by course, and pull them into brain maps or notes whenever you need them." },
-    ],
-    steps: [
-      { t: "Upload your material", d: "Drop in notes, a textbook passage, or a PDF." },
-      { t: "AI builds the deck", d: "A full set of study-ready cards appears in seconds." },
-      { t: "Study until mastered", d: "Quiz yourself with spaced repetition and watch your mastery climb." },
-    ],
-    faqs: [
-      { q: "Is the flashcard generator really free?", a: "Yes. Every study tool on Ace It Galaxy is free for students, with no card limits or paywalls." },
-      { q: "What can I make flashcards from?", a: "Paste your notes or a textbook passage, or upload a PDF or document — AI turns any of it into a study-ready deck." },
-      { q: "Do I need an account?", a: "You can try it without signing up. Create a free account to save your decks and sync them across devices." },
-    ],
-  },
-  notes: {
-    name: "Notes", color: "#F0D080", kicker: "AI NOTES",
-    h1: "AI Note-Taking for Students",
-    tagline: "Record lectures, upload slides, or paste your own notes and let AI turn them into clean, organized study notes — structured, summarized, and ready to review.",
-    features: [
-      { t: "Record & transcribe lectures", d: "Capture a lecture live and get an organized transcript you can actually study from." },
-      { t: "Clean up any input", d: "Messy notes, slides, or uploads become clear, structured study notes automatically." },
-      { t: "Send notes to flashcards", d: "Turn any note into a flashcard deck with one click and study it right away." },
-    ],
-    steps: [
-      { t: "Capture anything", d: "Record, upload, or paste your material." },
-      { t: "AI organizes it", d: "Everything becomes clean, structured notes." },
-      { t: "Review and reuse", d: "Study your notes or turn them into cards." },
-    ],
-    faqs: [
-      { q: "Is it free?", a: "Yes — AI note-taking is free for students on Ace It Galaxy, with no subscription." },
-      { q: "Can it record and transcribe lectures?", a: "Yes. Record a lecture in the app and AI turns it into organized notes you can review later." },
-      { q: "Can I turn notes into flashcards?", a: "Absolutely — send any note straight to the flashcard generator in one click." },
-    ],
-  },
-  brainmap: {
-    name: "Brain Map", color: "#F0A8C0", kicker: "BRAIN MAP",
-    h1: "Free Online Mind Map Maker",
-    tagline: "Build visual mind maps that connect ideas and reveal the big picture. Attach flashcard decks to any node and study straight from the map.",
-    features: [
-      { t: "Unlimited nodes & nesting", d: "Branch out as far as your subject goes — there are no limits on how deep your map gets." },
-      { t: "Attach decks to concepts", d: "Pin a flashcard deck to any node and study a topic without leaving the map." },
-      { t: "Works on any device", d: "Pinch-to-zoom and drag on your phone, tablet, or laptop." },
-    ],
-    steps: [
-      { t: "Start a central idea", d: "Drop your main topic in the middle." },
-      { t: "Branch out concepts", d: "Add and connect related ideas visually." },
-      { t: "Attach decks and study", d: "Pin flashcards to nodes and review from the map." },
-    ],
-    faqs: [
-      { q: "Is the mind map maker free?", a: "Yes — building brain maps is completely free for students, with unlimited nodes." },
-      { q: "Can I attach flashcards to a node?", a: "Yes. Attach any deck to any concept and study it directly from your map." },
-      { q: "Does it work on a phone or tablet?", a: "Yes — the map supports pinch-to-zoom and touch, so it works on any device." },
-    ],
-  },
-  simplifier: {
-    name: "Text Simplifier", color: "#6ED9B8", kicker: "TEXT SIMPLIFIER",
-    h1: "AI Text Simplifier & YouTube Summarizer",
-    tagline: "Paste a dense passage or a YouTube link and get a clear, structured version you can actually understand — at the reading level that works for you.",
-    features: [
-      { t: "Simplify any passage", d: "Turn confusing academic text into plain language without losing the meaning." },
-      { t: "Summarize YouTube videos", d: "Drop in a video link and get a structured summary of what it covers." },
-      { t: "Adjustable reading level", d: "Choose how simple you want it — from quick overview to detailed breakdown." },
-    ],
-    steps: [
-      { t: "Paste text or a link", d: "Add any passage or a YouTube URL." },
-      { t: "AI simplifies it", d: "Get a clear, structured version in seconds." },
-      { t: "Read and understand", d: "Study it at a level that makes sense to you." },
-    ],
-    faqs: [
-      { q: "Is it free?", a: "Yes — the text simplifier is free for students on Ace It Galaxy." },
-      { q: "Does it work on YouTube videos?", a: "Yes. Paste a YouTube link and AI returns a structured summary of the video." },
-      { q: "Can I change how simple the output is?", a: "Yes — pick a reading level so the result matches how much detail you want." },
-    ],
-  },
-  tracker: {
-    name: "Tracker", color: "#7FB8F0", kicker: "TRACKER",
-    h1: "Free Student Planner & Assignment Tracker",
-    tagline: "Your planner, calendar, and to-do list in one place. Track assignments, deadlines, and exams so nothing slips through the cracks.",
-    features: [
-      { t: "Every deadline in one view", d: "See all your assignments and due dates across every class at a glance." },
-      { t: "Calendar + to-do together", d: "Plan on a calendar and check items off a list in the same place." },
-      { t: "Never miss an assignment", d: "Keep due dates front and center so nothing sneaks up on you." },
-    ],
-    steps: [
-      { t: "Add your assignments", d: "Enter due dates for every class." },
-      { t: "See what's due", d: "View everything on a calendar or list." },
-      { t: "Check it off", d: "Mark work done and stay ahead." },
-    ],
-    faqs: [
-      { q: "Is the planner free?", a: "Yes — the student planner and assignment tracker are free on Ace It Galaxy." },
-      { q: "Can I see a calendar view?", a: "Yes. Your assignments show up on a calendar and as a to-do list." },
-      { q: "Does it sync across devices?", a: "With a free account, your tracker syncs everywhere you log in." },
-    ],
-  },
-  assistant: {
-    name: "Personal Assistant", color: "#90C8F8", kicker: "PERSONAL ASSISTANT",
-    h1: "Your Personal AI Study Assistant",
-    tagline: "An AI tutor that knows what you're working on. Ask questions, build study plans, and get help staying on track across every tool in the platform.",
-    features: [
-      { t: "Answers your questions", d: "Get clear explanations for anything you're studying, any time." },
-      { t: "Builds study plans", d: "Tell it your goals and it maps out what to study and when." },
-      { t: "Knows your work", d: "It sees your decks, notes, and coursework, so its help is actually about your classes." },
-    ],
-    steps: [
-      { t: "Ask anything", d: "Bring a question, a topic, or a goal." },
-      { t: "Get a plan", d: "Receive a personalized study plan or answer." },
-      { t: "Stay on track", d: "Check in across every app as you go." },
-    ],
-    faqs: [
-      { q: "Is it free?", a: "Yes — your AI study assistant is free for students on Ace It Galaxy." },
-      { q: "How is it different from a generic chatbot?", a: "It's connected to your own decks, notes, and coursework, so its answers and study plans are tailored to what you're actually studying." },
-      { q: "Can it build me a study plan?", a: "Yes. Share your goals and deadlines and it will lay out a plan to get you there." },
-    ],
-  },
-  studybuddy: {
-    name: "Study Buddy", color: "#FFA8D0", kicker: "STUDY BUDDY",
-    h1: "Live Study Rooms for Students",
-    tagline: "Study live with classmates over video. Share documents, sync study timers, and work through material together in real time.",
-    features: [
-      { t: "Video study rooms", d: "Jump on camera with classmates and study together from anywhere." },
-      { t: "Shared document viewer", d: "Open the same PDF or notes so everyone's on the same page." },
-      { t: "Synced study timers", d: "Run focus timers together to keep the whole group on rhythm." },
-    ],
-    steps: [
-      { t: "Start a room", d: "Create a study room in one click." },
-      { t: "Invite classmates", d: "Share the room with up to five friends." },
-      { t: "Study together", d: "Share docs, sync timers, and focus as a group." },
-    ],
-    faqs: [
-      { q: "Is it free?", a: "Yes — live study rooms are free for students on Ace It Galaxy." },
-      { q: "How many people can join a room?", a: "Up to six people can study together in a single room." },
-      { q: "Can we share documents?", a: "Yes. Open a shared PDF or notes so everyone sees the same material." },
-    ],
-  },
-  coursehub: {
-    name: "Course Hub", color: "#6ED9B8", kicker: "COURSE HUB",
-    h1: "Organize All Your Course Materials in One Place",
-    tagline: "Upload your syllabus and course materials once. AI organizes everything into folders and pushes content straight to your flashcards, notes, and simplifier.",
-    features: [
-      { t: "Unlimited nested folders", d: "Organize every class, unit, and topic exactly how your courses are structured." },
-      { t: "Upload anything", d: "Add files, pasted text, links, or audio — it all lives in one hub." },
-      { t: "Send to any tool", d: "Push a document into flashcards, notes, or the simplifier in one click." },
-    ],
-    steps: [
-      { t: "Upload your syllabus", d: "Add your course files and materials." },
-      { t: "AI organizes it", d: "Everything sorts into clean, nested folders." },
-      { t: "Study from one hub", d: "Send materials to any study tool instantly." },
-    ],
-    faqs: [
-      { q: "Is Course Hub free?", a: "Yes — organizing your courses is free for students on Ace It Galaxy." },
-      { q: "What can I upload?", a: "Files, pasted text, links, and audio recordings all live together in one hub." },
-      { q: "Can I send materials to other tools?", a: "Yes. Push any document to flashcards, notes, or the text simplifier in one click." },
-    ],
-  },
-  journal: {
-    name: "Journal", color: "#E8C4F0", kicker: "JOURNAL",
-    h1: "A Reflection Journal for Students",
-    tagline: "Reflect on what you've learned, track your progress, and build the habit of thinking deeply about your studies — with gentle AI prompts whenever you want them.",
-    features: [
-      { t: "Reflection prompts", d: "Optional AI prompts help you think through what you learned each day." },
-      { t: "Track your progress", d: "Look back over time and see how far you've come." },
-      { t: "Private and yours", d: "Your journal is personal — write freely and keep it to yourself." },
-    ],
-    steps: [
-      { t: "Write a reflection", d: "Jot down what you learned or struggled with." },
-      { t: "Look back", d: "Revisit past entries and see your growth." },
-      { t: "Build the habit", d: "Make deep thinking part of how you study." },
-    ],
-    faqs: [
-      { q: "Is the journal free?", a: "Yes — the student journal is free on Ace It Galaxy." },
-      { q: "Is my journal private?", a: "Yes. Your entries are personal to your account and aren't shared." },
-      { q: "Do I have to write every day?", a: "Not at all — journal whenever it helps. The prompts are there when you want them." },
-    ],
-  },
-};
-
-const SEO_APP_ORDER = ["flashcards","notes","brainmap","simplifier","tracker","assistant","studybuddy","coursehub","journal"];
-
 function SeoGlyph({ appId, color, size = 20 }) {
   const P = {
     flashcards: <><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M7 9h10M7 13h6"/></>,
@@ -1981,20 +1797,7 @@ function SeoGlyph({ appId, color, size = 20 }) {
 function AppSEOLanding({ appId, onEnter, openAuth, onLegal, onHome }) {
   const c = SEO_CONTENT[appId];
   useEffect(() => { try { window.scrollTo(0, 0); } catch {} }, [appId]);
-  useEffect(() => {
-    if (!c) return;
-    const prev = document.getElementById("seo-faq-jsonld");
-    if (prev) prev.remove();
-    const el = document.createElement("script");
-    el.type = "application/ld+json";
-    el.id = "seo-faq-jsonld";
-    el.text = JSON.stringify({
-      "@context": "https://schema.org", "@type": "FAQPage",
-      mainEntity: c.faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
-    });
-    document.head.appendChild(el);
-    return () => { el.remove(); };
-  }, [appId]);
+  // FAQ structured data for this page is written into the HTML at build time (scripts/seo-prerender.js).
   if (!c) return null;
   const accent = c.color;
   const others = SEO_APP_ORDER.filter(id => id !== appId);
@@ -2367,6 +2170,22 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ padding:"90px 24px", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth:760, margin:"0 auto" }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, marginBottom:28, color:"#F7F6F2", textAlign:"center" }}>Questions students ask</h2>
+          {LANDING_FAQS.map(f => (
+            <details key={f.q} style={{ borderBottom:"1px solid rgba(255,255,255,0.08)", padding:"18px 4px" }}>
+              <summary style={{ cursor:"pointer", fontSize:16, fontWeight:600, color:"#F7F6F2", listStyle:"revert", textAlign:"left" }}>{f.q}</summary>
+              <p style={{ margin:"10px 0 0", fontSize:14, lineHeight:1.75, color:"rgba(247,246,242,0.65)", textAlign:"left" }}>{f.a}</p>
+            </details>
+          ))}
+          <p style={{ marginTop:28, textAlign:"center", fontSize:14, color:"rgba(247,246,242,0.55)" }}>
+            Looking for something to study right now? <a href="/decks" style={{ color:"#F5C842" }}>Browse free flash card decks made by students</a>.
+          </p>
+        </div>
+      </section>
+
       {/* ── FINAL CTA ── */}
       <section style={{ padding:"100px 40px", textAlign:"center", borderTop:"1px solid rgba(255,255,255,0.05)", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)", top:"50%", left:"50%", transform:"translate(-50%,-50%)", pointerEvents:"none" }} />
@@ -2577,77 +2396,22 @@ function AceItGalaxyInner() {
   const [syncStatus, setSyncStatus]   = useState("idle"); // idle | saving | saved | error
 
   // Structured data (JSON-LD) per page for rich search results
-  useEffect(() => {
-    const existing = document.getElementById("page-jsonld");
-    if (existing) existing.remove();
-    if (!currentApp) return;
-    const appData = {
-      flashcards: { name:"AI Flashcard Generator", desc:"Create AI-powered flashcards from any text. Free for students." },
-      notes:      { name:"AI Note Taking App", desc:"AI-powered notes for students. Upload anything and get organized study notes." },
-      brainmap:   { name:"Mind Mapping Tool", desc:"Free visual mind mapping for students. Connect concepts and build brain maps." },
-      simplifier: { name:"Text Simplifier", desc:"Simplify complex text and YouTube videos with AI. Free for students." },
-      tracker:    { name:"Assignment Tracker", desc:"Free student planner and assignment tracker. Never miss a deadline." },
-      assistant:  { name:"AI Study Assistant", desc:"Personal AI tutor and study guide. Free for students." },
-      studybuddy: { name:"Study Buddy", desc:"Live study rooms for students. Study with friends in real time." },
-      coursehub:  { name:"Course Hub", desc:"Organize all your course materials in one place. Free for students." },
-      journal:    { name:"Student Journal", desc:"Reflection journal to track learning progress. Free for students." },
-    };
-    const app = appData[currentApp];
-    if (!app) return;
-    const script = document.createElement("script");
-    script.id = "page-jsonld";
-    script.type = "application/ld+json";
-    script.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": `Ace It Galaxy — ${app.name}`,
-      "url": `https://aceitgalaxy.com/${currentApp}`,
-      "description": app.desc,
-      "applicationCategory": "EducationApplication",
-      "operatingSystem": "Web",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    });
-    document.head.appendChild(script);
-    return () => script.remove();
-  }, [currentApp]);
+  // Structured data for each tool page is written into the HTML at build time (scripts/seo-prerender.js).
 
-  // Dynamic page title for SEO
+  // Page title, description and canonical link for the current screen (same text the build writes into each page).
   useEffect(() => {
-    const titles = {
-      flashcards: "Flash Cards — Ace It Galaxy | Free AI Flashcard Generator",
-      notes:      "Notes — Ace It Galaxy | AI-Powered Note Taking",
-      brainmap:   "Brain Map — Ace It Galaxy | Visual Mind Mapping Tool",
-      simplifier: "Text Simplifier — Ace It Galaxy | Simplify Any Text with AI",
-      tracker:    "Tracker — Ace It Galaxy | Student Assignment & Deadline Tracker",
-      assistant:  "Personal Assistant — Ace It Galaxy | Your AI Study Guide",
-      studybuddy: "Study Buddy — Ace It Galaxy | Live Study Rooms for Students",
-      coursehub:  "Course Hub — Ace It Galaxy | Organize All Your Courses",
-      journal:    "Journal — Ace It Galaxy | Student Reflection Journal",
-      settings:   "Settings — Ace It Galaxy",
-    };
-    document.title = currentApp
-      ? (titles[currentApp] || "Ace It Galaxy — Free AI Study Platform")
-      : "Ace It Galaxy — Free AI Study Platform for Students";
-    // Update meta description per page
-    const descs = {
-      flashcards: "Free AI flashcard generator. Paste any text and get a full flashcard deck in seconds. Study with spaced repetition on Ace It Galaxy.",
-      notes:      "AI-powered note taking for students. Upload lectures, textbooks, and materials — AI organizes everything into clean study notes.",
-      brainmap:   "Free visual mind mapping tool for students. Build brain maps, connect concepts, and attach flashcard decks to any node.",
-      simplifier: "Simplify any complex text or YouTube video instantly. Free AI text simplifier built for students on Ace It Galaxy.",
-      tracker:    "Free student assignment tracker and planner. Never miss a deadline. Manage all your courses and due dates in one place.",
-      assistant:  "Your personal AI study assistant. Get answers, build study plans, and stay on track with Ace It Galaxy's AI tutor.",
-      studybuddy: "Study live with classmates in real-time video rooms. Share documents and collaborate with Study Buddy on Ace It Galaxy.",
-      coursehub:  "Upload your course materials once and AI organizes everything. Free course management for students.",
-      journal:    "Student reflection journal. Track your progress, build study habits, and think deeply about what you're learning.",
-    };
-    const desc = currentApp ? descs[currentApp] : "Ace It Galaxy gives every student AI-powered flashcards, mind maps, notes, a personal assistant, live study rooms, and more — all free.";
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", desc);
-
-    // Update canonical URL dynamically per page
+    const key = currentApp || (window.location.pathname === "/privacy" ? "privacy" : window.location.pathname === "/terms" ? "terms" : "/");
+    const meta = PAGE_META[key] || PAGE_META["/"];
+    const url = key === "/" ? "https://aceitgalaxy.com/" : `https://aceitgalaxy.com/${key}`;
+    document.title = meta.title;
+    const set = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
+    set('meta[name="description"]', "content", meta.description);
+    set('meta[property="og:title"]', "content", meta.title);
+    set('meta[property="og:description"]', "content", meta.description);
+    set('meta[property="og:url"]', "content", url);
     let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
-    canonical.href = currentApp ? `https://aceitgalaxy.com/${currentApp}` : 'https://aceitgalaxy.com';
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = url;
   }, [currentApp]);
   const [legalPage, setLegalPage]     = useState(() => {
     const path = window.location.pathname;

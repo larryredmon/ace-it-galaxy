@@ -3,7 +3,7 @@
 //   /decks             → list of public decks
 import { getFirestore } from "firebase-admin/firestore";
 import { adminApp } from "./_lib/guard.js";
-import { SITE, esc, summary, deckPath, MIN_CARDS_TO_INDEX } from "./_lib/publicDecks.js";
+import { SITE, esc, summary, deckPath, slugify, MIN_CARDS_TO_INDEX } from "./_lib/publicDecks.js";
 
 const CSS = `
 *{box-sizing:border-box}body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#F7F6F2;color:#1A1814;line-height:1.55}
@@ -20,6 +20,8 @@ main{max-width:960px;margin:0 auto;padding:32px 20px 56px}h2{font-family:'Playfa
 .term{font-weight:700}.def{color:#4A4740;white-space:pre-wrap}.n{font-size:11px;color:#A8A59E;font-weight:700;margin-bottom:2px}
 .cta{margin:34px 0 0;background:#fff;border:1px solid #ECE9E3;border-radius:16px;padding:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .cta img{width:72px;height:auto}.cta div{flex:1 1 260px}.cta h3{font-family:'Playfair Display',Georgia,serif;margin:0 0 4px;font-size:20px}.cta p{margin:0;color:#6F6B63;font-size:14px}
+.crumbs{font-size:12px;color:rgba(247,246,242,.55);margin-bottom:14px}.crumbs a{color:rgba(247,246,242,.75);text-decoration:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}.chip{background:#fff;border:1px solid #ECE9E3;border-radius:999px;padding:6px 12px;font-size:13px;text-decoration:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}.tile{display:block;background:#fff;border:1px solid #ECE9E3;border-radius:14px;padding:18px;text-decoration:none}
 .tile .s{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}.tile .t{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:17px;margin-bottom:6px}.tile .m{font-size:12px;color:#8C8880}
 footer{border-top:1px solid #ECE9E3;padding:22px 20px;text-align:center;font-size:12px;color:#8C8880}footer a{margin:0 8px}
@@ -36,7 +38,7 @@ ${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robot
 <meta name="twitter:card" content="summary_large_image"><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-<style>${CSS}</style>${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>` : ""}</head><body>
+<style>${CSS}</style>${(Array.isArray(jsonld) ? jsonld : jsonld ? [jsonld] : []).map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, "\\u003c")}</script>`).join("")}</head><body>
 <header class="top"><div class="in"><a class="brand" href="/"><img src="/icons/icon-192.png" alt="">ACE IT GALAXY</a><a class="btn" href="/flashcards">Make your own free</a></div></header>
 ${body}
 <footer>© ${new Date().getFullYear()} Ace It Galaxy · Free AI study tools for students<br><a href="/decks">Public decks</a><a href="/">Home</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer>
@@ -51,6 +53,20 @@ function notFound(res) {
   }));
 }
 
+async function latestDecks(db) {
+  const snap = await db.collection("publicDecks").orderBy("updatedAt", "desc").limit(300).get();
+  return snap.docs.filter((x) => !x.data().hidden).map((x) => summary(x.id, x.data()));
+}
+const tile = (d) => `<a class="tile" href="${esc(d.url)}"><div class="s" style="color:${esc(d.color)}">${esc(d.subject)}</div><div class="t">${esc(d.title)}</div><div class="m">${d.cardCount} cards · by ${esc(d.authorName)}</div></a>`;
+const crumbsLd = (items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList",
+  itemListElement: items.map(([name, url], i) => ({ "@type": "ListItem", position: i + 1, name, item: url })) });
+const crumbsHtml = (items) => `<nav class="crumbs" aria-label="Breadcrumb">${items.map(([name, url], i) => i < items.length - 1 ? `<a href="${esc(url.replace(SITE, "") || "/")}">${esc(name)}</a> › ` : esc(name)).join("")}</nav>`;
+function subjectsOf(decks) {
+  const m = new Map();
+  for (const d of decks) { const k = slugify(d.subject); if (!m.has(k)) m.set(k, { slug: k, name: d.subject, count: 0 }); m.get(k).count++; }
+  return [...m.values()].sort((a, b) => b.count - a.count);
+}
+
 export default async function handler(req, res) {
   let db;
   try { db = getFirestore(adminApp()); }
@@ -59,17 +75,32 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=86400");
 
   const path = String(req.query.path || "");
+  const subjectSlug = slugify(String(req.query.subject || "")).slice(0, 60);
+  if (!path && req.query.subject) {
+    // One subject: /decks/<subject>
+    const decks = (await latestDecks(db)).filter((d) => slugify(d.subject) === subjectSlug);
+    if (!decks.length) return notFound(res);
+    const name = decks[0].subject;
+    const url = `${SITE}/decks/${subjectSlug}`;
+    const items = [["Ace It Galaxy", SITE + "/"], ["Flash card decks", SITE + "/decks"], [name, url]];
+    return res.status(200).send(page({
+      title: `Free ${name} Flash Cards Made by Students | Ace It Galaxy`,
+      description: `Study ${decks.length} free ${name} flash card deck${decks.length === 1 ? "" : "s"} shared by students, or make your own from your notes with AI.`,
+      canonical: url, noindex: decks.every((d) => d.cardCount < MIN_CARDS_TO_INDEX), jsonld: crumbsLd(items),
+      body: `<section class="hero"><div class="in">${crumbsHtml(items)}<div class="kicker">${esc(name)}</div><h1>Free ${esc(name)} flash cards</h1><p class="desc">${decks.length} deck${decks.length === 1 ? "" : "s"} shared by students. Study any of them free, or make your own in seconds with AI.</p><a class="btn" href="/flashcards">Make a deck</a></div></section>
+<main><div class="grid">${decks.map(tile).join("")}</div></main>`,
+    }));
+  }
   if (!path) {
-    // List page
-    const snap = await db.collection("publicDecks").orderBy("updatedAt", "desc").limit(300).get();
-    const decks = snap.docs.filter((x) => !x.data().hidden).map((x) => summary(x.id, x.data()));
-    const tiles = decks.map((d) => `<a class="tile" href="${esc(d.url)}"><div class="s" style="color:${esc(d.color)}">${esc(d.subject)}</div><div class="t">${esc(d.title)}</div><div class="m">${d.cardCount} cards · by ${esc(d.authorName)}</div></a>`).join("");
+    // All decks: /decks
+    const decks = await latestDecks(db);
+    const subjects = subjectsOf(decks);
     return res.status(200).send(page({
       title: "Free Flash Card Decks Made by Students · Ace It Galaxy",
-      description: "Browse free flash card decks shared by students on Ace It Galaxy. Study any deck for free, or make your own with AI.",
-      canonical: `${SITE}/decks`,
+      description: "Browse free flash card decks shared by students on Ace It Galaxy, by subject. Study any deck for free, or make your own with AI.",
+      canonical: `${SITE}/decks`, jsonld: crumbsLd([["Ace It Galaxy", SITE + "/"], ["Flash card decks", SITE + "/decks"]]),
       body: `<section class="hero"><div class="in"><div class="kicker">Public library</div><h1>Free flash card decks made by students</h1><p class="desc">Study any deck for free, save it to your account, or make your own in seconds with AI.</p><a class="btn" href="/flashcards">Make a deck</a></div></section>
-<main>${decks.length ? `<div class="grid">${tiles}</div>` : `<p>No public decks yet. Be the first to share one!</p>`}</main>`,
+<main>${subjects.length ? `<h2>Browse by subject</h2><div class="chips">${subjects.map((x) => `<a class="chip" href="/decks/${esc(x.slug)}">${esc(x.name)} (${x.count})</a>`).join("")}</div><h2>Newest decks</h2><div class="grid">${decks.map(tile).join("")}</div>` : `<p>No public decks yet. Be the first to share one!</p>`}</main>`,
     }));
   }
 
@@ -92,14 +123,18 @@ export default async function handler(req, res) {
     hasPart: cards.slice(0, 100).map((c) => ({ "@type": "Question", eduQuestionType: "Flashcard", text: c.term, acceptedAnswer: { "@type": "Answer", text: c.definition } })),
   };
   delete jsonld.educationalAlignment;
+  const subjectSlug2 = slugify(d.subject);
+  const crumbs = [["Ace It Galaxy", SITE + "/"], ["Flash card decks", SITE + "/decks"], [d.subject, `${SITE}/decks/${subjectSlug2}`], [d.title, canonical]];
+  const related = (await latestDecks(db)).filter((x) => x.id !== id && slugify(x.subject) === subjectSlug2).slice(0, 6);
   const list = cards.map((c, i) => `<div class="card"><div><div class="n">${i + 1}</div><div class="term">${esc(c.term)}</div></div><div class="def">${esc(c.definition)}</div></div>`).join("");
   return res.status(200).send(page({
-    title, description: description.slice(0, 300), canonical, noindex: cards.length < MIN_CARDS_TO_INDEX, jsonld,
-    body: `<section class="hero"><div class="in"><div class="kicker">${esc(d.subject)} · Flash cards</div><h1>${esc(d.title)}</h1>
+    title, description: description.slice(0, 300), canonical, noindex: cards.length < MIN_CARDS_TO_INDEX, jsonld: [jsonld, crumbsLd(crumbs)],
+    body: `<section class="hero"><div class="in">${crumbsHtml(crumbs)}<div class="kicker">${esc(d.subject)} · Flash cards</div><h1>${esc(d.title)}</h1>
 <div class="meta">${cards.length} cards · shared by ${esc(d.authorName)}${s.ratingCount ? ` · ★ ${s.ratingAvg} (${s.ratingCount})` : ""}</div>
 ${d.description ? `<p class="desc">${esc(d.description)}</p>` : ""}
 <a class="btn" href="/flashcards?public=${id}">Study these free</a> <a class="btn ghost" href="/decks">More decks</a></div></section>
 <main><h2>Terms in this deck</h2><div class="cards">${list}</div>
-<div class="cta"><img src="/mascots/ace-owl.webp" alt="Ace the owl"><div><h3>Study smarter with Ace</h3><p>Flip these cards, quiz yourself with spaced repetition, and make your own decks from your notes with AI. Free for students.</p></div><a class="btn" href="/flashcards?public=${id}">Start studying</a></div></main>`,
+<div class="cta"><img src="/mascots/ace-owl.webp" alt="Ace the owl"><div><h3>Study smarter with Ace</h3><p>Flip these cards, quiz yourself with spaced repetition, and make your own decks from your notes with AI. Free for students.</p></div><a class="btn" href="/flashcards?public=${id}">Start studying</a></div>
+${related.length ? `<h2 style="margin-top:40px">More ${esc(d.subject)} decks</h2><div class="grid">${related.map(tile).join("")}</div>` : ""}</main>`,
   }));
 }
