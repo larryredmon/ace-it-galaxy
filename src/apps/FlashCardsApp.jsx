@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FC_DECKS, aiFetch, tpSync } from "../shared.jsx";
 import { auth } from "../firebase";
+import { STANDARD_SUBJECTS, normalizeSubject, completeCards, MIN_PUBLIC_CARDS } from "../deckRules.js";
 
 // ── Public decks: talk to /api/decks (signed-in actions send the login token) ──
 async function deckApi(body) {
@@ -404,7 +405,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
   }, []);
 
   // After a student finishes a good private deck, ask once whether to share it publicly.
-  const SHARE_PROMPT_MIN_CARDS = 10;
+  const SHARE_PROMPT_MIN_CARDS = MIN_PUBLIC_CARDS;
   const [sharePrompt, setSharePrompt] = useState(null);   // deck id or null
   const maybeAskToShare = (deck) => {
     try { if (localStorage.getItem("tp_share_prompt_off")) return; } catch { /* ignore */ }
@@ -540,7 +541,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
       {sharePrompt != null && <FCSharePrompt deck={decks.find(d => d.id === sharePrompt)} onAnswer={answerSharePrompt} />}
       {view === "home"    && <FCHomeView    user={user} decks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onGoLibrary={() => fcNavigate("library")} onNewDeck={openCreate} onQuickBuild={openQuickBuild} />}
       {view === "library" && <FCLibraryView allDecks={decks} onOpenDeck={openDeck} onStartStudy={startStudy} onNewDeck={openCreate} drafts={drafts} onDeleteDeck={deleteDeck} userFolders={userFolders} setUserFolders={setUserFolders} />}
-      {view === "deck"    && activeDeck && <FCDeckView   deck={decks.find(d => d.id === activeDeck.id) || activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => { const cur = decks.find(d => d.id === id); updateDeck(id, { isPublic: !(cur || activeDeck).isPublic, publishError: null }); }} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
+      {view === "deck"    && activeDeck && <FCDeckView   deck={decks.find(d => d.id === activeDeck.id) || activeDeck} onBack={() => fcNavigate("library")} onStudy={() => startStudy(activeDeck)} onDelete={(id) => { deleteDeck(id); fcNavigate("library"); }} onTogglePublic={(id) => { const cur = decks.find(d => d.id === id) || activeDeck; const n = completeCards(cur.cards); if (!cur.isPublic && n < MIN_PUBLIC_CARDS) { updateDeck(id, { publishError: `Add at least ${MIN_PUBLIC_CARDS} complete cards (term + definition) to share publicly — this deck has ${n}.` }); return; } updateDeck(id, { isPublic: !cur.isPublic, publishError: null }); }} onRate={(id, stars, userId) => { updateDeck(id, { ratings: [...(activeDeck.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] }); setActiveDeck(d => d ? { ...d, ratings: [...(d.ratings||[]).filter(r=>r.userId!==userId), { userId, stars }] } : d); }} onEdit={(deck) => { setActiveDeck(deck); setCreateTab("cards"); fcNavigate("edit"); }} onMoveFolder={(id, folderId) => { updateDeck(id, { folderKey: folderId || null }); setActiveDeck(d => d ? { ...d, folderKey: folderId || null } : d); }} onImprove={(id, newCards) => { updateDeck(id, { cards: newCards, cardCount: newCards.length }); setActiveDeck(d => d ? { ...d, cards: newCards, cardCount: newCards.length } : d); }} user={user} userFolders={userFolders} launchApp={launchApp} />}
       {view === "create"  && <FCCreateDeck onBack={() => fcNavigate("library")} onSave={(deckData) => { const newDeck = saveDeck({ ...deckData, author: user?.name || "Anonymous" }); if (onDeckCreated) onDeckCreated(newDeck); fcNavigate("library"); maybeAskToShare(newDeck); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab={createTab} />}
       {view === "edit"    && activeDeck && <FCCreateDeck onBack={() => fcNavigate("deck")} onSave={(deckData) => { updateDeck(deckData.id, { title:deckData.title, subject:deckData.subject, description:deckData.description, color:deckData.color, cards:deckData.cards, cardCount:deckData.cards.length, folderKey:deckData.folderKey, isPublic:deckData.isPublic }); setActiveDeck(d => d ? { ...d, ...deckData, cardCount:deckData.cards.length } : d); fcNavigate("deck"); const cur = decks.find(d => d.id === deckData.id); if (cur) maybeAskToShare({ ...cur, ...deckData }); }} onSaveDraft={saveDraft} userFolders={userFolders} setUserFolders={setUserFolders} initialTab="cards" initialDeck={activeDeck} />}
       {view === "public"  && <FCPublicLibrary user={user} openAuth={openAuth} onBack={() => fcNavigate("home")} onSave={savePublicDeck} incoming={incoming} clearIncoming={() => setIncoming(null)} />}
@@ -924,7 +925,6 @@ function FCCreateDeck({ onBack, onSave, onSaveDraft, userFolders = [], setUserFo
   const [needsTitle, setNeedsTitle] = useState(false);
 
   const COLORS = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1ABC9C","#E91E8C"];
-  const SUBJECTS = ["Science","History","Math","Biology","Chemistry","English","Technology","Art","Music","Other"];
 
   const handleQuickBuild = async () => {
     if (!qbText.trim() && qbImages.length === 0) return;
@@ -1308,7 +1308,7 @@ Rules:
             const folderKey = selectedCustom
               ? selectedCustom
               : Object.values(orgPath).filter(Boolean).join(" › ") || (initialDeck?.folderKey || null);
-            onSave({ id: initialDeck?.id, title, subject, description, color, cards, folderKey, isPublic, tags });
+            onSave({ id: initialDeck?.id, title, subject: subject.trim() ? normalizeSubject(subject) : "", description, color, cards, folderKey, isPublic: isPublic && completeCards(cards) >= MIN_PUBLIC_CARDS, tags });
           }} disabled={filledCards === 0} title={filledCards > 0 && !title.trim() ? "Give your deck a name first" : ""} style={{ background: filledCards > 0 ? "#1A1814" : "#ECEAE4", border: "none", borderRadius: 8, padding: "9px 22px", fontSize: 13, fontWeight: 700, cursor: filledCards > 0 ? "pointer" : "default", color: filledCards > 0 ? "#F7F6F2" : "#A8A59E", transition: "all 0.2s" }}
             onMouseEnter={e => { if (canSave) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -1927,6 +1927,7 @@ Rules:
                 <input value={title} autoFocus={needsTitle} onChange={e => setTitle(e.target.value)} placeholder="e.g. Biology Chapter 3 — Cell Division"
                   style={{ width: "100%", padding: "13px 16px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 16, fontWeight: 600, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", transition: "border-color 0.18s" }}
                   onFocus={e => e.target.style.borderColor = "#1A1814"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
+                <div style={{ fontSize: 12, color: "#8C8880", marginTop: 6, lineHeight: 1.5 }}>Tip: name the class or exam and the topic, like “AP Biology Unit 2: Cell Structure.” That's how students search, so it helps them find your deck.</div>
               </div>
 
               {/* Description */}
@@ -1937,17 +1938,24 @@ Rules:
                   onFocus={e => e.target.style.borderColor = "#1A1814"} onBlur={e => e.target.style.borderColor = "#ECEAE4"} />
               </div>
 
+              <div style={{ fontSize: 12, color: "#8C8880", marginTop: -16, lineHeight: 1.5 }}>A short description (1–2 sentences: what it covers and who it's for) shows up in Google results and helps people find your deck.</div>
+
               {/* Subject */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Subject</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {SUBJECTS.map(s => (
-                    <button key={s} onClick={() => setSubject(s === subject ? "" : s)}
-                      style={{ padding: "7px 16px", borderRadius: 20, border: `1.5px solid ${subject === s ? "#1A1814" : "#ECEAE4"}`, background: subject === s ? "#1A1814" : "#fff", fontSize: 13, fontWeight: subject === s ? 700 : 400, color: subject === s ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.15s" }}>
-                      {s}
-                    </button>
+                <label htmlFor="fc-subject" style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Subject</label>
+                <input id="fc-subject" list="fc-subject-list" value={subject} onChange={e => setSubject(e.target.value)}
+                  onBlur={e => { e.target.style.borderColor = "#ECEAE4"; if (subject.trim()) setSubject(normalizeSubject(subject)); }}
+                  onFocus={e => e.target.style.borderColor = "#1A1814"}
+                  placeholder="Start typing, e.g. Biology, AP Psychology, Spanish…"
+                  style={{ width: "100%", padding: "12px 16px", border: "1.5px solid #ECEAE4", borderRadius: 9, fontSize: 14, color: "#1A1814", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "#fff", boxSizing: "border-box" }} />
+                <datalist id="fc-subject-list">{STANDARD_SUBJECTS.map(x => <option key={x} value={x} />)}</datalist>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                  {["Biology", "Chemistry", "Anatomy & Physiology", "Psychology", "U.S. History", "Algebra", "Spanish", "Nursing"].map(x => (
+                    <button key={x} type="button" onClick={() => setSubject(x === subject ? "" : x)}
+                      style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${subject === x ? "#1A1814" : "#ECEAE4"}`, background: subject === x ? "#1A1814" : "#fff", fontSize: 12, fontWeight: subject === x ? 700 : 500, color: subject === x ? "#F7F6F2" : "#5A5752", cursor: "pointer" }}>{x}</button>
                   ))}
                 </div>
+                <div style={{ fontSize: 12, color: "#8C8880", marginTop: 8 }}>Pick from the list when you can, so decks on the same subject are grouped together.</div>
               </div>
 
               {/* Color */}
@@ -1982,14 +1990,29 @@ Rules:
                 <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752", display: "block", marginBottom: 8 }}>Visibility</label>
                 <div style={{ display:"flex", gap:10 }}>
                   {[false, true].map(pub => (
-                    <button key={String(pub)} onClick={() => setIsPublic(pub)}
+                    <button key={String(pub)} onClick={() => setIsPublic(pub)} disabled={pub && completeCards(cards) < MIN_PUBLIC_CARDS} aria-disabled={pub && completeCards(cards) < MIN_PUBLIC_CARDS}
                       style={{ flex:1, padding:"12px 16px", borderRadius:10, border:`1.5px solid ${isPublic===pub ? (pub?"#2BAE7E":"#4F6EF7") : "#ECEAE4"}`, background: isPublic===pub ? (pub?"#2BAE7E18":"#4F6EF718") : "#fff", cursor:"pointer", transition:"all 0.18s", textAlign:"left" }}>
                       <div style={{ fontSize:18, marginBottom:4 }}>{pub ? "🌐" : "🔒"}</div>
                       <div style={{ fontSize:13, fontWeight:700, color: isPublic===pub ? (pub?"#1A6B4A":"#1A1877") : "#5A5752" }}>{pub ? "Public" : "Private"}</div>
-                      <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? "Anyone can find and study it (shows your first name)" : "Only you can see this deck"}</div>
+                      <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? (completeCards(cards) < MIN_PUBLIC_CARDS ? `Needs ${MIN_PUBLIC_CARDS}+ complete cards to share (${completeCards(cards)} so far)` : "Anyone can find and study it (shows your first name)") : "Only you can see this deck"}</div>
                     </button>
                   ))}
                 </div>
+                {isPublic && (
+                  <div style={{ marginTop: 12, background: "#F4FBF7", border: "1px solid #2BAE7E33", borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1A6B4A", marginBottom: 6 }}>Help students find your deck</div>
+                    {[
+                      [title.trim().split(/\s+/).length >= 3, "Title names the class or exam and the topic"],
+                      [!!subject.trim() && subject.trim() !== "Other", "Subject picked"],
+                      [description.trim().length >= 20, "Short description added"],
+                      [completeCards(cards) >= 20, `20+ cards (${completeCards(cards)} now) — complete decks rank better`],
+                    ].map(([ok, label]) => (
+                      <div key={label} style={{ fontSize: 12, color: ok ? "#1A6B4A" : "#6F6B63", display: "flex", gap: 6, alignItems: "baseline", lineHeight: 1.7 }}>
+                        <span aria-hidden="true">{ok ? "✓" : "○"}</span><span>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Preview card */}
