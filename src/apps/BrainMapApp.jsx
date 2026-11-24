@@ -1,6 +1,7 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { FC_DECKS, aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 // ─── Brain Map App ────────────────────────────────────────────────────────────
 const BM_PALETTE = ["#4F6EF7","#E85D3F","#2BAE7E","#9B59B6","#F5C842","#E67E22","#1DA1F2","#E91E8C","#C8B8FF","#6ED9B8","#FF6B6B","#4ECDC4"];
@@ -316,7 +317,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
           : <div onClick={()=>setEditTitle(true)} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", padding:"3px 7px", borderRadius:6, maxWidth:260 }}
               onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
               <span style={{ fontSize:14, fontWeight:800, color:"#F7F6F2", fontFamily:"'Playfair Display',serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mapTitle}</span>
-              <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", flexShrink:0 }}>✎</span>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", flexShrink:0 }}><Icon e="✎" /></span>
             </div>
         }
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
@@ -488,7 +489,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 16 }}>
               <button onClick={() => startEditing(selectedNode.id, selectedNode.label)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.65)", textAlign: "left", transition: "all 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}>
-                ✎ Edit Label
+                <Icon e="✎" /> Edit Label
               </button>
               <button onClick={() => addChild(selectedNode.id)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "rgba(255,255,255,0.65)", textAlign: "left", transition: "all 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}>
@@ -538,7 +539,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
                     );
                   })}
                   <button onClick={() => openStudy(selectedNode)} style={{ padding: "8px", borderRadius: 8, border: "none", background: "#F5C842", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1A1814", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    📇 Study ({allDecks.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0)} cards)
+                    <Icon e="📇" /> Study ({allDecks.filter(d => selectedNode.deckIds.includes(d.id)).reduce((a, d) => a + (d.cards?.length || d.cardCount || 0), 0)} cards)
                   </button>
                 </div>
               )}
@@ -575,7 +576,7 @@ function BrainMapCanvas({ map, onNodesChange, onBack, allDecks = FC_DECKS }) {
               }} style={{ marginTop: 14, width: "100%", padding: "7px 0", borderRadius: 7, border: "1px solid rgba(232,93,63,0.22)", background: "transparent", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "rgba(232,93,63,0.55)", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#E85D3F"; e.currentTarget.style.color = "#E85D3F"; e.currentTarget.style.background = "rgba(232,93,63,0.07)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(232,93,63,0.22)"; e.currentTarget.style.color = "rgba(232,93,63,0.55)"; e.currentTarget.style.background = "transparent"; }}>
-                🗑 Delete Node
+                <Icon e="🗑" /> Delete Node
               </button>
             )}
           </div>
@@ -757,7 +758,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
           <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "5px 12px", fontSize: 11, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}
             onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>← Galaxy</button>
           <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3, gap: 2 }}>
-            {[["home","🏠 Home"],["maps","📂 Maps"]].map(([v,label]) => (
+            {[["home","Home"],["maps","Maps"]].map(([v,label]) => (
               <button key={v} onClick={() => setView(v)} style={{ padding: "4px 12px", borderRadius: 6, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer", background: "transparent", color: "rgba(255,255,255,0.35)" }}
                 onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"}>{label}</button>
             ))}
@@ -863,7 +864,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
             </div>
           </div>
           <div className="bm-nav-tabs" style={{ display: "flex", background: "#F1EFEA", borderRadius: 9, padding: 3, gap: 2 }}>
-            {[["home","Home"],["maps","All Maps"],["explore","🌐 Explore"]].map(([v,label]) => (
+            {[["home","Home"],["maps","All Maps"],["explore","Explore"]].map(([v,label]) => (
               <button key={v} onClick={() => setView(v)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", background: view === v ? "#ECEAE4" : "transparent", color: view === v ? "#1A1814" : "#6F6B63", transition: "all 0.18s", whiteSpace:"nowrap" }}>{label}</button>
             ))}
           </div>
@@ -1000,12 +1001,12 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 800, color: "#1A1814", textAlign: "center", marginBottom: 40 }}>Built for deep understanding</h2>
               <div className="bm-feats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                 {[
-                  { emoji: "🧠", title: "Infinite Canvas",       desc: "Pan and zoom freely across an infinite workspace. Your map grows as your ideas do." },
-                  { emoji: "🎨", title: "Color Branches",        desc: "12 branch colors to organize topics visually. Change any node instantly from the panel." },
-                  { emoji: "📇", title: "Flash Card Integration",desc: "Attach any flash card deck to any node. Study directly from the map with a single click." },
-                  { emoji: "📝", title: "Node Notes",            desc: "Add context notes to any node — definitions, reminders, or references." },
-                  { emoji: "🔗", title: "Unlimited Connections",  desc: "Build deep hierarchies with unlimited child nodes off any parent branch." },
-                  { emoji: "📂", title: "Multiple Maps",         desc: "Create separate maps for every subject, chapter, or project and switch between them instantly." },
+                  { emoji: <Icon e="🧠" />, title: "Infinite Canvas",       desc: "Pan and zoom freely across an infinite workspace. Your map grows as your ideas do." },
+                  { emoji: <Icon e="🎨" />, title: "Color Branches",        desc: "12 branch colors to organize topics visually. Change any node instantly from the panel." },
+                  { emoji: <Icon e="📇" />, title: "Flash Card Integration",desc: "Attach any flash card deck to any node. Study directly from the map with a single click." },
+                  { emoji: <Icon e="📝" />, title: "Node Notes",            desc: "Add context notes to any node — definitions, reminders, or references." },
+                  { emoji: <Icon e="🔗" />, title: "Unlimited Connections",  desc: "Build deep hierarchies with unlimited child nodes off any parent branch." },
+                  { emoji: <Icon e="📂" />, title: "Multiple Maps",         desc: "Create separate maps for every subject, chapter, or project and switch between them instantly." },
                 ].map(f => (
                   <div key={f.title} style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 12, padding: "20px 20px" }}>
                     <div style={{ fontSize: 24, marginBottom: 10 }}>{f.emoji}</div>
@@ -1046,7 +1047,7 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:10, borderTop:"1px solid #ECEAE4" }}>
                   <button onClick={e => { e.stopPropagation(); updateMap(m.id, { isPublic: !m.isPublic }); }}
                     style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${m.isPublic ? "#2BAE7E" : "#ECEAE4"}`, background: m.isPublic ? "#2BAE7E18" : "transparent", fontSize:11, fontWeight:700, cursor:"pointer", color: m.isPublic ? "#2BAE7E" : "#6F6B63", transition:"all 0.18s" }}>
-                    {m.isPublic ? "🌐 Public" : "🔒 Private"}
+                    {m.isPublic ? "Public" : "Private"}
                   </button>
                   {m.isPublic && (
                     <div style={{ display:"flex", gap:2 }}>
@@ -1074,14 +1075,14 @@ function BrainMapApp({ onBack, user, openAuth, onLogout, onMapCreated }) {
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "50px 24px 60px" }}>
           <div style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "#6F6B63", marginBottom: 8 }}>Community</div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#1A1814", marginBottom: 8 }}>🌐 Public Brain Maps</h2>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 800, color: "#1A1814", marginBottom: 8 }}><Icon e="🌐" /> Public Brain Maps</h2>
             <p style={{ fontSize: 14, color: "#6F6B63", lineHeight: 1.7 }}>Browse mind maps shared by the community. Rate maps to help others find the best ones.</p>
           </div>
           {maps.filter(m => m.isPublic).length === 0 ? (
             <div style={{ textAlign:"center", padding:"60px 0", color:"#6F6B63" }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>🗺️</div>
+              <div style={{ fontSize:40, marginBottom:12 }}><Icon e="🗺️" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#3A3830", marginBottom:8 }}>No public maps yet</div>
-              <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>Be the first to share a map! Go to All Maps and click 🔒 Private to make it public.</p>
+              <p style={{ fontSize:14, maxWidth:360, margin:"0 auto", lineHeight:1.7 }}>Be the first to share a map! Go to All Maps and click <Icon e="🔒" /> Private to make it public.</p>
             </div>
           ) : (
             <div className="bm-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>

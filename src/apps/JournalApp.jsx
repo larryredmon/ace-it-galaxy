@@ -1,6 +1,7 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 // ─── Ace It Journal ──────────────────────────────────────────────────────────
 
@@ -36,14 +37,14 @@ const J_PROMPTS = [
 ];
 
 const J_CATEGORIES = [
-  { id:"all",         label:"All Entries",  emoji:"📖" },
-  { id:"daily",       label:"Daily Life",   emoji:"☀️" },
-  { id:"mental",      label:"Mental Health",emoji:"🧠" },
-  { id:"gratitude",   label:"Gratitude",    emoji:"🙏" },
-  { id:"goals",       label:"Goals",        emoji:"🎯" },
-  { id:"reflection",  label:"Reflection",   emoji:"💭" },
-  { id:"vent",        label:"Vent",         emoji:"💨" },
-  { id:"creative",    label:"Creative",     emoji:"✨" },
+  { id:"all",         label:"All Entries",  emoji:<Icon e="📖" /> },
+  { id:"daily",       label:"Daily Life",   emoji:<Icon e="☀️" /> },
+  { id:"mental",      label:"Mental Health",emoji:<Icon e="🧠" /> },
+  { id:"gratitude",   label:"Gratitude",    emoji:<Icon e="🙏" /> },
+  { id:"goals",       label:"Goals",        emoji:<Icon e="🎯" /> },
+  { id:"reflection",  label:"Reflection",   emoji:<Icon e="💭" /> },
+  { id:"vent",        label:"Vent",         emoji:<Icon e="💨" /> },
+  { id:"creative",    label:"Creative",     emoji:<Icon e="✨" /> },
 ];
 
 function JournalApp({ onBack, user, openAuth, aiContext }) {
@@ -205,7 +206,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
         {/* Sidebar header */}
         <div style={{ padding:"18px 20px", borderBottom:`1px solid ${J_LIGHT}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✍</div>
+            <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}><Icon e="✍" /></div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>Ace It Journal</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} style={{ background:"none", border:`1px solid ${J_LIGHT}`, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:13, color:"#6F6B63", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
@@ -242,9 +243,9 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Navigation */}
           <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#8C8880", padding:"4px 8px 8px" }}>Navigation</div>
           {[
-            { icon:"📖", label:"Home",           v:"home"   },
-            { icon:"✍",  label:"Write Entry",    v:"write"  },
-            { icon:"🗂",  label:"All Entries",    v:"browse" },
+            { icon:<Icon e="📖" />, label:"Home",           v:"home"   },
+            { icon:<Icon e="✍" />,  label:"Write Entry",    v:"write"  },
+            { icon:<Icon e="🗂" />,  label:"All Entries",    v:"browse" },
           ].map(({ icon, label, v }) => {
             const active = view === v;
             return (
@@ -324,14 +325,14 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>← Galaxy</button>
           <div style={{ width:1, height:20, background:J_LIGHT, flexShrink:0 }} />
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-            <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>✍</div>
+            <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}><Icon e="✍" /></div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#1A1814" }}>
               <span style={{ color:J_COLOR }}>Ace It</span> Journal
             </span>
           </div>
         </div>
         <div style={{ display:"flex", gap:8 }}>
-          {[["📖","home"],["✍","write"],["🗂","browse"]].map(([icon, v]) => (
+          {[[<Icon e="📖" />,"home"],[<Icon e="✍" />,"write"],[<Icon e="🗂" />,"browse"]].map(([icon, v]) => (
             <button key={v} onClick={() => setView(v)}
               style={{ padding:"7px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.18s", background: view===v ? J_COLOR : "transparent", color: view===v ? "#fff" : "#6F6B63" }}
               onKeyDown={e => { if (e.key===" ") e.preventDefault(); }}>
@@ -359,7 +360,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:J_COLOR, textTransform:"uppercase" }}>Your Private Space</span>
             </div>
             <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(28px,4vw,44px)", fontWeight:900, letterSpacing:-1, color:"#1A1814", lineHeight:1.1, marginBottom:10 }}>
-              Hey {user?.name?.split(" ")[0] || "there"} ✍<br/>
+              Hey {user?.name?.split(" ")[0] || "there"} <Icon e="✍" /><br/>
               <span style={{ color:J_COLOR }}>What's on your mind?</span>
             </h1>
             <p style={{ fontSize:15, color:"#6F6B63", lineHeight:1.7, maxWidth:500 }}>
@@ -370,10 +371,10 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Stats bar */}
           <div className="j-stats-strip" style={{ display:"flex", gap:12, marginBottom:36 }}>
             {[
-              { label:"Entries",    value:entries.length,       icon:"📝" },
-              { label:"Day Streak", value:`${streakDays}d`,     icon:"🔥" },
-              { label:"Words",      value:totalWords.toLocaleString(), icon:"✍" },
-              { label:"This Week",  value:entries.filter(e => new Date(e.createdAt) > new Date(Date.now()-604800000)).length, icon:"📅" },
+              { label:"Entries",    value:entries.length,       icon:<Icon e="📝" /> },
+              { label:"Day Streak", value:`${streakDays}d`,     icon:<Icon e="🔥" /> },
+              { label:"Words",      value:totalWords.toLocaleString(), icon:<Icon e="✍" /> },
+              { label:"This Week",  value:entries.filter(e => new Date(e.createdAt) > new Date(Date.now()-604800000)).length, icon:<Icon e="📅" /> },
             ].map(({ label, value, icon }) => (
               <div key={label} style={{ flex:1, background:"#fff", border:`1px solid ${J_LIGHT}88`, borderRadius:14, padding:"18px 16px", textAlign:"center" }}>
                 <div style={{ fontSize:20, marginBottom:6 }}>{icon}</div>
@@ -388,7 +389,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             <div onClick={() => setView("write")} style={{ background:`linear-gradient(135deg, ${J_COLOR}, ${J_DARK})`, borderRadius:16, padding:"28px 26px", cursor:"pointer", transition:"all 0.2s", color:"#fff" }}
               onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 14px 40px ${J_COLOR}44`;}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
-              <div style={{ fontSize:32, marginBottom:14 }}>✍</div>
+              <div style={{ fontSize:32, marginBottom:14 }}><Icon e="✍" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:19, fontWeight:900, marginBottom:6 }}>Write Today's Entry</div>
               <div style={{ fontSize:13, opacity:0.8, lineHeight:1.5 }}>Start with a blank page or get a prompt to spark reflection.</div>
             </div>
@@ -443,7 +444,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
           {entries.length === 0 && (
             <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
-              <div style={{ fontSize:52, marginBottom:14 }}>📖</div>
+              <div style={{ fontSize:52, marginBottom:14 }}><Icon e="📖" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:800, color:"#3A3830", marginBottom:8 }}>Your journal is waiting</div>
               <p style={{ fontSize:14, maxWidth:380, margin:"0 auto 24px", lineHeight:1.7 }}>Every journey starts with a single entry. Write your first one — it can be anything at all.</p>
               <button onClick={() => setView("write")} style={{ background:J_COLOR, border:"none", borderRadius:10, padding:"13px 30px", fontSize:14, fontWeight:700, cursor:"pointer", color:"#fff", boxShadow:`0 6px 20px ${J_COLOR}44` }}>Write Your First Entry →</button>
@@ -493,7 +494,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
               style={{ padding:"7px 14px", borderRadius:8, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:12, fontWeight:600, color:"#6F6B63", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=J_COLOR;e.currentTarget.style.color=J_COLOR;}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=J_LIGHT;e.currentTarget.style.color="#6F6B63";}}>
-              💡 Get a Prompt
+              <Icon e="💡" /> Get a Prompt
             </button>
             <div style={{ marginLeft:"auto", fontSize:12, color:"#8C8880" }}>{wordCount} {wordCount===1?"word":"words"}</div>
           </div>
@@ -572,7 +573,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
             </div>
             <button onClick={() => { if (window.confirm("Delete this journal entry? This can't be undone.")) deleteEntry(activeEntry.id); }}
               style={{ background:"none", border:`1px solid #FECACA`, borderRadius:7, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#E85D3F", flexShrink:0 }}>
-              🗑 Delete
+              <Icon e="🗑" /> Delete
             </button>
           </div>
           <div style={{ height:1, background:`${J_LIGHT}88`, marginBottom:28 }} />
@@ -588,7 +589,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
           {/* Search + filter */}
           <div style={{ display:"flex", gap:12, marginBottom:24, flexWrap:"wrap" }}>
             <div style={{ position:"relative", flex:1, minWidth:200 }}>
-              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#8C8880", pointerEvents:"none" }}>🔍</span>
+              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#8C8880", pointerEvents:"none" }}><Icon e="🔍" /></span>
               <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search entries…"
                 style={{ width:"100%", padding:"10px 14px 10px 36px", borderRadius:10, border:`1.5px solid ${J_LIGHT}`, background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", transition:"border-color 0.15s", boxSizing:"border-box" }}
                 onFocus={e=>e.target.style.borderColor=J_COLOR}
@@ -607,7 +608,7 @@ ${user?.name ? `The user's name is ${user.name}.` : ""}`,
 
           {filteredEntries.length === 0 ? (
             <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+              <div style={{ fontSize:40, marginBottom:12 }}><Icon e="📭" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#3A3830", marginBottom:8 }}>No entries found</div>
               <button onClick={() => setView("write")} style={{ background:J_COLOR, border:"none", borderRadius:9, padding:"11px 24px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff", marginTop:8 }}>Write Your First Entry</button>
             </div>
