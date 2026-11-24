@@ -5,6 +5,7 @@ import { db, auth, APPLE_SIGNIN_ENABLED, googleProvider, appleProvider, appCheck
 import { signInWithEmailAndPassword, linkWithCredential, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, OAuthProvider, signInWithRedirect, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence, getRedirectResult, onAuthStateChanged } from "firebase/auth";
 import { cloudSync } from "./cloudSync";
 import { AceHead, PA_COLOR, PA_DARK, PA_GLOW, aceRemember, aiFetch, readAceMemory, tpSync, useInstallApp } from "./shared.jsx";
+import { Icon } from "./shared.jsx";
 
 const FlashCardsApp = lazy(() => import("./apps/FlashCardsApp.jsx"));
 const BrainMapApp = lazy(() => import("./apps/BrainMapApp.jsx"));
@@ -157,8 +158,8 @@ const PLANETS = [
   { id: 4,  appId: "simplifier",   name: "Text Simplifier",   symbol: "≋", color: "#6ED9B8", glow: "#2BAE7E", size: 44, orbitRadius: 238, speed: 60, desc: "Break down complex text instantly." },
   { id: 10, appId: "assistant",    name: "Personal Assistant",symbol: "⊕", color: "#90C8F8", glow: "#4898E8", size: 42, orbitRadius: 470, speed: 42, desc: "Your 24/7 AI study and life companion." },
   { id: 13, appId: "studybuddy",   name: "Study Buddy",       symbol: "❋", color: "#FFA8D0", glow: "#FF5CA8", size: 44, orbitRadius: 582, speed: 44, desc: "Find study partners and study together online." },
-  { id: 14, appId: "settings",     name: "Settings",          symbol: "⚙", color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
-  { id: 15, appId: "journal",      name: "Journal",           symbol: "✍", color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
+  { id: 14, appId: "settings",     name: "Settings",          symbol: <Icon e="⚙" />, color: "#B8C8E8", glow: "#7090C0", size: 36, orbitRadius: 622, speed: 38, desc: "Customize your learning experience." },
+  { id: 15, appId: "journal",      name: "Journal",           symbol: <Icon e="✍" />, color: "#E8C4F0", glow: "#B060D0", size: 43, orbitRadius: 660, speed: 46, desc: "Write freely. Reflect deeply." },
   { id: 17, appId: "coursehub",    name: "Course Hub",        symbol: "◎", color: "#6ED9B8", glow: "#2BAE7E", size: 46, orbitRadius: 740, speed: 34, desc: "Upload your coursework once. Get flash cards, brain maps, and study plans automatically." },
 ];
 
@@ -906,7 +907,7 @@ const APP_CONFIGS = {
     cta: "Open Settings",
     stats: [{ value:"50+", label:"Customization Options" },{ value:"ADHD", label:"Friendly Mode" },{ value:"A11y", label:"Accessibility First" },{ value:"Your Way", label:"Learning Style" }],
     features: [
-      { icon:"⚙", title:"Learning Preferences",    desc:"Set your learning style (visual, audio, reading, hands-on), preferred study session length, and content difficulty level across all apps." },
+      { icon:<Icon e="⚙" />, title:"Learning Preferences",    desc:"Set your learning style (visual, audio, reading, hands-on), preferred study session length, and content difficulty level across all apps." },
       { icon:"✦", title:"ADHD & Neurodiverse Mode", desc:"Enable chunked learning, reduced cognitive load, focus timers, low-stimulation interface, and audio-first mode platform-wide." },
       { icon:"◈", title:"Accessibility Options",   desc:"Dyslexia-friendly fonts, adjustable text size, high-contrast mode, color blind modes, and screen reader optimization." },
       { icon:"⬡", title:"Notification Control",    desc:"Customize study reminders, streak alerts, achievement notifications, and AI assistant check-ins — on your schedule." },
@@ -1686,7 +1687,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                   <div style={{ position: "relative" }}>
                     <input id="auth-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"} style={{ ...inputStyle("password"), paddingRight: 42 }}
                       onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.password ? "#E85D3F" : "#E8E5E0"} />
-                    <button onClick={() => setShowPass(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showPass ? "🙈" : "👁"}</button>
+                    <button onClick={() => setShowPass(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showPass ? <Icon e="🙈" /> : <Icon e="👁" />}</button>
                   </div>
                   {errors.password && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.password}</div>}
                   {mode === "signup" && password && (
@@ -1704,7 +1705,7 @@ function AuthModal({ onClose, onAuth, initialMode = "login" }) {
                     <div style={{ position: "relative" }}>
                       <input id="auth-confirm" autoComplete="new-password" type={showConf ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat your password" style={{ ...inputStyle("confirm"), paddingRight: 42 }}
                         onFocus={e => e.target.style.borderColor = "#4F6EF7"} onBlur={e => e.target.style.borderColor = errors.confirm ? "#E85D3F" : "#E8E5E0"} />
-                      <button onClick={() => setShowConf(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showConf ? "🙈" : "👁"}</button>
+                      <button onClick={() => setShowConf(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#A8A59E", padding: 2 }}>{showConf ? <Icon e="🙈" /> : <Icon e="👁" />}</button>
                     </div>
                     {errors.confirm && <div style={{ fontSize: 11, color: "#E85D3F", marginTop: 4 }}>{errors.confirm}</div>}
                   </div>
@@ -2102,9 +2103,9 @@ function LandingPage({ onEnter, openAuth, onLegal }) {
           </h2>
           <div className="lp-pain-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
             {[
-              { icon:"😩", title:"Scattered everywhere", desc:"Your notes are in one app, flashcards in another, your planner somewhere else, and your tutor costs $80/hr." },
-              { icon:"⏱", title:"Running out of time", desc:"You spend more time organizing your study tools than actually studying. There has to be a better way." },
-              { icon:"💸", title:"Paying for everything", desc:"Quizlet charges. Chegg charges. Tutors charge. AI tools charge. It adds up fast — especially when you're a student." },
+              { icon:<Icon e="😩" />, title:"Scattered everywhere", desc:"Your notes are in one app, flashcards in another, your planner somewhere else, and your tutor costs $80/hr." },
+              { icon:<Icon e="⏱" />, title:"Running out of time", desc:"You spend more time organizing your study tools than actually studying. There has to be a better way." },
+              { icon:<Icon e="💸" />, title:"Paying for everything", desc:"Quizlet charges. Chegg charges. Tutors charge. AI tools charge. It adds up fast — especially when you're a student." },
             ].map(p => (
               <div key={p.title} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:"28px 24px" }}>
                 <div style={{ fontSize:32, marginBottom:16 }}>{p.icon}</div>
@@ -2361,9 +2362,9 @@ ctx.globalAlpha=1;}
       {isMobile&&(<div style={{position:'absolute',top:58,left:0,right:0,bottom:0,overflowY:'auto',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,alignContent:'start'}}>{PLANETS.map(app=>(<div key={app.appId} onClick={()=>setSelectedApp({...app})} style={{background:'rgba(255,255,255,0.04)',border:`1px solid ${app.color}28`,borderRadius:13,padding:'14px 12px',cursor:'pointer'}}><div style={{fontSize:22,marginBottom:7}}>{app.symbol}</div><div style={{fontSize:11,fontWeight:700,color:app.color,marginBottom:3}}>{app.name}</div><div style={{fontSize:9.5,color:'rgba(247,246,242,0.32)',lineHeight:1.4}}>{app.desc}</div></div>))}</div>)}
       <nav style={{position:'absolute',top:0,left:0,right:0,height:56,display:'flex',alignItems:'center',padding:'0 12px',gap:8,zIndex:20,background:'linear-gradient(180deg,rgba(4,2,12,0.98),transparent)'}}>
         <button onClick={()=>setSidebarOpen(true)} style={{background:'none',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:8,width:36,height:36,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4.5,flexShrink:0}}><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/><div style={{width:10,height:1.5,background:'#fff',borderRadius:2,alignSelf:'flex-start',marginLeft:2}}/><div style={{width:14,height:1.5,background:'#fff',borderRadius:2}}/></button>
-        {!isMobile&&(<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none'}}>🔍</span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…" style={{width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/></div>)}
+        {!isMobile&&(<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:10,color:'rgba(255,255,255,0.45)',pointerEvents:'none'}}><Icon e="🔍" /></span><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} onKeyDown={e=>e.stopPropagation()} placeholder="Search apps…" style={{width:'100%',padding:'7px 12px 7px 30px',background:'rgba(255,255,255,0.07)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:11,color:'#fff',outline:'none',fontFamily:"'DM Sans',sans-serif"}}/></div>)}
         <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',background:'rgba(4,2,12,0.75)',padding:'4px 4px 4px 8px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',flexShrink:0}}>
-          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'☁ Saved':syncStatus==='error'?'⚠ Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'Get Started Free'}</button></>)}
+          {user?(<>{syncStatus!=='idle'&&!isMobile&&<span style={{fontSize:11,fontWeight:600,color:syncStatus==='saved'?'#2BAE7E':syncStatus==='error'?'#E85D3F':'rgba(245,200,66,0.8)'}}>{syncStatus==='saved'?'Saved':syncStatus==='error'?'Sync failed':'Saving…'}</span>}{!isMobile&&<div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{user.name}</div></div>}<div onClick={()=>setSidebarOpen(true)} style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#9B7FFF,#F5D96A)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#1A1814',cursor:'pointer'}}>{user.avatar}</div></>):(<><button onClick={()=>openAuth('login')} style={{...navBtn,fontWeight:700,background:'rgba(255,255,255,0.12)',border:'1.5px solid rgba(255,255,255,0.5)',color:'#ffffff',padding:isMobile?'7px 12px':'7px 16px'}}>Log In</button><button onClick={()=>openAuth('signup')} style={{...navBtn,fontWeight:800,background:'#D4920A',border:'1.5px solid #F5C842',color:'#ffffff',boxShadow:'0 0 16px rgba(245,200,66,0.4)',padding:isMobile?'7px 10px':'7px 16px',fontSize:isMobile?11:12}}>{isMobile?'Get Started':'Get Started Free'}</button></>)}
         </div>
       </nav>
       <div style={{position:'absolute',bottom:20,left:0,right:0,textAlign:'center',pointerEvents:'none',zIndex:5}}><p style={{fontSize:9,color:'rgba(255,255,255,0.18)',letterSpacing:2.8,textTransform:'uppercase',fontWeight:600}}>The future of learning is yours</p></div>
@@ -2620,8 +2621,8 @@ STUDY PLAN MODE — User wants a personalized study plan. Build it from their ac
 Their flashcard library:
 ${decks.slice(0, 8).map(d => `• "${d.title}" — ${d.mastery || 0}% mastered, ${d.cards?.length || 0} cards, subject: ${d.subject}`).join("\n")}
 
-${urgentDecks.length ? `⚠️ Needs urgent attention (< 30% mastery): ${urgentDecks.map(d => d.title).join(", ")}` : ""}
-${masteredDecks.length ? `✅ Already mastered: ${masteredDecks.map(d => d.title).join(", ")}` : ""}
+${urgentDecks.length ? `Needs urgent attention (< 30% mastery): ${urgentDecks.map(d => d.title).join(", ")}` : ""}
+${masteredDecks.length ? `Already mastered: ${masteredDecks.map(d => d.title).join(", ")}` : ""}
 ${maps.length ? `Brain maps they've created: ${maps.map(m => m.title).join(", ")}` : ""}
 ${profile.goals?.length ? `Their stated goals: ${profile.goals.map(g => `${g.done?"✓":"○"} ${g.text}`).join("; ")}` : ""}
 
@@ -2685,11 +2686,11 @@ Help them see connections ACROSS their apps. For example:
     const now = new Date();
     const upcomingTasks = tasks.filter(t=>!t.done&&t.date).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,6);
     const overdueTasks  = tasks.filter(t=>!t.done&&t.date&&new Date(t.date)<now);
-    const tasksBlock = tasks.length ? "TRACKER (" + tasks.filter(t=>!t.done).length + " pending):\n" + (overdueTasks.length?"  ⚠️ OVERDUE: "+overdueTasks.map(t=>t.text||t.title).slice(0,3).join(", ")+"\n":"") + upcomingTasks.map(t=>"  • "+(t.text||t.title)+" — due "+new Date(t.date).toLocaleDateString()).join("\n") : "No tasks yet";
+    const tasksBlock = tasks.length ? "TRACKER (" + tasks.filter(t=>!t.done).length + " pending):\n" + (overdueTasks.length?"  OVERDUE: "+overdueTasks.map(t=>t.text||t.title).slice(0,3).join(", ")+"\n":"") + upcomingTasks.map(t=>"  • "+(t.text||t.title)+" — due "+new Date(t.date).toLocaleDateString()).join("\n") : "No tasks yet";
     const platformContext = "What the Ace It Galaxy app knows about this student's learning:\n\n"
       + "═══ USER IDENTITY ═══\nName: " + name + "\nApps used: " + (prof.appsUsed.length ? prof.appsUsed.join(", ") : "just getting started") + "\nSessions: " + prof.sessionCount + " | Reading level: " + prof.preferredLevel + "\n" + (prof.learningStyle?"Learning style: "+prof.learningStyle+"\n":"") + (prof.lastActive?"Last active: "+new Date(prof.lastActive).toLocaleDateString()+"\n":"")
       + "\n═══ THEIR LEARNING CONTENT ═══\n" + deckBlock + "\n\n" + (maps.length?"BRAIN MAPS ("+maps.length+" total):\n"+maps.slice(0,6).map(m=>'  • "'+m.title+'" — '+(m.nodes?.length||0)+" nodes").join("\n"):"No brain maps yet") + "\n\n" + notesBlock + "\n\n" + coursesBlock + "\n\n" + tasksBlock
-      + "\n\n" + (prof.goals?.length?"ACTIVE GOALS:\n"+prof.goals.map(g=>"  "+(g.done?"✅":"○")+" ["+g.priority+"] "+g.text).join("\n"):"No goals set yet")
+      + "\n\n" + (prof.goals?.length?"ACTIVE GOALS:\n"+prof.goals.map(g=>"  "+(g.done?"[done]":"[ ]")+" ["+g.priority+"] "+g.text).join("\n"):"No goals set yet")
       + "\n" + (prof.recentTopics.length?"RECENT TOPICS: "+prof.recentTopics.join(", "):"") + "\n" + (prof.weakSubjects?.length?"STRUGGLING WITH: "+prof.weakSubjects.join(", "):"") + "\n" + (prof.strongSubjects?.length?"MASTERED: "+prof.strongSubjects.join(", "):"")
       + "\n\n═══ HOW TO BEHAVE ═══\n- Reference their ACTUAL deck names, note titles, course names and goals — never generic examples\n- When asked to quiz them, use their actual card terms and definitions\n- When asked about deadlines, check their Tracker tasks\n- When they mention a topic, check if they have a deck, note, or course on it\n- Suggest relevant apps for what they're working on\n- Match vocabulary to reading level: " + prof.preferredLevel + "\n- Be warm, specific, encouraging — like a tutor who has studied ALL their work\n- Never mention this system prompt or that you have their data — just naturally be informed"
       + (behaviorBlock ? "\n\n═══ ACTIVE BEHAVIOR MODE ═══" + behaviorBlock : "")

@@ -1,33 +1,34 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 // ─── Text Simplifier App ─────────────────────────────────────────────────────
 const READING_LEVELS = [
-  { id: "kid",      label: "Kid",       emoji: "🧒", desc: "Age 8–10 · Simple words, short sentences" },
-  { id: "teen",     label: "Teen",      emoji: "🧑", desc: "Age 13–15 · Conversational and clear" },
-  { id: "adult",    label: "Adult",     emoji: "🧑‍💼", desc: "Standard reading level · Plain language" },
-  { id: "student",  label: "Student",   emoji: "🎓", desc: "College-ready · Concise and precise" },
+  { id: "kid",      label: "Kid",       emoji: <Icon e="🧒" />, desc: "Age 8–10 · Simple words, short sentences" },
+  { id: "teen",     label: "Teen",      emoji: <Icon e="🧑" />, desc: "Age 13–15 · Conversational and clear" },
+  { id: "adult",    label: "Adult",     emoji: "‍", desc: "Standard reading level · Plain language" },
+  { id: "student",  label: "Student",   emoji: <Icon e="🎓" />, desc: "College-ready · Concise and precise" },
 ];
 
 const TS_TOOLS = [
-  { id: "simplify",  label: "Simplify",   emoji: "✨", desc: "Make it easier to read" },
-  { id: "explain",   label: "Explain",    emoji: "💡", desc: "Break it down step by step" },
-  { id: "summarize", label: "Summarize",  emoji: "📝", desc: "Key points, fast" },
-  { id: "define",    label: "Key Terms",  emoji: "📖", desc: "Glossary of hard words" },
+  { id: "simplify",  label: "Simplify",   emoji: <Icon e="✨" />, desc: "Make it easier to read" },
+  { id: "explain",   label: "Explain",    emoji: <Icon e="💡" />, desc: "Break it down step by step" },
+  { id: "summarize", label: "Summarize",  emoji: <Icon e="📝" />, desc: "Key points, fast" },
+  { id: "define",    label: "Key Terms",  emoji: <Icon e="📖" />, desc: "Glossary of hard words" },
 ];
 
 const TS_MODES = [
-  { id: "standard",  label: "Standard",      emoji: "📄", desc: "Default output" },
-  { id: "dyslexia",  label: "Dyslexia",      emoji: "🔤", desc: "Wider spacing, serif-free" },
-  { id: "adhd",      label: "ADHD Mode",     emoji: "⚡", desc: "Chunked, bullets, highlights" },
-  { id: "audio",     label: "Audio",         emoji: "🔊", desc: "Read it aloud" },
+  { id: "standard",  label: "Standard",      emoji: <Icon e="📄" />, desc: "Default output" },
+  { id: "dyslexia",  label: "Dyslexia",      emoji: <Icon e="🔤" />, desc: "Wider spacing, serif-free" },
+  { id: "adhd",      label: "ADHD Mode",     emoji: <Icon e="⚡" />, desc: "Chunked, bullets, highlights" },
+  { id: "audio",     label: "Audio",         emoji: <Icon e="🔊" />, desc: "Read it aloud" },
 ];
 
 const YT_DETAIL_LEVELS = [
   {
     id: "overview",
-    icon: "🎯",
+    icon: <Icon e="🎯" />,
     label: "Main Topics",
     sublabel: "Important info only",
     desc: "The key topics, core arguments, and most important takeaways — fast and clean.",
@@ -42,21 +43,21 @@ You cannot access or watch the video directly. Using the title, channel name, an
 
 Format your response as:
 
-**🎯 What This Video Is About**
+**What This Video Is About**
 [2-3 sentences explaining the video's topic and purpose based on the title/channel]
 
-**📌 Key Topics Covered**
+**Key Topics Covered**
 [4-6 specific bullet points based on what the title/description suggests]
 
-**💡 Most Important Takeaways**
+**Most Important Takeaways**
 [3-4 bullet points with the core insights a viewer would gain]
 
-**👀 Worth Watching If...**
+**Worth Watching If...**
 [1-2 sentences on who this video is most useful for]`,
   },
   {
     id: "detailed",
-    icon: "📋",
+    icon: <Icon e="📋" />,
     label: "More Detail",
     sublabel: "Full topic coverage",
     desc: "Everything the video covers, explained clearly. Each topic broken down so you understand the content without needing to watch the full video.",
@@ -71,24 +72,24 @@ You cannot watch the video, but use the metadata above to give a detailed, speci
 
 Format your response as:
 
-**📹 About This Video**
+**About This Video**
 [3-4 sentences on the topic, based on the title/channel/description]
 
-**📚 Topics Covered In Detail**
+**Topics Covered In Detail**
 
 [For each of 4-6 major topic areas you'd expect in this video:]
 ### [Topic Name]
 [2-3 sentences explaining this topic specifically as it likely appears in this video]
 
-**🔑 Key Points to Remember**
+**Key Points to Remember**
 [5-7 specific bullet points]
 
-**❓ Questions This Video Answers**
+**Questions This Video Answers**
 [3-4 specific questions the video likely addresses]`,
   },
   {
     id: "breakdown",
-    icon: "📖",
+    icon: <Icon e="📖" />,
     label: "Full Breakdown",
     sublabel: "Everything, organized",
     desc: "A complete, organized breakdown of everything talked about — structured like study notes.",
@@ -103,13 +104,13 @@ You cannot watch the video, but use the metadata above to produce the most compr
 
 Format as:
 
-**📹 Video Overview**
+**Video Overview**
 [3-4 sentences on what this video covers, based on the title and channel]
 
-**⏱ Likely Content Structure**
+**Likely Content Structure**
 [List 5-7 sections this video probably covers with estimated timestamps like "0:00 – 2:30 · Introduction"]
 
-**📖 Full Topic Breakdown**
+**Full Topic Breakdown**
 
 [For each section:]
 ### Section [#]: [Section Title]
@@ -117,10 +118,10 @@ Format as:
 **Key concepts:** [bullet points]
 **Important details:** [specific points to remember]
 
-**✅ Summary & Conclusions**
+**Summary & Conclusions**
 [What this video likely concludes or recommends]
 
-**🎓 Study Notes**
+**Study Notes**
 [6-8 bullet points formatted as study notes a student would actually use]`,
   },
 ];
@@ -349,10 +350,10 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
   const accentLight = "#6ED9B8";
 
   const YT_LOAD_STEPS = [
-    { icon: "🔗", label: "Connecting to YouTube…" },
-    { icon: "📝", label: "Fetching video transcript…" },
-    { icon: "🧠", label: "AI analyzing content…" },
-    { icon: "✍️", label: "Generating your summary…" },
+    { icon: <Icon e="🔗" />, label: "Connecting to YouTube…" },
+    { icon: <Icon e="📝" />, label: "Fetching video transcript…" },
+    { icon: <Icon e="🧠" />, label: "AI analyzing content…" },
+    { icon: <Icon e="✍️" />, label: "Generating your summary…" },
   ];
 
   return (
@@ -400,7 +401,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button onClick={() => setHistoryOpen(o => !o)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", color: "#8C8880", transition: "all 0.15s" }}>
-              🕐 History {history.length > 0 && `(${history.length})`}
+              <Icon e="🕐" /> History {history.length > 0 && `(${history.length})`}
             </button>
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -434,7 +435,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
       <div style={{ background: "#1A1814", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "center", paddingBottom: 0 }}>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: "12px 12px 0 0", padding: "4px 4px 0", gap: 2 }}>
           {[
-            { id: "text",    icon: "📄", label: "Paste Text" },
+            { id: "text",    icon: <Icon e="📄" />, label: "Paste Text" },
             { id: "youtube", icon: "▶️", label: "YouTube Video" },
           ].map(m => (
             <button key={m.id} onClick={() => { setInputMode(m.id); setOutputText(""); setError(""); setYtError(""); }}
@@ -508,7 +509,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                   {outputText && (
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={handleCopy} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: copied ? accentColor : "#8C8880", transition: "all 0.15s" }}>{copied ? "✓ Copied" : "Copy"}</button>
-                      <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#ECEAE4"}`, borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880", transition: "all 0.15s" }}>{speaking ? "⏹ Stop" : "🔊 Read"}</button>
+                      <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#ECEAE4"}`, borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880", transition: "all 0.15s" }}>{speaking ? "Stop" : "Read"}</button>
                       <button onClick={()=>setOutputExpanded(o=>!o)} style={{ background: outputExpanded ? accentColor : "none", border: `1px solid ${outputExpanded ? accentColor : "#ECEAE4"}`, borderRadius: 5, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: outputExpanded ? "#fff" : "#8C8880", transition: "all 0.15s" }}>{outputExpanded ? "⊠ Collapse" : "⊞ Expand"}</button>
                     </div>
                   )}
@@ -579,12 +580,12 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                       onFocus={e => { if (!ytError) e.target.style.borderColor = accentColor; }}
                       onBlur={e => { if (!ytError && !isValidYt) e.target.style.borderColor = "#ECEAE4"; }}
                     />
-                    <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔗</span>
+                    <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}><Icon e="🔗" /></span>
                     {isValidYt && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: accentColor, fontSize: 16 }}>✓</span>}
                   </div>
                   {ytUrl && <button onClick={() => { setYtUrl(""); setOutputText(""); setYtError(""); }} style={{ padding: "13px 16px", borderRadius: 10, border: "1px solid #ECEAE4", background: "#F7F6F2", fontSize: 12, color: "#8C8880", cursor: "pointer", whiteSpace: "nowrap" }}>Clear</button>}
                 </div>
-                {ytError && <div style={{ fontSize: 12, color: "#E85D3F", marginTop: 8 }}>⚠ {ytError}</div>}
+                {ytError && <div style={{ fontSize: 12, color: "#E85D3F", marginTop: 8 }}><Icon e="⚠" /> {ytError}</div>}
                 {isValidYt && (
                   <div className="ts-fade" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "10px 14px", background: "#F0FDF8", border: "1px solid #6ED9B844", borderRadius: 8 }}>
                     <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />
@@ -666,7 +667,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={handleCopy} style={{ background: "none", border: "1px solid #D8D5CE", borderRadius: 5, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: copied ? accentColor : "#8C8880" }}>{copied ? "✓ Copied" : "Copy"}</button>
-                    <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#D8D5CE"}`, borderRadius: 5, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880" }}>{speaking ? "⏹ Stop" : "🔊 Read Aloud"}</button>
+                    <button onClick={handleSpeak} style={{ background: speaking ? accentColor : "none", border: `1px solid ${speaking ? accentColor : "#D8D5CE"}`, borderRadius: 5, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", color: speaking ? "#fff" : "#8C8880" }}>{speaking ? "Stop" : "Read Aloud"}</button>
                   </div>
                 </div>
                 <div style={{ padding: "28px 28px", maxHeight: 600, overflowY: "auto" }}>
@@ -687,7 +688,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
               </div>
             )}
 
-            {error && <div style={{ color: "#E85D3F", fontSize: 14, marginTop: 16, padding: "14px 18px", background: "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA" }}>⚠ {error}</div>}
+            {error && <div style={{ color: "#E85D3F", fontSize: 14, marginTop: 16, padding: "14px 18px", background: "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA" }}><Icon e="⚠" /> {error}</div>}
           </div>
         )}
 
@@ -695,11 +696,11 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginTop: 48 }}>
           {[
             { emoji: "▶️", title: "YouTube Summaries",   desc: "Paste any YouTube link. Get a clean summary of the full video in three detail levels." },
-            { emoji: "🎓", title: "Academic to Plain",   desc: "Translates dense scholarly language into clear, everyday English." },
-            { emoji: "⚖️", title: "Legal Language",      desc: "Turns contracts and legalese into something a human can actually parse." },
-            { emoji: "🩺", title: "Medical Reports",     desc: "Decodes clinical summaries and diagnoses into plain language." },
-            { emoji: "⚡", title: "ADHD Mode",           desc: "Breaks output into bite-sized bullets with visual anchors." },
-            { emoji: "🔊", title: "Audio Playback",      desc: "Have your simplified text or video summary read aloud at a comfortable pace." },
+            { emoji: <Icon e="🎓" />, title: "Academic to Plain",   desc: "Translates dense scholarly language into clear, everyday English." },
+            { emoji: <Icon e="⚖️" />, title: "Legal Language",      desc: "Turns contracts and legalese into something a human can actually parse." },
+            { emoji: <Icon e="🩺" />, title: "Medical Reports",     desc: "Decodes clinical summaries and diagnoses into plain language." },
+            { emoji: <Icon e="⚡" />, title: "ADHD Mode",           desc: "Breaks output into bite-sized bullets with visual anchors." },
+            { emoji: <Icon e="🔊" />, title: "Audio Playback",      desc: "Have your simplified text or video summary read aloud at a comfortable pace." },
           ].map(f => (
             <div key={f.title} style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 12, padding: "20px 22px" }}>
               <div style={{ fontSize: 24, marginBottom: 10 }}>{f.emoji}</div>
@@ -732,7 +733,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
             <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
               {history.length === 0 ? (
                 <div style={{ textAlign: "center", color: "#A8A59E", fontSize: 13, marginTop: 40 }}>
-                  <div style={{fontSize:32,marginBottom:12}}>🕐</div>
+                  <div style={{fontSize:32,marginBottom:12}}><Icon e="🕐" /></div>
                   <div>No saved history yet.</div>
                   <div style={{marginTop:6,fontSize:12}}>Simplify some text to get started.</div>
                 </div>
@@ -758,7 +759,7 @@ function TextSimplifierApp({ onBack, user, openAuth, aiContext, onLevelChange })
                   </div>
                   <div style={{padding:"8px 14px",borderTop:"1px solid #F0EDE8",display:"flex",gap:8,background:"#FAFAFA"}}>
                     <button onClick={()=>{ if(h.type==="youtube"){setInputMode("youtube");setYtUrl(h.input);}else{setInputMode("text");setInputText(h.input);setActiveTool(h.tool);}setOutputText(h.output);setHistoryOpen(false);}} style={{flex:1,padding:"6px 0",borderRadius:7,border:"none",background:accentColor,fontSize:11,fontWeight:700,cursor:"pointer",color:"#fff"}}>↩ Restore</button>
-                    <button onClick={()=>navigator.clipboard.writeText(h.output||"")} style={{flex:1,padding:"6px 0",borderRadius:7,border:"1px solid #ECEAE4",background:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",color:"#5A5752"}}>📋 Copy</button>
+                    <button onClick={()=>navigator.clipboard.writeText(h.output||"")} style={{flex:1,padding:"6px 0",borderRadius:7,border:"1px solid #ECEAE4",background:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",color:"#5A5752"}}><Icon e="📋" /> Copy</button>
                   </div>
                 </div>
               ))}

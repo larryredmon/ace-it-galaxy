@@ -1,6 +1,7 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 function NotesApp({ onBack, user, openAuth, launchApp }) {
   const NC = "#D4A830";
@@ -314,7 +315,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
       <div style={{ position:"fixed",left:0,top:0,bottom:0,width:268,background:"#fff",borderRight:`1px solid ${NL}`,display:"flex",flexDirection:"column",zIndex:201,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform 0.38s cubic-bezier(0.16,1,0.3,1)" }}>
         <div style={{ padding:"18px 18px",borderBottom:`1px solid ${NL}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-            <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>📝</div>
+            <div style={{ width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}><Icon e="📝" /></div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814" }}>Ace It Notes</span>
           </div>
           <button onClick={()=>setSidebarOpen(false)} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:5,width:28,height:28,cursor:"pointer",fontSize:13,color:"#8C7A4A",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
@@ -335,7 +336,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             </div>
           )}
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Navigation</div>
-          {[["📝","All Notes","library"],["🤖","AI Upload","upload"],["📁","Folders","folders"]].map(([icon,label,v])=>(
+          {[[<Icon e="📝" />,"All Notes","library"],[<Icon e="🤖" />,"AI Upload","upload"],[<Icon e="📁" />,"Folders","folders"]].map(([icon,label,v])=>(
             <button key={v} onClick={()=>{setView(v);setSidebarOpen(false);}}
               style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,border:"none",background:view===v?`${NC}15`:"transparent",cursor:"pointer",marginBottom:2,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s" }}>
               <span style={{ fontSize:14 }}>{icon}</span>
@@ -349,7 +350,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               {[{id:"all",name:"All Notes",count:notes.length},...folders.map(f=>({...f,count:notes.filter(n=>n.folder===f.id).length}))].map(f=>(
                 <button key={f.id} onClick={()=>{setFilterFolder(f.id);setView("library");setSidebarOpen(false);}}
                   style={{ width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",background:filterFolder===f.id?`${NC}12`:"transparent",cursor:"pointer",marginBottom:1,fontFamily:"'DM Sans',sans-serif" }}>
-                  <span style={{ fontSize:13 }}>📁</span>
+                  <span style={{ fontSize:13 }}><Icon e="📁" /></span>
                   <span style={{ fontSize:12,fontWeight:500,color:"#3A3020",flex:1,textAlign:"left" }}>{f.name}</span>
                   <span style={{ fontSize:11,color:"#B8A06A",background:`${NC}10`,borderRadius:10,padding:"1px 7px",fontWeight:600 }}>{f.count}</span>
                 </button>
@@ -358,7 +359,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           )}
           <div style={{ marginTop:14,paddingTop:12,borderTop:`1px solid ${NL}66` }}>
             <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#B8A06A",padding:"4px 8px 8px" }}>Stats</div>
-            {[["📝",notes.length,"Notes"],["📁",folders.length,"Folders"],["✍",notes.reduce((a,n)=>a+(n.wordCount||0),0).toLocaleString(),"Words"]].map(([icon,val,label])=>(
+            {[[<Icon e="📝" />,notes.length,"Notes"],[<Icon e="📁" />,folders.length,"Folders"],[<Icon e="✍" />,notes.reduce((a,n)=>a+(n.wordCount||0),0).toLocaleString(),"Words"]].map(([icon,val,label])=>(
               <div key={label} style={{ display:"flex",alignItems:"center",gap:10,padding:"6px 10px" }}>
                 <span style={{ fontSize:13 }}>{icon}</span>
                 <span style={{ fontSize:13,fontWeight:700,color:NC }}>{val}</span>
@@ -392,14 +393,14 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Galaxy</button>
           <div style={{ width:1,height:20,background:NL,flexShrink:0 }} />
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
-            <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>📝</div>
+            <div style={{ width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${NC},${ND})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}><Icon e="📝" /></div>
             <span style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814" }}>
               <span style={{ color:NC }}>Ace It</span> Notes
             </span>
           </div>
         </div>
         <div className="notes-nav-tabs" style={{ display:"flex",gap:6 }}>
-          {[["📝","home","Notes"],["🤖","upload","AI Upload"],["📁","folders","Folders"]].map(([icon,v,label])=>(
+          {[[<Icon e="📝" />,"home","Notes"],[<Icon e="🤖" />,"upload","AI Upload"],[<Icon e="📁" />,"folders","Folders"]].map(([icon,v,label])=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ padding:"7px 14px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.18s",background:view===v?v==="upload"?"#4F6EF7":NC:"transparent",color:view===v?"#fff":"#8C7A4A" }}
               onKeyDown={e=>{if(e.key===" ")e.preventDefault();}}>
@@ -425,14 +426,14 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           <div style={{ background:"#1A1814",padding:"64px 24px 48px",textAlign:"center",position:"relative",overflow:"hidden" }}>
             <div style={{ position:"absolute",inset:0,opacity:0.05,backgroundImage:`radial-gradient(circle at 20% 50%, ${NC} 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${NC} 0%, transparent 40%)` }}/>
             <div style={{ position:"relative",zIndex:1 }}>
-              <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(212,168,48,0.15)",border:"1px solid rgba(212,168,48,0.3)",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:NC,marginBottom:20 }}>📝 ACE IT NOTES</div>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:8,background:"rgba(212,168,48,0.15)",border:"1px solid rgba(212,168,48,0.3)",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:NC,marginBottom:20 }}><Icon e="📝" /> ACE IT NOTES</div>
               <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:"clamp(32px,5vw,52px)",fontWeight:900,color:"#F7F6F2",lineHeight:1.1,marginBottom:16,letterSpacing:-1 }}>
                 <span style={{ color:NC }}>Ace It</span> Notes
               </h1>
               <p style={{ fontSize:15,color:"#9A9690",maxWidth:480,margin:"0 auto 32px",lineHeight:1.7 }}>Write, record, and organize your ideas. Upload any material and AI turns it into structured study notes.</p>
               <div style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap" }}>
-                <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:700,cursor:"pointer",color:"#1A1814" }}>✍ New Note</button>
-                <button onClick={()=>setView("upload")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.2)",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#F7F6F2" }}>🤖 AI Upload</button>
+                <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:700,cursor:"pointer",color:"#1A1814" }}><Icon e="✍" /> New Note</button>
+                <button onClick={()=>setView("upload")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.2)",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#F7F6F2" }}><Icon e="🤖" /> AI Upload</button>
                 {notes.length>0&&<button onClick={()=>setView("library")} style={{ background:"none",border:"1px solid rgba(255,255,255,0.2)",borderRadius:9,padding:"12px 28px",fontSize:14,fontWeight:600,cursor:"pointer",color:"#F7F6F2" }}>Browse All Notes</button>}
               </div>
             </div>
@@ -447,7 +448,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           </div>
           <div className="notes-main" style={{ maxWidth:980,margin:"0 auto",padding:"36px 24px",animation:"notes-fade 0.4s ease both" }}>
           <div style={{ position:"relative",marginBottom:20 }}>
-            <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}>🔍</span>
+            <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#B8A06A",pointerEvents:"none" }}><Icon e="🔍" /></span>
             <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search notes…"
               onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
               style={{ width:"100%",padding:"10px 14px 10px 36px",borderRadius:10,border:`1.5px solid ${NL}`,background:"#fff",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif",transition:"border-color 0.15s",boxSizing:"border-box" }}
@@ -455,7 +456,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           </div>
           {filteredNotes.length===0 ? (
             <div style={{ textAlign:"center",padding:"60px 0",color:"#B8A06A" }}>
-              <div style={{ fontSize:48,marginBottom:14 }}>📝</div>
+              <div style={{ fontSize:48,marginBottom:14 }}><Icon e="📝" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No notes yet</div>
               <p style={{ fontSize:14,maxWidth:360,margin:"0 auto 20px",lineHeight:1.7 }}>Create your first note or upload any material and let AI turn it into structured study notes.</p>
               <button onClick={()=>newNote()} style={{ background:NC,border:"none",borderRadius:10,padding:"12px 28px",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff",boxShadow:`0 6px 20px ${NC}44` }}>Create First Note →</button>
@@ -471,18 +472,18 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                       <div style={{ fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:800,color:"#1A1814",lineHeight:1.3,flex:1,marginRight:8 }}>{n.title}</div>
                       <div style={{ fontSize:10,color:"#B8A06A",flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
                     </div>
-                    {fld && <div style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}>📁 {fld.name}</div>}
-                    {n.aiGenerated && <div style={{ fontSize:10,fontWeight:700,color:"#4F6EF7",background:"#4F6EF715",borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8,marginLeft:4 }}>🤖 AI Generated</div>}
+                    {fld && <div style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}12`,borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8 }}><Icon e="📁" /> {fld.name}</div>}
+                    {n.aiGenerated && <div style={{ fontSize:10,fontWeight:700,color:"#4F6EF7",background:"#4F6EF715",borderRadius:10,padding:"2px 8px",display:"inline-block",marginBottom:8,marginLeft:4 }}><Icon e="🤖" /> AI Generated</div>}
                     <div style={{ fontSize:12,color:"#8C7A4A",lineHeight:1.55,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical" }}>
                       {n.content?.replace(/[#*_]/g,"").slice(0,160)}{(n.content?.length||0)>160?"…":""}
                     </div>
                     <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10 }}>
                       <span style={{ fontSize:10,color:"#C8B88A" }}>{n.wordCount} words</span>
-                      <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
+                      <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! ");setTimeout(()=>setNotesMsg(""),3000);}}
                         style={{ fontSize:10,fontWeight:700,color:NC,background:`${NC}10`,border:`1px solid ${NC}30`,borderRadius:10,padding:"3px 10px",cursor:"pointer",transition:"all 0.15s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
                         onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
-                        🎓 Turn into Course
+                        <Icon e="🎓" /> Turn into Course
                       </button>
                     </div>
                   </div>
@@ -508,7 +509,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 onMouseEnter={e=>{if(filterFolder!=="all")e.currentTarget.style.background=`${NC}08`;}}
                 onMouseLeave={e=>{if(filterFolder!=="all")e.currentTarget.style.background="transparent";}}>
                 <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-                  <span style={{ fontSize:15 }}>📝</span>
+                  <span style={{ fontSize:15 }}><Icon e="📝" /></span>
                   <span style={{ fontSize:13, fontWeight:filterFolder==="all"?700:500, color:filterFolder==="all"?NC:"#3A3020" }}>All Notes</span>
                 </div>
                 <span style={{ fontSize:11, color:"#B8A06A", background:`${NC}10`, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{notes.length}</span>
@@ -520,7 +521,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 onMouseEnter={e=>{if(filterFolder!=="__ai__")e.currentTarget.style.background=`${NC}08`;}}
                 onMouseLeave={e=>{if(filterFolder!=="__ai__")e.currentTarget.style.background="transparent";}}>
                 <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-                  <span style={{ fontSize:15 }}>🤖</span>
+                  <span style={{ fontSize:15 }}><Icon e="🤖" /></span>
                   <span style={{ fontSize:13, fontWeight:filterFolder==="__ai__"?700:500, color:filterFolder==="__ai__"?NC:"#3A3020" }}>AI Generated</span>
                 </div>
                 <span style={{ fontSize:11, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{notes.filter(n=>n.aiGenerated).length}</span>
@@ -538,7 +539,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                         onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=`${NC}08`;}}
                         onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}}>
                         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-                          <span style={{ fontSize:15 }}>📁</span>
+                          <span style={{ fontSize:15 }}><Icon e="📁" /></span>
                           <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?NC:"#3A3020", textAlign:"left", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:120 }}>{f.name}</span>
                         </div>
                         <span style={{ fontSize:11, color:"#B8A06A", background:`${NC}10`, borderRadius:10, padding:"1px 8px", fontWeight:600 }}>{count}</span>
@@ -598,7 +599,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               <div style={{ display:"flex", gap:8 }}>
                 {/* Search */}
                 <div style={{ position:"relative" }}>
-                  <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#B8A06A", pointerEvents:"none" }}>🔍</span>
+                  <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#B8A06A", pointerEvents:"none" }}><Icon e="🔍" /></span>
                   <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search…"
                     onKeyDown={e=>{if(e.key===" ")e.stopPropagation();}}
                     style={{ padding:"8px 12px 8px 32px", borderRadius:9, border:`1.5px solid ${NL}`, background:"#fff", fontSize:13, color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", width:180, transition:"border-color 0.15s" }}
@@ -614,7 +615,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             {filteredNotes.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 0", color:"#B8A06A" }}>
                 <div style={{ fontSize:48, marginBottom:14 }}>
-                  {filterFolder==="__ai__" ? "🤖" : "📝"}
+                  {filterFolder==="__ai__" ? <Icon e="🤖" /> : <Icon e="📝" />}
                 </div>
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:800, color:"#5A4A2A", marginBottom:8 }}>
                   {filterFolder==="__ai__" ? "No AI notes yet" : "No notes here"}
@@ -624,7 +625,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 </p>
                 <button onClick={filterFolder==="__ai__" ? ()=>setView("upload") : ()=>newNote()}
                   style={{ background:NC, border:"none", borderRadius:10, padding:"11px 24px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#fff" }}>
-                  {filterFolder==="__ai__" ? "🤖 AI Upload" : "+ New Note"}
+                  {filterFolder==="__ai__" ? "AI Upload" : "+ New Note"}
                 </button>
               </div>
             ) : (
@@ -639,8 +640,8 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                         <div style={{ fontSize:10, color:"#B8A06A", flexShrink:0 }}>{new Date(n.updatedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</div>
                       </div>
                       <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:8 }}>
-                        {fld && <span style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}12`, borderRadius:10, padding:"2px 8px" }}>📁 {fld.name}</span>}
-                        {n.aiGenerated && <span style={{ fontSize:10, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 8px" }}>🤖 AI</span>}
+                        {fld && <span style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}12`, borderRadius:10, padding:"2px 8px" }}><Icon e="📁" /> {fld.name}</span>}
+                        {n.aiGenerated && <span style={{ fontSize:10, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 8px" }}><Icon e="🤖" /> AI</span>}
                       </div>
                       <div style={{ fontSize:12, color:"#8C7A4A", lineHeight:1.55, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical" }}>
                         {n.content?.replace(/[#*_\-]/g,"").slice(0,160)}{(n.content?.length||0)>160?"…":""}
@@ -650,11 +651,11 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                         <div style={{ display:"flex", gap:6 }}>
                           <button onClick={e=>{e.stopPropagation();openEditor(n);}}
                             style={{ fontSize:10, fontWeight:700, color:"#8C7A4A", background:`${NL}22`, border:"none", borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
-                            ✏️ Edit
+                            <Icon e="✏️" /> Edit
                           </button>
-                          <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! 🎓"); setTimeout(()=>setNotesMsg(""),3000);}}
+                          <button onClick={e=>{e.stopPropagation();setNotesMsg("Turn into Course coming soon! "); setTimeout(()=>setNotesMsg(""),3000);}}
                             style={{ fontSize:10, fontWeight:700, color:NC, background:`${NC}10`, border:`1px solid ${NC}30`, borderRadius:8, padding:"3px 10px", cursor:"pointer" }}>
-                            🎓 Course
+                            <Icon e="🎓" /> Course
                           </button>
                         </div>
                       </div>
@@ -673,10 +674,10 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           <button onClick={()=>setView("home")} style={{ background:"none",border:`1px solid ${NL}`,borderRadius:7,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C7A4A",marginBottom:24,transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>← Back</button>
-          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}>🤖 AI Note Builder</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:"#1A1814",marginBottom:6 }}><Icon e="🤖" /> AI Note Builder</h2>
           <p style={{ fontSize:14,color:"#8C7A4A",lineHeight:1.7,marginBottom:24,maxWidth:520 }}>Give AI your content in any format — file, text, YouTube, or website. It reads everything and builds comprehensive study notes instantly.</p>
           <div style={{ display:"flex",gap:4,marginBottom:20,background:"#F5F3EC",borderRadius:10,padding:4 }}>
-            {[["file","📄 File"],["paste","📋 Paste"],["youtube","▶ YouTube"],["website","🌐 Website"]].map(([t,label])=>(
+            {[["file","File"],["paste","Paste"],["youtube","▶ YouTube"],["website","Website"]].map(([t,label])=>(
               <button key={t} onClick={()=>setUploadTab(t)}
                 style={{ flex:1,padding:"8px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:uploadTab===t?"#fff":"transparent",color:uploadTab===t?ND:"#8C7A4A",transition:"all 0.18s",boxShadow:uploadTab===t?"0 1px 6px rgba(0,0,0,0.08)":"none" }}>
                 {label}
@@ -690,10 +691,10 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.background=`${NC}08`;}}
               onMouseLeave={e=>{if(!isDragging){e.currentTarget.style.borderColor=NL;e.currentTarget.style.background=`${NC}04`;}}}>
               <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.jpg,.jpeg,.png,.webp" style={{ display:"none" }} onChange={handleFileDrop} />
-              <div style={{ fontSize:52,marginBottom:14 }}>📄</div>
+              <div style={{ fontSize:52,marginBottom:14 }}><Icon e="📄" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#1A1814",marginBottom:8 }}>Drop your file here</div>
               <p style={{ fontSize:13,color:"#8C7A4A",lineHeight:1.7,marginBottom:14 }}>PDF · Images · Text · Markdown</p>
-              <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:NC,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}>📎 Choose File</div>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:NC,borderRadius:8,padding:"9px 22px",fontSize:13,fontWeight:700,color:"#fff" }}><Icon e="📎" /> Choose File</div>
             </div>
           )}
           {uploadTab==="paste" && (
@@ -719,7 +720,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           {uploadTab==="website" && (
             <div style={{ marginBottom:16 }}>
               <div style={{ background:"#fff",border:`1.5px solid ${NL}`,borderRadius:12,padding:"24px",marginBottom:12 }}>
-                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}>🌐 Paste a website or article URL</div>
+                <div style={{ fontSize:13,fontWeight:700,color:"#5A4A2A",marginBottom:12 }}><Icon e="🌐" /> Paste a website or article URL</div>
                 <div style={{ display:"flex",gap:10 }}>
                   <input value={uploadUrl} onChange={e=>setUploadUrl(e.target.value)} onKeyDown={e=>{if(e.key===" ")e.stopPropagation();if(e.key==="Enter"&&uploadUrl.trim())fetchWebContent(uploadUrl);}} placeholder="https://example.com/article"
                     style={{ flex:1,padding:"10px 14px",borderRadius:9,border:`1.5px solid ${NL}`,background:"#F7F6F2",fontSize:13,color:"#1A1814",outline:"none",fontFamily:"'DM Sans',sans-serif" }}
@@ -749,7 +750,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           <div style={{ background:`${NC}08`,border:`1px solid ${NL}`,borderRadius:12,padding:"14px 18px",marginBottom:20 }}>
             <div style={{ fontSize:12,fontWeight:700,color:ND,marginBottom:8 }}>✦ AI generates automatically:</div>
             <div style={{ display:"flex",flexWrap:"wrap",gap:7 }}>
-              {["📋 Overview","🎯 Objectives","💡 Key Concepts","📖 Key Terms","📝 Full Notes","📌 Summary","🧠 Study Tips"].map(item=>(
+              {["Overview","Objectives","Key Concepts","Key Terms","Full Notes","Summary","Study Tips"].map(item=>(
                 <span key={item} style={{ fontSize:11,fontWeight:600,color:ND,background:"#fff",border:`1px solid ${NL}`,borderRadius:20,padding:"3px 10px" }}>{item}</span>
               ))}
             </div>
@@ -765,7 +766,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           )}
           <button onClick={()=>generateSmartNotes(uploadText,null,uploadTitle,uploadObjectives)} disabled={!uploadText.trim()||uploadLoading}
             style={{ width:"100%",padding:"15px 0",borderRadius:11,border:"none",background:uploadText.trim()&&!uploadLoading?`linear-gradient(135deg,#4F6EF7,#7B5EE8)`:"#E8E5E0",color:uploadText.trim()&&!uploadLoading?"#fff":"#A8A59E",fontSize:15,fontWeight:800,cursor:uploadText.trim()&&!uploadLoading?"pointer":"default",transition:"all 0.2s",boxShadow:uploadText.trim()&&!uploadLoading?"0 8px 28px #4F6EF744":"none",fontFamily:"'DM Sans',sans-serif" }}>
-            {uploadLoading?"Building your notes…":"🤖 Build My Notes with AI →"}
+            {uploadLoading?"Building your notes…":"Build My Notes with AI →"}
           </button>
         </div>
       )}
@@ -783,7 +784,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 style={{ padding:"8px 18px", borderRadius:8, border:`1.5px solid ${NL}`, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#8C7A4A", transition:"all 0.15s" }}
                 onMouseEnter={e=>{e.currentTarget.style.borderColor=NC;e.currentTarget.style.color=NC;}}
                 onMouseLeave={e=>{e.currentTarget.style.borderColor=NL;e.currentTarget.style.color="#8C7A4A";}}>
-                ✏️ Edit
+                <Icon e="✏️" /> Edit
               </button>
               {launchApp && <>
                 <button id="note-fc-btn" onClick={async()=>{
@@ -823,7 +824,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                 </button>
               </>}
               {!confirmDeleteNote
-              ? <button onClick={()=>setConfirmDeleteNote(true)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}>🗑</button>
+              ? <button onClick={()=>setConfirmDeleteNote(true)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #FECACA", background:"transparent", color:"#E85D3F", fontSize:13, fontWeight:600, cursor:"pointer" }}><Icon e="🗑" /></button>
               : <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                   <span style={{ fontSize:11, color:"#E85D3F", fontWeight:600 }}>Delete?</span>
                   <button onClick={()=>{deleteNote(activeNote.id);setConfirmDeleteNote(false);}} style={{ padding:"5px 10px", borderRadius:6, border:"none", background:"#E85D3F", fontSize:11, fontWeight:700, cursor:"pointer", color:"#fff" }}>Yes</button>
@@ -847,7 +848,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             {activeNote.aiGenerated && (
               <>
                 <span style={{ width:4, height:4, borderRadius:"50%", background:NL, display:"inline-block" }} />
-                <span style={{ fontSize:11, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 10px" }}>🤖 AI Generated</span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#4F6EF7", background:"#4F6EF715", borderRadius:10, padding:"2px 10px" }}><Icon e="🤖" /> AI Generated</span>
               </>
             )}
           </div>
@@ -985,13 +986,13 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               style={{ padding:"12px 28px", borderRadius:10, border:"none", background:NC, color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 16px ${NC}44`, transition:"all 0.18s" }}
               onMouseEnter={e=>e.currentTarget.style.opacity="0.88"}
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-              ✏️ Edit This Note
+              <Icon e="✏️" /> Edit This Note
             </button>
-            <button onClick={()=>{setNotesMsg("Turn into Course coming soon! 🎓");setTimeout(()=>setNotesMsg(""),3000);}}
+            <button onClick={()=>{setNotesMsg("Turn into Course coming soon! ");setTimeout(()=>setNotesMsg(""),3000);}}
               style={{ padding:"12px 24px", borderRadius:10, border:`1.5px solid ${NC}30`, background:`${NC}10`, color:NC, fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.18s" }}
               onMouseEnter={e=>{e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";}}
               onMouseLeave={e=>{e.currentTarget.style.background=`${NC}10`;e.currentTarget.style.color=NC;}}>
-              🎓 Turn into Course
+              <Icon e="🎓" /> Turn into Course
             </button>
           </div>
         </div>
@@ -1079,14 +1080,14 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             {/* Folder selector */}
             <select value={folder} onChange={e=>setFolder(e.target.value)}
               style={{ padding:"4px 8px", borderRadius:6, border:"1px solid #C8C0A0", background:"#fff", fontSize:11, fontWeight:600, color:"#5A4A2A", cursor:"pointer", outline:"none", fontFamily:"'DM Sans',sans-serif" }}>
-              <option value="">📁 No Folder</option>
+              <option value="">No Folder</option>
               {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
 
             {/* Record */}
             <button onClick={toggleRecording} className="doc-toolbar-btn"
               style={{ padding:"4px 10px", borderRadius:5, border:`1px solid ${isRecording?"#E85D3F":"#C8C0A0"}`, background:isRecording?"#FEF2F2":"transparent", fontSize:11, fontWeight:700, cursor:"pointer", color:isRecording?"#E85D3F":"#5A4A2A", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", transition:"all 0.18s" }}>
-              {isRecording ? <><span style={{ width:7,height:7,borderRadius:"50%",background:"#E85D3F",animation:"notes-pulse 1s infinite",display:"inline-block" }} />Recording…</> : "🎙 Record"}
+              {isRecording ? <><span style={{ width:7,height:7,borderRadius:"50%",background:"#E85D3F",animation:"notes-pulse 1s infinite",display:"inline-block" }} />Recording…</> : "Record"}
             </button>
 
             {/* Word count */}
@@ -1112,7 +1113,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
               {/* Meta row */}
               <div style={{ fontSize:11, color:"#B8A06A", marginBottom:32, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
                 <span>{new Date().toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</span>
-                {folder && <><span style={{ opacity:0.5 }}>·</span><span>📁 {folders.find(f=>f.id===folder)?.name}</span></>}
+                {folder && <><span style={{ opacity:0.5 }}>·</span><span><Icon e="📁" /> {folders.find(f=>f.id===folder)?.name}</span></>}
               </div>
 
               {/* Divider under title */}
@@ -1138,7 +1139,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           {/* ── BOTTOM AI STRIP ── */}
           <div style={{ background:"#F5F2EA", borderTop:"1px solid #D8D0B8", padding:"8px 20px", display:"flex", alignItems:"center", gap:6, flexShrink:0, overflowX:"auto" }}>
             <span style={{ fontSize:11, fontWeight:700, color:"#8C7A4A", marginRight:4, whiteSpace:"nowrap" }}>AI:</span>
-            {[["summarize","✦ Summarize"],["improve","✨ Improve"],["flashcards","📇 Flashcards"],["quiz","❓ Quiz"],["objectives","🎯 Objectives"],["explain","💬 Explain"]].map(([mode,label])=>(
+            {[["summarize","✦ Summarize"],["improve","Improve"],["flashcards","Flashcards"],["quiz","Quiz"],["objectives","Objectives"],["explain","Explain"]].map(([mode,label])=>(
               <button key={mode} onClick={()=>runAI(mode)} disabled={!content.trim()||aiLoading}
                 style={{ padding:"5px 12px", borderRadius:6, border:`1px solid #C8C0A0`, background:"#fff", fontSize:11, fontWeight:700, cursor:content.trim()&&!aiLoading?"pointer":"default", color:content.trim()?ND:"#C8B890", whiteSpace:"nowrap", transition:"all 0.15s" }}
                 onMouseEnter={e=>{if(content.trim()&&!aiLoading){e.currentTarget.style.background=NC;e.currentTarget.style.color="#fff";e.currentTarget.style.borderColor=NC;}}}
@@ -1148,12 +1149,12 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             ))}
             <button onClick={()=>setShowChat(c=>!c)}
               style={{ padding:"5px 12px", borderRadius:6, border:`1px solid ${showChat?NC:"#C8C0A0"}`, background:showChat?`${NC}15`:"#fff", fontSize:11, fontWeight:700, cursor:"pointer", color:showChat?NC:ND, whiteSpace:"nowrap", marginLeft:4, transition:"all 0.15s" }}>
-              💬 Chat
+              <Icon e="💬" /> Chat
             </button>
             {activeNote && (
               <button onClick={()=>setConfirmDeleteNote(true)}
                 style={{ marginLeft:"auto", padding:"5px 12px", borderRadius:6, border:"1px solid #FECACA", background:"transparent", fontSize:11, fontWeight:600, cursor:"pointer", color:"#E85D3F", whiteSpace:"nowrap" }}>
-                🗑 Delete
+                <Icon e="🗑" /> Delete
               </button>
             )}
           </div>
@@ -1163,7 +1164,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
             <div style={{ position:"fixed", bottom:52, right:20, width:380, maxHeight:"60vh", background:"#fff", border:`1.5px solid ${NC}`, borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.15)", zIndex:200, display:"flex", flexDirection:"column", animation:"notes-fade 0.25s ease both" }}>
               <div style={{ padding:"12px 16px", borderBottom:`1px solid ${NL}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
                 <div style={{ fontSize:12, fontWeight:700, color:NC, textTransform:"uppercase", letterSpacing:1 }}>
-                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"✨ Improved":aiMode==="flashcards"?"📇 Flashcards":aiMode==="quiz"?"❓ Quiz":aiMode==="objectives"?"🎯 Objectives":"💬 Explanation"}
+                  {aiMode==="summarize"?"✦ Summary":aiMode==="improve"?"Improved":aiMode==="flashcards"?"Flashcards":aiMode==="quiz"?"Quiz":aiMode==="objectives"?"Objectives":"Explanation"}
                 </div>
                 <button onClick={()=>setShowAiPanel(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:14,lineHeight:1 }}>✕</button>
               </div>
@@ -1191,7 +1192,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           {showChat && (
             <div style={{ position:"fixed", bottom:52, right:20, width:360, maxHeight:"55vh", background:"#fff", border:`1.5px solid ${NC}`, borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.15)", zIndex:200, display:"flex", flexDirection:"column", animation:"notes-fade 0.25s ease both" }}>
               <div style={{ padding:"12px 16px", borderBottom:`1px solid ${NL}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-                <span style={{ fontSize:13, fontWeight:700, color:ND }}>💬 Chat with Notes</span>
+                <span style={{ fontSize:13, fontWeight:700, color:ND }}><Icon e="💬" /> Chat with Notes</span>
                 <button onClick={()=>setShowChat(false)} style={{ background:"none",border:"none",color:"#B8A06A",cursor:"pointer",fontSize:14 }}>✕</button>
               </div>
               {chatMessages.length===0 && (
@@ -1247,7 +1248,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
           )}
           {folders.length===0&&!addingFolder ? (
             <div style={{ textAlign:"center",padding:"50px 0",color:"#B8A06A" }}>
-              <div style={{ fontSize:40,marginBottom:12 }}>📁</div>
+              <div style={{ fontSize:40,marginBottom:12 }}><Icon e="📁" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:"#5A4A2A",marginBottom:8 }}>No folders yet</div>
               <p style={{ fontSize:14,lineHeight:1.7 }}>Create folders to organize notes by subject, class, or project.</p>
             </div>
@@ -1260,7 +1261,7 @@ function NotesApp({ onBack, user, openAuth, launchApp }) {
                     style={{ background:"#fff",border:`1px solid ${NL}88`,borderTop:`3px solid ${NC}`,borderRadius:12,padding:"18px 18px",cursor:"pointer",transition:"all 0.2s",position:"relative" }}
                     onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 24px ${NC}18`;}}
                     onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
-                    <div style={{ fontSize:28,marginBottom:8 }}>📁</div>
+                    <div style={{ fontSize:28,marginBottom:8 }}><Icon e="📁" /></div>
                     <div style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:800,color:"#1A1814",marginBottom:4 }}>{f.name}</div>
                     <div style={{ fontSize:12,color:"#8C7A4A" }}>{count} {count===1?"note":"notes"}</div>
                     <button onClick={e=>{e.stopPropagation();setConfirmDeleteFolder(f.id);}}

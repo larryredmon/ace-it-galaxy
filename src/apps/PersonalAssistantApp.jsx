@@ -3,6 +3,7 @@ import { createAvatar } from "@dicebear/core";
 import * as toonHead from "@dicebear/toon-head";
 import { useState, useRef, useEffect } from "react";
 import { AceHead, PA_COLOR, PA_DARK, PA_GLOW, aceRemember, aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 const AV_SKIN_COLORS = [
   { id:"f1c3a5", label:"Light" },
@@ -152,13 +153,13 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
   const [profileOpen, setProfileOpen] = useState(true);
 
   const navItems = [
-    { icon: "⌂",  label: "Home",          v: "home"     },
-    { icon: "💬", label: "Chat",           v: "chat"     },
-    { icon: "📅", label: "Study Planner",  v: "planner"  },
-    { icon: "🎯", label: "Goals",          v: "goals"    },
-    { icon: "📊", label: "My Progress",    v: "progress" },
-    { icon: "🧑", label: "My Avatar",      v: "avatar"   },
-    { icon: "⚙",  label: "Preferences",   v: "prefs"    },
+    { icon: <Icon e="⌂" />,  label: "Home",          v: "home"     },
+    { icon: <Icon e="💬" />, label: "Chat",           v: "chat"     },
+    { icon: <Icon e="📅" />, label: "Study Planner",  v: "planner"  },
+    { icon: <Icon e="🎯" />, label: "Goals",          v: "goals"    },
+    { icon: <Icon e="📊" />, label: "My Progress",    v: "progress" },
+    { icon: <Icon e="🧑" />, label: "My Avatar",      v: "avatar"   },
+    { icon: <Icon e="⚙" />,  label: "Preferences",   v: "prefs"    },
   ];
 
   const navItem = (icon, label, v) => {
@@ -231,7 +232,7 @@ function PASidebar({ isOpen, onClose, view, setView, onBack, user, openAuth, onL
                 ) : (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}>👤</div>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}><Icon e="👤" /></div>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814" }}>Not signed in</div>
                         <div style={{ fontSize: 11, color: "#8C8880" }}>Sign in to save your chats</div>
@@ -550,7 +551,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: PA_GLOW, textTransform: "uppercase" }}>Ace · Your study owl</span>
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 900, color: "#1A1814", lineHeight: 1.1, marginBottom: 12, letterSpacing: -1 }}>
-          Hey {user?.name?.split(" ")[0] || "there"} 👋<br />
+          Hey {user?.name?.split(" ")[0] || "there"} <Icon e="👋" /><br />
           <span style={{ color: PA_GLOW }}>What are we</span> working on today?
         </h1>
         <p style={{ fontSize: 15, color: "#6F6B63", lineHeight: 1.7, maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
@@ -579,9 +580,9 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       {/* Dashboard cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
         {[
-          { icon: "💬", title: "Start Chatting",    desc: "Ask me anything — concepts, study help, or just a question", action: () => setView("chat"),    color: PA_COLOR },
-          { icon: "📅", title: "View Study Plan",   desc: "Your personalized weekly schedule and daily tasks",           action: () => setView("planner"), color: "#F0D080" },
-          { icon: "🎯", title: "Track Your Goals",  desc: `${goals.filter(g => !g.done).length} active goals in progress`, action: () => setView("goals"), color: "#A8E6CF" },
+          { icon: <Icon e="💬" />, title: "Start Chatting",    desc: "Ask me anything — concepts, study help, or just a question", action: () => setView("chat"),    color: PA_COLOR },
+          { icon: <Icon e="📅" />, title: "View Study Plan",   desc: "Your personalized weekly schedule and daily tasks",           action: () => setView("planner"), color: "#F0D080" },
+          { icon: <Icon e="🎯" />, title: "Track Your Goals",  desc: `${goals.filter(g => !g.done).length} active goals in progress`, action: () => setView("goals"), color: "#A8E6CF" },
         ].map(({ icon, title, desc, action, color }) => (
           <div key={title} onClick={action} style={{ background: "#fff", border: `1.5px solid #ECEAE4`, borderTop: `3px solid ${color}`, borderRadius: 14, padding: "22px 20px", cursor: "pointer", transition: "all 0.2s" }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(72,152,232,0.1)"; }}
@@ -638,7 +639,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
               <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search chats…"
                 style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1.5px solid #D8ECFF", borderRadius: 8, fontSize: 12, outline: "none", background: "#fff", fontFamily: "'DM Sans',sans-serif", color: "#1A1814", boxSizing: "border-box", transition: "border-color 0.15s" }}
                 onFocus={e => e.target.style.borderColor = PA_GLOW} onBlur={e => e.target.style.borderColor = "#D8ECFF"} />
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#A8A59E" }}>🔍</span>
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#A8A59E" }}><Icon e="🔍" /></span>
               {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#A8A59E", lineHeight: 1 }}>✕</button>}
             </div>
           </div>
@@ -671,9 +672,9 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
                             {/* Action buttons — revealed on hover */}
                             <div className="pa-convo-actions" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, opacity: isActive ? 1 : 0, transition: "opacity 0.15s" }}>
                               <button onClick={e => { e.stopPropagation(); setRenamingId(c.id); setRenameVal(c.title); }}
-                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(72,152,232,0.1)", cursor: "pointer", fontSize: 11, color: PA_GLOW, display: "flex", alignItems: "center", justifyContent: "center" }} title="Rename">✏</button>
+                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(72,152,232,0.1)", cursor: "pointer", fontSize: 11, color: PA_GLOW, display: "flex", alignItems: "center", justifyContent: "center" }} title="Rename"><Icon e="✏" /></button>
                               <button onClick={e => { e.stopPropagation(); if (conversations.length > 1) deleteConvo(c.id); }}
-                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(232,93,63,0.08)", cursor: conversations.length > 1 ? "pointer" : "default", fontSize: 11, color: conversations.length > 1 ? "#E85D3F" : "#D8ECFF", display: "flex", alignItems: "center", justifyContent: "center" }} title="Delete">🗑</button>
+                                style={{ width: 22, height: 22, borderRadius: 5, border: "none", background: "rgba(232,93,63,0.08)", cursor: conversations.length > 1 ? "pointer" : "default", fontSize: 11, color: conversations.length > 1 ? "#E85D3F" : "#D8ECFF", display: "flex", alignItems: "center", justifyContent: "center" }} title="Delete"><Icon e="🗑" /></button>
                             </div>
                           </>
                         )}
@@ -685,7 +686,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
             })}
             {filtered.length === 0 && (
               <div style={{ textAlign: "center", padding: "40px 16px", color: "#A8A59E" }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+                <div style={{ fontSize: 28, marginBottom: 8 }}><Icon e="🔍" /></div>
                 <div style={{ fontSize: 12 }}>No chats match "{searchQuery}"</div>
               </div>
             )}
@@ -877,7 +878,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         })}
       </div>
       <div style={{ marginTop: 28, background: `${PA_COLOR}14`, border: `1px solid ${PA_COLOR}44`, borderRadius: 14, padding: "18px 22px", display: "flex", alignItems: "center", gap: 14 }}>
-        <span style={{ fontSize: 22 }}>💡</span>
+        <span style={{ fontSize: 22 }}><Icon e="💡" /></span>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1814", marginBottom: 3 }}>Want a custom plan?</div>
           <div style={{ fontSize: 12, color: "#6F6B63" }}>Ask your assistant to build a study plan based on your goals or exam date.</div>
@@ -922,7 +923,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
             const items = goals.filter(g => g.priority === priority);
             if (!items.length) return null;
             const pColor = priority==="high"?"#E85D3F":priority==="medium"?PA_GLOW:"#2BAE7E";
-            const pLabel = priority==="high"?"🔴 High":priority==="medium"?"🔵 Medium":"🟢 Low";
+            const pLabel = priority==="high"?"High":priority==="medium"?"Medium":"Low";
             return (
               <div key={priority}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: pColor, marginBottom: 8, paddingLeft: 4 }}>{pLabel} Priority</div>
@@ -945,7 +946,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
               </div>
             );
           })}
-          {goals.length === 0 && <div style={{ textAlign:"center", padding:"60px 0", color:"#A8A59E" }}><div style={{ fontSize:40, marginBottom:12 }}>🎯</div><div style={{ fontSize:14 }}>Add your first goal above</div></div>}
+          {goals.length === 0 && <div style={{ textAlign:"center", padding:"60px 0", color:"#A8A59E" }}><div style={{ fontSize:40, marginBottom:12 }}><Icon e="🎯" /></div><div style={{ fontSize:14 }}>Add your first goal above</div></div>}
         </div>
       </div>
     );
@@ -961,10 +962,10 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       {/* Stats */}
       <div className="pa-progress-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 }}>
         {[
-          { val: messages.length, label: "AI Conversations", icon: "💬" },
-          { val: `${goals.filter(g => g.done).length}/${goals.length}`, label: "Goals Completed", icon: "🎯" },
-          { val: planDays.reduce((a, d) => a + d.done.filter(Boolean).length, 0), label: "Tasks Done", icon: "✅" },
-          { val: "7🔥", label: "Day Streak", icon: "🔥" },
+          { val: messages.length, label: "AI Conversations", icon: <Icon e="💬" /> },
+          { val: `${goals.filter(g => g.done).length}/${goals.length}`, label: "Goals Completed", icon: <Icon e="🎯" /> },
+          { val: planDays.reduce((a, d) => a + d.done.filter(Boolean).length, 0), label: "Tasks Done", icon: <Icon e="✅" /> },
+          { val: "7", label: "Day Streak", icon: <Icon e="🔥" /> },
         ].map(({ val, label, icon }) => (
           <div key={label} style={{ background: "#fff", border: "1.5px solid #ECEAE4", borderRadius: 14, padding: "20px 18px", textAlign: "center" }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
@@ -1140,7 +1141,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         {showFloating && (
           <div style={{ padding:"14px 22px", background:"#F7F6F2" }}>
             <div style={{ fontSize:11, color:"#6F6B63", lineHeight:1.6 }}>
-              💡 <strong>Tip:</strong> You can drag the button anywhere on screen. Click it to open a quick chat panel. You can also hide it from inside any app's sidebar.
+              <Icon e="💡" /> <strong>Tip:</strong> You can drag the button anywhere on screen. Click it to open a quick chat panel. You can also hide it from inside any app's sidebar.
             </div>
           </div>
         )}
@@ -1150,7 +1151,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
       <div onClick={() => setView("avatar")} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"20px 22px", display:"flex", alignItems:"center", gap:14, cursor:"pointer", marginBottom:16, transition:"all 0.2s" }}
         onMouseEnter={e=>e.currentTarget.style.borderColor=PA_GLOW} onMouseLeave={e=>e.currentTarget.style.borderColor="#ECEAE4"}>
         <div style={{ width:44, height:44, borderRadius:"50%", border:`2px solid ${PA_COLOR}`, overflow:"hidden", flexShrink:0, background:"#F7F6F2", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          {avatar?.skinColor ? <AvatarHead avatar={avatar} size={44}/> : <span style={{fontSize:22}}>🧑</span>}
+          {avatar?.skinColor ? <AvatarHead avatar={avatar} size={44}/> : <span style={{fontSize:22}}><Icon e="🧑" /></span>}
         </div>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:14, fontWeight:700, color:"#1A1814", marginBottom:3 }}>{avatar?.skinColor ? "Edit My Avatar" : "Create My Avatar"}</div>
@@ -1220,7 +1221,7 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "1px solid #ECEAE4", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "#6F6B63", fontSize: 16, transition: "all 0.15s", lineHeight: 1 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = PA_GLOW; e.currentTarget.style.color = PA_GLOW; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#6F6B63"; }}>☰</button>
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ECEAE4"; e.currentTarget.style.color = "#6F6B63"; }}><Icon e="☰" /></button>
           <button onClick={onBack} style={{background:"none",border:"1px solid #D8ECFF",borderRadius:7,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#8C8880",whiteSpace:"nowrap"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=PA_GLOW;e.currentTarget.style.color=PA_GLOW;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8ECFF";e.currentTarget.style.color="#8C8880";}}>← Galaxy</button>
           <div style={{ width: 1, height: 20, background: "#ECEAE4" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -1233,8 +1234,8 @@ function PersonalAssistantApp({ onBack, user, openAuth, onLogout, avatar, setAva
 
         {/* View tabs */}
         <div className="pa-nav-tabs" style={{ display: "flex", background: "#F1EFEA", borderRadius: 9, padding: 3, gap: 2 }}>
-          {[["⌂","home"],["💬","chat"],["📅","planner"],["🎯","goals"],["📊","progress"],["🧑","avatar"],["⚙","prefs"]].map(([icon, v]) => (
-            <button key={v} onClick={() => setView(v)} title={VIEW_TITLES[v]}
+          {[[<Icon e="⌂" />,"home"],[<Icon e="💬" />,"chat"],[<Icon e="📅" />,"planner"],[<Icon e="🎯" />,"goals"],[<Icon e="📊" />,"progress"],[<Icon e="🧑" />,"avatar"],[<Icon e="⚙" />,"prefs"]].map(([icon, v]) => (
+            <button key={v} onClick={() => setView(v)} title={VIEW_TITLES[v]} aria-label={VIEW_TITLES[v]}
               onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
               style={{ padding: "7px 12px", borderRadius: 6, border: "none", fontSize: 14, cursor: "pointer", transition: "all 0.18s", background: view === v ? "#fff" : "transparent", color: view === v ? PA_GLOW : "#8C8880", boxShadow: view === v ? "0 1px 6px rgba(72,152,232,0.15)" : "none" }}>
               {icon}

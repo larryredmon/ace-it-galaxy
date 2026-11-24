@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { FC_DECKS, aiFetch, tpSync } from "../shared.jsx";
 import { auth, appCheckHeader } from "../firebase";
 import { STANDARD_SUBJECTS, normalizeSubject, completeCards, MIN_PUBLIC_CARDS } from "../deckRules.js";
+import { Icon } from "../shared.jsx";
 
 // ── Public decks: talk to /api/decks (signed-in actions send the login token) ──
 async function deckApi(body) {
@@ -57,7 +58,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
   const [decksOpen,   setDecksOpen]   = useState(true);
 
   const navItems = [
-    { icon: "⌂", label: "Home",       v: "home"    },
+    { icon: <Icon e="⌂" />, label: "Home",       v: "home"    },
     { icon: "▦", label: "My Library", v: "library" },
   ];
 
@@ -132,7 +133,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
                       </div>
                     </div>
                     <div style={{ display: "flex", borderTop: "1px solid #ECEAE4", paddingTop: 12, marginBottom: 12 }}>
-                      {[{ val: "7🔥", lbl: "Streak" }, { val: "4", lbl: "Decks" }, { val: "64%", lbl: "Mastery" }].map(({ val, lbl }, i) => (
+                      {[{ val: "7", lbl: "Streak" }, { val: "4", lbl: "Decks" }, { val: "64%", lbl: "Mastery" }].map(({ val, lbl }, i) => (
                         <div key={lbl} style={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid #ECEAE4" : "none" }}>
                           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#1A1814" }}>{val}</div>
                           <div style={{ fontSize: 9, color: "#A8A59E", marginTop: 2, textTransform: "uppercase", letterSpacing: 1 }}>{lbl}</div>
@@ -146,7 +147,7 @@ function FCSidebar({ isOpen, onClose, decks, view, setView, onBack, user, openAu
                 ) : (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}>👤</div>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#ECEAE4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}><Icon e="👤" /></div>
                       <div>
                         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 800, color: "#8C8880" }}>Guest</div>
                         <div style={{ fontSize: 11, color: "#A8A59E", marginTop: 1 }}>Not signed in</div>
@@ -508,7 +509,7 @@ function FlashCardsApp({ onBack, user, openAuth, onLogout, onDeckCreated, launch
 
           {/* Nav links */}
           <div className="fc-nav-links" style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            {[["Home", "home"], ["My Library", "library"], ["🌐 Public Library", "public"]].map(([label, v]) => (
+            {[["Home", "home"], ["My Library", "library"], ["Public Library", "public"]].map(([label, v]) => (
               <span key={v} className="fc-nav-link" onClick={() => setView(v)} style={{ fontSize: 14, fontWeight: 500, color: view === v ? "#1A1814" : "#8C8880", cursor: "pointer", borderBottom: view === v ? "2px solid #1A1814" : "2px solid transparent", paddingBottom: 2, whiteSpace:"nowrap" }}>{label}</span>
             ))}
           </div>
@@ -562,7 +563,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
           <div className="fc-fade-up" style={{ animationDelay: "0s", display: "inline-block", background: "rgba(247,246,242,0.1)", border: "1px solid rgba(247,246,242,0.15)", borderRadius: 20, padding: "4px 14px", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(247,246,242,0.6)", marginBottom: 24 }}>
             Ace It Flash Cards
           </div>
-          {typeof user !== "undefined" && user?.name && <div className="fc-fade-up" style={{ animationDelay:"0.04s", fontSize:14, color:"rgba(247,246,242,0.45)", marginBottom:8 }}>Welcome back, <span style={{ color:"#F7F6F2", fontWeight:600 }}>{user.name.split(" ")[0]}</span> 👋</div>}
+          {typeof user !== "undefined" && user?.name && <div className="fc-fade-up" style={{ animationDelay:"0.04s", fontSize:14, color:"rgba(247,246,242,0.45)", marginBottom:8 }}>Welcome back, <span style={{ color:"#F7F6F2", fontWeight:600 }}>{user.name.split(" ")[0]}</span> <Icon e="👋" /></div>}
           <h1 className="fc-fade-up" style={{ animationDelay: "0.08s", fontFamily: "'Playfair Display', serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 22, color: "#F7F6F2" }}>
             <span style={{ color: "#F5C842" }}>Ace It</span> Flash Cards
           </h1>
@@ -572,7 +573,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
           <div className="fc-fade-up" style={{ animationDelay: "0.24s", display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <button className="fc-btn" onClick={onGoLibrary} style={{ background: "#F5C842", border: "none", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#1A1814", transition: "all 0.2s" }}>Browse My Decks</button>
             <button style={{ background: "transparent", border: "1px solid rgba(247,246,242,0.2)", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "rgba(247,246,242,0.7)" }} onClick={onNewDeck}>Create a Deck</button>
-            <button style={{ background: "transparent", border: "1px solid #F5C84255", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#F5C842" }} onClick={onQuickBuild}>⚡ Quick Build</button>
+            <button style={{ background: "transparent", border: "1px solid #F5C84255", borderRadius: 8, padding: "13px 28px", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#F5C842" }} onClick={onQuickBuild}><Icon e="⚡" /> Quick Build</button>
           </div>
         </div>
       </section>
@@ -582,7 +583,7 @@ function FCHomeView({ decks, onOpenDeck, onStartStudy, onGoLibrary, onNewDeck, o
       {/* Due today CTA */}
       {(()=>{const now=Date.now();const decks=(()=>{try{return JSON.parse(localStorage.getItem("tp_fc_decks")||"[]");}catch{return[];}})();const due=decks.reduce((a,d)=>a+(d.cards||[]).filter(c=>!c.dueDate||new Date(c.dueDate).getTime()<=now).length,0);if(due===0)return null;return(
         <div style={{ background:"#F5C84215", borderBottom:"1px solid #F5C84230", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12 }}>
-          <span style={{ fontSize:20 }}>⏰</span>
+          <span style={{ fontSize:20 }}><Icon e="⏰" /></span>
           <span style={{ fontSize:13, fontWeight:700, color:"#1A1814" }}>You have <span style={{ color:"#C8900A" }}>{due} card{due!==1?"s":""}</span> due for review today</span>
           <a href="#my-library" style={{ background:"#F5C842", border:"none", borderRadius:7, padding:"6px 16px", fontSize:12, fontWeight:700, cursor:"pointer", color:"#1A1814", textDecoration:"none" }}>Study Now →</a>
         </div>
@@ -664,11 +665,11 @@ const FC_TREE = [];
 
 // Folder type display config — add or rename levels here
 const FC_TYPE_META = {
-  year:     { icon: "📅", label: "Year"     },
-  semester: { icon: "📆", label: "Semester" },
-  class:    { icon: "📚", label: "Class"    },
-  chapter:  { icon: "📖", label: "Chapter"  },
-  section:  { icon: "📄", label: "Section"  },
+  year:     { icon: <Icon e="📅" />, label: "Year"     },
+  semester: { icon: <Icon e="📆" />, label: "Semester" },
+  class:    { icon: <Icon e="📚" />, label: "Class"    },
+  chapter:  { icon: <Icon e="📖" />, label: "Chapter"  },
+  section:  { icon: <Icon e="📄" />, label: "Section"  },
 };
 
 const FC_ORG_LEVELS = ["year", "semester", "class", "chapter", "section"];
@@ -1295,7 +1296,7 @@ Rules:
 
           {/* Tabs */}
           <div style={{ display: "flex", background: "#F7F6F2", borderRadius: 9, padding: 3, gap: 2 }}>
-            {[["quickbuild","⚡ Quick Build"], ["cards","📇 Cards"], ["details","✏️ Details"], ["organize","📁 Organize"]].map(([t, label]) => (
+            {[["quickbuild","Quick Build"], ["cards","Cards"], ["details","Details"], ["organize","Organize"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={tabStyle(t)}>{label}</button>
             ))}
           </div>
@@ -1333,7 +1334,7 @@ Rules:
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#FFF8E8", border: "1px solid #F5C84244", borderRadius: 20, padding: "4px 14px", marginBottom: 14 }}>
-                <span style={{ fontSize: 11 }}>⚡</span>
+                <span style={{ fontSize: 11 }}><Icon e="⚡" /></span>
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#D4A830", textTransform: "uppercase" }}>Quick Build Mode</span>
               </div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: "#1A1814", marginBottom: 6 }}>Paste Text → Instant Cards</h3>
@@ -1343,8 +1344,8 @@ Rules:
             {/* MODE SELECTOR */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
               {[
-                { id:"ai",     icon:"🤖", title:"Let AI Build",  desc:"Paste your text and AI instantly extracts key concepts and creates accurate flashcards for you." },
-                { id:"manual", icon:"✏️", title:"I'll Choose",  desc:"Paste your text, then highlight exactly which parts become terms and which become definitions." },
+                { id:"ai",     icon:<Icon e="🤖" />, title:"Let AI Build",  desc:"Paste your text and AI instantly extracts key concepts and creates accurate flashcards for you." },
+                { id:"manual", icon:<Icon e="✏️" />, title:"I'll Choose",  desc:"Paste your text, then highlight exactly which parts become terms and which become definitions." },
               ].map(m => (
                 <div key={m.id} onClick={() => { setQbSubMode(m.id); setQbAiStep("input"); setQbDocOpen(false); }}
                   style={{ border: `2px solid ${qbSubMode===m.id ? "#1A1814" : "#ECEAE4"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", background: qbSubMode===m.id ? "#1A1814" : "#fff", transition: "all 0.18s" }}
@@ -1414,7 +1415,7 @@ Rules:
                           style={{ width:80, height:80, borderRadius:8, border:"2px dashed #D8D5CE", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", gap:4, transition:"all 0.15s", flexShrink:0 }}
                           onMouseEnter={e=>{e.currentTarget.style.borderColor="#F5C842";e.currentTarget.style.background="#FFF8E8";}}
                           onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.background="transparent";}}>
-                          <span style={{ fontSize:22 }}>📷</span>
+                          <span style={{ fontSize:22 }}><Icon e="📷" /></span>
                           <span style={{ fontSize:9, fontWeight:700, color:"#A8A59E", textAlign:"center", lineHeight:1.3 }}>Add Photo</span>
                         </div>
                       </div>
@@ -1437,7 +1438,7 @@ Rules:
                     </div>
                     <button onClick={handleQuickBuild} disabled={qbText.trim().length < 20 && qbImages.length === 0}
                       style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:(qbText.trim().length>=20||qbImages.length>0)?"#F5C842":"#ECEAE4", color:(qbText.trim().length>=20||qbImages.length>0)?"#1A1814":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:(qbText.trim().length>=20||qbImages.length>0)?"pointer":"default", transition:"all 0.2s" }}>
-                      🤖 Generate Flashcards with AI {qbImages.length > 0 && `(${qbImages.length} image${qbImages.length>1?"s":""})`}
+                      <Icon e="🤖" /> Generate Flashcards with AI {qbImages.length > 0 && `(${qbImages.length} image${qbImages.length>1?"s":""})`}
                     </button>
                   </>
                 )}
@@ -1473,7 +1474,7 @@ Rules:
                   <div className="qb-fade">
                     {/* Summary banner */}
                     <div style={{ background:"#F0FDF4", border:"1.5px solid #2BAE7E44", borderRadius:14, padding:"16px 20px", marginBottom:16, display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
-                      <div style={{ fontSize:28 }}>✅</div>
+                      <div style={{ fontSize:28 }}><Icon e="✅" /></div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800, color:"#1A1814" }}>
                           {qbAiCards.length} cards generated
@@ -1485,7 +1486,7 @@ Rules:
                       </div>
                       {qbDuplicates.size > 0 && (
                         <div style={{ display:"flex", alignItems:"center", gap:6, background:"#FFF8E8", border:"1px solid #F5C84244", borderRadius:8, padding:"6px 12px" }}>
-                          <span style={{ fontSize:14 }}>⚠️</span>
+                          <span style={{ fontSize:14 }}><Icon e="⚠️" /></span>
                           <span style={{ fontSize:11, fontWeight:700, color:"#D4A830" }}>Duplicates highlighted</span>
                         </div>
                       )}
@@ -1501,7 +1502,7 @@ Rules:
                             style={{ padding:"14px 16px", borderRadius:12, border:"2px solid #ECEAE4", cursor:"pointer", transition:"all 0.18s", background:"#fff" }}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";}}>
-                            <div style={{ fontSize:22, marginBottom:8 }}>📦</div>
+                            <div style={{ fontSize:22, marginBottom:8 }}><Icon e="📦" /></div>
                             <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>One big deck</div>
                             <div style={{ fontSize:11, color:"#8C8880" }}>All {qbAiCards.length} cards in a single deck</div>
                           </div>
@@ -1509,7 +1510,7 @@ Rules:
                             style={{ padding:"14px 16px", borderRadius:12, border:"2px solid #ECEAE4", cursor:"pointer", transition:"all 0.18s", background:"#fff" }}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor="#1A1814";}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";}}>
-                            <div style={{ fontSize:22, marginBottom:8 }}>📂</div>
+                            <div style={{ fontSize:22, marginBottom:8 }}><Icon e="📂" /></div>
                             <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>Organized by topic</div>
                             <div style={{ fontSize:11, color:"#8C8880" }}>{qbTopics.length} subfolders created automatically</div>
                           </div>
@@ -1520,7 +1521,7 @@ Rules:
                             <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                               {qbTopics.map(t => (
                                 <span key={t.topic} style={{ fontSize:11, color:"#1A1814", background:"#fff", border:"1px solid #ECEAE4", borderRadius:20, padding:"3px 10px", fontWeight:600 }}>
-                                  📁 {t.folderName} ({t.cards.length})
+                                  <Icon e="📁" /> {t.folderName} ({t.cards.length})
                                 </span>
                               ))}
                             </div>
@@ -1536,7 +1537,7 @@ Rules:
                         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                           {qbTopics.map(t => (
                             <div key={t.topic} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", background:"#F7F6F2", border:"1px solid #ECEAE4", borderRadius:20 }}>
-                              <span style={{ fontSize:12 }}>📁</span>
+                              <span style={{ fontSize:12 }}><Icon e="📁" /></span>
                               <span style={{ fontSize:12, fontWeight:700, color:"#1A1814" }}>{t.folderName}</span>
                               <span style={{ fontSize:11, color:"#8C8880" }}>({t.cards.length})</span>
                             </div>
@@ -1547,7 +1548,7 @@ Rules:
 
                     {/* Cards list */}
                     <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E", marginBottom:10 }}>
-                      Review Cards {qbDuplicates.size > 0 && <span style={{ color:"#D4A830", marginLeft:8 }}>⚠️ Yellow = possible duplicate</span>}
+                      Review Cards {qbDuplicates.size > 0 && <span style={{ color:"#D4A830", marginLeft:8 }}><Icon e="⚠️" /> Yellow = possible duplicate</span>}
                     </div>
                     <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:18, maxHeight:480, overflowY:"auto" }}>
                       {qbAiCards.map((c, i) => {
@@ -1570,7 +1571,7 @@ Rules:
                               )}
                               <div style={{ fontSize:13, fontWeight:700, color:"#1A1814", marginBottom:3 }}>{c.term}</div>
                               <div style={{ fontSize:12, color:"#6B6860", lineHeight:1.55 }}>{c.definition}</div>
-                              {isDup && <div style={{ fontSize:10, color:"#D4A830", fontWeight:600, marginTop:4 }}>⚠️ Similar concept may already exist in deck</div>}
+                              {isDup && <div style={{ fontSize:10, color:"#D4A830", fontWeight:600, marginTop:4 }}><Icon e="⚠️" /> Similar concept may already exist in deck</div>}
                             </div>
                             <button onClick={() => { setQbAiCards(cs => cs.filter(x => x.id !== c.id)); setQbDuplicates(ds => { const n = new Set(ds); n.delete(c.id); return n; }); }}
                               style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:10, color:"#A8A59E", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
@@ -1591,7 +1592,7 @@ Rules:
                         style={{ padding:"13px", borderRadius:10, border:"2px solid #1A1814", background:"transparent", color:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"all 0.2s" }}
                         onMouseEnter={e=>{e.currentTarget.style.background="#1A1814";e.currentTarget.style.color="#F7F6F2";}}
                         onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#1A1814";}}>
-                        ✏️ Keep + Add More
+                        <Icon e="✏️" /> Keep + Add More
                       </button>
                     </div>
                     <button onClick={() => { setQbAiStep("input"); setQbAiCards([]); setQbDuplicates(new Set()); setQbTopics([]); setQbOrgChoice(null); setQbSource(""); }}
@@ -1616,7 +1617,7 @@ Rules:
                     style={{ width:"100%", minHeight:220, padding:"16px", fontSize:14, color:"#3A3830", fontFamily:"'DM Sans',sans-serif", border:"none", outline:"none", resize:"vertical", lineHeight:1.7, background:"transparent", boxSizing:"border-box" }} />
                 </div>
                 <div style={{ background:"#F7F6F2", borderRadius:12, padding:"14px 16px", marginBottom:18, display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <span style={{ fontSize:18 }}>💡</span>
+                  <span style={{ fontSize:18 }}><Icon e="💡" /></span>
                   <div style={{ fontSize:12, color:"#5A5752", lineHeight:1.6 }}>
                     Once you open the editor, <strong>highlight any text</strong> → a toolbar appears →
                     click <strong style={{color:"#4F6EF7"}}>Set as Term</strong> or <strong style={{color:"#2BAE7E"}}>Set as Definition</strong> →
@@ -1626,7 +1627,7 @@ Rules:
                 <button onClick={() => { if (qbText.trim().length >= 20) { setQbDocOpen(true); setPendingCardNum(1); } }}
                   disabled={qbText.trim().length < 20}
                   style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:qbText.trim().length>=20?"#1A1814":"#ECEAE4", color:qbText.trim().length>=20?"#F7F6F2":"#A8A59E", fontSize:15, fontWeight:800, fontFamily:"'Montserrat',sans-serif", cursor:qbText.trim().length>=20?"pointer":"default", transition:"all 0.2s" }}>
-                  ✏️ Open Editor →
+                  <Icon e="✏️" /> Open Editor →
                 </button>
               </div>
             )}
@@ -1664,17 +1665,17 @@ Rules:
                         <div style={{ position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"6px solid transparent", borderRight:"6px solid transparent", borderTop:"6px solid #1A1814" }} />
                         <button onClick={() => applySelection("term")}
                           style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#4F6EF7", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
-                          📌 Term
+                          <Icon e="📌" /> Term
                         </button>
                         <button onClick={() => applySelection("def")}
                           style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#2BAE7E", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
-                          📖 Definition
+                          <Icon e="📖" /> Definition
                         </button>
                         <button onClick={handleAutoCard} disabled={autoCardLoading}
                           style={{ padding:"6px 12px", borderRadius:7, border:"none", background:"#F5C842", color:"#1A1814", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
                           {autoCardLoading
                             ? <><span style={{ width:10, height:10, border:"2px solid rgba(26,24,20,0.3)", borderTopColor:"#1A1814", borderRadius:"50%", display:"inline-block", animation:"qbSpin 0.7s linear infinite" }} /> Making…</>
-                            : <>✨ Auto Card</>
+                            : <><Icon e="✨" /> Auto Card</>
                           }
                         </button>
                         <button onClick={() => setToolbar(null)}
@@ -1693,7 +1694,7 @@ Rules:
                       <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#A8A59E" }}>Card #{pendingCardNum}</div>
                       {selMode === "auto" && (
                         <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#FFF8E8", border:"1px solid #F5C84255", borderRadius:12, padding:"3px 10px" }}>
-                          <span style={{ fontSize:11 }}>✨</span>
+                          <span style={{ fontSize:11 }}><Icon e="✨" /></span>
                           <span style={{ fontSize:10, fontWeight:700, color:"#D4A830", letterSpacing:1 }}>AI Generated</span>
                         </div>
                       )}
@@ -1702,7 +1703,7 @@ Rules:
                     {/* TERM */}
                     <div style={{ marginBottom:14 }}>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7" }}>📌 Term</div>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7" }}><Icon e="📌" /> Term</div>
                         <div style={{ display:"flex", gap:5 }}>
                           {pendingTermPrev && pendingTermPrev !== pendingTerm && (
                             <button onClick={() => { setPendingTerm(pendingTermPrev); setPendingTermPrev(""); }}
@@ -1734,7 +1735,7 @@ Rules:
                     {/* DEFINITION */}
                     <div style={{ marginBottom:16 }}>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#2BAE7E" }}>📖 Definition</div>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#2BAE7E" }}><Icon e="📖" /> Definition</div>
                         <div style={{ display:"flex", gap:5 }}>
                           {pendingDefPrev && pendingDefPrev !== pendingDef && (
                             <button onClick={() => { setPendingDef(pendingDefPrev); setPendingDefPrev(""); }}
@@ -1895,7 +1896,7 @@ Rules:
                           reader.onload=ev=>updateCard(c.id,"image",ev.target.result);
                           reader.readAsDataURL(file); e.target.value="";
                         }} />
-                        📷 Add Image
+                        <Icon e="📷" /> Add Image
                       </label>
                     </div>
                     <button onClick={addCard} style={{ background: "none", border: "none", fontSize: 12, fontWeight: 600, color: "#4F6EF7", cursor: "pointer", padding: 0 }}>+ Add next card →</button>
@@ -1992,7 +1993,7 @@ Rules:
                   {[false, true].map(pub => (
                     <button key={String(pub)} onClick={() => setIsPublic(pub)} disabled={pub && completeCards(cards) < MIN_PUBLIC_CARDS} aria-disabled={pub && completeCards(cards) < MIN_PUBLIC_CARDS}
                       style={{ flex:1, padding:"12px 16px", borderRadius:10, border:`1.5px solid ${isPublic===pub ? (pub?"#2BAE7E":"#4F6EF7") : "#ECEAE4"}`, background: isPublic===pub ? (pub?"#2BAE7E18":"#4F6EF718") : "#fff", cursor:"pointer", transition:"all 0.18s", textAlign:"left" }}>
-                      <div style={{ fontSize:18, marginBottom:4 }}>{pub ? "🌐" : "🔒"}</div>
+                      <div style={{ fontSize:18, marginBottom:4 }}>{pub ? <Icon e="🌐" /> : <Icon e="🔒" />}</div>
                       <div style={{ fontSize:13, fontWeight:700, color: isPublic===pub ? (pub?"#1A6B4A":"#1A1877") : "#5A5752" }}>{pub ? "Public" : "Private"}</div>
                       <div style={{ fontSize:11, color:"#8C8880", marginTop:2 }}>{pub ? (completeCards(cards) < MIN_PUBLIC_CARDS ? `Needs ${MIN_PUBLIC_CARDS}+ complete cards to share (${completeCards(cards)} so far)` : "Anyone can find and study it (shows your first name)") : "Only you can see this deck"}</div>
                     </button>
@@ -2042,10 +2043,10 @@ Rules:
 
               {/* Structured levels */}
               {[
-                { key: "year",     label: "Year",     emoji: "📅" },
-                { key: "semester", label: "Semester", emoji: "🗓" },
-                { key: "class",    label: "Class",    emoji: "📚" },
-                { key: "chapter",  label: "Chapter",  emoji: "📖" },
+                { key: "year",     label: "Year",     emoji: <Icon e="📅" /> },
+                { key: "semester", label: "Semester", emoji: <Icon e="🗓" /> },
+                { key: "class",    label: "Class",    emoji: <Icon e="📚" /> },
+                { key: "chapter",  label: "Chapter",  emoji: <Icon e="📖" /> },
               ].map(({ key, label, emoji }) => (
                 <div key={key}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -2089,7 +2090,7 @@ Rules:
               {/* Custom / user folders — same section, no divider */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 14 }}>📁</span>
+                  <span style={{ fontSize: 14 }}><Icon e="📁" /></span>
                   <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#5A5752" }}>Custom Folder</span>
                   {selectedCustom && (
                     <button onClick={() => setSelectedCustom("")}
@@ -2101,7 +2102,7 @@ Rules:
                   {userFolders.map(f => (
                     <button key={f.id} onClick={() => { setSelectedCustom(c => c === f.id ? "" : f.id); setOrgPath({ year:"", semester:"", class:"", chapter:"" }); }}
                       style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${selectedCustom === f.id ? "#1A1814" : "#ECEAE4"}`, background: selectedCustom === f.id ? "#1A1814" : "#fff", fontSize: 13, fontWeight: selectedCustom === f.id ? 700 : 400, color: selectedCustom === f.id ? "#F7F6F2" : "#5A5752", cursor: "pointer", transition: "all 0.15s" }}>
-                      📁 {f.name}
+                      <Icon e="📁" /> {f.name}
                     </button>
                   ))}
                   {/* Inline create */}
@@ -2150,7 +2151,7 @@ Rules:
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>Saved To</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                   {selectedCustom ? (
-                    <span style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#3A3830" }}>📁 {userFolders?.find(f => f.id === selectedCustom)?.name || selectedCustom}</span>
+                    <span style={{ background: "#F7F6F2", border: "1px solid #ECEAE4", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#3A3830" }}><Icon e="📁" /> {userFolders?.find(f => f.id === selectedCustom)?.name || selectedCustom}</span>
                   ) : (
                     ["year","semester","class","chapter"].filter(k => orgPath[k]).map((k, i, arr) => (
                       <span key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -2165,7 +2166,7 @@ Rules:
               </div>
             ) : (
               <div style={{ marginTop: 28, padding: "24px", background: "#fff", borderRadius: 10, border: "1.5px dashed #D8D5CE", textAlign: "center" }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
+                <div style={{ fontSize: 28, marginBottom: 8 }}><Icon e="📂" /></div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#8C8880", marginBottom: 4 }}>No folder selected</div>
                 <div style={{ fontSize: 12, color: "#A8A59E" }}>This deck will appear under All Folders. You can move it any time.</div>
               </div>
@@ -2200,7 +2201,7 @@ function FCSharePrompt({ deck, onAnswer }) {
         </label>
         <div style={{ display:"flex", gap:8, justifyContent:"flex-end", flexWrap:"wrap" }}>
           <button onClick={() => onAnswer(false, dontAsk)} style={{ background:"#fff", border:"1px solid #DAD6CE", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:600, color:"#1A1814", cursor:"pointer" }}>Keep private</button>
-          <button onClick={() => onAnswer(true, dontAsk)} style={{ background:"#2BAE7E", border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>🌐 Share publicly</button>
+          <button onClick={() => onAnswer(true, dontAsk)} style={{ background:"#2BAE7E", border:"none", borderRadius:8, padding:"10px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}><Icon e="🌐" /> Share publicly</button>
         </div>
       </div>
     </div>
@@ -2284,7 +2285,7 @@ function FCPublicLibrary({ user, openAuth, onBack, onSave, incoming, clearIncomi
       <div style={{ marginBottom:28 }}>
         <button onClick={onBack} style={{ background:"none", border:"1px solid #ECEAE4", borderRadius:7, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#8C8880", marginBottom:20 }}>← Back</button>
         <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:32, fontWeight:900, letterSpacing:-0.8, marginBottom:8, color:"#1A1814" }}>Public Library</h1>
-        <p style={{ fontSize:14, color:"#6F6B63", lineHeight:1.7 }}>Decks shared by students. Save one to your library to study it — your copy is private. To share your own, open a deck and click 🔒 Private → 🌐 Public.</p>
+        <p style={{ fontSize:14, color:"#6F6B63", lineHeight:1.7 }}>Decks shared by students. Save one to your library to study it — your copy is private. To share your own, open a deck and click <Icon e="🔒" /> Private → <Icon e="🌐" /> Public.</p>
       </div>
 
       {incoming && (
@@ -2320,7 +2321,7 @@ function FCPublicLibrary({ user, openAuth, onBack, onSave, incoming, clearIncomi
             {loadError ? "Couldn't load decks" : (decks.length === 0 ? "No public decks yet" : "No results found")}
           </div>
           <p style={{ fontSize:14, maxWidth:380, margin:"0 auto", lineHeight:1.7 }}>
-            {loadError || (decks.length === 0 ? "Be the first to share one! Open any deck and click 🔒 Private to make it public." : "Try a different search.")}
+            {loadError || (decks.length === 0 ? "Be the first to share one! Open any deck and click Private to make it public." : "Try a different search.")}
           </p>
         </div>
       ) : (
@@ -2436,7 +2437,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
             onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
             <span style={{ fontSize:8, color:isActive?"rgba(247,246,242,0.4)":"#C8C5BE", width:10, flexShrink:0, display:"inline-block", transform:hasKids&&expanded?"rotate(90deg)":"rotate(0)", transition:"transform 0.2s" }}>{hasKids?"▶":" "}</span>
-            <span style={{ fontSize:11 }}>📁</span>
+            <span style={{ fontSize:11 }}><Icon e="📁" /></span>
             <span style={{ fontSize:12, fontWeight:isActive?700:500, color:isActive?"#F7F6F2":"#3A3830", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{folder.name}</span>
             <span style={{ fontSize:10, color:isActive?"rgba(247,246,242,0.35)":"#C8C5BE", marginRight:16 }}>{deckCount}</span>
           </div>
@@ -2503,7 +2504,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", borderRadius:7, cursor:"pointer", background:folderPath.length===0?"#1A1814":"transparent", marginBottom:4, transition:"background 0.15s" }}
             onMouseEnter={e => { if (folderPath.length>0) e.currentTarget.style.background="#F7F6F2"; }}
             onMouseLeave={e => { if (folderPath.length>0) e.currentTarget.style.background="transparent"; }}>
-            <span style={{ fontSize:13 }}>🗂</span>
+            <span style={{ fontSize:13 }}><Icon e="🗂" /></span>
             <span style={{ fontSize:13, fontWeight:700, color:folderPath.length===0?"#F7F6F2":"#1A1814" }}>All Folders</span>
             <span style={{ marginLeft:"auto", fontSize:10, color:folderPath.length===0?"rgba(247,246,242,0.4)":"#C8C5BE" }}>{allDecks.length}</span>
           </div>
@@ -2525,7 +2526,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                 style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:7, cursor:"pointer", background:isActive?"#1A1814":"transparent", transition:"background 0.15s", marginTop:2 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="#F7F6F2"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}>
-                <span style={{ fontSize:13 }}>📂</span>
+                <span style={{ fontSize:13 }}><Icon e="📂" /></span>
                 <span style={{ fontSize:12, fontWeight:isActive?700:400, color:isActive?"#F7F6F2":"#3A3830", flex:1 }}>Uncategorized</span>
                 <span style={{ fontSize:10, background:"#E8E5DF", color:"#8C8880", borderRadius:10, padding:"1px 6px", fontWeight:600 }}>{count}</span>
               </div>
@@ -2550,7 +2551,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                 style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:7, cursor:"pointer", background:isDraftsFolder?"#1A1814":"transparent", transition:"background 0.15s" }}
                 onMouseEnter={e => { if (!isDraftsFolder) e.currentTarget.style.background="#F7F6F2"; }}
                 onMouseLeave={e => { if (!isDraftsFolder) e.currentTarget.style.background="transparent"; }}>
-                <span style={{ fontSize:11 }}>📝</span>
+                <span style={{ fontSize:11 }}><Icon e="📝" /></span>
                 <span style={{ fontSize:12, fontWeight:isDraftsFolder?700:500, color:isDraftsFolder?"#F7F6F2":"#3A3830", flex:1 }}>Drafts</span>
                 <span style={{ fontSize:10, background:"#F5C842", color:"#1A1814", borderRadius:10, padding:"1px 6px", fontWeight:700 }}>{drafts.length}</span>
               </div>
@@ -2564,7 +2565,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"8px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="#4F6EF7"; e.currentTarget.style.color="#4F6EF7"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor="#D8D5CE"; e.currentTarget.style.color="#8C8880"; }}>
-            📁 New Folder
+            <Icon e="📁" /> New Folder
           </button>
           <button onClick={onNewDeck}
             style={{ width:"100%", background:"none", border:"1.5px dashed #D8D5CE", borderRadius:8, padding:"9px 12px", fontSize:11, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
@@ -2580,7 +2581,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
 
         {/* Search */}
         <div style={{ position:"relative", marginBottom:28 }}>
-          <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A8A59E", pointerEvents:"none" }}>⌕</span>
+          <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#A8A59E", pointerEvents:"none" }}><Icon e="⌕" /></span>
           <input type="text" placeholder="Search all decks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             style={{ width:"100%", padding:"11px 16px 11px 38px", border:"1px solid #D8D5CE", borderRadius:10, fontSize:14, background:"#fff", color:"#1A1814", outline:"none", fontFamily:"'DM Sans',sans-serif", boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }} />
           {searchQuery && <span onClick={() => setSearchQuery("")} style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", cursor:"pointer", fontSize:13, color:"#A8A59E" }}>✕</span>}
@@ -2591,14 +2592,14 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
           <div>
             <div style={{ fontSize:12, color:"#8C8880", marginBottom:16 }}>{searchResults.length} result{searchResults.length!==1?"s":""} for "<strong>{searchQuery}</strong>"</div>
             {searchResults.length === 0
-              ? <div style={{ textAlign:"center", padding:"48px 0", color:"#8C8880" }}><div style={{ fontSize:36, marginBottom:12 }}>🔍</div><div style={{ fontSize:15, fontWeight:500 }}>No decks match</div></div>
+              ? <div style={{ textAlign:"center", padding:"48px 0", color:"#8C8880" }}><div style={{ fontSize:36, marginBottom:12 }}><Icon e="🔍" /></div><div style={{ fontSize:15, fontWeight:500 }}>No decks match</div></div>
               : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))", gap:14 }}>{searchResults.map((d,i) => <FCDeckCard key={d.id} deck={d} index={i} onOpen={onOpenDeck} onStudy={onStartStudy} onDelete={onDeleteDeck} />)}</div>
             }
           </div>
 
         ) : isDraftsFolder ? (
           <div>
-            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", marginBottom:20 }}>📝 Drafts</h1>
+            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:"#1A1814", marginBottom:20 }}><Icon e="📝" /> Drafts</h1>
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               {drafts.map(d => (
                 <div key={d.id} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderLeft:`3px solid ${d.color||"#F5C842"}`, borderRadius:10, padding:"16px 20px", display:"flex", alignItems:"center", gap:16 }}>
@@ -2617,7 +2618,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             {/* Breadcrumb */}
             <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:20 }}>
               <span onClick={goRoot} style={{ fontSize:13, color:folderPath.length===0?"#1A1814":"#8C8880", cursor:"pointer", fontWeight:folderPath.length===0?700:400 }}>All Folders</span>
-              {isUserFolder && <><span style={{ color:"#D8D5CE" }}>›</span><span style={{ fontSize:13, color:"#1A1814", fontWeight:700 }}>📁 {activeFolderName}</span></>}
+              {isUserFolder && <><span style={{ color:"#D8D5CE" }}>›</span><span style={{ fontSize:13, color:"#1A1814", fontWeight:700 }}><Icon e="📁" /> {activeFolderName}</span></>}
               {!isUserFolder && folderPath.map((id, i) => {
                 const n = fcFindNode(FC_TREE, id);
                 if (!n) return null;
@@ -2631,11 +2632,11 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
               <div>
                 {isUserFolder ? (
                   <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 10px", borderRadius:20, marginBottom:6 }}>Your Folder</div>
-                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>📁 {activeFolderName}</h1>
+                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}><Icon e="📁" /> {activeFolderName}</h1>
                   <div style={{ fontSize:12, color:"#8C8880" }}>{currentDecks.length} deck{currentDecks.length!==1?"s":""}</div></>
                 ) : isUncategorized ? (
                   <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#8C8880", background:"#F0EDE8", padding:"2px 10px", borderRadius:20, marginBottom:6 }}>Unsorted</div>
-                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}>📂 Uncategorized</h1>
+                  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, letterSpacing:-0.5, color:"#1A1814", marginBottom:4 }}><Icon e="📂" /> Uncategorized</h1>
                   <div style={{ fontSize:12, color:"#8C8880" }}>{currentDecks.length} deck{currentDecks.length!==1?"s":""} without a folder</div></>
                 ) : currentNode ? (
                   <><div style={{ display:"inline-block", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:currentNode.color, background:`${currentNode.color}18`, padding:"2px 10px", borderRadius:20, marginBottom:6 }}>{FC_TYPE_META[currentNode.type]?.label}</div>
@@ -2652,7 +2653,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                     style={{ background:"none", border:"1.5px solid #D8D5CE", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, color:"#8C8880", cursor:"pointer", transition:"all 0.15s" }}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D5CE";e.currentTarget.style.color="#8C8880";}}>
-                    📂 New Subfolder
+                    <Icon e="📂" /> New Subfolder
                   </button>
                 )}
                 <button onClick={onNewDeck} className="fc-btn" style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2", transition:"all 0.2s" }}>+ New Deck</button>
@@ -2677,7 +2678,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                           onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)";}}
                           onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
                           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-                            <span style={{ fontSize:18 }}>📂</span>
+                            <span style={{ fontSize:18 }}><Icon e="📂" /></span>
                             <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 8px", borderRadius:20 }}>Subfolder</span>
                           </div>
                           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>{sub.name}</div>
@@ -2746,7 +2747,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                         onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)"; }}
                         onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none"; }}>
                         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-                          <span style={{ fontSize:18 }}>📁</span>
+                          <span style={{ fontSize:18 }}><Icon e="📁" /></span>
                           <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#4F6EF7", background:"#EEF1FF", padding:"2px 8px", borderRadius:20 }}>My Folder</span>
                         </div>
                         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>{f.name}</div>
@@ -2771,7 +2772,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
                         onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.08)";}}
                         onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
                         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-                          <span style={{ fontSize:18 }}>📂</span>
+                          <span style={{ fontSize:18 }}><Icon e="📂" /></span>
                           <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#8C8880", background:"#F0EDE8", padding:"2px 8px", borderRadius:20 }}>Unsorted</span>
                         </div>
                         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:800, color:"#1A1814", marginBottom:6 }}>Uncategorized</div>
@@ -2796,7 +2797,7 @@ function FCLibraryView({ allDecks, onOpenDeck, onStartStudy, onNewDeck, drafts =
             ) : (
               !isDraftsFolder && (currentNode || isUserFolder) && (
                 <div style={{ textAlign:"center", padding:"60px 0", color:"#8C8880" }}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>📂</div>
+                  <div style={{ fontSize:40, marginBottom:12 }}><Icon e="📂" /></div>
                   <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>No decks in this folder yet</div>
                   <div style={{ fontSize:13, marginBottom:20 }}>When you create a deck and assign it here, it'll appear in this folder.</div>
                   <button onClick={onNewDeck} style={{ background:"#1A1814", border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>+ Create a Deck</button>
@@ -2990,7 +2991,7 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
             <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
               <button onClick={onStudy} style={{ background:deck.color, border:"none", borderRadius:10, padding:"13px 28px", fontSize:14, fontWeight:800, cursor:"pointer", color:"#1A1814", whiteSpace:"nowrap", boxShadow:`0 4px 20px ${deck.color}50` }}>Study Now →</button>
               <button onClick={()=>onEdit&&onEdit(deck)} style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"10px 20px", fontSize:13, fontWeight:600, cursor:"pointer", color:"rgba(255,255,255,0.7)" }}
-                onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.14)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.08)"}>✏️ Edit Deck</button>
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.14)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.08)"}><Icon e="✏️" /> Edit Deck</button>
             </div>
           </div>
         </div>
@@ -3003,17 +3004,17 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
             style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-            📁 {(userFolders.find(f=>f.id===deck.folderKey)?.name||null)||"Add to Folder"}
+            <Icon e="📁" /> {(userFolders.find(f=>f.id===deck.folderKey)?.name||null)||"Add to Folder"}
           </button>
           {showFolderPicker&&(
             <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:12, padding:"8px", minWidth:200, zIndex:100, boxShadow:"0 8px 24px rgba(0,0,0,0.1)" }}>
               <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#A8A59E", textTransform:"uppercase", padding:"4px 8px 8px" }}>Move to Folder</div>
               <button onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,null);setShowFolderPicker(false);}} style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:!deck.folderKey?"#F0F0F0":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
-                <span>📂</span> No Folder
+                <span><Icon e="📂" /></span> No Folder
               </button>
               {userFolders.filter(f=>!f.parentId).map(f=>(
                 <button key={f.id} onClick={()=>{onMoveFolder&&onMoveFolder(deck.id,f.id,f.name);setShowFolderPicker(false);}} style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:deck.folderKey===f.id?"#EEF1FF":"transparent",cursor:"pointer",textAlign:"left",fontSize:13,color:"#1A1814",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:8 }}>
-                  <span>📁</span> {f.name}
+                  <span><Icon e="📁" /></span> {f.name}
                 </button>
               ))}
               {userFolders.length===0&&<div style={{ padding:"8px 10px",fontSize:12,color:"#A8A59E" }}>No folders yet — create one in My Library</div>}
@@ -3023,11 +3024,11 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
         <button onClick={()=>onTogglePublic&&onTogglePublic(deck.id)}
           style={{ background:deck.isPublic?"#2BAE7E":"#fff", border:`1px solid ${deck.isPublic?"#2BAE7E":"#ECEAE4"}`, borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:deck.isPublic?"#fff":"#5A5752", transition:"all 0.2s", display:"flex", alignItems:"center", gap:6 }}
           title={deck.isPublic?"Click to make private":"Click to make public"}>
-          {deck.isPublic?"🌐 Public":"🔒 Private"}
+          {deck.isPublic?"Public":"Private"}
         </button>
         {deck.isPublic && deck.publicUrl && <>
           <button onClick={()=>{ try { navigator.clipboard.writeText(window.location.origin + deck.publicUrl); } catch { /* ignore */ } setLinkCopied(true); setTimeout(()=>setLinkCopied(false),1600); }}
-            style={{ background:"#fff", border:"1px solid #2BAE7E", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#1A6B4A" }}>{linkCopied?"✓ Link copied":"🔗 Copy link"}</button>
+            style={{ background:"#fff", border:"1px solid #2BAE7E", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#1A6B4A" }}>{linkCopied?"✓ Link copied":"Copy link"}</button>
           <a href={deck.publicUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, fontWeight:600, color:"#1A6B4A", padding:"8px 4px" }}>View page ↗</a>
         </>}
         {deck.isPublic && !deck.publicUrl && <span style={{ fontSize:12, color:"#8C8880", padding:"8px 4px" }}>{user ? "Sharing…" : "Log in to share"}</span>}
@@ -3037,7 +3038,7 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
           style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:improving?"default":"pointer", color:improving?"#A8A59E":"#5A5752", display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}
           onMouseEnter={e=>{if(!improving){e.currentTarget.style.borderColor="#9B59B6";e.currentTarget.style.color="#9B59B6";}}}
           onMouseLeave={e=>{if(!improving){e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}}>
-          {improving?<><span style={{ width:10,height:10,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/>Improving…</>:"✨ Improve with AI"}
+          {improving?<><span style={{ width:10,height:10,borderRadius:"50%",border:"2px solid #9B59B6",borderTopColor:"transparent",animation:"qbSpin 0.6s linear infinite",display:"inline-block" }}/>Improving…</>:"Improve with AI"}
         </button>
         <button onClick={()=>{const txt=deck.cards.map((c,i)=>`${i+1},${JSON.stringify(c.term)},${JSON.stringify(c.definition)}`).join("\n");const blob=new Blob([`Term,Definition\n${txt}`],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${deck.title}.csv`;a.click();}}
           style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
@@ -3048,22 +3049,22 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
         <button onClick={handlePrint} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
           onMouseEnter={e=>{e.currentTarget.style.borderColor="#5A5752";e.currentTarget.style.color="#1A1814";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-          🖨 Print
+          <Icon e="🖨" /> Print
         </button>
         {!deck.isPublic && <button onClick={handleShare} title="Make this deck public and get a link" style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#5A5752", transition:"all 0.15s" }}
           onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F6EF7";e.currentTarget.style.color="#4F6EF7";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#5A5752";}}>
-          🔗 Share
+          <Icon e="🔗" /> Share
         </button>}
         {launchApp&&<button onClick={sendToBrainMap} style={{ background:"#fff", border:"1px solid #F0A8C0", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#9B1446", transition:"all 0.15s" }}
           onMouseEnter={e=>e.currentTarget.style.background="#FFF5F8"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
-          🧠 Brain Map
+          <Icon e="🧠" /> Brain Map
         </button>}
         <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
           {!confirmDelete?(
             <button onClick={()=>setConfirmDelete(true)} style={{ background:"#fff", border:"1px solid #ECEAE4", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer", color:"#C8C5BE", transition:"all 0.15s" }}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="#E85D3F";e.currentTarget.style.color="#E85D3F";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#C8C5BE";}}>🗑 Delete</button>
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECEAE4";e.currentTarget.style.color="#C8C5BE";}}><Icon e="🗑" /> Delete</button>
           ):(
             <div style={{ display:"flex", gap:6, alignItems:"center", background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:8, padding:"6px 10px" }}>
               <span style={{ fontSize:12, color:"#E85D3F", fontWeight:600 }}>Delete deck?</span>
@@ -3106,7 +3107,7 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
       {improveResult && improveResult !== "error" && (
         <div style={{ background:"#F9F5FF", border:"1.5px solid #9B59B630", borderRadius:14, padding:"20px", marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}>✨ AI Improved {improveResult.length} cards</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:800, color:"#1A1814" }}><Icon e="✨" /> AI Improved {improveResult.length} cards</div>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={()=>{setImproveResult(null);setConfirmApply(false);}} style={{ padding:"7px 14px", borderRadius:8, border:"1px solid #ECEAE4", background:"transparent", fontSize:12, cursor:"pointer", color:"#8C8880" }}>Discard</button>
               <button onClick={()=>setConfirmApply(true)} style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"#9B59B6", fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>Apply Changes</button>
@@ -3141,7 +3142,7 @@ ${deck.cards.map(c=>`<div class="card"><div class="label">Term</div><div class="
       {/* Struggling cards */}
       {strugglingCards.length > 0 && (
         <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:12, padding:"16px 18px", marginBottom:24 }}>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#E85D3F", marginBottom:12 }}>⚠️ Needs Work — Your 5 Weakest Cards</div>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#E85D3F", marginBottom:12 }}><Icon e="⚠️" /> Needs Work — Your 5 Weakest Cards</div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {strugglingCards.map(c => {
               const total=(c.timesCorrect||0)+(c.timesWrong||0); const pct=total>0?Math.round((c.timesCorrect||0)/total*100):0;
@@ -3234,18 +3235,18 @@ function FCStudySetup({ deck, onBack, onStart }) {
 
   const MODES = [
     { id:"spaced",      icon:"✦",  label:"Spaced Repetition", desc:`${dueCount} card${dueCount!==1?"s":""} due — schedules reviews based on your memory` },
-    { id:"written",     icon:"✍",  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
+    { id:"written",     icon:<Icon e="✍" />,  label:"Written Answer",    desc:"Type your answer — AI grades it as correct, close, or wrong" },
     { id:"truefalse",   icon:"◐",  label:"True / False",      desc:"AI generates true and false statements for quick recall" },
-    { id:"matching",    icon:"⇄",  label:"Matching",          desc:"Match 6 terms to their definitions" },
-    { id:"timed",       icon:"⏱",  label:"Timed",             desc:"Beat the clock — 10 seconds per card" },
+    { id:"matching",    icon:<Icon e="⇄" />,  label:"Matching",          desc:"Match 6 terms to their definitions" },
+    { id:"timed",       icon:<Icon e="⏱" />,  label:"Timed",             desc:"Beat the clock — 10 seconds per card" },
     { id:"all",         icon:"▦",  label:"Full Deck",         desc:"Go through every card in order" },
     { id:"quiz",        icon:"◈",  label:"Multiple Choice",   desc:"Multiple choice answers — test your knowledge" },
-    { id:"rapid",       icon:"⚡", label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
+    { id:"rapid",       icon:<Icon e="⚡" />, label:"Rapid Review",      desc:"Quick-flip mode — fast cycle through all cards" },
     { id:"pick",        icon:"◎",  label:"Pick Cards",        desc:"Choose exactly which cards to study" },
-    { id:"count",       icon:"🔢", label:"Set Count",         desc:"Choose how many cards to study" },
-    { id:"progressive", icon:"📈", label:"Progressive",       desc:"Start small, unlock more as you master each" },
-    { id:"challenge",   icon:"🔥", label:"Challenge",         desc:"No hints, no second chances" },
-    { id:"focus",       icon:"🧠", label:"Focus Mode",        desc:"Larger text, slower pace, fewer distractions" },
+    { id:"count",       icon:<Icon e="🔢" />, label:"Set Count",         desc:"Choose how many cards to study" },
+    { id:"progressive", icon:<Icon e="📈" />, label:"Progressive",       desc:"Start small, unlock more as you master each" },
+    { id:"challenge",   icon:<Icon e="🔥" />, label:"Challenge",         desc:"No hints, no second chances" },
+    { id:"focus",       icon:<Icon e="🧠" />, label:"Focus Mode",        desc:"Larger text, slower pace, fewer distractions" },
   ];
 
   return (
@@ -3537,11 +3538,11 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
     const total=workingCards.length; const pct=total>0?Math.round(known.size/total*100):0;
     return (
       <div style={{ maxWidth:560, margin:"0 auto", padding:"60px 24px", textAlign:"center" }}>
-        <div style={{ fontSize:56, marginBottom:16 }}>{pct>=80?"🎉":pct>=50?"👍":"💪"}</div>
+        <div style={{ fontSize:56, marginBottom:16 }}>{pct>=80?<Icon e="🎉" />:pct>=50?<Icon e="👍" />:<Icon e="💪" />}</div>
         <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:"#1A1814", marginBottom:8 }}>Session Complete!</h2>
         <p style={{ fontSize:15, color:"#8C8880", marginBottom:32 }}>You studied {total} card{total!==1?"s":""}</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:32 }}>
-          {[["✅","Correct",known.size,"#2BAE7E"],["❌","Missed",wrong.size,"#E85D3F"],["📊","Score",`${pct}%`,deck.color]].map(([icon,label,val,color])=>(
+          {[[<Icon e="✅" />,"Correct",known.size,"#2BAE7E"],[<Icon e="❌" />,"Missed",wrong.size,"#E85D3F"],[<Icon e="📊" />,"Score",`${pct}%`,deck.color]].map(([icon,label,val,color])=>(
             <div key={label} style={{ background:"#fff", border:"1.5px solid #ECEAE4", borderRadius:14, padding:"18px 14px" }}>
               <div style={{ fontSize:24, marginBottom:8 }}>{icon}</div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color }}>{val}</div>
@@ -3570,7 +3571,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
   if (unlockAnim) return (
     <div style={{ maxWidth:600, margin:"0 auto", padding:"80px 24px", textAlign:"center" }}>
       <div className="fc-fade-in" style={{ background:"#fff", border:`2px solid ${deck.color}`, borderRadius:20, padding:"48px 40px", boxShadow:`0 0 60px ${deck.color}30` }}>
-        <div style={{ fontSize:40, marginBottom:16 }}>🔓</div>
+        <div style={{ fontSize:40, marginBottom:16 }}><Icon e="🔓" /></div>
         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", marginBottom:8 }}>New Card Unlocked!</div>
         <div style={{ fontSize:14, color:"#6B6860" }}>Adding: <strong>{cards[activeCount]?.term}</strong></div>
       </div>
@@ -3597,7 +3598,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
 
       {showRoundToast && (
         <div className="fc-round-toast" style={{ position:"fixed",top:80,left:"50%",background:"#1A1814",borderRadius:10,padding:"10px 22px",zIndex:999,display:"flex",alignItems:"center",gap:10,pointerEvents:"none" }}>
-          <span style={{ fontSize:16 }}>🔁</span>
+          <span style={{ fontSize:16 }}><Icon e="🔁" /></span>
           <span style={{ fontSize:13, fontWeight:700, color:"#F7F6F2" }}>Round {round} complete!</span>
           <span style={{ fontSize:12, color:"#2BAE7E", fontWeight:600 }}>{known.size}/{workingCards.length} ✓</span>
         </div>
@@ -3629,7 +3630,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
         <div>
           {matchComplete ? (
             <div style={{ textAlign:"center", padding:"32px 0" }}>
-              <div style={{ fontSize:40, marginBottom:14 }}>✅</div>
+              <div style={{ fontSize:40, marginBottom:14 }}><Icon e="✅" /></div>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:"#1A1814", marginBottom:16 }}>Round Complete!</div>
               {matchRound*6+6 < cards.length ? (
                 <button onClick={()=>{const nr=matchRound+1;setMatchRound(nr);initMatchRound(nr);}} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#1A1814", fontSize:14, fontWeight:700, cursor:"pointer", color:"#F7F6F2" }}>Next 6 Cards →</button>
@@ -3753,7 +3754,7 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
             <div style={{ marginBottom:14 }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
                 <span style={{ fontSize:11,fontWeight:700,letterSpacing:1,color:"#8C8880",textTransform:"uppercase" }}>Time</span>
-                <span style={{ fontFamily:"monospace",fontSize:22,fontWeight:900,color:timedExpired?"#E85D3F":timedSecs<=3?"#F5A623":"#2BAE7E" }}>{timedExpired?"⏰":timedSecs+"s"}</span>
+                <span style={{ fontFamily:"monospace",fontSize:22,fontWeight:900,color:timedExpired?"#E85D3F":timedSecs<=3?"#F5A623":"#2BAE7E" }}>{timedExpired?<Icon e="⏰" />:timedSecs+"s"}</span>
               </div>
               <div style={{ height:6,background:"#ECEAE4",borderRadius:3,overflow:"hidden" }}>
                 <div style={{ height:"100%",width:`${timedSecs*10}%`,background:timedSecs<=3?"#E85D3F":timedSecs<=6?"#F5A623":"#2BAE7E",borderRadius:3,transition:"width 1s linear" }}/>
@@ -3774,8 +3775,8 @@ function FCStudyView({ deck, config, onBack, onBackToLibrary, onUpdateCards }) {
                   {card.hint && !flipped && (
                     <div style={{ marginTop:18 }}>
                       {showHint
-                        ? <div style={{ fontSize:13,color:"#6B6860",fontStyle:"italic",background:"#F7F6F2",borderRadius:8,padding:"8px 14px",maxWidth:380 }}>💡 {card.hint}</div>
-                        : <button onClick={e=>{e.stopPropagation();setShowHint(true);}} style={{ background:"transparent",border:"1px solid #ECEAE4",borderRadius:7,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#A8A59E",fontWeight:600 }}>💡 Show Hint</button>
+                        ? <div style={{ fontSize:13,color:"#6B6860",fontStyle:"italic",background:"#F7F6F2",borderRadius:8,padding:"8px 14px",maxWidth:380 }}><Icon e="💡" /> {card.hint}</div>
+                        : <button onClick={e=>{e.stopPropagation();setShowHint(true);}} style={{ background:"transparent",border:"1px solid #ECEAE4",borderRadius:7,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#A8A59E",fontWeight:600 }}><Icon e="💡" /> Show Hint</button>
                       }
                     </div>
                   )}

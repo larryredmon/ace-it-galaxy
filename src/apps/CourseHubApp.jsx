@@ -1,6 +1,7 @@
 // Split out of App.jsx so this code only downloads when it is needed.
 import { useState, useRef, useEffect } from "react";
 import { aiFetch, tpSync } from "../shared.jsx";
+import { Icon } from "../shared.jsx";
 
 // ─── Course Hub App ────────────────────────────────────────────────────────────
 function CourseHubApp({ onBack, user, openAuth, launchApp }) {
@@ -326,7 +327,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
     const allText=docsToUse.map(d=>'['+d.name+']\n'+d.content).join('\n\n');
     const totalChars=allText.length;
     try{
-      setGenProgress('📖 Reading your document and planning study structure…');
+      setGenProgress('Reading your document and planning study structure…');
       const blueprintRes=await aiFetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,
           messages:[{role:'user',content:'Analyze this study material and list ALL chapters/levels/sections as flashcard decks. Return ONLY valid JSON like this example:\n{"courseName":"Course Name","hasHierarchy":true,"folders":[{"id":"f1","name":"Level 01 Introduction","parentId":null,"decks":[{"id":"d1","name":"Real Estate Basics","topics":["topic1"]},{"id":"d2","name":"Real Estate Law","topics":["topic2"]}]},{"id":"f2","name":"Level 02 Real Property","parentId":null,"decks":[{"id":"d3","name":"Land and Property","topics":["topic1"]}]}],"flatDecks":[]}\n\nIMPORTANT: Find ALL levels and ALL chapters. Create one deck per chapter. No markdown. No explanation. Only the JSON object.\n\nDocument:\n'+allText.slice(0,12000)}]})});
@@ -396,7 +397,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       }
 
       if(allDecks.length>0){
-        setGenProgress('💾 Saving decks and folder structure…');
+        setGenProgress('Saving decks and folder structure…');
         if(allFolders.length>0){
           const ef=JSON.parse(localStorage.getItem('tp_fc_folders')||'[]');
           localStorage.setItem('tp_fc_folders',JSON.stringify([...ef,...allFolders]));
@@ -454,7 +455,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             :<div style={{width:18,flexShrink:0}}/>
           }
           <button onClick={()=>setActiveFolderId(folder.id)} style={{flex:1,display:'flex',alignItems:'center',gap:8,padding:'7px 8px',borderRadius:8,border:'none',background:isActive?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',minWidth:0}}>
-            <span style={{fontSize:13}}>{isOpen&&children.length>0?'📂':'📁'}</span>
+            <span style={{fontSize:13}}>{isOpen&&children.length>0?<Icon e="📂" />:<Icon e="📁" />}</span>
             <span style={{fontSize:12,fontWeight:isActive?700:500,color:isActive?active.color:'#3A3530',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{folder.name}</span>
             {docCount>0&&<span style={{fontSize:10,color:'#A8A59E',flexShrink:0}}>{docCount}</span>}
           </button>
@@ -470,8 +471,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',padding:'4px 10px 6px'}}>Send to...</div>
       {[
         {id:'flashcards',label:'Flash Cards',icon:'🃏',color:'#C8B8FF'},
-        {id:'notes',label:'Notes',icon:'📄',color:'#F0D080'},
-        {id:'simplifier',label:'Text Simplifier',icon:'🔍',color:'#6ED9B8'},
+        {id:'notes',label:'Notes',icon:<Icon e="📄" />,color:'#F0D080'},
+        {id:'simplifier',label:'Text Simplifier',icon:<Icon e="🔍" />,color:'#6ED9B8'},
       ].map(app=>(
         <button key={app.id} onClick={()=>{sendToApp(app.id,sourceType,sourceId);setSendToMenu(null);}}
           style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}
@@ -538,10 +539,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {!addContentType&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:8}}>
                 {[
-                  {id:'file',icon:'📎',label:'Upload File',desc:'PDF, image, TXT, MD'},
-                  {id:'text',icon:'✏️',label:'Paste Text',desc:'Notes, chapters, content'},
-                  {id:'link',icon:'🔗',label:'Add Link',desc:'YouTube, article, website'},
-                  {id:'audio',icon:'🎙️',label:'Record Audio',desc:'Lecture, voice notes'},
+                  {id:'file',icon:<Icon e="📎" />,label:'Upload File',desc:'PDF, image, TXT, MD'},
+                  {id:'text',icon:<Icon e="✏️" />,label:'Paste Text',desc:'Notes, chapters, content'},
+                  {id:'link',icon:<Icon e="🔗" />,label:'Add Link',desc:'YouTube, article, website'},
+                  {id:'audio',icon:<Icon e="🎙️" />,label:'Record Audio',desc:'Lecture, voice notes'},
                 ].map(t=>(
                   <button key={t.id} onClick={()=>setAddContentType(t.id)}
                     style={{display:'flex',alignItems:'center',gap:12,padding:'16px',borderRadius:14,border:'1.5px solid #ECEAE4',background:'#fff',cursor:'pointer',textAlign:'left',transition:'all 0.15s'}}
@@ -567,8 +568,8 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                   {fileUploading
                     ?<><div style={{width:32,height:32,border:`3px solid ${active.color}30`,borderTopColor:active.color,borderRadius:'50%',animation:'qbSpin 0.8s linear infinite',margin:'0 auto 10px'}}/><div style={{fontSize:13,fontWeight:600,color:'#6B6860'}}>Reading file…</div></>
                     :fileUploaded
-                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534'}}>File ready — give it a name below</div></>
-                      :<><div style={{fontSize:36,marginBottom:8}}>📎</div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Click to upload</div><div style={{fontSize:11,color:'#8C8880',marginTop:4}}>PDF, PNG, JPG, TXT, MD supported</div></>
+                      ?<><div style={{fontSize:36,marginBottom:8}}><Icon e="✅" /></div><div style={{fontSize:13,fontWeight:700,color:'#166534'}}>File ready — give it a name below</div></>
+                      :<><div style={{fontSize:36,marginBottom:8}}><Icon e="📎" /></div><div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>Click to upload</div><div style={{fontSize:11,color:'#8C8880',marginTop:4}}>PDF, PNG, JPG, TXT, MD supported</div></>
                   }
                 </label>
                 <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Document name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
@@ -600,12 +601,12 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
               <>
                 <div style={{textAlign:'center',padding:'24px 20px',background:'#F7F6F2',borderRadius:14,marginBottom:12}}>
                   {isRecording
-                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:24}}>🎙️</div>
+                    ?<><div style={{width:56,height:56,borderRadius:'50%',background:'#E85D3F',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:24}}><Icon e="🎙️" /></div>
                       <div style={{fontSize:14,fontWeight:700,color:'#E85D3F',marginBottom:12}}>Recording…</div>
                       <button onClick={stopRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#E85D3F',fontSize:13,fontWeight:700,cursor:'pointer',color:'#fff'}}>Stop Recording</button></>
                     :audioBlob
-                      ?<><div style={{fontSize:36,marginBottom:8}}>✅</div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
-                      :<><div style={{fontSize:40,marginBottom:10}}>🎙️</div>
+                      ?<><div style={{fontSize:36,marginBottom:8}}><Icon e="✅" /></div><div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:4}}>Recording complete</div><div style={{fontSize:11,color:'#8C8880'}}>Name it below and save</div></>
+                      :<><div style={{fontSize:40,marginBottom:10}}><Icon e="🎙️" /></div>
                         <div style={{fontSize:13,fontWeight:600,color:'#1A1814',marginBottom:4}}>Record a lecture or voice note</div>
                         <div style={{fontSize:11,color:'#8C8880',marginBottom:14}}>Requires microphone access</div>
                         <button onClick={startRecording} style={{padding:'10px 24px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814'}}>Start Recording</button></>
@@ -623,7 +624,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                     setAudioBlob(file);
                     e.target.value='';
                   }}/>
-                  <span style={{fontSize:12,fontWeight:600,color:'#6B6860'}}>📂 Upload audio file (MP3, M4A, WAV…)</span>
+                  <span style={{fontSize:12,fontWeight:600,color:'#6B6860'}}><Icon e="📂" /> Upload audio file (MP3, M4A, WAV…)</span>
                 </label>
                 <input value={docName} onChange={e=>setDocName(e.target.value)} placeholder="Recording name (optional)" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:'1.5px solid #ECEAE4',background:'#fff',fontSize:13,color:'#1A1814',outline:'none',marginBottom:16,boxSizing:'border-box',fontFamily:"'DM Sans',sans-serif"}} onFocus={e=>e.target.style.borderColor=active.color} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/>
               </>
@@ -702,7 +703,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
           <div style={{padding:'16px 14px 8px',flex:1}}>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#A8A59E',marginBottom:10}}>My Materials</div>
             <button onClick={()=>setActiveFolderId(null)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,border:'none',background:activeFolderId===null?active.color+'20':'transparent',cursor:'pointer',textAlign:'left',marginBottom:2}}>
-              <div style={{width:28,height:28,borderRadius:7,background:activeFolderId===null?active.color:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>📂</div>
+              <div style={{width:28,height:28,borderRadius:7,background:activeFolderId===null?active.color:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}><Icon e="📂" /></div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:'#1A1814'}}>All Folders</div>
                 <div style={{fontSize:11,color:'#A8A59E'}}>{(active.folders||[]).length} folders</div>
@@ -712,7 +713,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {(active.folders||[]).length===0&&<div style={{fontSize:12,color:'#A8A59E',padding:'8px 12px',lineHeight:1.5}}>No folders yet. Create one to organize your documents.</div>}
           </div>
           <div style={{padding:'12px 14px',borderTop:'1px solid #ECEAE4'}}>
-            <button onClick={()=>{if(chConfirmDelete){deleteCourse(active.id);setChConfirmDelete(false);}else{setChConfirmDelete(true);setTimeout(()=>setChConfirmDelete(false),4000);}}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:chConfirmDelete?'rgba(232,93,63,0.1)':'transparent',cursor:'pointer',color:chConfirmDelete?'#E85D3F':'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>{if(!chConfirmDelete)e.currentTarget.style.color='#D8D5CE';}}>{chConfirmDelete?'⚠️ Tap again to confirm':'Delete course'}</button>
+            <button onClick={()=>{if(chConfirmDelete){deleteCourse(active.id);setChConfirmDelete(false);}else{setChConfirmDelete(true);setTimeout(()=>setChConfirmDelete(false),4000);}}} style={{width:'100%',padding:'8px 12px',borderRadius:9,border:'none',background:chConfirmDelete?'rgba(232,93,63,0.1)':'transparent',cursor:'pointer',color:chConfirmDelete?'#E85D3F':'#D8D5CE',fontSize:11,fontWeight:600,textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>{if(!chConfirmDelete)e.currentTarget.style.color='#D8D5CE';}}>{chConfirmDelete?'Tap again to confirm':'Delete course'}</button>
           </div>
         </div>
 
@@ -721,7 +722,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             <div style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:'uppercase',color:active.color,marginBottom:8}}>{active.subject||'Course'}</div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:900,color:'#1A1814',margin:'0 0 16px'}}>{active.name}</h2>
             <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
-              <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>✏️ Edit</button>
+              <button onClick={()=>{setEditCourseForm({name:active.name,subject:active.subject||'',color:active.color});setShowEditCourse(true);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 16px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}><Icon e="✏️" /> Edit</button>
               <button onClick={()=>{setFolderForm({name:'',parentId:activeFolderId||null});setShowFolderModal(true);}} style={{background:'#fff',border:'1px solid #ECEAE4',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#1A1814',whiteSpace:'nowrap'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#1A1814';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>+ New Folder</button>
               <button onClick={()=>setShowAddDoc(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2',whiteSpace:'nowrap'}}>+ Add Document</button>
             </div>
@@ -731,11 +732,11 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             <div style={{animation:'ch-fade 0.2s ease'}}>
               {(active.folders||[]).length===0&&(active.documents||[]).length===0?(
                 <div style={{textAlign:'center',padding:'60px 20px',background:'#fff',borderRadius:16,border:'1px solid #ECEAE4'}}>
-                  <div style={{fontSize:48,marginBottom:12}}>📂</div>
+                  <div style={{fontSize:48,marginBottom:12}}><Icon e="📂" /></div>
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:'#1A1814',marginBottom:8}}>Start organizing</div>
                   <p style={{fontSize:13,color:'#8C8880',maxWidth:320,margin:'0 auto 20px',lineHeight:1.6}}>Create folders to organize your materials by chapter, week, or topic — then add documents inside them.</p>
                   <div style={{display:'flex',gap:10,justifyContent:'center'}}>
-                    <button onClick={()=>{setFolderForm({name:'',parentId:null});setShowFolderModal(true);}} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'10px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>📁 Create a Folder</button>
+                    <button onClick={()=>{setFolderForm({name:'',parentId:null});setShowFolderModal(true);}} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'10px 20px',fontSize:13,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}><Icon e="📁" /> Create a Folder</button>
                     <button onClick={()=>setShowAddDoc(true)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:9,padding:'10px 20px',fontSize:13,fontWeight:600,cursor:'pointer',color:'#6B6860'}}>+ Add Document</button>
                   </div>
                 </div>
@@ -751,10 +752,10 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
                             <div style={{position:'absolute',top:8,right:8,display:'flex',gap:4}}>
-                              <button onClick={e=>{e.stopPropagation();setEditingFolder(folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:2}} onMouseEnter={e=>e.currentTarget.style.color=active.color} onMouseLeave={e=>e.currentTarget.style.color='#A8A59E'}>✏️</button>
-                              <button onClick={e=>{e.stopPropagation();const cnt=getDocCount(active.folders||[],active.documents||[],folder.id);if(cnt>0&&!window.confirm(`Delete "${folder.name}" and ${cnt} document(s) inside?`))return;deleteFolderDeep(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
+                              <button onClick={e=>{e.stopPropagation();setEditingFolder(folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#A8A59E',padding:2}} onMouseEnter={e=>e.currentTarget.style.color=active.color} onMouseLeave={e=>e.currentTarget.style.color='#A8A59E'}><Icon e="✏️" /></button>
+                              <button onClick={e=>{e.stopPropagation();const cnt=getDocCount(active.folders||[],active.documents||[],folder.id);if(cnt>0&&!window.confirm(`Delete "${folder.name}" and ${cnt} document(s) inside?`))return;deleteFolderDeep(active.id,folder.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#D8D5CE',padding:2}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}><Icon e="🗑" /></button>
                             </div>
-                            <div style={{fontSize:40,marginBottom:8}}>📁</div>
+                            <div style={{fontSize:40,marginBottom:8}}><Icon e="📁" /></div>
                             {editingFolder===folder.id
                               ?<input autoFocus value={editingFolder===folder.id?folder.name:''} defaultValue={folder.name}
                                 onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')renameFolder(active.id,folder.id,e.target.value);if(e.key==='Escape')setEditingFolder(null);}}
@@ -781,7 +782,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                         {(active.documents||[]).filter(d=>!d.folderId).map((d,i,arr)=>(
                           <div key={d.id} style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderBottom:i<arr.length-1?'1px solid #F0EDE8':'none',transition:'background 0.15s'}}
                             onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
-                            <div style={{width:36,height:36,borderRadius:9,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
+                            <div style={{width:36,height:36,borderRadius:9,background:'#F0EDE8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}><Icon e="📄" /></div>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{display:'flex',alignItems:'center',gap:6}}>
                                 {editingDoc===d.id
@@ -790,11 +791,11 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                                     onBlur={e=>{renameDoc(active.id,d.id,e.target.value);setEditingDoc(null);}}
                                     style={{flex:1,padding:'3px 8px',borderRadius:6,border:`1.5px solid ${active.color}`,fontSize:13,fontWeight:600,color:'#1A1814',outline:'none',background:'#fff',boxSizing:'border-box'}}/>
                                   :<div style={{fontSize:13,fontWeight:600,color:'#1A1814',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}} onDoubleClick={()=>setEditingDoc(d.id)} title="Double-click to rename">{d.name}</div>}
-                                <button onClick={()=>setEditingDoc(id=>id===d.id?null:d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#C8C4BE',padding:'0 2px',flexShrink:0}} title="Rename">✏️</button>
+                                <button onClick={()=>setEditingDoc(id=>id===d.id?null:d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'#C8C4BE',padding:'0 2px',flexShrink:0}} title="Rename"><Icon e="✏️" /></button>
                               </div>
                               <div style={{fontSize:11,color:'#A8A59E'}}>{(d.content||'').split(/\s+/).filter(Boolean).length} words</div>
                             </div>
-                            {(active.folders||[]).length>0&&<select onChange={e=>{if(e.target.value)assignDocToFolder(active.id,d.id,e.target.value);}} defaultValue="" style={{padding:'4px 8px',borderRadius:6,border:'1px solid #ECEAE4',background:'#fff',fontSize:11,color:'#6B6860',cursor:'pointer'}}><option value="">Move to folder…</option>{(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>📁 {f.name}</option>)}</select>}
+                            {(active.folders||[]).length>0&&<select onChange={e=>{if(e.target.value)assignDocToFolder(active.id,d.id,e.target.value);}} defaultValue="" style={{padding:'4px 8px',borderRadius:6,border:'1px solid #ECEAE4',background:'#fff',fontSize:11,color:'#6B6860',cursor:'pointer'}}><option value="">Move to folder…</option>{(active.folders||[]).filter(f=>!f.parentId).map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select>}
                             <button onClick={()=>updateCourse(active.id,{documents:(active.documents||[]).filter(x=>x.id!==d.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,color:'#D8D5CE',flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>✕</button>
                           </div>
                         ))}
@@ -814,18 +815,18 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
               <div style={{animation:'ch-fade 0.2s ease'}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
                   <button onClick={()=>setActiveFolderId(null)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:7,padding:'5px 12px',fontSize:12,cursor:'pointer',color:'#8C8880'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#1A1814'} onMouseLeave={e=>e.currentTarget.style.borderColor='#ECEAE4'}>← All Folders</button>
-                  <div style={{width:32,height:32,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📁</div>
+                  <div style={{width:32,height:32,borderRadius:8,background:active.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}><Icon e="📁" /></div>
                   {editingFolder===activeFolderId
                     ?<input autoFocus defaultValue={folder?.name}
                         onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter'){renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}if(e.key==='Escape')setEditingFolder(null);}}
                         onBlur={e=>{renameFolder(active.id,activeFolderId,e.target.value);setEditingFolder(null);}}
                         style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',border:'none',borderBottom:`2px solid ${active.color}`,outline:'none',background:'transparent',minWidth:120}}/>
                     :<span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:800,color:'#1A1814',cursor:'pointer'}} onDoubleClick={()=>setEditingFolder(activeFolderId)} title="Double-click to rename">{folder?.name}</span>}
-                  <button onClick={()=>setEditingFolder(ef=>ef===activeFolderId?null:activeFolderId)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#A8A59E',padding:'2px 4px'}} title="Rename folder">✏️</button>
+                  <button onClick={()=>setEditingFolder(ef=>ef===activeFolderId?null:activeFolderId)} style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'#A8A59E',padding:'2px 4px'}} title="Rename folder"><Icon e="✏️" /></button>
                 </div>
                 {subFolders.length===0&&folderDocs.length===0?(
                   <div style={{textAlign:'center',padding:'50px 20px',background:'#fff',borderRadius:16,border:'1px solid #ECEAE4'}}>
-                    <div style={{fontSize:40,marginBottom:10}}>📂</div>
+                    <div style={{fontSize:40,marginBottom:10}}><Icon e="📂" /></div>
                     <div style={{fontSize:15,fontWeight:700,color:'#1A1814',marginBottom:6}}>This folder is empty</div>
                     <p style={{fontSize:13,color:'#8C8880',marginBottom:16}}>Use the <strong>New Folder</strong> tile or <strong>+ Add Document</strong> button above to add content.</p>
                   </div>
@@ -839,13 +840,13 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.background=active.color+'08';}}
                             onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.background='#fff';}}>
                             <div onClick={()=>setActiveFolderId(sub.id)} style={{cursor:'pointer'}}>
-                              <div style={{fontSize:32,marginBottom:8}}>📁</div>
+                              <div style={{fontSize:32,marginBottom:8}}><Icon e="📁" /></div>
                               <div style={{fontSize:13,fontWeight:700,color:'#1A1814',marginBottom:3}}>{sub.name}</div>
                               <div style={{fontSize:11,color:'#A8A59E'}}>{getDocCount(active.folders||[],active.documents||[],sub.id)} docs</div>
                             </div>
                             <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8,position:'relative'}}>
                               <button onClick={e=>{e.stopPropagation();setSendToMenu(sm=>sm?.id===sub.id?null:{type:'folder',id:sub.id});}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';}}>Send ↗</button>
-                              <button onClick={e=>{e.stopPropagation();if(window.confirm('Delete "'+sub.name+'" and all its contents?'))deleteFolderDeep(active.id,sub.id);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#D8D5CE'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}>🗑</button>
+                              <button onClick={e=>{e.stopPropagation();if(window.confirm('Delete "'+sub.name+'" and all its contents?'))deleteFolderDeep(active.id,sub.id);}} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:600,color:'#D8D5CE'}} onMouseEnter={e=>e.currentTarget.style.color='#E85D3F'} onMouseLeave={e=>e.currentTarget.style.color='#D8D5CE'}><Icon e="🗑" /></button>
                               {sendToMenu?.id===sub.id&&renderSendToDropdown("folder",sub.id)}
                             </div>
                           </div>
@@ -867,7 +868,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                           <div key={d.id} style={{borderBottom:i<folderDocs.length-1?'1px solid #F0EDE8':'none'}}>
                             <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',transition:'background 0.15s'}}
                               onMouseEnter={e=>e.currentTarget.style.background='#F7F6F2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
-                              <div style={{width:36,height:36,borderRadius:9,background:active.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>📄</div>
+                              <div style={{width:36,height:36,borderRadius:9,background:active.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}><Icon e="📄" /></div>
                               <div style={{flex:1,minWidth:0}}>
                                 {editingDoc===d.id
                                   ?<input autoFocus defaultValue={d.name} id={`doc-rename-${d.id}`}
@@ -878,7 +879,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                               </div>
                               {editingDoc===d.id
                                 ?<button onMouseDown={e=>{e.preventDefault();const inp=document.getElementById(`doc-rename-${d.id}`);if(inp)renameDoc(active.id,d.id,inp.value||d.name);setEditingDoc(null);}} style={{background:active.color,border:'none',borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontWeight:700,color:'#1A1814',flexShrink:0}}>Save</button>
-                                :<button onClick={()=>setEditingDoc(d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#C8C4BE',flexShrink:0,padding:'0 2px'}} title="Rename">✏️</button>}
+                                :<button onClick={()=>setEditingDoc(d.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:12,color:'#C8C4BE',flexShrink:0,padding:'0 2px'}} title="Rename"><Icon e="✏️" /></button>}
                               <button onClick={()=>setExpandedDoc(expandedDoc===d.id?null:d.id)} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 10px',cursor:'pointer',color:'#8C8880',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#8C8880';}}>{expandedDoc===d.id?'▲ Hide':'▼ View'}</button>
                               <div style={{position:'relative',flexShrink:0}}>
                                 <button onClick={()=>setSendToMenu(sm=>sm?.id===d.id?null:{type:'doc',id:d.id})} style={{background:'none',border:'1px solid #ECEAE4',borderRadius:6,padding:'4px 8px',cursor:'pointer',fontSize:11,fontWeight:600,color:'#6B6860'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=active.color;e.currentTarget.style.color=active.color;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#ECEAE4';e.currentTarget.style.color='#6B6860';}}>Send ↗</button>
@@ -910,14 +911,14 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
             {genResult?.type==='send-cards'&&<div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#166534',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" → {genResult.count} flashcards created!</span><button onClick={()=>launchApp('flashcards')} style={{background:'none',border:'none',cursor:'pointer',color:'#166534',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
             {genResult?.type==='send-notes'&&<div style={{background:'#FFF9E6',border:'1px solid #F0D080',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#8B6914',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>✓ "{genResult.name}" sent to Notes!</span><button onClick={()=>launchApp('notes')} style={{background:'none',border:'none',cursor:'pointer',color:'#8B6914',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open →</button></div>}
             {genResult?.type==='error'&&<div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#E85D3F'}}>{genResult.msg}</div>}
-            {sendingTo&&<div style={{background:'#EEF2FF',border:'1px solid #C7D2FE',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#4338CA'}}>⏳ Sending to {sendingTo}…</div>}
+            {sendingTo&&<div style={{background:'#EEF2FF',border:'1px solid #C7D2FE',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#4338CA'}}><Icon e="⏳" /> Sending to {sendingTo}…</div>}
             {genResult?.type==='map'&&<div style={{background:'#FFF5F7',border:'1px solid #F0A8C0',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:12,color:'#9B1446'}}>✓ Brain map created! <button onClick={()=>launchApp('brainmap')} style={{marginLeft:6,background:'none',border:'none',cursor:'pointer',color:'#9B1446',fontWeight:700,textDecoration:'underline',fontSize:12}}>Open Brain Map →</button></div>}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
               <button onClick={generateFlashCards} disabled={generating==='cards'} style={{padding:'12px',borderRadius:10,border:'none',background:active.color,fontSize:13,fontWeight:700,cursor:'pointer',color:'#1A1814',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
                 {generating==='cards'?<><span style={{width:12,height:12,border:'2px solid rgba(26,24,20,0.3)',borderTopColor:'#1A1814',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:<>🃏 Generate Flash Cards</>}
               </button>
               <button onClick={generateBrainMap} disabled={generating==='map'||!(active.documents||[]).length} style={{padding:'12px',borderRadius:10,border:'none',background:(active.documents||[]).length?'#F0A8C0':'#ECEAE4',fontSize:13,fontWeight:700,cursor:(active.documents||[]).length?'pointer':'default',color:(active.documents||[]).length?'#9B1446':'#A8A59E',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                {generating==='map'?<><span style={{width:12,height:12,border:'2px solid rgba(155,20,70,0.3)',borderTopColor:'#9B1446',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:<>🧠 Generate Brain Map</>}
+                {generating==='map'?<><span style={{width:12,height:12,border:'2px solid rgba(155,20,70,0.3)',borderTopColor:'#9B1446',borderRadius:'50%',animation:'qbSpin 0.6s linear infinite',display:'inline-block'}}/>{genProgress||'Generating…'}</>:<><Icon e="🧠" /> Generate Brain Map</>}
               </button>
             </div>
           </div>
@@ -956,17 +957,17 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                     <div key={folder.id}>
                       <div style={{fontSize:11,fontWeight:700,color:'#3A3530',padding:'4px 6px',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',gap:5}}
                         onClick={()=>navigateTo(course,'course')}>
-                        📁 {folder.name}
+                        <Icon e="📁" /> {folder.name}
                       </div>
                       {(course.folders||[]).filter(sf=>sf.parentId===folder.id).map(sub=>(
                         <div key={sub.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px 3px 18px',cursor:'pointer'}}
                           onClick={()=>navigateTo(course,'course')}>
-                          📁 {sub.name}
+                          <Icon e="📁" /> {sub.name}
                         </div>
                       ))}
                       {(course.documents||[]).filter(d=>d.folderId===folder.id).map(doc=>(
                         <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px 3px 18px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                          📄 {doc.name}
+                          <Icon e="📄" /> {doc.name}
                         </div>
                       ))}
                     </div>
@@ -976,7 +977,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                       <div style={{fontSize:10,color:'#A8A59E',padding:'4px 6px',fontWeight:600}}>Uncategorized</div>
                       {(course.documents||[]).filter(d=>!d.folderId).map(doc=>(
                         <div key={doc.id} style={{fontSize:11,color:'#6B6860',padding:'3px 6px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                          📄 {doc.name}
+                          <Icon e="📄" /> {doc.name}
                         </div>
                       ))}
                     </div>
@@ -1032,7 +1033,7 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
       <div style={{maxWidth:960,margin:'0 auto',padding:'40px 24px 80px',animation:'ch-fade 0.3s ease'}}>
         {courses.length===0?(
           <div style={{textAlign:'center',padding:'60px 20px'}}>
-            <div style={{fontSize:52,marginBottom:16}}>📚</div>
+            <div style={{fontSize:52,marginBottom:16}}><Icon e="📚" /></div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:900,color:'#1A1814',marginBottom:8}}>No courses yet</h2>
             <p style={{fontSize:14,color:'#8C8880',marginBottom:24,maxWidth:340,margin:'0 auto 24px',lineHeight:1.6}}>Create your first course to start organizing your study materials.</p>
             <button onClick={()=>setShowCreate(true)} style={{background:'#1A1814',border:'none',borderRadius:9,padding:'12px 28px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#F7F6F2'}}>+ Create a Course</button>
@@ -1050,23 +1051,23 @@ function CourseHubApp({ onBack, user, openAuth, launchApp }) {
                   onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';e.currentTarget.style.transform='translateY(-2px)';}}
                   onMouseLeave={e=>{e.currentTarget.style.boxShadow='none';e.currentTarget.style.transform='none';}}>
                   <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:12}}>
-                    <div style={{width:40,height:40,borderRadius:10,background:course.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📚</div>
+                    <div style={{width:40,height:40,borderRadius:10,background:course.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}><Icon e="📚" /></div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:15,fontWeight:800,fontFamily:"'Playfair Display',serif",color:'#1A1814',lineHeight:1.3,marginBottom:2}}>{course.name}</div>
                       {course.subject&&<div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:course.color}}>{course.subject}</div>}
                     </div>
                   </div>
                   <div style={{display:'flex',gap:12,paddingTop:12,borderTop:'1px solid #F0EDE8'}}>
-                    <span style={{fontSize:12,color:'#8C8880'}}>📄 {(course.documents||[]).length} docs</span>
+                    <span style={{fontSize:12,color:'#8C8880'}}><Icon e="📄" /> {(course.documents||[]).length} docs</span>
                     <span style={{fontSize:12,color:'#8C8880'}}>🃏 {(course.flashDeckIds||[]).length} decks</span>
-                    <span style={{fontSize:12,color:'#8C8880'}}>🧠 {(course.brainMapIds||[]).length} maps</span>
+                    <span style={{fontSize:12,color:'#8C8880'}}><Icon e="🧠" /> {(course.brainMapIds||[]).length} maps</span>
                   </div>
                 </div>
               ))}
             </div>
           </>
         )}
-        {courses.length===0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>{[['1','Upload','Paste notes, syllabus, or textbook chapters.','📄'],['2','Generate','AI creates flash cards and brain maps from your content.','✦'],['3','Study','Use your generated content across all apps.','🚀']].map(([n,title,desc,icon])=>(<div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}><div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div><div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#166534',marginBottom:6}}>Step {n}</div><div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div></div>))}</div>)}
+        {courses.length===0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:40}}>{[['1','Upload','Paste notes, syllabus, or textbook chapters.',<Icon e="📄" />],['2','Generate','AI creates flash cards and brain maps from your content.','✦'],['3','Study','Use your generated content across all apps.',<Icon e="🚀" />]].map(([n,title,desc,icon])=>(<div key={n} style={{background:'#fff',border:'1.5px solid #ECEAE4',borderRadius:14,padding:'20px',textAlign:'center'}}><div style={{width:40,height:40,borderRadius:'50%',background:CH+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,margin:'0 auto 12px'}}>{icon}</div><div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#166534',marginBottom:6}}>Step {n}</div><div style={{fontSize:14,fontWeight:700,color:'#1A1814',marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#6B6860',lineHeight:1.6}}>{desc}</div></div>))}</div>)}
 
       </div>
       {showCreate&&(<div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)'}} onClick={()=>setShowCreate(false)}><div style={{background:'#fff',borderRadius:18,padding:'36px',width:440,maxWidth:'94vw',animation:'ch-fade 0.2s ease'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:28,marginBottom:14}}>◎</div><h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:'#1A1814',marginBottom:6}}>Create a Course</h3><p style={{fontSize:13,color:'#8C8880',marginBottom:24,lineHeight:1.6}}>Give your course a name. You will add documents after.</p><input value={createForm.name} onChange={e=>setCreateForm(f=>({...f,name:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter')createCourse();e.stopPropagation();}} placeholder="Course name e.g. Biology 101" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><input value={createForm.subject} onChange={e=>setCreateForm(f=>({...f,subject:e.target.value}))} placeholder="Subject e.g. Biology, Math, History" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:14,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',marginBottom:12,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><textarea value={createForm.description} onChange={e=>setCreateForm(f=>({...f,description:e.target.value}))} placeholder="Description (optional)" style={{width:'100%',padding:'12px 14px',border:'1.5px solid #ECEAE4',borderRadius:9,fontSize:13,color:'#1A1814',background:'#fff',fontFamily:"'DM Sans',sans-serif",outline:'none',resize:'none',minHeight:72,marginBottom:16,boxSizing:'border-box'}} onFocus={e=>e.target.style.borderColor='#1A1814'} onBlur={e=>e.target.style.borderColor='#ECEAE4'}/><div style={{marginBottom:20}}><div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:'uppercase',color:'#8C8880',marginBottom:8}}>Color</div><div style={{display:'flex',gap:8}}>{PALETTE.map(col=>(<button key={col} onClick={()=>setCreateForm(f=>({...f,color:col}))} style={{width:28,height:28,borderRadius:'50%',background:col,border:`3px solid ${createForm.color===col?'#1A1814':'transparent'}`,cursor:'pointer'}}/>))}</div></div><div style={{display:'flex',gap:10}}><button onClick={()=>setShowCreate(false)} style={{flex:1,padding:'11px',borderRadius:9,border:'1px solid #ECEAE4',background:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',color:'#8C8880'}}>Cancel</button><button onClick={createCourse} disabled={!createForm.name.trim()} style={{flex:2,padding:'11px',borderRadius:9,border:'none',background:createForm.name.trim()?'#1A1814':'#ECEAE4',fontSize:13,fontWeight:700,cursor:createForm.name.trim()?'pointer':'default',color:createForm.name.trim()?'#F7F6F2':'#A8A59E'}}>Create Course →</button></div></div></div>)}
